@@ -4,7 +4,7 @@
 #include <iostream>
 
 int main() {
-    engine_t engine;
+    engine_t engine(true);
 
     try {
         engine.run();

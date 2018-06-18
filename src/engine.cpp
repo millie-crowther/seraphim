@@ -4,6 +4,10 @@
 #include <iostream>
 #include <stdexcept>
 
+engine_t::engine_t(bool is_debug){
+    this->is_debug = is_debug;
+}
+
 void
 engine_t::init(){
     // initialise GLFW
@@ -30,7 +34,7 @@ engine_t::init(){
     createInfo.pApplicationInfo = &appInfo;
  
     uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
+    const char ** glfwExtensions;
 
     glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
 
@@ -46,12 +50,11 @@ engine_t::init(){
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
     std::vector<VkExtensionProperties> extensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
-    std::cout << "Available extensions:" << std::endl;
 
+    std::cout << "Available extensions:" << std::endl;
     for (const auto& extension : extensions) {
 	std::cout << "\t" << extension.extensionName << std::endl;
     }
-
 }
 
 void 
@@ -62,6 +65,7 @@ engine_t::update(){
 void
 engine_t::cleanup(){
     vkDestroyInstance(instance, nullptr);
+
     glfwDestroyWindow(window);
     glfwTerminate();
 }

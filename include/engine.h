@@ -12,10 +12,13 @@ private:
 
     bool should_quit(); 
 
+    bool is_debug;
     VkInstance instance;
     GLFWwindow * window;
 
 public:
+    engine_t(bool is_debug);
+
     void run();
 };
 
