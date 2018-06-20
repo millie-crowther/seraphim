@@ -14,6 +14,8 @@ private:
     bool check_validation_layers(std::vector<const char *> validation_layers);
     std::vector<const char *> get_required_extensions();
     bool setup_debug_callback();
+    bool is_suitable_device(VkPhysicalDevice device);
+    VkPhysicalDevice select_device();
 
     // update functions
     bool should_quit(); 

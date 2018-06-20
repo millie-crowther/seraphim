@@ -3,6 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
@@ -39,7 +40,20 @@ engine_t::init(){
 	std::cout << "\t" << extension.extensionName << std::endl;
     }
 
-    setup_debug_callback();
+    if (is_debug){
+	if (!setup_debug_callback()){
+	    throw std::runtime_error("Error: Failed to setup debug callback.");
+	}
+    }
+
+    VkPhysicalDevice physical_device = select_device();
+    if (physical_device == VK_NULL_HANDLE){
+	throw std::runtime_error("Error: Couldn't find a Vulkan compatible GPU.");
+    }
+
+    VkPhysicalDeviceProperties properties = {};
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
+    std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
 }
 
 bool
@@ -80,6 +94,61 @@ engine_t::get_required_extensions(){
     }
 
     return req_ext;
+}
+
+bool
+engine_t::is_suitable_device(VkPhysicalDevice device){
+    // check that gpu isnt integrated
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(device, &properties);
+    if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
+        return false;
+    }
+
+    // check device can do geometry shaders
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(device, &features);
+    if (!features.geometryShader){
+	return false;
+    }
+
+    // check device has at least one graphics queue family
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, q_families.data());
+
+    auto p = [](VkQueueFamilyProperties qfam){ 
+	return qfam.queueCount > 0 && qfam.queueFlags & VK_QUEUE_GRAPHICS_BIT;
+    };
+
+    if (!std::any_of(q_families.begin(), q_families.end(), p)){
+	return false;
+    }
+
+    return true;
+}
+
+VkPhysicalDevice
+engine_t::select_device(){
+    uint32_t device_count = 0;
+    
+    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+    if (device_count == 0){
+	return VK_NULL_HANDLE;
+    }
+
+    std::vector<VkPhysicalDevice> devices(device_count);
+    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+    
+    for (auto device : devices){
+	if (is_suitable_device(device)){
+            return device;
+	}
+    }
+
+    return VK_NULL_HANDLE;
 }
 
 void
