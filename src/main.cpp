@@ -2,9 +2,19 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <cstring>
 
-int main() {
-    engine_t engine(true);
+
+int main(int argc, char ** argv) {
+    bool is_debug = false;
+    for (int i = 1; i < argc; i++){
+	if (strcmp(argv[i], "--debug") == 0){
+	    is_debug = true;
+	    break;
+	}
+    }
+
+    engine_t engine(is_debug);
 
     try {
         engine.run();

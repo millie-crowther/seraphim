@@ -4,15 +4,29 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <vector>
+
 class engine_t {
 private:
+    // initialisation functions
     void init();
+    void create_instance();
+    bool check_validation_layers(std::vector<const char *> validation_layers);
+    std::vector<const char *> get_required_extensions();
+    bool setup_debug_callback();
+
+    // update functions
+    bool should_quit(); 
     void update();
+
+    // cleanup functions
     void cleanup();
 
-    bool should_quit(); 
-
+    // debug fields
     bool is_debug;
+    VkDebugReportCallbackEXT callback;
+
+    // main fields
     VkInstance instance;
     GLFWwindow * window;
 
