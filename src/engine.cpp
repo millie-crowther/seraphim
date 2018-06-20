@@ -3,7 +3,12 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <set>
 #include <algorithm>
+
+const std::vector<const char *> validation_layers = {
+    "VK_LAYER_LUNARG_standard_validation"
+};
 
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
@@ -46,6 +51,10 @@ engine_t::init(){
 	}
     }
 
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+	throw std::runtime_error("Error: Failed to create window surface.");
+    }
+
     VkPhysicalDevice physical_device = select_device();
     if (physical_device == VK_NULL_HANDLE){
 	throw std::runtime_error("Error: Couldn't find a Vulkan compatible GPU.");
@@ -54,10 +63,64 @@ engine_t::init(){
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
+
+    if (!create_logical_device(physical_device)){
+	throw std::runtime_error("Error: Couldn't create logical device.");
+    }
+
+    int index = get_graphics_queue_family(physical_device);
+    vkGetDeviceQueue(device, index, 0, &graphics_queue);
 }
 
 bool
-engine_t::check_validation_layers(std::vector<const char*> validation_layers){
+engine_t::create_logical_device(VkPhysicalDevice physical_device){
+    int graphics = get_graphics_queue_family(physical_device);
+    int present = get_present_queue_family(physical_device);
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<int> unique_queue_families = { graphics, present };
+    
+    float queue_priority = 1.0f;
+    for (int queue_family : unique_queue_families){
+	VkDeviceQueueCreateInfo queue_create_info = {};
+	queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queue_create_info.queueFamilyIndex = queue_family;
+	queue_create_info.queueCount = 1;
+	queue_create_info.pQueuePriorities = &queue_priority;
+	queue_create_infos.push_back(queue_create_info);
+    }
+
+    VkPhysicalDeviceFeatures device_features = {};
+
+    VkDeviceCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    create_info.pQueueCreateInfos = queue_create_infos.data();
+    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
+
+    create_info.pEnabledFeatures = &device_features;
+
+    create_info.enabledExtensionCount = 0;
+
+    if (is_debug) {
+	create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+	create_info.ppEnabledLayerNames = validation_layers.data();
+    } else {
+	create_info.enabledLayerCount = 0;
+    }
+
+    if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
+	return false;
+    }
+
+    vkGetDeviceQueue(device, graphics, 0, &graphics_queue);
+    vkGetDeviceQueue(device, present, 0, &present_queue);
+
+    return true;
+}
+
+bool
+engine_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -96,34 +159,65 @@ engine_t::get_required_extensions(){
     return req_ext;
 }
 
+int
+engine_t::get_graphics_queue_family(VkPhysicalDevice device){
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, q_families.data());
+   
+    for (int i = 0; i < queue_family_count; i++){
+	if (q_families[i].queueCount > 0 && q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
+	    return i;
+	}
+    }
+
+    return -1;    
+}
+
+int 
+engine_t::get_present_queue_family(VkPhysicalDevice physical_device){
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, q_families.data());
+   
+    for (int i = 0; i < queue_family_count; i++){
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
+
+	if (q_families[i].queueCount > 0 && present_support){
+	    return i;
+	}
+    }
+
+    return -1;    
+}
+
 bool
-engine_t::is_suitable_device(VkPhysicalDevice device){
+engine_t::is_suitable_device(VkPhysicalDevice physical_device){
     // check that gpu isnt integrated
     VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(device, &properties);
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
     if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
         return false;
     }
 
     // check device can do geometry shaders
     VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(device, &features);
+    vkGetPhysicalDeviceFeatures(physical_device, &features);
     if (!features.geometryShader){
 	return false;
     }
 
     // check device has at least one graphics queue family
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+    if (get_graphics_queue_family(physical_device) == -1){
+	return false;
+    }
 
-    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, q_families.data());
-
-    auto p = [](VkQueueFamilyProperties qfam){ 
-	return qfam.queueCount > 0 && qfam.queueFlags & VK_QUEUE_GRAPHICS_BIT;
-    };
-
-    if (!std::any_of(q_families.begin(), q_families.end(), p)){
+    if (get_present_queue_family(physical_device) == -1){
 	return false;
     }
 
@@ -142,9 +236,9 @@ engine_t::select_device(){
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
     
-    for (auto device : devices){
-	if (is_suitable_device(device)){
-            return device;
+    for (auto physical_device : devices){
+	if (is_suitable_device(physical_device)){
+            return physical_device;
 	}
     }
 
@@ -153,12 +247,7 @@ engine_t::select_device(){
 
 void
 engine_t::create_instance(){
-    const std::vector<const char *> validation_layers = {
-        "VK_LAYER_LUNARG_standard_validation"
-    };
-
-
-    if (is_debug && !check_validation_layers(validation_layers)){
+    if (is_debug && !check_validation_layers()){
 	throw std::runtime_error("Requested validation layers not available.");
     }
 
@@ -237,15 +326,23 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    // destory logical device
+    vkDestroyDevice(device, nullptr);
+
+    // destroy debug callback
     if (is_debug){
         auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
 	if (func != nullptr){
 	    func(instance, callback, nullptr);
 	}
     }
-    
+   
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+
+    // destroy instance
     vkDestroyInstance(instance, nullptr);
 
+    // destory GLFW
     glfwDestroyWindow(window);
     glfwTerminate();
 }

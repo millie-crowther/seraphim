@@ -11,11 +11,14 @@ private:
     // initialisation functions
     void init();
     void create_instance();
-    bool check_validation_layers(std::vector<const char *> validation_layers);
+    bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
     bool setup_debug_callback();
-    bool is_suitable_device(VkPhysicalDevice device);
+    bool is_suitable_device(VkPhysicalDevice physical_device);
     VkPhysicalDevice select_device();
+    int get_graphics_queue_family(VkPhysicalDevice physical_device);
+    int get_present_queue_family(VkPhysicalDevice physical_device);
+    bool create_logical_device(VkPhysicalDevice physical_device);
 
     // update functions
     bool should_quit(); 
@@ -30,6 +33,10 @@ private:
 
     // main fields
     VkInstance instance;
+    VkDevice device;
+    VkSurfaceKHR surface;
+    VkQueue graphics_queue;
+    VkQueue present_queue;
     GLFWwindow * window;
 
 public:
