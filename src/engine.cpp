@@ -135,7 +135,7 @@ engine_t::select_swap_extent(VkPhysicalDevice physical_device){
 
      // check if we need to supply width and height
      if (capabilities.currentExtent.width == ~((uint32_t) 0)){
-	  VkExtent2D extents = { width, height };
+	  VkExtent2D extents = { (uint32_t) width, (uint32_t) height };
 	  
 	  extents.width = std::max(
 	      capabilities.minImageExtent.width, 
@@ -196,8 +196,8 @@ engine_t::create_swapchain(VkPhysicalDevice physical_device){
     create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     uint32_t families[2] = { 
-        get_graphics_queue_family(physical_device),
-        get_present_queue_family(physical_device)
+        (uint32_t) get_graphics_queue_family(physical_device),
+        (uint32_t) get_present_queue_family(physical_device)
     };
 
     if (families[0] != families[1]){
@@ -219,7 +219,19 @@ engine_t::create_swapchain(VkPhysicalDevice physical_device){
     // will need to update this field if creating a new swap chain e.g. for resized window
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    return vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) == VK_SUCCESS;
+    if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) != VK_SUCCESS){
+	return false;
+    }
+
+    uint32_t count = 0;
+    vkGetSwapchainImagesKHR(device, swapchain, &count, nullptr);
+    swapchain_images.resize(count);
+    vkGetSwapchainImagesKHR(device, swapchain, &count, swapchain_images.data());
+
+    swapchain_image_format = format.format;
+    swapchain_extents = extents;
+
+    return true;
 }
 
 VkSurfaceFormatKHR

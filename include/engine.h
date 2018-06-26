@@ -51,6 +51,9 @@ private:
     VkQueue graphics_queue;
     VkQueue present_queue;
     VkSwapchainKHR swapchain;
+    std::vector<VkImage> swapchain_images;
+    VkFormat swapchain_image_format;
+    VkExtent2D swapchain_extents;
 
     int width;
     int height;
