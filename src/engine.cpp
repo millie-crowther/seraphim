@@ -75,7 +75,9 @@ engine_t::init(){
     int index = get_graphics_queue_family(physical_device);
     vkGetDeviceQueue(device, index, 0, &graphics_queue);
 
-    VkSurfaceFormatKHR format = select_surface_format(physical_device);
+    if (!create_swapchain(physical_device)){
+	throw std::runtime_error("Error: Couldn't create swapchain.");
+    }
 }
 
 bool
@@ -168,6 +170,58 @@ engine_t::select_present_mode(VkPhysicalDevice physical_device){
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
+bool
+engine_t::create_swapchain(VkPhysicalDevice physical_device){
+    VkSurfaceFormatKHR format = select_surface_format(physical_device);
+    VkPresentModeKHR mode = select_present_mode(physical_device);
+    VkExtent2D extents = select_swap_extent(physical_device);
+
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+    uint32_t image_count = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount != 0 && image_count > capabilities.maxImageCount){
+	image_count = capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface = surface;
+    create_info.minImageCount = image_count;
+    create_info.imageFormat = format.format;
+    create_info.imageColorSpace = format.colorSpace;
+    create_info.imageExtent = extents;
+    create_info.imageArrayLayers = 1;
+
+    // if you dont wanna draw to image directly VK_IMAGE_USAGE_TRANSFER_DST_BIT
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    uint32_t families[2] = { 
+        get_graphics_queue_family(physical_device),
+        get_present_queue_family(physical_device)
+    };
+
+    if (families[0] != families[1]){
+        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+	create_info.queueFamilyIndexCount = 2;
+	create_info.pQueueFamilyIndices = families;
+    } else {
+	create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        create_info.queueFamilyIndexCount = 0;
+	create_info.pQueueFamilyIndices = nullptr;
+    }
+
+    create_info.preTransform = capabilities.currentTransform;
+    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+    create_info.presentMode = mode;
+    create_info.clipped = VK_TRUE;
+
+    // will need to update this field if creating a new swap chain e.g. for resized window
+    create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    return vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) == VK_SUCCESS;
+}
+
 VkSurfaceFormatKHR
 engine_t::select_surface_format(VkPhysicalDevice physical_device){
     uint32_t count = 0;
@@ -177,7 +231,7 @@ engine_t::select_surface_format(VkPhysicalDevice physical_device){
     
     // check if all formats supported
     if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED){
-	 return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
     }
 
     // check for preferred
@@ -447,6 +501,8 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    vkDestroySwapchainKHR(device, swapchain, nullptr);
+
     // destory logical device
     vkDestroyDevice(device, nullptr);
 
