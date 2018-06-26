@@ -8,13 +8,16 @@
 
 class engine_t {
 private:
-    // initialisation functions
+    /*
+      initialisation functions
+    */
     void init();
     void create_instance();
     bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
     bool setup_debug_callback();
 
+    // physical device selection
     VkPhysicalDevice select_device();
     bool is_suitable_device(VkPhysicalDevice physical_device);
     bool device_has_extension(VkPhysicalDevice physical_device, const char * extension);
@@ -23,6 +26,11 @@ private:
     int get_present_queue_family(VkPhysicalDevice physical_device);
     
     bool create_logical_device(VkPhysicalDevice physical_device);
+
+    // swap chain creation
+    VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device); 
+    VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device);
+    VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
 
     // update functions
     bool should_quit(); 
@@ -41,6 +49,9 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+
+    int width;
+    int height;
     GLFWwindow * window;
 
 public:

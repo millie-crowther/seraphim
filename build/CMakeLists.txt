@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.7)
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 17)
 project (blaspheme)
 
 set(VULKAN_SDK_PATH "/home/millie/VulkanSDK/1.1.73.0/x86_64")

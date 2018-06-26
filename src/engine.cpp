@@ -32,9 +32,9 @@ engine_t::init(){
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-    int WIDTH = 640;
-    int HEIGHT = 480;
-    window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    width = 640;
+    height = 480;
+    window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
 
     // initialise vulkan
     create_instance();
@@ -74,6 +74,8 @@ engine_t::init(){
 
     int index = get_graphics_queue_family(physical_device);
     vkGetDeviceQueue(device, index, 0, &graphics_queue);
+
+    VkSurfaceFormatKHR format = select_surface_format(physical_device);
 }
 
 bool
@@ -122,6 +124,74 @@ engine_t::create_logical_device(VkPhysicalDevice physical_device){
     vkGetDeviceQueue(device, present, 0, &present_queue);
 
     return true;
+}
+
+VkExtent2D
+engine_t::select_swap_extent(VkPhysicalDevice physical_device){
+     VkSurfaceCapabilitiesKHR capabilities;
+     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+
+     // check if we need to supply width and height
+     if (capabilities.currentExtent.width == ~((uint32_t) 0)){
+	  VkExtent2D extents = { width, height };
+	  
+	  extents.width = std::max(
+	      capabilities.minImageExtent.width, 
+	      std::min(extents.width, capabilities.maxImageExtent.width)
+	  );
+	  extents.height = std::max(
+	      capabilities.minImageExtent.height, 
+	      std::min(extents.height, capabilities.maxImageExtent.height)
+	  );
+          
+	  return extents;
+     } else {
+	  return capabilities.currentExtent;
+     }
+}
+
+VkPresentModeKHR
+engine_t::select_present_mode(VkPhysicalDevice physical_device){
+    uint32_t count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, nullptr);
+    std::vector<VkPresentModeKHR> modes(count);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, modes.data());
+
+    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()){
+	return VK_PRESENT_MODE_MAILBOX_KHR;
+    }
+
+    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != modes.end()){
+	return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkSurfaceFormatKHR
+engine_t::select_surface_format(VkPhysicalDevice physical_device){
+    uint32_t count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
+    std::vector<VkSurfaceFormatKHR> formats(count);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, formats.data());
+    
+    // check if all formats supported
+    if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED){
+	 return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+    }
+
+    // check for preferred
+    for (auto available_format : formats){
+	if (
+	    available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+	    available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+	){
+	    return available_format;
+	}
+    }
+
+    // default
+    return formats[0];
 }
 
 bool
@@ -203,21 +273,19 @@ engine_t::get_present_queue_family(VkPhysicalDevice physical_device){
 
 bool
 engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
-    VkSurfaceCapabilitiesKHR capabilities;
-
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
-
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
-    std::vector<VkSurfaceFormatKHR> formats(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, formats.data());
-    
+    if (count == 0){
+	return false;
+    }
+
     count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, nullptr);
-    std::vector<VkPresentModeKHR> modes(count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, modes.data());
+    if (count == 0){
+	return false;
+    }
 
-    return !formats.empty() && !modes.empty();
+    return true;
 }
 
 bool
