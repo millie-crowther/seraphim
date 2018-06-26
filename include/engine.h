@@ -14,10 +14,14 @@ private:
     bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
     bool setup_debug_callback();
-    bool is_suitable_device(VkPhysicalDevice physical_device);
+
     VkPhysicalDevice select_device();
+    bool is_suitable_device(VkPhysicalDevice physical_device);
+    bool device_has_extension(VkPhysicalDevice physical_device, const char * extension);
+    bool has_adequate_swapchain(VkPhysicalDevice physical_device);
     int get_graphics_queue_family(VkPhysicalDevice physical_device);
     int get_present_queue_family(VkPhysicalDevice physical_device);
+    
     bool create_logical_device(VkPhysicalDevice physical_device);
 
     // update functions

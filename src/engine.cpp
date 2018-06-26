@@ -10,6 +10,10 @@ const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
+const std::vector<const char*> device_extensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
 
@@ -100,7 +104,8 @@ engine_t::create_logical_device(VkPhysicalDevice physical_device){
 
     create_info.pEnabledFeatures = &device_features;
 
-    create_info.enabledExtensionCount = 0;
+    create_info.enabledExtensionCount = device_extensions.size();
+    create_info.ppEnabledExtensionNames = device_extensions.data();
 
     if (is_debug) {
 	create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
@@ -197,6 +202,25 @@ engine_t::get_present_queue_family(VkPhysicalDevice physical_device){
 }
 
 bool
+engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
+    VkSurfaceCapabilitiesKHR capabilities;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+
+    uint32_t count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
+    std::vector<VkSurfaceFormatKHR> formats(count);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, formats.data());
+    
+    count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, nullptr);
+    std::vector<VkPresentModeKHR> modes(count);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, modes.data());
+
+    return !formats.empty() && !modes.empty();
+}
+
+bool
 engine_t::is_suitable_device(VkPhysicalDevice physical_device){
     // check that gpu isnt integrated
     VkPhysicalDeviceProperties properties;
@@ -221,7 +245,36 @@ engine_t::is_suitable_device(VkPhysicalDevice physical_device){
 	return false;
     }
 
+    for (auto extension : device_extensions){
+	if (!device_has_extension(physical_device, extension)){
+            return false;
+	}
+    }
+
+    if (!has_adequate_swapchain(physical_device)){
+	return false;
+    }
+
     return true;
+}
+
+bool
+engine_t::device_has_extension(VkPhysicalDevice physical_device, const char * extension){
+    uint32_t extension_count = 0;
+    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extension_count, nullptr);
+
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    vkEnumerateDeviceExtensionProperties(
+        physical_device, nullptr, &extension_count, available_extensions.data()
+    );
+
+    for (auto available_extension : available_extensions){
+	if (std::string(extension) == std::string(available_extension.extensionName)){
+	    return true;
+	}
+    }
+
+    return false;
 }
 
 VkPhysicalDevice
