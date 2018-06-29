@@ -4,6 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <string>
 #include <vector>
 
 class engine_t {
@@ -36,6 +37,8 @@ private:
 
     // graphics pipeline
     bool create_graphics_pipeline();    
+    std::vector<char> load_file(std::string filename);
+    VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
     // update functions
     bool should_quit(); 
@@ -54,6 +57,7 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+    VkPipelineLayout pipeline_layout;
 
     // swapchain fields
     VkSwapchainKHR swapchain;
