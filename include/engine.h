@@ -29,9 +29,11 @@ private:
 
     // swap chain creation
     bool create_swapchain(VkPhysicalDevice physical_device);
+    bool create_image_views();
     VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device); 
     VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device);
     VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
+    
 
     // update functions
     bool should_quit(); 
@@ -50,11 +52,14 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+
+    // swapchain fields
     VkSwapchainKHR swapchain;
     std::vector<VkImage> swapchain_images;
     VkFormat swapchain_image_format;
     VkExtent2D swapchain_extents;
-
+    std::vector<VkImageView> swapchain_image_views;
+     
     int width;
     int height;
     GLFWwindow * window;

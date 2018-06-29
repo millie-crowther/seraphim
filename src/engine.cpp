@@ -72,11 +72,12 @@ engine_t::init(){
 	throw std::runtime_error("Error: Couldn't create logical device.");
     }
 
-    int index = get_graphics_queue_family(physical_device);
-    vkGetDeviceQueue(device, index, 0, &graphics_queue);
-
     if (!create_swapchain(physical_device)){
 	throw std::runtime_error("Error: Couldn't create swapchain.");
+    }
+
+    if (!create_image_views()){
+        throw std::runtime_error("Error: Couldn't create image views");
     }
 }
 
@@ -230,6 +231,38 @@ engine_t::create_swapchain(VkPhysicalDevice physical_device){
 
     swapchain_image_format = format.format;
     swapchain_extents = extents;
+
+    return true;
+}
+
+bool
+engine_t::create_image_views(){
+    swapchain_image_views.resize(swapchain_images.size());
+
+    for (int i = 0; i < swapchain_images.size(); i++){
+        VkImageViewCreateInfo create_info = {};
+	create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	create_info.image = swapchain_images[i];
+	create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	create_info.format = swapchain_image_format;
+
+	create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+	create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+	create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+	create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+	create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	create_info.subresourceRange.baseMipLevel = 0;
+	create_info.subresourceRange.levelCount = 1;
+	create_info.subresourceRange.baseArrayLayer = 0;
+	create_info.subresourceRange.layerCount = 1;
+
+	if (vkCreateImageView(
+	    device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS
+        ){
+            return false;
+	}
+    }
 
     return true;
 }
@@ -513,6 +546,10 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    for (auto image_view : swapchain_image_views){
+        vkDestroyImageView(device, image_view, nullptr);
+    }
+
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 
     // destory logical device
