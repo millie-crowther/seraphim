@@ -33,7 +33,9 @@ private:
     VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device); 
     VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device);
     VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
-    
+
+    // graphics pipeline
+    bool create_graphics_pipeline();    
 
     // update functions
     bool should_quit(); 

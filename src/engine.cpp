@@ -370,6 +370,11 @@ engine_t::get_present_queue_family(VkPhysicalDevice physical_device){
     return -1;    
 }
 
+bool 
+engine_t::create_graphics_pipeline(){
+
+}
+
 bool
 engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
     uint32_t count = 0;
