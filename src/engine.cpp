@@ -62,7 +62,7 @@ engine_t::init(){
 
     VkPhysicalDevice physical_device = select_device();
     if (physical_device == VK_NULL_HANDLE){
-	throw std::runtime_error("Error: Couldn't find a Vulkan compatible GPU.");
+	throw std::runtime_error("Error: Couldn't find an appropriate GPU.");
     }
 
     VkPhysicalDeviceProperties properties = {};
