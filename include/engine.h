@@ -35,6 +35,8 @@ private:
     VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device);
     VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
 
+    bool create_render_pass();
+
     // graphics pipeline
     bool create_graphics_pipeline();    
     std::vector<char> load_file(std::string filename);
@@ -57,7 +59,9 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+    VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
+    VkRenderPass render_pass;
 
     // swapchain fields
     VkSwapchainKHR swapchain;

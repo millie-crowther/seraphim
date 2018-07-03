@@ -81,6 +81,10 @@ engine_t::init(){
         throw std::runtime_error("Error: Couldn't create image views.");
     }
 
+    if (!create_render_pass()){
+	throw std::runtime_error("Error: Couldn't create render pass.");
+    }
+
     if (!create_graphics_pipeline()){
 	throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
@@ -256,6 +260,35 @@ engine_t::create_swapchain(VkPhysicalDevice physical_device){
     swapchain_extents = extents;
 
     return true;
+}
+
+bool
+engine_t::create_render_pass(){
+    VkAttachmentDescription colour_attachment = {};
+    colour_attachment.format = swapchain_image_format;
+    colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colour_attachment_ref = {};
+    colour_attachment_ref.attachment = 0;
+    colour_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colour_attachment_ref;
+
+    VkRenderPassCreateInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments = &colour_attachment;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+
+    return vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
 }
 
 bool
@@ -518,6 +551,7 @@ engine_t::create_graphics_pipeline(){
     colour_blend_info.blendConstants[1] = 0.0f;
     colour_blend_info.blendConstants[2] = 0.0f;
     colour_blend_info.blendConstants[3] = 0.0f;
+    const VkPipelineColorBlendStateCreateInfo colour_blend_const = colour_blend_info;
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -529,6 +563,30 @@ engine_t::create_graphics_pipeline(){
     if (vkCreatePipelineLayout(
 	device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
+	return false;
+    }
+
+    VkGraphicsPipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = 2;
+    pipeline_info.pStages = shader_stages;
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &raster_info;
+    pipeline_info.pMultisampleState = &multisample_info;
+    pipeline_info.pDepthStencilState = nullptr;
+    pipeline_info.pColorBlendState = &colour_blend_const;
+    pipeline_info.pDynamicState = nullptr;
+    pipeline_info.layout = pipeline_layout;
+    pipeline_info.renderPass = render_pass;
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_info.basePipelineIndex = -1;
+
+    if (vkCreateGraphicsPipelines(
+	device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline
+    ) != VK_SUCCESS){
 	return false;
     }
 
@@ -714,7 +772,9 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    vkDestroyPipeline(device, graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(device, render_pass, nullptr);
 
     for (auto image_view : swapchain_image_views){
         vkDestroyImageView(device, image_view, nullptr);
