@@ -38,6 +38,7 @@ private:
     bool create_render_pass();
     bool create_framebuffers();
     bool create_command_pool(VkPhysicalDevice physical_device);
+    bool create_semaphores();
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -45,7 +46,8 @@ private:
     VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
     // update functions
-    bool should_quit(); 
+    bool should_quit();
+    void render(); 
     void update();
 
     // cleanup functions
@@ -78,7 +80,11 @@ private:
     VkExtent2D swapchain_extents;
     std::vector<VkImageView> swapchain_image_views;
     std::vector<VkFramebuffer> swapchain_framebuffers;
-     
+    
+    // synchronisation fields
+    VkSemaphore image_available_sema;
+    VkSemaphore render_finished_sema;
+ 
     int width;
     int height;
     GLFWwindow * window;

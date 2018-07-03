@@ -96,6 +96,10 @@ engine_t::init(){
     if (!create_command_pool(physical_device)){
 	throw std::runtime_error("Error: Failed to create command pool.");
     }
+
+    if (!create_semaphores()){
+        throw std::runtime_error("Error: Failed to create semaphores.");
+    }
 }
 
 std::vector<char>
@@ -317,12 +321,23 @@ engine_t::create_render_pass(){
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colour_attachment_ref;
 
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+                             | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = 1;
     render_pass_info.pAttachments = &colour_attachment;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
 
     return vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
 }
@@ -861,6 +876,22 @@ engine_t::setup_debug_callback(){
     return true;
 }
 
+bool
+engine_t::create_semaphores(){
+    VkSemaphoreCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(device, &create_info, nullptr, &image_available_sema) != VK_SUCCESS){
+        return false;
+    }
+
+    if (vkCreateSemaphore(device, &create_info, nullptr, &render_finished_sema) != VK_SUCCESS){
+        return false;
+    }
+
+    return true;
+}
+
 void 
 engine_t::update(){
     glfwPollEvents();
@@ -868,6 +899,9 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    vkDestroySemaphore(device, image_available_sema, nullptr);
+    vkDestroySemaphore(device, render_finished_sema, nullptr);
+
     vkDestroyCommandPool(device, command_pool, nullptr);
 
     for (auto framebuffer : swapchain_framebuffers){
@@ -911,11 +945,50 @@ engine_t::should_quit(){
 }
 
 void
+engine_t::render(){
+    uint32_t image_index;
+    vkAcquireNextImageKHR(
+        device, swapchain, ~((uint64_t) 0), image_available_sema, VK_NULL_HANDLE, &image_index
+    );
+     
+    VkSemaphore wait_semas[1] = { image_available_sema };
+    VkPipelineStageFlags wait_stages[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+    VkSubmitInfo submit_info = {};
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = wait_semas;
+    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffers[image_index];
+    
+    VkSemaphore signal_semas[1] = { render_finished_sema };
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = signal_semas;
+
+    if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to submit to draw command buffer.");
+    }
+
+    VkPresentInfoKHR present_info = {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = signal_semas;
+
+    VkSwapchainKHR swapchains[1] = { swapchain };
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = swapchains;
+    present_info.pImageIndices = &image_index;
+    present_info.pResults = nullptr;
+    vkQueuePresentKHR(present_queue, &present_info);
+}
+
+void
 engine_t::run(){
     init();	
 
     while (!should_quit()){
 	update();
+        render();
     }
 
     cleanup();
