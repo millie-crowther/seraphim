@@ -36,6 +36,7 @@ private:
     VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
 
     bool create_render_pass();
+    bool create_framebuffers();
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -69,6 +70,7 @@ private:
     VkFormat swapchain_image_format;
     VkExtent2D swapchain_extents;
     std::vector<VkImageView> swapchain_image_views;
+    std::vector<VkFramebuffer> swapchain_framebuffers;
      
     int width;
     int height;

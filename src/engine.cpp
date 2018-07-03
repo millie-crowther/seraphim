@@ -88,6 +88,10 @@ engine_t::init(){
     if (!create_graphics_pipeline()){
 	throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
+
+    if (!create_framebuffers()){
+	throw std::runtime_error("Error: Failed to create framebuffers.");
+    }
 }
 
 std::vector<char>
@@ -196,6 +200,34 @@ engine_t::select_present_mode(VkPhysicalDevice physical_device){
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+bool
+engine_t::create_framebuffers(){
+    swapchain_framebuffers.resize(swapchain_image_views.size());
+
+    for (int i = 0; i < swapchain_framebuffers.size(); i++){
+        VkImageView attachments[1] = {
+	    swapchain_image_views[i]
+	};
+
+	VkFramebufferCreateInfo framebuffer_info = {};
+	framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebuffer_info.renderPass = render_pass;
+	framebuffer_info.attachmentCount = 1;
+	framebuffer_info.pAttachments = attachments;
+	framebuffer_info.width = swapchain_extents.width;
+	framebuffer_info.height = swapchain_extents.height;
+	framebuffer_info.layers = 1;
+
+	if (vkCreateFramebuffer(
+	    device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
+	){
+            return false;
+	}
+    }
+
+    return true;
 }
 
 bool
@@ -585,8 +617,8 @@ engine_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(
-	device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline
-    ) != VK_SUCCESS){
+	device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS
+    ){
 	return false;
     }
 
@@ -772,6 +804,10 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    for (auto framebuffer : swapchain_framebuffers){
+	vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+
     vkDestroyPipeline(device, graphics_pipeline, nullptr);
     vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
     vkDestroyRenderPass(device, render_pass, nullptr);
