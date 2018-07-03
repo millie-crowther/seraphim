@@ -37,6 +37,7 @@ private:
 
     bool create_render_pass();
     bool create_framebuffers();
+    bool create_command_pool(VkPhysicalDevice physical_device);
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -60,9 +61,15 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+
+    // graphics pipeline fields
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
     VkRenderPass render_pass;
+
+    // command pool fields
+    VkCommandPool command_pool;
+    std::vector<VkCommandBuffer> command_buffers;
 
     // swapchain fields
     VkSwapchainKHR swapchain;
