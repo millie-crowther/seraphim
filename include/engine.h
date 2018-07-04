@@ -20,25 +20,28 @@ private:
 
     // physical device selection
     VkPhysicalDevice select_device();
-    bool is_suitable_device(VkPhysicalDevice physical_device);
-    bool device_has_extension(VkPhysicalDevice physical_device, const char * extension);
-    bool has_adequate_swapchain(VkPhysicalDevice physical_device);
-    int get_graphics_queue_family(VkPhysicalDevice physical_device);
-    int get_present_queue_family(VkPhysicalDevice physical_device);
+    bool is_suitable_device(VkPhysicalDevice phys_device);
+    bool device_has_extension(VkPhysicalDevice phys_device, const char * extension);
+    bool has_adequate_swapchain(VkPhysicalDevice phys_device);
+    int get_graphics_queue_family(VkPhysicalDevice phys_device);
+    int get_present_queue_family(VkPhysicalDevice phys_device);
     
-    bool create_logical_device(VkPhysicalDevice physical_device);
+    bool create_logical_device();
 
-    // swap chain creation
-    bool create_swapchain(VkPhysicalDevice physical_device);
+    // swap chain management
+    bool create_swapchain();
+    void recreate_swapchain();
+    void cleanup_swapchain();
     bool create_image_views();
-    VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device); 
-    VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device);
-    VkExtent2D select_swap_extent(VkPhysicalDevice physical_device);
+    VkSurfaceFormatKHR select_surface_format(); 
+    VkPresentModeKHR select_present_mode();
+    VkExtent2D select_swap_extent();
 
     bool create_render_pass();
     bool create_framebuffers();
-    bool create_command_pool(VkPhysicalDevice physical_device);
-    bool create_semaphores();
+    bool create_command_pool();
+    bool create_command_buffers();
+    bool create_sync();
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -47,7 +50,7 @@ private:
 
     // update functions
     bool should_quit();
-    void render(); 
+    void render(int currrent_frame); 
     void update();
 
     // cleanup functions
@@ -58,6 +61,7 @@ private:
     VkDebugReportCallbackEXT callback;
 
     // main fields
+    VkPhysicalDevice physical_device;
     VkInstance instance;
     VkDevice device;
     VkSurfaceKHR surface;
@@ -82,8 +86,10 @@ private:
     std::vector<VkFramebuffer> swapchain_framebuffers;
     
     // synchronisation fields
-    VkSemaphore image_available_sema;
-    VkSemaphore render_finished_sema;
+    static constexpr int frames_in_flight = 2;
+    std::vector<VkSemaphore> image_available_semas;
+    std::vector<VkSemaphore> render_finished_semas;
+    std::vector<VkFence> in_flight_fences;
  
     int width;
     int height;
