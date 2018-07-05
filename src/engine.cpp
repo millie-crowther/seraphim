@@ -7,6 +7,20 @@
 #include <algorithm>
 #include <fstream>
 
+void 
+window_resize_callback(GLFWwindow * window, int width, int height){
+    void * data = glfwGetWindowUserPointer(window);
+    engine_t * engine = reinterpret_cast<engine_t *>(data);
+    engine->window_resize(width, height);
+}
+
+void
+engine_t::window_resize(int w, int h){
+    width = w;
+    height = h;
+    recreate_swapchain();
+}
+
 constexpr int engine_t::frames_in_flight;
 
 const std::vector<const char *> validation_layers = {
@@ -38,6 +52,8 @@ engine_t::init(){
     width = 640;
     height = 480;
     window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+    glfwSetWindowUserPointer(window, static_cast<void *>(this));
+    glfwSetWindowSizeCallback(window, window_resize_callback);   
 
     // initialise vulkan
     create_instance();
@@ -883,7 +899,9 @@ engine_t::setup_debug_callback(){
     create_info.pfnCallback = debug_callback;
 
     //load in function address, since its an extension
-    auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugReportCallbackEXT");
+    auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(
+        instance, "vkCreateDebugReportCallbackEXT"
+    );
     if (func == nullptr){
         return false;
     }
@@ -891,8 +909,6 @@ engine_t::setup_debug_callback(){
     if (func(instance, &create_info, nullptr, &callback) != VK_SUCCESS){
 	return false;
     }	
-
-    std::cout << "Debug callback setup succesfully." << std::endl;
 
     return true;
 }
@@ -988,12 +1004,14 @@ engine_t::cleanup(){
     vkDestroyCommandPool(device, command_pool, nullptr);
 
 
-    // destory logical device
+    // destroy logical device
     vkDestroyDevice(device, nullptr);
 
     // destroy debug callback
     if (is_debug){
-        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugReportCallbackEXT");
+        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugReportCallbackEXT"
+        );
 	if (func != nullptr){
 	    func(instance, callback, nullptr);
 	}
@@ -1041,7 +1059,7 @@ engine_t::render(int current_frame){
 
     VkResult res = vkQueueSubmit(graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
     if (res == VK_ERROR_OUT_OF_DATE_KHR){
-        recreate_swapchain();
+       // recreate_swapchain();
         return;
     } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR){
         throw std::runtime_error("Error: Failed to submit to draw command buffer.");
@@ -1059,8 +1077,8 @@ engine_t::render(int current_frame){
     present_info.pResults = nullptr;
     
     res = vkQueuePresentKHR(present_queue, &present_info);
-    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR){  
-        recreate_swapchain();
+    if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR){ 
+        //recreate_swapchain();
     } else if (res != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to present image.");
     }

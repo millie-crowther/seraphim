@@ -98,6 +98,8 @@ private:
 public:
     engine_t(bool is_debug);
 
+    void window_resize(int w, int h);
+
     void run();
 };
 
