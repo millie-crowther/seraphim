@@ -6,6 +6,24 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
+#include "vertex.h"
+#include <cstring>
+
+constexpr int engine_t::frames_in_flight;
+
+const std::vector<const char *> validation_layers = {
+    "VK_LAYER_LUNARG_standard_validation"
+};
+
+const std::vector<const char*> device_extensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
+
+const std::vector<vertex_t> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+};
 
 void 
 window_resize_callback(GLFWwindow * window, int width, int height){
@@ -20,16 +38,6 @@ engine_t::window_resize(int w, int h){
     height = h;
     recreate_swapchain();
 }
-
-constexpr int engine_t::frames_in_flight;
-
-const std::vector<const char *> validation_layers = {
-    "VK_LAYER_LUNARG_standard_validation"
-};
-
-const std::vector<const char*> device_extensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
 
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
@@ -113,6 +121,14 @@ engine_t::init(){
 
     if (!create_command_pool()){
 	throw std::runtime_error("Error: Failed to create command pool.");
+    }
+
+    if (!create_vertex_buffer()){
+        throw std::runtime_error("Error: Failed to create vertex buffer.");
+    }
+
+    if (!create_command_buffers()){
+        throw std::runtime_error("Error: Failed to create command buffers.");
     }
 
     if (!create_sync()){
@@ -406,7 +422,66 @@ engine_t::create_command_pool(){
 	return false;
     }
 
-    return create_command_buffers();
+    return true;
+}
+
+int
+engine_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
+    VkPhysicalDeviceMemoryProperties memory_prop;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_prop);
+
+    for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
+        if (
+            (type_filter & (1 << i)) && 
+            (memory_prop.memoryTypes[i].propertyFlags & properties) == properties
+        ){
+            return i;
+        }
+    }
+ 
+    return -1;
+}
+
+bool
+engine_t::create_vertex_buffer(){
+    VkBufferCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    create_info.size = sizeof(vertex_t) * vertices.size();
+    create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+    if (vkCreateBuffer(device, &create_info, nullptr, &vertex_buffer) != VK_SUCCESS){
+        return false;
+    }
+
+    VkMemoryRequirements memory_req;
+    vkGetBufferMemoryRequirements(device, vertex_buffer, &memory_req);
+
+    int memory_type = find_memory_type(
+        memory_req.memoryTypeBits, 
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT          
+    );
+
+    if (memory_type == -1){
+        return false;
+    }
+   
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = memory_req.size;
+    alloc_info.memoryTypeIndex = memory_type;
+    
+    if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS){
+        return false;
+    }
+
+    vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);     
+
+    void * data;
+    vkMapMemory(device, vertex_buffer_memory, 0, create_info.size, 0, &data);
+        std::memcpy(data, vertices.data(), (size_t) create_info.size);
+    vkUnmapMemory(device, vertex_buffer_memory);
+    return true;
 }
 
 bool
@@ -448,7 +523,12 @@ engine_t::create_command_buffers(){
 	    vkCmdBindPipeline(
 		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
 	    );
-	    vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
+
+            VkBuffer vertex_buffers[1] = { vertex_buffer };
+            VkDeviceSize offsets[1] = { 0 };
+            vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+
+	    vkCmdDraw(command_buffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
 	vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
@@ -610,12 +690,15 @@ engine_t::create_graphics_pipeline(){
 	frag_create_info
     };
 
+    auto vert_desc = vertex_t::get_binding_description();
+    auto attr_desc = vertex_t::get_attr_descriptions();
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = 0;
-    vertex_input_info.pVertexBindingDescriptions = nullptr;
-    vertex_input_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_info.pVertexAttributeDescriptions = nullptr;
+    vertex_input_info.vertexBindingDescriptionCount = 1;
+    vertex_input_info.pVertexBindingDescriptions = &vert_desc;
+    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attr_desc.size());;
+    vertex_input_info.pVertexAttributeDescriptions = attr_desc.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -954,8 +1037,6 @@ engine_t::update(){
 
 void
 engine_t::recreate_swapchain(){
-    std::cout << "Recreating swapchain..." << std::endl;
-
     vkDeviceWaitIdle(device);
   
     cleanup_swapchain();
@@ -994,6 +1075,9 @@ engine_t::cleanup(){
     vkDeviceWaitIdle(device);
 
     cleanup_swapchain();
+
+    vkDestroyBuffer(device, vertex_buffer, nullptr);
+    vkFreeMemory(device, vertex_buffer_memory, nullptr);
 
     for (int i = 0; i < frames_in_flight; i++){
         vkDestroySemaphore(device, image_available_semas[i], nullptr);

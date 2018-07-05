@@ -42,6 +42,9 @@ private:
     bool create_command_pool();
     bool create_command_buffers();
     bool create_sync();
+ 
+    bool create_vertex_buffer();
+    int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -61,6 +64,9 @@ private:
     VkDebugReportCallbackEXT callback;
 
     // main fields
+    VkBuffer vertex_buffer;
+    VkDeviceMemory vertex_buffer_memory;
+
     VkPhysicalDevice physical_device;
     VkInstance instance;
     VkDevice device;
