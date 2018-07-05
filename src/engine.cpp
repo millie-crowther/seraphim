@@ -99,6 +99,13 @@ engine_t::init(){
 	throw std::runtime_error("Error: Couldn't create logical device.");
     }
 
+    // initialise vulkan memory allocator
+    VmaAllocatorCreateInfo allocator_info = {};
+    allocator_info.physicalDevice = physical_device;
+    allocator_info.device = device;
+    
+    vmaCreateAllocator(&allocator_info, &allocator);
+
     if (!create_swapchain()){
 	throw std::runtime_error("Error: Couldn't create swapchain.");
     }

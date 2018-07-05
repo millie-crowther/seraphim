@@ -11,6 +11,7 @@ add_subdirectory("glfw")
 
 set(INCLUDE_DIR
     ../include
+    VulkanMemoryAllocator/src
 )
 
 include_directories(${INCLUDE_DIR})
@@ -19,6 +20,7 @@ set(SOURCES
     ../src/main.cpp
     ../src/engine.cpp
     ../src/sdf.cpp
+    ../src/vma.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

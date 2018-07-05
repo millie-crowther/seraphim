@@ -4,6 +4,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "vk_mem_alloc.h"
+
 #include <string>
 #include <vector>
 
@@ -64,6 +66,7 @@ private:
     VkDebugReportCallbackEXT callback;
 
     // main fields
+    VmaAllocator allocator;
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
 
