@@ -9,6 +9,18 @@
 #include "vertex.h"
 #include <cstring>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+};
+
 constexpr int engine_t::frames_in_flight;
 
 const std::vector<const char *> validation_layers = {
@@ -119,6 +131,10 @@ engine_t::init(){
 	throw std::runtime_error("Error: Couldn't create render pass.");
     }
 
+    if (!create_descriptor_set_layout()){
+	throw std::runtime_error("Error: Couldn't create descriptor set layout.");
+    }
+
     if (!create_graphics_pipeline()){
 	throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
@@ -131,8 +147,12 @@ engine_t::init(){
 	throw std::runtime_error("Error: Failed to create command pool.");
     }
 
-    if (!create_vertex_buffer() || !create_index_buffer()){
-        throw std::runtime_error("Error: Failed to create vertex and index buffers.");
+    if (!create_vertex_buffer() || !create_index_buffer() || !create_uniform_buffers()){
+        throw std::runtime_error("Error: Failed to create buffers.");
+    }
+
+    if (!create_descriptor_pool()){
+	throw std::runtime_error("Error: Failed to create descriptor pool.");
     }
 
     if (!create_command_buffers()){
@@ -343,6 +363,118 @@ engine_t::create_swapchain(){
 
     swapchain_image_format = format.format;
     swapchain_extents = extents;
+
+    return true;
+}
+
+bool 
+engine_t::create_descriptor_pool(){
+    VkDescriptorPoolSize pool_size = {};
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount = static_cast<uint32_t>(swapchain_images.size());
+
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.poolSizeCount = 1;
+    pool_info.pPoolSizes = &pool_size;
+    pool_info.maxSets = static_cast<uint32_t>(swapchain_images.size());
+
+    if (vkCreateDescriptorPool(device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
+	return false;
+    }
+
+    if (!create_descriptor_sets()){
+	return false;
+    }
+
+    return true;
+}
+
+bool 
+engine_t::create_descriptor_sets(){
+    std::vector<VkDescriptorSetLayout> layouts(swapchain_images.size(), descriptor_layout);
+
+    VkDescriptorSetAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool = desc_pool;
+    alloc_info.descriptorSetCount = static_cast<uint32_t>(swapchain_images.size());
+    alloc_info.pSetLayouts = layouts.data();
+
+    desc_sets.resize(swapchain_images.size());
+    if (vkAllocateDescriptorSets(device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
+	return false;
+    }
+
+    VkDescriptorBufferInfo buffer_info = {};
+    buffer_info.offset = 0;
+    buffer_info.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet desc_write = {};
+    desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    desc_write.dstBinding = 0;
+    desc_write.dstArrayElement = 0;
+    desc_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    desc_write.descriptorCount = 1;
+    desc_write.pBufferInfo = &buffer_info;
+    desc_write.pImageInfo = nullptr;
+    desc_write.pTexelBufferView = nullptr;
+
+    for (int i = 0; i < swapchain_images.size(); i++){
+	buffer_info.buffer = uniform_buffers[i];
+	desc_write.dstSet = desc_sets[i];
+
+	vkUpdateDescriptorSets(device, 1, &desc_write, 0, nullptr);
+    }
+
+    return true;
+}
+
+bool
+engine_t::create_descriptor_set_layout(){
+    VkDescriptorSetLayoutBinding ubo_layout = {};
+    ubo_layout.binding = 0;
+    ubo_layout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    ubo_layout.descriptorCount = 1;
+    ubo_layout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    ubo_layout.pImmutableSamplers = nullptr;
+    
+    VkDescriptorSetLayoutCreateInfo layout_info = {};
+    layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_info.bindingCount = 1;
+    layout_info.pBindings = &ubo_layout;
+
+    VkResult result = vkCreateDescriptorSetLayout(
+        device, &layout_info, nullptr, &descriptor_layout
+    );
+ 
+    if (result != VK_SUCCESS){
+	return false;
+    }
+
+    return true;
+}
+
+bool 
+engine_t::create_uniform_buffers(){
+    VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+
+    uniform_buffers.resize(swapchain_images.size());
+    uniform_buffer_memories.resize(swapchain_images.size());
+
+    for (int i = 0; i < swapchain_images.size(); i++){
+        bool result = create_buffer(
+	    buffer_size,
+	    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+	  | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	    &uniform_buffers[i],
+	    &uniform_buffer_memories[i]
+	);
+
+	if (!result){
+	    return false;
+	}
+    }
 
     return true;
 }
@@ -650,7 +782,7 @@ engine_t::create_command_buffers(){
 	render_pass_info.clearValueCount = 1;
 	render_pass_info.pClearValues = &clear_colour;
 
-	vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(command_buffers[i], &render_pass_info,VK_SUBPASS_CONTENTS_INLINE);
 	    vkCmdBindPipeline(
 		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
 	    );
@@ -659,6 +791,10 @@ engine_t::create_command_buffers(){
             VkDeviceSize offsets[1] = { 0 };
 	    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
             vkCmdBindIndexBuffer(command_buffers[i], index_buffer, 0, VK_INDEX_TYPE_UINT32);
+            vkCmdBindDescriptorSets(
+		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+		0, 1, &desc_sets[i], 0, nullptr
+	    );
 
 	    vkCmdDrawIndexed(command_buffers[i], (uint32_t) indices.size(), 1, 0, 0, 0);
 	vkCmdEndRenderPass(command_buffers[i]);
@@ -829,7 +965,9 @@ engine_t::create_graphics_pipeline(){
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &vert_desc;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attr_desc.size());;
+    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(
+	attr_desc.size()
+    );
     vertex_input_info.pVertexAttributeDescriptions = attr_desc.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
@@ -863,7 +1001,7 @@ engine_t::create_graphics_pipeline(){
     raster_info.polygonMode = VK_POLYGON_MODE_FILL;
     raster_info.lineWidth = 1.0f;
     raster_info.cullMode = VK_CULL_MODE_BACK_BIT;
-    raster_info.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    raster_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
     raster_info.depthBiasEnable = VK_FALSE;
     raster_info.depthBiasConstantFactor = 0;
     raster_info.depthBiasClamp = 0;
@@ -906,8 +1044,8 @@ engine_t::create_graphics_pipeline(){
 
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 0;
-    pipeline_layout_info.pSetLayouts = nullptr;
+    pipeline_layout_info.setLayoutCount = 1;
+    pipeline_layout_info.pSetLayouts = &descriptor_layout;
     pipeline_layout_info.pushConstantRangeCount = 0;
     pipeline_layout_info.pPushConstantRanges = nullptr;
 
@@ -1206,6 +1344,13 @@ void
 engine_t::cleanup(){
     vkDeviceWaitIdle(device);
 
+    vkDestroyDescriptorSetLayout(device, descriptor_layout, nullptr);
+
+    for (int i = 0; i < swapchain_images.size(); i++){
+	vkDestroyBuffer(device, uniform_buffers[i], nullptr);
+	vkFreeMemory(device, uniform_buffer_memories[i], nullptr);
+    }
+
     cleanup_swapchain();
 
     vkDestroyBuffer(device, vertex_buffer, nullptr);
@@ -1252,6 +1397,34 @@ engine_t::should_quit(){
 }
 
 void
+engine_t::update_uniform_buffers(uint32_t image_index){
+    static auto start = std::chrono::high_resolution_clock::now();
+    auto current = std::chrono::high_resolution_clock::now();
+    
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(
+        current - start
+    ).count();
+
+    UniformBufferObject ubo = {};
+    ubo.model = glm::rotate(
+        glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+
+    ubo.view = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(
+	glm::radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
+	0.1f, 10.0f
+    );
+
+    ubo.proj[1][1] *= -1; // account for OpenGL weirdness
+
+    void * data;
+    vkMapMemory(device, uniform_buffer_memories[image_index], 0, sizeof(ubo), 0, &data);
+        std::memcpy(data, &ubo, sizeof(ubo));
+    vkUnmapMemory(device, uniform_buffer_memories[image_index]);
+}
+
+void
 engine_t::render(int current_frame){
     vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device, 1, &in_flight_fences[current_frame]); 
@@ -1261,7 +1434,9 @@ engine_t::render(int current_frame){
         device, swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
-     
+   
+    update_uniform_buffers(image_index);
+
     VkSemaphore wait_semas[1] = { image_available_semas[current_frame] };
     VkPipelineStageFlags wait_stages[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -1276,9 +1451,12 @@ engine_t::render(int current_frame){
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semas;
 
-    VkResult res = vkQueueSubmit(graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
+    VkResult res = vkQueueSubmit(
+        graphics_queue, 1, &submit_info, in_flight_fences[current_frame]
+    );
+
     if (res == VK_ERROR_OUT_OF_DATE_KHR){
-       // recreate_swapchain();
+        //recreate_swapchain();
         return;
     } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR){
         throw std::runtime_error("Error: Failed to submit to draw command buffer.");

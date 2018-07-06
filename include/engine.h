@@ -39,6 +39,10 @@ private:
     VkPresentModeKHR select_present_mode();
     VkExtent2D select_swap_extent();
 
+    bool create_descriptor_set_layout();
+    bool create_descriptor_pool();
+    bool create_descriptor_sets();
+
     bool create_render_pass();
     bool create_framebuffers();
     bool create_command_pool();
@@ -52,6 +56,7 @@ private:
     );
     bool create_index_buffer();
     bool create_vertex_buffer();
+    bool create_uniform_buffers();
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     // graphics pipeline
@@ -61,8 +66,9 @@ private:
 
     // update functions
     bool should_quit();
-    void render(int currrent_frame); 
+    void render(int current_frame); 
     void update();
+    void update_uniform_buffers(uint32_t image_index);
 
     // cleanup functions
     void cleanup();
@@ -73,10 +79,14 @@ private:
 
     // main fields
     VmaAllocator allocator;
+
+    // buffers
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
     VkBuffer index_buffer;
     VkDeviceMemory index_buffer_memory;
+    std::vector<VkBuffer> uniform_buffers;
+    std::vector<VkDeviceMemory> uniform_buffer_memories;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;
@@ -84,9 +94,12 @@ private:
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
+    VkDescriptorPool desc_pool;
+    std::vector<VkDescriptorSet> desc_sets;
 
     // graphics pipeline fields
     VkPipeline graphics_pipeline;
+    VkDescriptorSetLayout descriptor_layout;
     VkPipelineLayout pipeline_layout;
     VkRenderPass render_pass;
 
