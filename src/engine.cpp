@@ -20,9 +20,14 @@ const std::vector<const char*> device_extensions = {
 };
 
 const std::vector<vertex_t> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+const std::vector<uint32_t> indices = {
+    0, 1, 2, 2, 3, 0
 };
 
 void 
@@ -34,8 +39,6 @@ window_resize_callback(GLFWwindow * window, int width, int height){
 
 void
 engine_t::window_resize(int w, int h){
-    width = w;
-    height = h;
     recreate_swapchain();
 }
 
@@ -57,9 +60,7 @@ engine_t::init(){
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    width = 640;
-    height = 480;
-    window = glfwCreateWindow(width, height, "Vulkan", nullptr, nullptr);
+    window = glfwCreateWindow(640, 480, "Vulkan", nullptr, nullptr);
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback);   
 
@@ -130,8 +131,8 @@ engine_t::init(){
 	throw std::runtime_error("Error: Failed to create command pool.");
     }
 
-    if (!create_vertex_buffer()){
-        throw std::runtime_error("Error: Failed to create vertex buffer.");
+    if (!create_vertex_buffer() || !create_index_buffer()){
+        throw std::runtime_error("Error: Failed to create vertex and index buffers.");
     }
 
     if (!create_command_buffers()){
@@ -217,6 +218,7 @@ engine_t::select_swap_extent(){
 
      // check if we need to supply width and height
      if (capabilities.currentExtent.width == ~((uint32_t) 0)){
+          int width, height;
           glfwGetFramebufferSize(window, &width, &height);
 	  VkExtent2D extents = { (uint32_t) width, (uint32_t) height };
 	  
@@ -449,26 +451,25 @@ engine_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags propertie
     return -1;
 }
 
-bool
-engine_t::create_vertex_buffer(){
+bool 
+engine_t::create_buffer(
+    VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
+    VkBuffer * buffer, VkDeviceMemory * buffer_memory
+){
     VkBufferCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.size = sizeof(vertex_t) * vertices.size();
-    create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    create_info.size = size;
+    create_info.usage = usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     
-    if (vkCreateBuffer(device, &create_info, nullptr, &vertex_buffer) != VK_SUCCESS){
+    if (vkCreateBuffer(device, &create_info, nullptr, buffer) != VK_SUCCESS){
         return false;
     }
 
     VkMemoryRequirements memory_req;
-    vkGetBufferMemoryRequirements(device, vertex_buffer, &memory_req);
+    vkGetBufferMemoryRequirements(device, *buffer, &memory_req);
 
-    int memory_type = find_memory_type(
-        memory_req.memoryTypeBits, 
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT          
-    );
-
+    int memory_type = find_memory_type(memory_req.memoryTypeBits, properties);
     if (memory_type == -1){
         return false;
     }
@@ -478,16 +479,139 @@ engine_t::create_vertex_buffer(){
     alloc_info.allocationSize = memory_req.size;
     alloc_info.memoryTypeIndex = memory_type;
     
-    if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS){
+    if (vkAllocateMemory(device, &alloc_info, nullptr, buffer_memory) != VK_SUCCESS){
         return false;
     }
 
-    vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);     
+    vkBindBufferMemory(device, *buffer, *buffer_memory, 0);    
+
+    return true; 
+}    
+
+void
+engine_t::copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size){
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
+    
+    VkCommandBufferBeginInfo begin_info = {};
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+        VkBufferCopy copy_region = {};
+	copy_region.srcOffset = 0;
+	copy_region.dstOffset = 0;
+	copy_region.size = size;
+
+	vkCmdCopyBuffer(command_buffer, src, dst, 1, &copy_region);
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+
+    vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(graphics_queue);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
+}
+
+bool
+engine_t::create_index_buffer(){
+    VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    bool result = create_buffer(
+        buffer_size,
+	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+      | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &staging_buffer,
+	&staging_buffer_memory
+    );
+
+    if (!result){
+	return false;
+    }
 
     void * data;
-    vkMapMemory(device, vertex_buffer_memory, 0, create_info.size, 0, &data);
-        std::memcpy(data, vertices.data(), (size_t) create_info.size);
-    vkUnmapMemory(device, vertex_buffer_memory);
+    vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        std::memcpy(data, indices.data(), buffer_size);
+    vkUnmapMemory(device, staging_buffer_memory);
+
+
+    result = create_buffer(
+        buffer_size,
+	VK_BUFFER_USAGE_TRANSFER_DST_BIT
+      | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &index_buffer,
+	&index_buffer_memory
+    );
+
+    copy_buffer(staging_buffer, index_buffer, buffer_size);
+
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr); 
+
+    if (!result){
+        return false;
+    }
+
+    return true;
+}
+
+bool
+engine_t::create_vertex_buffer(){
+    VkDeviceSize buffer_size = sizeof(vertex_t) * vertices.size();
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    bool result = create_buffer(
+        buffer_size,
+	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+      | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &staging_buffer,
+	&staging_buffer_memory
+    );
+
+    if (!result){
+	return false;
+    }
+
+    void * data;
+    vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        std::memcpy(data, vertices.data(), buffer_size);
+    vkUnmapMemory(device, staging_buffer_memory);
+
+
+    result = create_buffer(
+        buffer_size,
+	VK_BUFFER_USAGE_TRANSFER_DST_BIT
+      | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        &vertex_buffer,
+	&vertex_buffer_memory
+    );
+
+    copy_buffer(staging_buffer, vertex_buffer, buffer_size);
+
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr); 
+
+    if (!result){
+        return false;
+    }
+
     return true;
 }
 
@@ -533,9 +657,10 @@ engine_t::create_command_buffers(){
 
             VkBuffer vertex_buffers[1] = { vertex_buffer };
             VkDeviceSize offsets[1] = { 0 };
-            vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+	    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+            vkCmdBindIndexBuffer(command_buffers[i], index_buffer, 0, VK_INDEX_TYPE_UINT32);
 
-	    vkCmdDraw(command_buffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+	    vkCmdDrawIndexed(command_buffers[i], (uint32_t) indices.size(), 1, 0, 0, 0);
 	vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
@@ -1085,6 +1210,9 @@ engine_t::cleanup(){
 
     vkDestroyBuffer(device, vertex_buffer, nullptr);
     vkFreeMemory(device, vertex_buffer_memory, nullptr);
+
+    vkDestroyBuffer(device, index_buffer, nullptr);
+    vkFreeMemory(device, index_buffer_memory, nullptr);
 
     for (int i = 0; i < frames_in_flight; i++){
         vkDestroySemaphore(device, image_available_semas[i], nullptr);

@@ -44,7 +44,13 @@ private:
     bool create_command_pool();
     bool create_command_buffers();
     bool create_sync();
- 
+
+    void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+    bool create_buffer(
+	VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags,
+	VkBuffer * buffer, VkDeviceMemory * buffer_memory
+    );
+    bool create_index_buffer();
     bool create_vertex_buffer();
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
@@ -69,6 +75,8 @@ private:
     VmaAllocator allocator;
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
+    VkBuffer index_buffer;
+    VkDeviceMemory index_buffer_memory;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;
@@ -100,8 +108,6 @@ private:
     std::vector<VkSemaphore> render_finished_semas;
     std::vector<VkFence> in_flight_fences;
  
-    int width;
-    int height;
     GLFWwindow * window;
 
 public:
