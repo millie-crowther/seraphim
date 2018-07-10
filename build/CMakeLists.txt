@@ -21,6 +21,8 @@ set(SOURCES
     ../src/engine.cpp
     ../src/sdf.cpp
     ../src/vma.cpp
+    ../src/buffer.cpp
+    ../src/vk_utils.cpp
 )
 
 add_executable(blaspheme ${SOURCES})
