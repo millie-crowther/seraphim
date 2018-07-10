@@ -8,6 +8,7 @@
 #include <fstream>
 #include "vertex.h"
 #include <cstring>
+#include "vk_utils.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -798,14 +799,14 @@ engine_t::create_buffer(
 
 void
 engine_t::copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size){
-    VkCommandBuffer command_buffer = begin_single_time_commands();
+    vk_utils::single_time_commands(device, command_pool, graphics_queue, [&](VkCommandBuffer cmd){
         VkBufferCopy copy_region = {};
 	copy_region.srcOffset = 0;
 	copy_region.dstOffset = 0;
 	copy_region.size = size;
 
-	vkCmdCopyBuffer(command_buffer, src, dst, 1, &copy_region);
-    end_single_time_commands(command_buffer);
+	vkCmdCopyBuffer(cmd, src, dst, 1, &copy_region);
+    });
 }
 
 void
