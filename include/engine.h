@@ -9,6 +9,8 @@
 #include <string>
 #include <vector>
 
+#include "buffer.h"
+
 class engine_t {
 private:
     /*
@@ -39,9 +41,6 @@ private:
     VkPresentModeKHR select_present_mode();
     VkExtent2D select_swap_extent();
 
-    VkCommandBuffer begin_single_time_commands();
-    void end_single_time_commands(VkCommandBuffer command_buffer);
-
     void transition_image_layout(
         VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout
     );
@@ -69,11 +68,6 @@ private:
     );
     VkFormat find_depth_format();
 
-    void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
-    bool create_buffer(
-	VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags flags,
-	VkBuffer * buffer, VkDeviceMemory * buffer_memory
-    );
     bool create_index_buffer();
     bool create_vertex_buffer();
     bool create_uniform_buffers();
@@ -101,12 +95,9 @@ private:
     VmaAllocator allocator;
 
     // buffers
-    VkBuffer vertex_buffer;
-    VkDeviceMemory vertex_buffer_memory;
-    VkBuffer index_buffer;
-    VkDeviceMemory index_buffer_memory;
-    std::vector<VkBuffer> uniform_buffers;
-    std::vector<VkDeviceMemory> uniform_buffer_memories;
+    buffer_t vertex_buffer;
+    buffer_t index_buffer;
+    std::vector<buffer_t> uniform_buffers;
 
     // depth buffer
     VkImage depth_image;

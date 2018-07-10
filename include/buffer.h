@@ -7,7 +7,7 @@
 class buffer_t {
 private:
     // fields
-    bool is_valid;
+    bool is_val;
     VkBuffer buffer;
     VkDeviceMemory memory;
     VkDevice device;
@@ -19,15 +19,21 @@ private:
 
 public:
     // constructors and destructors
-    buffer_t(
+    buffer_t();
+    bool initialise(
         VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, 
         VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
     );
     ~buffer_t();
 
     // public methods
-    void copy(VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size);
+    void copy(VkCommandPool command_pool, VkQueue queue, const buffer_t& dest, VkDeviceSize size);
     void destroy();
+
+    // getters
+    VkBuffer get_buffer();
+    VkDeviceMemory get_memory();
+    bool is_valid();
 };
 
 #endif

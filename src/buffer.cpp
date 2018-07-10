@@ -2,8 +2,14 @@
 
 #include "vk_utils.h"
 #include <stdexcept>
+#include <iostream>
 
-buffer_t::buffer_t(
+buffer_t::buffer_t(){
+    is_val = false;
+}
+
+bool
+buffer_t::initialise(
     VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, VkBufferUsageFlags usage,
     VkMemoryPropertyFlags properties
 ){
@@ -16,7 +22,7 @@ buffer_t::buffer_t(
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device, &create_info, nullptr, &buffer) != VK_SUCCESS){
-        throw std::runtime_error("Error: Failed to create buffer.");
+        return false;
     }
 
     VkMemoryRequirements memory_req;
@@ -24,7 +30,7 @@ buffer_t::buffer_t(
 
     int memory_type = find_memory_type(physical_device, memory_req.memoryTypeBits, properties);
     if (memory_type == -1){
-        throw std::runtime_error("Error: Couldn't find appropriate memory type.");
+        return false;
     }
 
     VkMemoryAllocateInfo alloc_info = {};
@@ -33,16 +39,17 @@ buffer_t::buffer_t(
     alloc_info.memoryTypeIndex = memory_type;
 
     if (vkAllocateMemory(device, &alloc_info, nullptr, &memory) != VK_SUCCESS){
-        throw std::runtime_error("Error: Failed to allocate memory for buffer.");
+        return false;
     }
 
     vkBindBufferMemory(device, buffer, memory, 0);   
 
-    is_valid = true;
+    is_val = true;
+    return true;
 }
 
 buffer_t::~buffer_t(){
-    if (is_valid){
+    if (is_val){
         destroy();
     }
 }
@@ -66,9 +73,14 @@ buffer_t::find_memory_type(
     return -1;
 }
 
+VkBuffer
+buffer_t::get_buffer(){
+    return buffer;
+}
+
 void
-buffer_t::copy(VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size){
-    if (!is_valid){
+buffer_t::copy(VkCommandPool command_pool, VkQueue queue, const buffer_t& dest, VkDeviceSize size){
+    if (!is_val){
         throw std::runtime_error("Error: Tried to copy a buffer that was already deleted.");
     }
 
@@ -78,15 +90,25 @@ buffer_t::copy(VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDevic
         copy_region.dstOffset = 0;
         copy_region.size = size;
 
-        vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
+        vkCmdCopyBuffer(cmd, buffer, dest.buffer, 1, &copy_region);
     });
 }
 
 void
 buffer_t::destroy(){
-   if (is_valid){
+   if (is_val){
        vkDestroyBuffer(device, buffer, nullptr);
        vkFreeMemory(device, memory, nullptr);
-       is_valid = false;
+       is_val = false;
    }
+}
+
+VkDeviceMemory
+buffer_t::get_memory(){
+    return memory;
+}
+
+bool
+buffer_t::is_valid(){
+    return is_val;
 }
