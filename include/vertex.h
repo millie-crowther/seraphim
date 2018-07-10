@@ -7,7 +7,7 @@
 #include <array>
 
 struct vertex_t {
-    glm::vec2 position;
+    glm::vec3 position;
     glm::vec3 colour;
 
     static VkVertexInputBindingDescription get_binding_description(){
@@ -23,7 +23,7 @@ struct vertex_t {
 
         attr_desc[0].binding = 0;
         attr_desc[0].location = 0;
-        attr_desc[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attr_desc[0].format = VK_FORMAT_R32G32B32_SFLOAT;
         attr_desc[0].offset = offsetof(vertex_t, position);
 
         attr_desc[1].binding = 0;

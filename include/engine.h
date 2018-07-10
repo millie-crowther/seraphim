@@ -39,6 +39,13 @@ private:
     VkPresentModeKHR select_present_mode();
     VkExtent2D select_swap_extent();
 
+    VkCommandBuffer begin_single_time_commands();
+    void end_single_time_commands(VkCommandBuffer command_buffer);
+
+    void transition_image_layout(
+        VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout
+    );
+
     bool create_descriptor_set_layout();
     bool create_descriptor_pool();
     bool create_descriptor_sets();
@@ -48,6 +55,19 @@ private:
     bool create_command_pool();
     bool create_command_buffers();
     bool create_sync();
+
+    void create_image(
+        uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
+        VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage * image, 
+        VkDeviceMemory * image_memory
+    );
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
+    bool create_depth_resources();
+    VkFormat find_supported_format(
+        const std::vector<VkFormat>& candidates, VkImageTiling image_tiling, 
+        VkFormatFeatureFlags flags
+    );
+    VkFormat find_depth_format();
 
     void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
     bool create_buffer(
@@ -87,6 +107,11 @@ private:
     VkDeviceMemory index_buffer_memory;
     std::vector<VkBuffer> uniform_buffers;
     std::vector<VkDeviceMemory> uniform_buffer_memories;
+
+    // depth buffer
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView depth_image_view;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;
