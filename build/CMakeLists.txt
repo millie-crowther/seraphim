@@ -23,6 +23,7 @@ set(SOURCES
     ../src/vma.cpp
     ../src/buffer.cpp
     ../src/vk_utils.cpp
+    ../src/renderer.cpp
 )
 
 add_executable(blaspheme ${SOURCES})
