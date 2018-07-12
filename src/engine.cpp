@@ -518,8 +518,9 @@ engine_t::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags a
 
 void
 engine_t::create_image(
-    uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-    VkMemoryPropertyFlags properties, VkImage * image, VkDeviceMemory * image_memory
+    uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
+    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage * image, 
+    VkDeviceMemory * image_memory
 ){
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -1060,11 +1061,10 @@ engine_t::create_graphics_pipeline(){
     multisample_info.alphaToOneEnable = VK_FALSE;
 
     VkPipelineColorBlendAttachmentState colour_blending = {};
-    colour_blending.colorWriteMask = 
-	VK_COLOR_COMPONENT_R_BIT
-      | VK_COLOR_COMPONENT_G_BIT
-      | VK_COLOR_COMPONENT_B_BIT
-      | VK_COLOR_COMPONENT_A_BIT;
+    colour_blending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+                                   | VK_COLOR_COMPONENT_G_BIT
+                                   | VK_COLOR_COMPONENT_B_BIT
+                                   | VK_COLOR_COMPONENT_A_BIT;
     colour_blending.blendEnable = VK_FALSE;
     colour_blending.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     colour_blending.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -1242,7 +1242,7 @@ engine_t::create_instance(){
 
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = "Hello Triangle";
+    app_info.pApplicationName = "Blaspheme";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.pEngineName = "No Engine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -1286,9 +1286,9 @@ debug_callback(
     uint64_t obj,
     size_t location,
     int32_t code,
-    const char* layer_prefix,
-    const char* msg,
-    void* user_data
+    const char * layer_prefix,
+    const char * msg,
+    void * user_data
 ){
     std::cout << "Validation layer debug message: " << msg << std::endl;
     return VK_FALSE;
