@@ -159,8 +159,35 @@ engine_t::init(){
 	throw std::runtime_error("Error: Failed to create framebuffers.");
     }
 
-    if (!create_vertex_buffer() || !create_index_buffer() || !create_uniform_buffers()){
-        throw std::runtime_error("Error: Failed to create buffers.");
+
+    VkDeviceSize size = sizeof(indices[0]) * indices.size();
+
+    // create index buffer
+    index_buffer = new buffer_t(
+        physical_device, device, size,
+	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    );
+    index_buffer->copy(command_pool, graphics_queue, (void *) indices.data(), size);
+    
+    // create vertex buffer
+    size = sizeof(vertex_t) * vertices.size();
+    vertex_buffer = new buffer_t(
+        physical_device, device, size,
+	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    );
+    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), size);
+
+    // create uniform buffers
+    size = sizeof(UniformBufferObject);
+    uniform_buffers.resize(swapchain_images.size());
+    for (int i = 0; i < swapchain_images.size(); i++){
+        uniform_buffers[i] = new buffer_t(
+            physical_device, device, size,
+	    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	);
     }
  
     if (!create_descriptor_pool()){
@@ -433,7 +460,7 @@ engine_t::create_descriptor_sets(){
     desc_write.pTexelBufferView = nullptr;
 
     for (int i = 0; i < swapchain_images.size(); i++){
-	buffer_info.buffer = uniform_buffers[i].get_buffer();
+	buffer_info.buffer = uniform_buffers[i]->get_buffer();
 	desc_write.dstSet = desc_sets[i];
 
 	vkUpdateDescriptorSets(device, 1, &desc_write, 0, nullptr);
@@ -583,30 +610,6 @@ engine_t::create_depth_resources(){
         depth_image, depth_format, VK_IMAGE_LAYOUT_UNDEFINED, 
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     );
-
-    return true;
-}
-
-bool 
-engine_t::create_uniform_buffers(){
-    VkDeviceSize buffer_size = sizeof(UniformBufferObject);
-
-    uniform_buffers.resize(swapchain_images.size());
-
-    for (int i = 0; i < swapchain_images.size(); i++){
-        bool result = uniform_buffers[i].initialise(
-            physical_device,
-            device,
-	    buffer_size,
-	    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-	  | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
-
-	if (!result){
-	    return false;
-	}
-    }
 
     return true;
 }
@@ -782,86 +785,6 @@ engine_t::transition_image_layout(
     });
 }
 
-
-bool
-engine_t::create_index_buffer(){
-    VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
-
-    buffer_t staging_buffer;
-    bool result = staging_buffer.initialise(
-        physical_device,
-        device,
-        buffer_size,
-	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
-
-    if (!result){
-	return false;
-    }
-
-    void * data;
-    vkMapMemory(device, staging_buffer.get_memory(), 0, buffer_size, 0, &data);
-        std::memcpy(data, indices.data(), buffer_size);
-    vkUnmapMemory(device, staging_buffer.get_memory());
-
-
-    result = index_buffer.initialise(
-        physical_device,
-        device,
-        buffer_size,
-	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-    );
-
-    if (!result){
-        return false;
-    }
-
-    staging_buffer.copy(command_pool, graphics_queue, index_buffer, buffer_size);
-
-    return true;
-}
-
-bool
-engine_t::create_vertex_buffer(){
-    VkDeviceSize buffer_size = sizeof(vertex_t) * vertices.size();
-
-    buffer_t staging_buffer;
-    bool result = staging_buffer.initialise(
-        physical_device,
-        device,
-        buffer_size,
-	VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
-
-    if (!result){
-	return false;
-    }
-
-    void * data;
-    vkMapMemory(device, staging_buffer.get_memory(), 0, buffer_size, 0, &data);
-        std::memcpy(data, vertices.data(), buffer_size);
-    vkUnmapMemory(device, staging_buffer.get_memory());
-
-    result = vertex_buffer.initialise(
-        physical_device, 
-        device,
-        buffer_size,
-	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-    );
-
-    if (!result){
-        return false;
-    }
-
-    staging_buffer.copy(command_pool, graphics_queue, vertex_buffer, buffer_size);
-
-    return true;
-}
-
 bool
 engine_t::create_command_buffers(){
     // create command buffers
@@ -905,11 +828,11 @@ engine_t::create_command_buffers(){
 		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
 	    );
 
-            VkBuffer vertex_buffers[1] = { vertex_buffer.get_buffer() };
+            VkBuffer vertex_buffers[1] = { vertex_buffer->get_buffer() };
             VkDeviceSize offsets[1] = { 0 };
 	    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
             vkCmdBindIndexBuffer(
-                command_buffers[i], index_buffer.get_buffer(), 0, VK_INDEX_TYPE_UINT32
+                command_buffers[i], index_buffer->get_buffer(), 0, VK_INDEX_TYPE_UINT32
             );
             vkCmdBindDescriptorSets(
 		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
@@ -1483,14 +1406,18 @@ engine_t::cleanup(){
 
     vkDestroyDescriptorSetLayout(device, descriptor_layout, nullptr);
 
-    for (auto& buffer : uniform_buffers){
-        buffer.destroy();
+    for (auto buffer : uniform_buffers){
+        delete buffer;
     }
+    uniform_buffers.clear();
 
     cleanup_swapchain();
-    
-    vertex_buffer.destroy();
-    index_buffer.destroy();
+   
+    delete vertex_buffer;
+    vertex_buffer = nullptr;
+
+    delete index_buffer;
+    index_buffer = nullptr;
 
     for (int i = 0; i < frames_in_flight; i++){
         vkDestroySemaphore(device, image_available_semas[i], nullptr);
@@ -1551,10 +1478,9 @@ engine_t::update_uniform_buffers(uint32_t image_index){
 
     ubo.proj[1][1] *= -1; // account for OpenGL weirdness
 
-    void * data;
-    vkMapMemory(device, uniform_buffers[image_index].get_memory(), 0, sizeof(ubo), 0, &data);
-        std::memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device, uniform_buffers[image_index].get_memory());
+    uniform_buffers[image_index]->copy(
+        command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
+    );
 }
 
 void

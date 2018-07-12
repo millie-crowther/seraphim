@@ -68,9 +68,6 @@ private:
     );
     VkFormat find_depth_format();
 
-    bool create_index_buffer();
-    bool create_vertex_buffer();
-    bool create_uniform_buffers();
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     // graphics pipeline
@@ -95,9 +92,9 @@ private:
     VmaAllocator allocator;
 
     // buffers
-    buffer_t vertex_buffer;
-    buffer_t index_buffer;
-    std::vector<buffer_t> uniform_buffers;
+    buffer_t * vertex_buffer;
+    buffer_t * index_buffer;
+    std::vector<buffer_t *> uniform_buffers;
 
     // depth buffer
     VkImage depth_image;

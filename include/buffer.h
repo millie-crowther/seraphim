@@ -7,28 +7,28 @@
 class buffer_t {
 private:
     // fields
-    bool is_val;
+    bool is_host_visible;
     VkBuffer buffer;
     VkDeviceMemory memory;
     VkDevice device;
+    VkPhysicalDevice physical_device;
 
     // helper methods
-    int find_memory_type(
-        VkPhysicalDevice physical_device, uint32_t memory_type_mask, VkMemoryPropertyFlags properties
+    int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
+    void copy_buffer(
+	VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
     );
 
 public:
     // constructors and destructors
-    buffer_t();
-    bool initialise(
+    buffer_t(
         VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, 
         VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
     );
     ~buffer_t();
 
     // public methods
-    void copy(VkCommandPool command_pool, VkQueue queue, const buffer_t& dest, VkDeviceSize size);
-    void destroy();
+    void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);
 
     // getters
     VkBuffer get_buffer();
