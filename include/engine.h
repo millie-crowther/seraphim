@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "buffer.h"
+#include "image.h"
 
 class engine_t {
 private:
@@ -36,14 +37,9 @@ private:
     bool create_swapchain();
     void recreate_swapchain();
     void cleanup_swapchain();
-    bool create_image_views();
     VkSurfaceFormatKHR select_surface_format(); 
     VkPresentModeKHR select_present_mode();
     VkExtent2D select_swap_extent();
-
-    void transition_image_layout(
-        VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout
-    );
 
     bool create_descriptor_set_layout();
     bool create_descriptor_pool();
@@ -55,20 +51,7 @@ private:
     bool create_command_buffers();
     bool create_sync();
 
-    void create_image(
-        uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, 
-        VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage * image, 
-        VkDeviceMemory * image_memory
-    );
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
     bool create_depth_resources();
-    VkFormat find_supported_format(
-        const std::vector<VkFormat>& candidates, VkImageTiling image_tiling, 
-        VkFormatFeatureFlags flags
-    );
-    VkFormat find_depth_format();
-
-    int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     // graphics pipeline
     bool create_graphics_pipeline();    
@@ -97,9 +80,7 @@ private:
     std::vector<buffer_t *> uniform_buffers;
 
     // depth buffer
-    VkImage depth_image;
-    VkDeviceMemory depth_image_memory;
-    VkImageView depth_image_view;
+    image_t * depth_image;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;
@@ -121,11 +102,9 @@ private:
     std::vector<VkCommandBuffer> command_buffers;
 
     // swapchain fields
+    std::vector<image_t *> swapchain_images;
     VkSwapchainKHR swapchain;
-    std::vector<VkImage> swapchain_images;
-    VkFormat swapchain_image_format;
     VkExtent2D swapchain_extents;
-    std::vector<VkImageView> swapchain_image_views;
     std::vector<VkFramebuffer> swapchain_framebuffers;
     
     // synchronisation fields

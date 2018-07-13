@@ -24,6 +24,7 @@ set(SOURCES
     ../src/buffer.cpp
     ../src/vk_utils.cpp
     ../src/renderer.cpp
+    ../src/image.cpp
 )
 
 add_executable(blaspheme ${SOURCES})
