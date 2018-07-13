@@ -11,12 +11,14 @@ private:
     VkDeviceMemory memory;
     VkFormat format;
     VkImageLayout layout;
+    VkDevice device;
 
 public:
     // constructors and destructors
     image_t(
         VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
+	VkImageUsageFlags usage, VkMemoryPropertyFlags properties, 
+	VkImageAspectFlags aspect_flags
     );
     image_t(VkImage image);
     ~image_t();
