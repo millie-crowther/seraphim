@@ -118,8 +118,10 @@ engine_t::init(){
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
 
     if (!create_logical_device()){
-	throw std::runtime_error("Error: Couldn't create logical device.");
+	    throw std::runtime_error("Error: Couldn't create logical device.");
     }
+
+    buffer_t::initialise(physical_device, device);
 
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
@@ -156,48 +158,31 @@ engine_t::init(){
 	throw std::runtime_error("Error: Failed to create framebuffers.");
     }
 
-
-    VkDeviceSize size = sizeof(indices[0]) * indices.size();
-
-    // create index buffer
-    index_buffer = new buffer_t(
-        physical_device, device, size,
-	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-    );
-    index_buffer->copy(command_pool, graphics_queue, (void *) indices.data(), size);
-    
-    // create vertex buffer
-    size = sizeof(vertex_t) * vertices.size();
-    vertex_buffer = new buffer_t(
-        physical_device, device, size,
-	VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-    );
-    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), size);
+    mesh = new mesh_t(command_pool, graphics_queue, vertices, indices);
 
     // create uniform buffers
-    size = sizeof(UniformBufferObject);
+    VkDeviceSize size = sizeof(UniformBufferObject);
     uniform_buffers.resize(swapchain_images.size());
     for (int i = 0; i < swapchain_images.size(); i++){
         uniform_buffers[i] = new buffer_t(
-            physical_device, device, size,
-	    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-	    VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	);
+            size,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+	    );
     }
  
     if (!create_descriptor_pool()){
 	throw std::runtime_error("Error: Failed to create descriptor pool.");
     }
 
+    if (!create_sync()){
+        throw std::runtime_error("Error: Failed to create synchronisation primitives.");
+    }
+
     if (!create_command_buffers()){
         throw std::runtime_error("Error: Failed to create command buffers.");
     }
 
-    if (!create_sync()){
-        throw std::runtime_error("Error: Failed to create synchronisation primitives.");
-    }
 }
 
 std::vector<char>
@@ -597,54 +582,54 @@ engine_t::create_command_buffers(){
     alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
     if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS){
-	return false;
+        return false;
     }
 
     for (int i = 0; i < command_buffers.size(); i++){
         VkCommandBufferBeginInfo begin_info = {};
-	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+   	    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS){
-            return false;
-	}
+        if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS){
+                return false;
+        }
 
-	VkRenderPassBeginInfo render_pass_info = {};
-	render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	render_pass_info.renderPass = render_pass;
-	render_pass_info.framebuffer = swapchain_framebuffers[i];
-	render_pass_info.renderArea.offset = {0, 0};
-	render_pass_info.renderArea.extent = swapchain_extents;
+        VkRenderPassBeginInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_info.renderPass = render_pass;
+        render_pass_info.framebuffer = swapchain_framebuffers[i];
+        render_pass_info.renderArea.offset = {0, 0};
+        render_pass_info.renderArea.extent = swapchain_extents;
 
-	std::array<VkClearValue, 2> clear_values = {};
+        std::array<VkClearValue, 2> clear_values = {};
         clear_values[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
         clear_values[1].depthStencil = { 1.0f, 0 };
 
-	render_pass_info.clearValueCount = clear_values.size();
-	render_pass_info.pClearValues = clear_values.data();
+        render_pass_info.clearValueCount = clear_values.size();
+        render_pass_info.pClearValues = clear_values.data();
 
-	vkCmdBeginRenderPass(command_buffers[i], &render_pass_info,VK_SUBPASS_CONTENTS_INLINE);
-	    vkCmdBindPipeline(
-		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
-	    );
+        vkCmdBeginRenderPass(command_buffers[i], &render_pass_info,VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(
+                command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
+            );
 
-            VkBuffer vertex_buffers[1] = { vertex_buffer->get_buffer() };
+            VkBuffer vertex_buffers[1] = { mesh->get_vertex_buffer()->get_buffer() };
             VkDeviceSize offsets[1] = { 0 };
-	    vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
             vkCmdBindIndexBuffer(
-                command_buffers[i], index_buffer->get_buffer(), 0, VK_INDEX_TYPE_UINT32
+                command_buffers[i], mesh->get_index_buffer()->get_buffer(), 0, VK_INDEX_TYPE_UINT32
             );
             vkCmdBindDescriptorSets(
-		command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
-		0, 1, &desc_sets[i], 0, nullptr
-	    );
+		        command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+		        0, 1, &desc_sets[i], 0, nullptr
+	        );
 
-	    vkCmdDrawIndexed(command_buffers[i], (uint32_t) indices.size(), 1, 0, 0, 0);
-	vkCmdEndRenderPass(command_buffers[i]);
+	        vkCmdDrawIndexed(command_buffers[i], (uint32_t) indices.size(), 1, 0, 0, 0);
+	    vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
-	    return false;
-	}
+	        return false;
+	    }
     }
 
     return true;
@@ -1210,11 +1195,8 @@ engine_t::cleanup(){
 
     cleanup_swapchain();
    
-    delete vertex_buffer;
-    vertex_buffer = nullptr;
-
-    delete index_buffer;
-    index_buffer = nullptr;
+    delete mesh;
+    mesh = nullptr;
 
     for (int i = 0; i < frames_in_flight; i++){
         vkDestroySemaphore(device, image_available_semas[i], nullptr);
@@ -1307,9 +1289,7 @@ engine_t::render(int current_frame){
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semas;
 
-    VkResult res = vkQueueSubmit(
-        graphics_queue, 1, &submit_info, in_flight_fences[current_frame]
-    );
+    VkResult res = vkQueueSubmit(graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
 
     if (res == VK_ERROR_OUT_OF_DATE_KHR){
         //recreate_swapchain();

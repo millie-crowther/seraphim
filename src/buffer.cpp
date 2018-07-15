@@ -5,13 +5,18 @@
 #include <iostream>
 #include <cstring>
 
-buffer_t::buffer_t(
-    VkPhysicalDevice physical_device, VkDevice device, VkDeviceSize size, 
-    VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
-){
-    this->device = device;
-    this->physical_device = physical_device;
+VkPhysicalDevice buffer_t::physical_device;
+VkDevice buffer_t::device;
 
+void
+buffer_t::initialise(VkPhysicalDevice physical_d, VkDevice d){
+    physical_device = physical_d;
+    device = d;
+}
+
+buffer_t::buffer_t(
+    VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
+){
     VkBufferCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     create_info.size = size;
@@ -94,15 +99,13 @@ buffer_t::copy(
     VkCommandPool command_pool, VkQueue queue, void * data, VkDeviceSize size
 ){
     if (is_host_visible){
-	void * mem_map;
+	    void * mem_map;
         vkMapMemory(device, memory, 0, size, 0, &mem_map);
-	    std::memcpy(mem_map, data, size);
-	vkUnmapMemory(device, memory);
+	        std::memcpy(mem_map, data, size);
+	    vkUnmapMemory(device, memory);
 	 
     } else {
         buffer_t staging_buffer(
-            physical_device,
-            device,
             size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT

@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "buffer.h"
 #include "image.h"
+#include "mesh.h"
 
 class engine_t {
 private:
@@ -75,8 +75,7 @@ private:
     VmaAllocator allocator;
 
     // buffers
-    buffer_t * vertex_buffer;
-    buffer_t * index_buffer;
+    mesh_t * mesh;
     std::vector<buffer_t *> uniform_buffers;
 
     // depth buffer
