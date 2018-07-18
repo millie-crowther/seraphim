@@ -3,12 +3,17 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
 #include <array>
+#include "vec.h"
 
 struct vertex_t {
-    glm::vec3 position;
-    glm::vec3 colour;
+    vec3_t position;
+    vec3_t colour;
+
+    vertex_t(vec3_t p, vec3_t c){
+        position = p;
+        colour = c;
+    } 
 
     static VkVertexInputBindingDescription get_binding_description(){
         VkVertexInputBindingDescription binding_desc = {};

@@ -2,22 +2,22 @@
 
 constexpr float sdf_t::epsilon;
 
-sdf_t::sdf_t(std::function<float(glm::vec3)> phi){
+sdf_t::sdf_t(std::function<float(const vec3_t&)> phi){
     this->phi = phi;
 }
 
 float
-sdf_t::operator()(glm::vec3 p){
+sdf_t::operator()(const vec3_t& p){
     return phi(p);
 }
 
-glm::vec3
-sdf_t::normal(glm::vec3 p){
-    glm::vec3 n = glm::vec3(
-        phi(p + glm::vec3(epsilon, 0, 0)) - phi(p - glm::vec3(epsilon, 0, 0)),      
-        phi(p + glm::vec3(0, epsilon, 0)) - phi(p - glm::vec3(0, epsilon, 0)),      
-        phi(p + glm::vec3(0, 0, epsilon)) - phi(p - glm::vec3(0, 0, epsilon))
-    );
+vec3_t
+sdf_t::normal(const vec3_t& p){
+    vec3_t n = vec3_t({
+        phi(p + vec3_t({ epsilon, 0, 0 })) - phi(p - vec3_t({ epsilon, 0, 0 })),      
+        phi(p + vec3_t({ 0, epsilon, 0 })) - phi(p - vec3_t({ 0, epsilon, 0 })),      
+        phi(p + vec3_t({ 0, 0, epsilon })) - phi(p - vec3_t({ 0, 0, epsilon }))
+    });
 
-    return glm::length(n) > 0.0f ? glm::normalize(n) : n;
+    return n.length() > 0.0f ? n.normalise() : n;
 }

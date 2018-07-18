@@ -26,6 +26,9 @@ set(SOURCES
     ../src/renderer.cpp
     ../src/image.cpp
     ../src/mesh.cpp
+    ../src/maths.cpp
+    ../src/quat.cpp
+    ../src/dual_quat.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

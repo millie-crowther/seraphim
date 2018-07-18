@@ -1,5 +1,6 @@
 #include "engine.h"
 
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -9,19 +10,18 @@
 #include "vertex.h"
 #include <cstring>
 #include "vk_utils.h"
-
-
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "maths.h"
+#include "mat.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-
 #include <chrono>
+#include "dual_quat.h"
+#include <glm/gtx/string_cast.hpp> 
 
 struct UniformBufferObject {
-    glm::mat4 model;
+    mat4_t model;
     glm::mat4 view;
-    glm::mat4 proj;
+    mat4_t proj;
 };
 
 constexpr int engine_t::frames_in_flight;
@@ -35,15 +35,15 @@ const std::vector<const char*> device_extensions = {
 };
 
 const std::vector<vertex_t> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+    vertex_t(vec3_t({-0.5f, -0.5f,  0.0f}), vec3_t({1.0f, 0.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,  -0.5f,  0.0f}), vec3_t({0.0f, 1.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,   0.5f,  0.0f}), vec3_t({0.0f, 0.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f,  0.5f,  0.0f}), vec3_t({1.0f, 1.0f, 1.0f})),
 
-    {{-0.5f, -0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, -0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}}
+    vertex_t(vec3_t({-0.5f, -0.5f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,  -0.5f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,   0.5f, -0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f,  0.5f, -0.5f}), vec3_t({1.0f, 1.0f, 1.0f}))
 };
 
 const std::vector<uint32_t> indices = {
@@ -75,6 +75,11 @@ engine_t::engine_t(bool is_debug){
 
 void
 engine_t::init(){
+    // check compatibility of float
+    if (sizeof(vec3_t) != 12){
+        throw std::runtime_error("Error: 'float' is wrong size");
+    }
+
     // initialise GLFW
     glfwInit();
 
@@ -182,7 +187,6 @@ engine_t::init(){
     if (!create_command_buffers()){
         throw std::runtime_error("Error: Failed to create command buffers.");
     }
-
 }
 
 std::vector<char>
@@ -1245,17 +1249,27 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     UniformBufferObject ubo = {};
-    ubo.model = glm::rotate(
-        glm::mat4(1.0f), time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)
-    );
+    ubo.model = mat4_t::identity();
+    auto m = quat_t::angle_axis(
+        time * maths::to_radians(90.0f), vec3_t({0.0f, 0.0f, 1.0f})
+    ).to_matrix();
+    for (int i = 0; i < 3; i++){
+        for (int j = 0; j < 3; j++){
+            ubo.model[i][j] = m[i][j];
+        }
+    }
 
-    ubo.view = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(
-	glm::radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
-	0.1f, 10.0f
-    );
+    glm::mat4 glmv = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glmv;
+  //  ubo.view = dual_quat_t::look_at(vec3_t(2), vec3_t(0), vec3_t({0, 0, 1})).to_matrix();
+  
+   // std::cout << glm::to_string(glmv)<< std::endl;
+   // std::cout << ubo.view.to_string() << std::endl;
 
-    ubo.proj[1][1] *= -1; // account for OpenGL weirdness
+    ubo.proj = maths::perspective(
+	    maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
+	    0.1f, 10.0f
+    );
 
     uniform_buffers[image_index]->copy(
         command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
