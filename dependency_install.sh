@@ -15,4 +15,5 @@ if cd VulkanMemoryAllocator; then
 else
     git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 fi
+
 cd ..
