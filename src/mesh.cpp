@@ -35,3 +35,8 @@ buffer_t *
 mesh_t::get_index_buffer(){
     return indices;
 }
+
+mesh_t
+mesh_t::polygonise(const sdf_t& sdf){
+    
+}
