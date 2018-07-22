@@ -6,6 +6,7 @@ template <unsigned int N, unsigned int M> class mat_t;
 #include <cmath>
 #include <array>
 #include "mat.h"
+#include <iostream>
 
 template <unsigned int N>
 class vec_t {
@@ -30,8 +31,16 @@ public:
         }
         return result;
     }
-   
-    vec_t<3> cross(const vec_t<3>& v){
+
+    std::string to_string() const {
+        std::string r = "[";
+	for (int i = 0; i < N - 1; i++){
+            r += std::to_string(xs[i]) + ", ";
+	}
+	return r + std::to_string(xs[N-1]) + "]";
+    }
+
+    vec_t<3> cross(const vec_t<3>& v) const {
         return vec_t<3>({
             xs[1] * v.xs[2] - xs[2] * v.xs[1],
             xs[2] * v.xs[0] - xs[0] * v.xs[2],
@@ -48,7 +57,7 @@ public:
     }   
 
     vec_t<N> project_vector(const vec_t<N>& v) const {
-        return dot(v.normalise());
+        return dot(v.normalise()) * v.normalise();
     }
 
     vec_t<N> project_plane(const vec_t<N>& n) const {
@@ -133,13 +142,23 @@ public:
         return vec_t<N>(ys);
     }
 
-    vec_t<N> operator/(float scale) const{
+    vec_t<N> operator/(float scale) const {
         return *this * (1.0f / scale);
+    }
+
+    vec_t<3> operator%(const vec_t<3> v) const {
+	return cross(v);
     }
 };
 
 typedef vec_t<2> vec2_t;
 typedef vec_t<3> vec3_t;
 typedef vec_t<4> vec4_t;
+
+template <unsigned int N>
+vec_t<N> 
+operator*(float scale, const vec_t<N>& v){
+    return v * scale;
+}
 
 #endif

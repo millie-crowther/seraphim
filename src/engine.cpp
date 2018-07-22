@@ -20,7 +20,7 @@
 
 struct UniformBufferObject {
     mat4_t model;
-    glm::mat4 view;
+    mat4_t view;
     mat4_t proj;
 };
 
@@ -1249,23 +1249,26 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     UniformBufferObject ubo = {};
-    ubo.model = mat4_t::identity();
-    auto m = quat_t::angle_axis(
-        time * maths::to_radians(90.0f), vec3_t({0.0f, 0.0f, 1.0f})
+    ubo.model = dual_quat_t(
+        quat_t::angle_axis(time * maths::to_radians(90.0f), vec3_t({0.0f, 0.0f, 1.0f})),
+	quat_t(vec4_t(0))
     ).to_matrix();
-    for (int i = 0; i < 3; i++){
-        for (int j = 0; j < 3; j++){
-            ubo.model[i][j] = m[i][j];
-        }
-    }
 
     glm::mat4 glmv = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glmv;
-  //  ubo.view = dual_quat_t::look_at(vec3_t(2), vec3_t(0), vec3_t({0, 0, 1})).to_matrix();
+    auto myv = dual_quat_t::look_at(vec3_t(2), vec3_t(0), vec3_t({0, 1, 0}));
+    ubo.view = myv.to_matrix();
   
-   // std::cout << glm::to_string(glmv)<< std::endl;
-   // std::cout << ubo.view.to_string() << std::endl;
+    //std::cout << glm::to_string(glmv)<< std::endl;
+    //std::cout << ubo.view.to_string() << std::endl;
 
+    auto myquat = quat_t::look_at(vec3_t(-2), vec3_t({0,1,0}));
+
+    static bool print = false;
+    if (!print){
+        std::cout << glm::to_string(glm::quat_cast(glm::mat3(glmv))) << std::endl;
+        std::cout << myquat.to_string() << std::endl;
+        print = true;
+    }
     ubo.proj = maths::perspective(
 	    maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
 	    0.1f, 10.0f

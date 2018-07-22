@@ -27,7 +27,7 @@ public:
         }
     }
 
-    mat_t<M, N> transpose(){
+    mat_t<M, N> transpose() const {
         mat_t<M, N> result;
         for (int x = 0; x < N; x++){
             for (int y = 0; y < M; y++){
@@ -55,7 +55,11 @@ public:
 
     /*
        overloaded operators
-    */ 
+    */
+    vec_t<M> operator[](int i) const {
+	return columns[i];
+    }
+
     vec_t<M>& operator[](int i){
         return columns[i];
     }

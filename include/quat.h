@@ -20,6 +20,7 @@ public:
 
     static quat_t identity();
     static quat_t angle_axis(float angle, const vec3_t& axis);
+    static quat_t from_matrix(const mat3_t& m);
     static quat_t look_at(const vec3_t& forward, const vec3_t& up); 
 };
 
