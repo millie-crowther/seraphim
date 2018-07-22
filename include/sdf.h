@@ -3,7 +3,7 @@
 
 #include "vec.h"
 #include <functional>
-
+#include "bounds.h"
 
 class sdf_t {
 private:
@@ -12,9 +12,17 @@ private:
     std::function<float(const vec3_t&)> phi;
 
 public:
+    // constructors and destructors
     sdf_t(std::function<float(const vec3_t&)> phi); 
-    float operator()(const vec3_t& p);
+
+    // publids methods
     vec3_t normal(const vec3_t& p);
+ 
+    // virtual methods
+    virtual bounds_t get_bounds();
+    
+    // overloaded operators
+    float operator()(const vec3_t& p);
 };
 
 #endif

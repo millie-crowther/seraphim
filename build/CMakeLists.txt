@@ -20,7 +20,7 @@ set(SOURCES
     ../src/main.cpp
     ../src/engine.cpp
     ../src/sdf.cpp
-    ../src/vma.cpp
+    ../src/lib.cpp
     ../src/buffer.cpp
     ../src/vk_utils.cpp
     ../src/renderer.cpp
@@ -29,6 +29,7 @@ set(SOURCES
     ../src/maths.cpp
     ../src/quat.cpp
     ../src/dual_quat.cpp
+    ../src/bounds.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

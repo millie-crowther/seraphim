@@ -13,11 +13,14 @@ sdf_t::operator()(const vec3_t& p){
 
 vec3_t
 sdf_t::normal(const vec3_t& p){
-    vec3_t n = vec3_t({
+    return vec3_t({
         phi(p + vec3_t({ epsilon, 0, 0 })) - phi(p - vec3_t({ epsilon, 0, 0 })),      
         phi(p + vec3_t({ 0, epsilon, 0 })) - phi(p - vec3_t({ 0, epsilon, 0 })),      
         phi(p + vec3_t({ 0, 0, epsilon })) - phi(p - vec3_t({ 0, 0, epsilon }))
-    });
+    }).normalise();
+}
 
-    return n.length() > 0.0f ? n.normalise() : n;
+bounds_t
+sdf_t::get_bounds(){
+    return bounds_t(vec3_t(), vec3_t());     
 }
