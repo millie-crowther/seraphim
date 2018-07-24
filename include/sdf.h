@@ -11,18 +11,19 @@ private:
 
     std::function<float(const vec3_t&)> phi;
 
+    bool valid_bounds;
+    bounds_t bounds;
+
 public:
     // constructors and destructors
     sdf_t(std::function<float(const vec3_t&)> phi); 
 
-    // publids methods
-    vec3_t normal(const vec3_t& p);
+    // accessors
+    vec3_t normal(const vec3_t& p) const;
+    float distance(const vec3_t& v) const;
  
-    // virtual methods
+    // virtuals
     virtual bounds_t get_bounds();
-    
-    // overloaded operators
-    float operator()(const vec3_t& p);
 };
 
 #endif

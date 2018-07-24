@@ -57,7 +57,7 @@ public:
        overloaded operators
     */
     vec_t<M> operator[](int i) const {
-	return columns[i];
+        return columns[i];
     }
 
     vec_t<M>& operator[](int i){
@@ -70,6 +70,14 @@ public:
             xs[i] += m.columns[i];
         }
         return mat_t<N, M>(xs);
+    }
+
+    mat_t<N, M> operator*(float scale) const {
+        auto result = *this;
+        for (auto& c : result.columns){
+            c *= scale;
+        }
+        return result;
     }
 
     /*
@@ -90,11 +98,7 @@ typedef mat_t<4, 4> mat4_t;
 
 template <unsigned int N, unsigned int M>
 mat_t<N, M> operator*(float scale, const mat_t<N, M>& m){
-    mat_t<N, M> result = m;
-    for (int i = 0; i < N; i++){
-        result[i] *= scale;
-    }
-    return result;
+    return m * scale;
 }
 
 #endif

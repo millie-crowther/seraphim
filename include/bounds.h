@@ -5,16 +5,31 @@
 
 class bounds_t {
 private:
+    // fields
     vec3_t min;
     vec3_t size;
 
 public:
+    // constructors
+    bounds_t();
     bounds_t(const vec3_t& m, const vec3_t& s);
 
+    // accessors
     vec3_t get_centre() const;
-    bool contains(const vec3_t& v);
-    bounds_t get_octant(int i);
-    int get_octant_id(const vec3_t& v);
+    vec3_t get_size() const;
+    bounds_t get_octant(int i) const;
+    int get_octant_id(const vec3_t& v) const;
+    std::string to_string() const;    
+
+    // predicates
+    bool contains(const vec3_t& v) const;
+
+    // mutators
+    void encapsulate_point(const vec3_t& v);
+    void encapsulate_sphere(const vec3_t& v, float r);
+
+    // factories
+    static bounds_t max_bounds();
 };
 
 #endif
