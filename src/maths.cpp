@@ -1,5 +1,8 @@
 #include "maths.h"
 
+#include <cmath>
+#include "mat.h"
+
 namespace maths {
     float to_radians(float degrees){
         return degrees * pi / 180.0f;
@@ -18,5 +21,9 @@ namespace maths {
             0, 0, (far + near) / (near - far), 2 * far * near / (near - far),
             0, 0, -1, 0
         });
+    }
+
+    bool approx(float a, float b){
+	return std::abs(a - b) < epsilon;
     }
 }

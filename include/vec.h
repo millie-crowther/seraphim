@@ -4,6 +4,7 @@
 template <unsigned int N, unsigned int M> class mat_t;
 
 #include <cmath>
+#include "maths.h"
 #include <array>
 #include "mat.h"
 #include <iostream>
@@ -55,6 +56,10 @@ public:
     float length() const {
         return sqrt(square_length());
     }   
+
+    bool approx(const vec_t<N>& v){
+	return maths::approx((*this - v).square_length(), 0);
+    }
 
     vec_t<N> project_vector(const vec_t<N>& v) const {
         return dot(v.normalise()) * v.normalise();

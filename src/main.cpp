@@ -25,7 +25,7 @@ main(int argc, char ** argv) {
     }
 
     sdf_t sdf([](const vec3_t& v){
-        return (v - vec3_t(2)).length() - 2.0f;
+        return (v - vec3_t(4)).length() - 1.0f;
     });
 
     std::cout << sdf.get_bounds().to_string() << std::endl;

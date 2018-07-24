@@ -1,5 +1,8 @@
 #include "sdf.h"
 
+#include <chrono>
+#include <iostream>
+
 constexpr float sdf_t::epsilon;
 
 sdf_t::sdf_t(std::function<float(const vec3_t&)> phi){
@@ -22,15 +25,16 @@ sdf_t::normal(const vec3_t& p) const {
 
 bounds_t
 sdf_t::get_bounds(){
-    static void (*helper)(const bounds_t&, bounds_t *, const sdf_t& sdf);
-    helper = [](const bounds_t& b, bounds_t * full, const sdf_t& sdf){
+    static int x = 0;
+    static void (*helper)(const bounds_t&, bounds_t&, const sdf_t& sdf) = 
+    [](const bounds_t& b, bounds_t& full, const sdf_t& sdf){
         float d = sdf.distance(b.get_centre());
-        
+        x++;
         if (d < 0){ 
-            full->encapsulate_sphere(b.get_centre(), -d); 
+            full.encapsulate_sphere(b.get_centre(), -d); 
         }
- 
-        if (std::abs(d) < (b.get_size() / 2.0f).length()){
+
+        if (b.get_size().length() > 0.1f && std::abs(d) < (b.get_size() / 2.0f).length()){
             for (int i = 0; i < 8; i++){
                 helper(b.get_octant(i), full, sdf);
             }
@@ -39,6 +43,13 @@ sdf_t::get_bounds(){
 
 
     bounds_t result;
-    helper(bounds_t::max_bounds(), &result, *this);
+    auto start = std::chrono::high_resolution_clock::now();
+    helper(bounds_t::max_bounds(), result, *this);
+    auto current = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(
+        current - start
+    ).count();
+
+    std::cout << time << std::endl;
     return result;
 }

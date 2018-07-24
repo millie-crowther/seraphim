@@ -1,6 +1,7 @@
 #include "bounds.h"
 
 #include <limits>
+#include "maths.h"
 
 bounds_t::bounds_t() : bounds_t(vec3_t(), vec3_t()){ }
 
@@ -51,7 +52,8 @@ bounds_t::contains(const vec3_t& v) const {
 
 bounds_t
 bounds_t::max_bounds(){
-    vec3_t s(std::numeric_limits<float>::max());
+    // TODO
+    vec3_t s(1 << 16);
     return bounds_t(-(s / 2.0f), s);
 }
 
@@ -62,11 +64,15 @@ bounds_t::get_size() const {
 
 std::string
 bounds_t::to_string() const {
-    return "bounds[ centre: " + get_centre().to_string() + ", size: " + size.to_string() + "]";
+    return "bounds[centre: " + get_centre().to_string() + ", size: " + size.to_string() + "]";
 }
 
 void
 bounds_t::encapsulate_sphere(const vec3_t& v, float r){
+    if (size.approx(vec3_t(0))){
+	min = v;
+    }
+
     for (int i = 0; i < 3; i++){
         min[i] = std::min(min[i], v[i] - r);
         size[i] = std::max(size[i], v[i] + r - min[i]);
