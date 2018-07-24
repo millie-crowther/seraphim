@@ -107,7 +107,7 @@ quat_t::hamilton(const quat_t& q) const {
 }
 
 mat3_t
-quat_t::to_matrix(){
+quat_t::to_matrix() const {
     mat3_t r({
         -xs[2] * xs[2] - xs[3] * xs[3], 
          xs[1] * xs[2] - xs[0] * xs[3], 
@@ -134,4 +134,18 @@ quat_t::from_matrix(const mat3_t& m){
         (m[2][0] - m[0][2]) / w,
         (m[0][1] - m[1][0]) / w
     });
+}
+
+quat_t
+quat_t::operator*(float s) const {
+    quat_t r = *this;
+    for (int i = 0; i < 4; i++){
+	r[i] *= s;
+    }
+    return r;
+}
+
+quat_t
+operator*(float s, const quat_t& q){
+    return q * s;
 }
