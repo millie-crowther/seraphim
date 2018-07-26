@@ -55,12 +55,6 @@ dual_quat_t::operator*(const vec3_t& v) const {
     return transform(v);
 }
 
-dual_quat_t
-dual_quat_t::look_at(const vec3_t& from, const vec3_t& to, const vec3_t& up){
-    vec3_t forwards = (to - from).normalise();
-    return dual_quat_t(quat_t::look_at(forwards, up.normalise()), from);
-}
-
 mat4_t
 dual_quat_t::to_matrix() const {
     mat3_t r = real.to_matrix();

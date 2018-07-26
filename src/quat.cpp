@@ -19,38 +19,6 @@ quat_t::angle_axis(float angle, const vec3_t& axis){
 }
 
 quat_t
-quat_t::look_at(const vec3_t& forward, const vec3_t& up){
-/*
-    // align forward
-    vec3_t f = forward.normalise();
-    vec3_t axis = f % vec3_t({ 0, 0, 1 });
-    float theta = f.angle(vec3_t({ 0, 0, 1 }));
-    if ((f % axis).dot(vec3_t({ 0, 0, 1 })) < 0){
-	theta = -theta;
-    }
-    quat_t q1  angle_axis(theta, axis);
-
-    // align upwards
-    vec3_t u = up.normalise();
-    vec3_t u_r = q1.conjugate(vec3_t({ 0, 1, 0 }));
-    axis = u % u_r;
-    theta = u.angle(u_r);
-    if ((u % axis).dot(u_r) < 0){
-	theta = -theta;
-    }
-    quat_t q2 = angle_axis(theta, axis);
-
-    return q2.hamilton(q1);
-*/
-    vec3_t f = -forward.normalise();
-    vec3_t s = (f % up).normalise();
-
-    mat3_t m = mat3_t({ s, s % f, -f }).transpose();
-    
-    return from_matrix(m);
-}
-
-quat_t
 quat_t::conjugate() const {
     return quat_t({ xs[0], -xs[1], -xs[2], -xs[3] });
 }
@@ -140,7 +108,7 @@ quat_t
 quat_t::operator*(float s) const {
     quat_t r = *this;
     for (int i = 0; i < 4; i++){
-	r[i] *= s;
+	    r[i] *= s;
     }
     return r;
 }

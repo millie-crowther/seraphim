@@ -9,12 +9,20 @@ template <unsigned int N> class vec_t;
 
 template <unsigned int N, unsigned int M>
 class mat_t {
-protected:
+private:
+    //fields
     std::array<vec_t<M>, N> columns;
 
 public:
+    // constructors
     mat_t(){ 
         columns.fill(vec_t<M>());
+    }
+
+    mat_t(float f) : mat_t() {
+        for (int i = 0; i < std::min(N, M); i++){
+            columns[i][i] = f;
+        }
     }
 
     mat_t(const std::array<vec_t<M>, N>& cs){
@@ -24,6 +32,15 @@ public:
     mat_t(const std::array<float, M * N>& xs){
         for (int i = 0; i < N * M; i++){
             columns[i % N][i/ M] = xs[i];
+        }
+    }
+
+    template <unsigned int P, unsigned int Q>
+    mat_t(const mat_t<P, Q> & m) : mat_t(1){
+        for (int i = 0; i < std::min(N, P); i++){
+            for (int j = 0; j < std::min(M, Q); j++){
+                columns[i][j] = m[i][j];
+            }
         }
     }
 
@@ -44,7 +61,10 @@ public:
             for (int x = 0; x < N; x++){
                 result += std::to_string(columns[x][y]);
                 if (x == N-1){
-                    result += "]\n";
+                    result += "]";
+                    if (y < M-1){
+                        result += "\n";
+                    }
                 } else {
                     result += ", ";
                 }
@@ -53,9 +73,7 @@ public:
         return result;
     }
 
-    /*
-       overloaded operators
-    */
+    // operators
     vec_t<M> operator[](int i) const {
         return columns[i];
     }
@@ -80,25 +98,30 @@ public:
         return result;
     }
 
-    /*
-       static methods
-    */
+    // factories
     static mat_t<N, M> identity(){
-        mat_t<N, M> result;
-        for (int i = 0; i < std::min(N, M); i++){
-            result[i][i] = 1.0f;
-        }
-        return result;
+        return mat_t<N, M>(1);
     }
 };
 
+// operatiors
+template <unsigned int N, unsigned int M>
+mat_t<N, M> operator*(float scale, const mat_t<N, M>& m){
+    return m * scale;
+}
+
+// typedefs
 typedef mat_t<2, 2> mat2_t;
 typedef mat_t<3, 3> mat3_t;
 typedef mat_t<4, 4> mat4_t;
 
-template <unsigned int N, unsigned int M>
-mat_t<N, M> operator*(float scale, const mat_t<N, M>& m){
-    return m * scale;
+// factories
+namespace matrix {
+    mat3_t angle_axis(float angle, const vec3_t & axis);
+    mat3_t look_at(const vec3_t & forward, const vec3_t& up);
+
+    mat4_t perspective(float fov, float aspect, float near, float far);
+    mat4_t look_at(const vec3_t & from, const vec3_t & to, const vec3_t & up);
 }
 
 #endif
