@@ -8,6 +8,7 @@ template <unsigned int N, unsigned int M> class mat_t;
 #include <array>
 #include "mat.h"
 #include <iostream>
+#include <algorithm>
 
 template <unsigned int N>
 class vec_t {
@@ -49,6 +50,9 @@ public:
         });
     }
 
+    /*
+       norms
+    */
     float square_length() const {
         return dot(*this);
     }
@@ -57,10 +61,17 @@ public:
         return sqrt(square_length());
     }   
 
+    float max_norm() const {
+        return *std::max_element(xs.begin(), xs.end()); 
+    } 
+
     bool approx(const vec_t<N>& v){
-	return maths::approx((*this - v).square_length(), 0);
+	    return maths::approx((*this - v).square_length(), 0);
     }
 
+    /*
+       projections
+    */
     vec_t<N> project_vector(const vec_t<N>& v) const {
         return dot(v.normalise()) * v.normalise();
     }
@@ -75,6 +86,10 @@ public:
 
     float angle(const vec_t<N>& v){
         return std::acos(dot(v) / length() / v.length());
+    }
+
+    vec_t<N> lerp(const vec_t<N>& v, float alpha){
+        return (*this) * (1.0f - alpha) + v * alpha;
     }
 
     template <unsigned int M>

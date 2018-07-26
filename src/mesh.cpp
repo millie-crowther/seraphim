@@ -1,5 +1,7 @@
 #include "mesh.h"
 
+#include "bounds.h"
+
 mesh_t::mesh_t(
     VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t>& vs, 
     const std::vector<unsigned int>& is
@@ -34,9 +36,4 @@ mesh_t::get_vertex_buffer(){
 buffer_t * 
 mesh_t::get_index_buffer(){
     return indices;
-}
-
-mesh_t
-mesh_t::polygonise(const sdf_t& sdf){
-    
 }

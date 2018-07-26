@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include "bounds.h"
 
 constexpr float sdf_t::epsilon;
 
@@ -24,7 +25,7 @@ sdf_t::normal(const vec3_t& p) const {
 }
 
 bounds_t
-sdf_t::get_bounds(){
+sdf_t::get_bounds() const {
     static int x = 0;
     static void (*helper)(const bounds_t&, bounds_t&, const sdf_t& sdf) = 
     [](const bounds_t& b, bounds_t& full, const sdf_t& sdf){

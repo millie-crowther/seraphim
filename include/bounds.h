@@ -1,7 +1,7 @@
 #ifndef BOUNDS_H
 #define BOUNDS_H
 
-#include "vec.h"
+#include "sdf.h"
 
 class bounds_t {
 private:
@@ -20,6 +20,7 @@ public:
     bounds_t get_octant(int i) const;
     int get_octant_id(const vec3_t& v) const;
     std::string to_string() const;    
+    vec3_t get_vertex(int i) const;    
 
     // predicates
     bool contains(const vec3_t& v) const;

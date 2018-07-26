@@ -3,16 +3,14 @@
 
 #include "vec.h"
 #include <functional>
-#include "bounds.h"
+
+class bounds_t;
 
 class sdf_t {
 private:
     static constexpr float epsilon = 0.0001f;
 
     std::function<float(const vec3_t&)> phi;
-
-    bool valid_bounds;
-    bounds_t bounds;
 
 public:
     // constructors and destructors
@@ -23,7 +21,7 @@ public:
     float distance(const vec3_t& v) const;
  
     // virtuals
-    virtual bounds_t get_bounds();
+    virtual bounds_t get_bounds() const;
 };
 
 #endif

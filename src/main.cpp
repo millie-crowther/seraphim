@@ -4,6 +4,7 @@
 #include "engine.h"
 
 #include "sdf.h"
+#include "bounds.h"
 
 int 
 main(int argc, char ** argv) {
