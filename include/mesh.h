@@ -23,9 +23,6 @@ public:
     // getters
     buffer_t * get_vertex_buffer();
     buffer_t * get_index_buffer();
-
-    // factory methods
-    static mesh_t polygonise(const sdf_t& sdf);
 };
 
 #endif

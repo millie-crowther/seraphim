@@ -1249,15 +1249,12 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     UniformBufferObject ubo = {};
-    dual_quat_t dq(
-        quat_t::angle_axis(time * maths::to_radians(90), vec3_t({ 0, 1, 0 })),
-        vec3_t(0)
-    );
-    ubo.model = dq.to_matrix();
+    mat3_t m = matrix::angle_axis(time * maths::to_radians(90), vec3_t({ 0, 1, 0 }));
+    ubo.model = mat4_t(m);
 
     glm::mat4 glmv = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    auto myv = dual_quat_t::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
-    ubo.view = myv.to_matrix();
+    auto myv = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
+    ubo.view = myv;
   
     static bool print = false;
     if (!print){
@@ -1266,9 +1263,9 @@ engine_t::update_uniform_buffers(uint32_t image_index){
         print = true;
     }
 
-    ubo.proj = maths::perspective(
-	maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
-	0.1f, 10.0f
+    ubo.proj = matrix::perspective(
+        maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
+        0.1f, 10.0f
     );
 
     uniform_buffers[image_index]->copy(

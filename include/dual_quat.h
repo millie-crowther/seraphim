@@ -30,7 +30,6 @@ public:
 
     // factories
     static dual_quat_t identity();
-    static dual_quat_t look_at(const vec3_t& from, const vec3_t& to, const vec3_t& up); 
 };
 
 #endif

@@ -80,7 +80,7 @@ bounds_t::to_string() const {
 void
 bounds_t::encapsulate_sphere(const vec3_t& v, float r){
     if (size.approx(vec3_t(0))){
-	min = v;
+	    min = v;
     }
 
     for (int i = 0; i < 3; i++){
