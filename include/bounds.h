@@ -23,6 +23,7 @@ public:
 
     // predicates
     bool contains(const vec3_t& v) const;
+    bool contains(const bounds_t& b) const;
 
     // mutators
     void encapsulate_point(const vec3_t& v);

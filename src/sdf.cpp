@@ -25,22 +25,27 @@ sdf_t::normal(const vec3_t& p) const {
 
 bounds_t
 sdf_t::get_bounds(){
+    static float precision = 0.1f;
     static int x = 0;
+
+    // TODO: improve performance
     static void (*helper)(const bounds_t&, bounds_t&, const sdf_t& sdf) = 
     [](const bounds_t& b, bounds_t& full, const sdf_t& sdf){
         float d = sdf.distance(b.get_centre());
-        x++;
         if (d < 0){ 
             full.encapsulate_sphere(b.get_centre(), -d); 
         }
-
-        if (b.get_size().length() > 0.1f && std::abs(d) < (b.get_size() / 2.0f).length()){
+        x++;
+        if (
+	    b.get_size().length() > precision && 
+	    std::abs(d) < (b.get_size() / 2.0f).length() &&
+	    !full.contains(b)
+	){
             for (int i = 0; i < 8; i++){
                 helper(b.get_octant(i), full, sdf);
             }
         }
     };
-
 
     bounds_t result;
     auto start = std::chrono::high_resolution_clock::now();
@@ -50,6 +55,6 @@ sdf_t::get_bounds(){
         current - start
     ).count();
 
-    std::cout << time << std::endl;
+    std::cout << time << " : " << x << std::endl;
     return result;
 }

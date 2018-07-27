@@ -57,6 +57,16 @@ bounds_t::max_bounds(){
     return bounds_t(-(s / 2.0f), s);
 }
 
+bool
+bounds_t::contains(const bounds_t& b) const {
+    for (int i = 0; i < 3; i++){
+        if (min[i] > b.min[i] || min[i] + size[i] < b.min[i] + b.size[i]){
+	    return false;
+	}
+    }
+    return true;
+}
+
 vec3_t
 bounds_t::get_size() const {
     return size;
