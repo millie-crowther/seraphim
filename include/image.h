@@ -14,28 +14,31 @@ private:
     VkDeviceMemory memory;
     VkFormat format;
     VkImageLayout layout;
-    VkDevice device;
-    VkPhysicalDevice physical_device;
+
+    // static fields
+    static VkDevice device;
+    static VkPhysicalDevice physical_device;
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
     void create_image_view(VkImageAspectFlags aspect_flags);
+
 public:
     // constructors and destructors
     image_t(
-        VkPhysicalDevice physical_device, VkDevice device, uint32_t width, uint32_t height, 
-        VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, 
+        uint32_t width, uint32_t height, VkFormat format, 
+        VkImageTiling tiling, VkImageUsageFlags usage, 
         VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
     );
     image_t(
-        VkPhysicalDevice physical_device, VkDevice device, VkImage image, VkFormat format,
-        VkImageAspectFlags aspect_flags
+        VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
     );
     ~image_t();
 
     void transition_image_layout(VkCommandPool pool, VkQueue queue, VkImageLayout new_layout);
 
     // getters
+    VkImage get_image();
     VkImageView get_image_view();
     VkFormat get_format();
 
@@ -45,6 +48,7 @@ public:
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkFormat find_depth_format(VkPhysicalDevice physical_device);
+    static void initialise(VkPhysicalDevice pd, VkDevice d);
 };
 
 #endif

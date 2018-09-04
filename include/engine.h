@@ -45,6 +45,8 @@ private:
     bool create_descriptor_pool();
     bool create_descriptor_sets();
 
+    bool create_texture_image();
+
     bool create_render_pass();
     bool create_framebuffers();
     bool create_command_pool();
@@ -80,6 +82,8 @@ private:
 
     // depth buffer
     image_t * depth_image;
+
+    image_t * texture_image;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;

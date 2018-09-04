@@ -31,6 +31,7 @@ public:
 
     // public methods
     void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);
+    void copy_to_image(VkCommandPool pool, VkQueue queue, VkImage image, int width, int height);
 
     // getters
     VkBuffer get_buffer();

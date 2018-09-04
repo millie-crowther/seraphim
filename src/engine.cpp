@@ -15,8 +15,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
-#include "dual_quat.h"
 #include <glm/gtx/string_cast.hpp> 
+#include "stb_image.h"
 
 struct UniformBufferObject {
     mat4_t model;
@@ -127,6 +127,7 @@ engine_t::init(){
     }
 
     buffer_t::initialise(physical_device, device);
+    image_t::initialise(physical_device, device);
 
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
@@ -136,23 +137,27 @@ engine_t::init(){
     vmaCreateAllocator(&allocator_info, &allocator);
 
     if (!create_swapchain()){
-	throw std::runtime_error("Error: Couldn't create swapchain.");
+    	throw std::runtime_error("Error: Couldn't create swapchain.");
     }
 
     if (!create_render_pass()){
-	throw std::runtime_error("Error: Couldn't create render pass.");
+    	throw std::runtime_error("Error: Couldn't create render pass.");
     }
 
     if (!create_descriptor_set_layout()){
-	throw std::runtime_error("Error: Couldn't create descriptor set layout.");
+	    throw std::runtime_error("Error: Couldn't create descriptor set layout.");
     }
 
     if (!create_graphics_pipeline()){
-	throw std::runtime_error("Error: Failed to create graphics pipeline.");
+    	throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
 
     if (!create_command_pool()){
-	throw std::runtime_error("Error: Failed to create command pool.");
+    	throw std::runtime_error("Error: Failed to create command pool.");
+    }
+
+    if (!create_texture_image()){
+        throw std::runtime_error("Error: Failed to create texture image.");
     }
 
     if (!create_depth_resources()){
@@ -160,7 +165,7 @@ engine_t::init(){
     }
 
     if (!create_framebuffers()){
-	throw std::runtime_error("Error: Failed to create framebuffers.");
+    	throw std::runtime_error("Error: Failed to create framebuffers.");
     }
 
     mesh = new mesh_t(command_pool, graphics_queue, vertices, indices);
@@ -194,7 +199,7 @@ engine_t::load_file(std::string filename){
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()){
-	return std::vector<char>();
+	    return std::vector<char>();
     }
 
     size_t filesize = file.tellg();    
@@ -207,6 +212,49 @@ engine_t::load_file(std::string filename){
     return buffer;
 }
 
+bool 
+engine_t::create_texture_image(){
+    int texture_width;
+    int texture_height;
+    int texture_channels;
+    stbi_uc * pixels = stbi_load(
+        "../resources/erin.jpg", 
+        &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha
+    );
+
+    if (!pixels){
+        return false;
+    }
+
+    VkDeviceSize image_size = texture_width * texture_height * 4;
+
+    texture_image = new image_t(
+        texture_width, texture_height, VK_FORMAT_R8G8B8A8_UNORM, 
+        VK_IMAGE_TILING_OPTIMAL, 
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        VK_IMAGE_ASPECT_COLOR_BIT // TODO: texture doesnt need image view??
+    );
+
+    stbi_image_free(pixels);
+
+    buffer_t texture_data(
+        image_size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    );
+        
+    // FIXME: segfault
+ //   texture_data.copy(command_pool, graphics_queue, pixels, image_size);
+
+    //texture_data.copy_to_image(
+   //     command_pool, graphics_queue, texture_image->get_image(), 
+   //     texture_width, texture_height
+   // );
+
+    return true;
+}
+
 bool
 engine_t::create_logical_device(){
     int graphics = get_graphics_queue_family(physical_device);
@@ -217,12 +265,12 @@ engine_t::create_logical_device(){
     
     float queue_priority = 1.0f;
     for (int queue_family : unique_queue_families){
-	VkDeviceQueueCreateInfo queue_create_info = {};
-	queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-	queue_create_info.queueFamilyIndex = queue_family;
-	queue_create_info.queueCount = 1;
-	queue_create_info.pQueuePriorities = &queue_priority;
-	queue_create_infos.push_back(queue_create_info);
+        VkDeviceQueueCreateInfo queue_create_info = {};
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queue_priority;
+        queue_create_infos.push_back(queue_create_info);
     }
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -240,14 +288,14 @@ engine_t::create_logical_device(){
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
     if (is_debug) {
-	create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-	create_info.ppEnabledLayerNames = validation_layers.data();
+        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.ppEnabledLayerNames = validation_layers.data();
     } else {
-	create_info.enabledLayerCount = 0;
+	    create_info.enabledLayerCount = 0;
     }
 
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
-	return false;
+	    return false;
     }
 
     vkGetDeviceQueue(device, graphics, 0, &graphics_queue);
@@ -290,11 +338,11 @@ engine_t::select_present_mode(){
     vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, modes.data());
 
     if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()){
-	return VK_PRESENT_MODE_MAILBOX_KHR;
+	    return VK_PRESENT_MODE_MAILBOX_KHR;
     }
 
     if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != modes.end()){
-	return VK_PRESENT_MODE_IMMEDIATE_KHR;
+	    return VK_PRESENT_MODE_IMMEDIATE_KHR;
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
@@ -322,7 +370,7 @@ engine_t::create_framebuffers(){
         if (vkCreateFramebuffer(
             device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
         ){
-                return false;
+            return false;
         }
     }
 
@@ -391,7 +439,7 @@ engine_t::create_swapchain(){
     swapchain_images.resize(count);
     for (int i = 0; i < count; i++){
         swapchain_images[i] = new image_t(
-            physical_device, device, swapchain_imgs[i], format.format, VK_IMAGE_ASPECT_COLOR_BIT
+            swapchain_imgs[i], format.format, VK_IMAGE_ASPECT_COLOR_BIT
         );
     }
 
@@ -413,11 +461,11 @@ engine_t::create_descriptor_pool(){
     pool_info.maxSets = static_cast<uint32_t>(swapchain_images.size());
 
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
-	return false;
+	    return false;
     }
 
     if (!create_descriptor_sets()){
-	return false;
+	    return false;
     }
 
     return true;
@@ -435,7 +483,7 @@ engine_t::create_descriptor_sets(){
 
     desc_sets.resize(swapchain_images.size());
     if (vkAllocateDescriptorSets(device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
-	return false;
+	    return false;
     }
 
     VkDescriptorBufferInfo buffer_info = {};
@@ -481,7 +529,7 @@ engine_t::create_descriptor_set_layout(){
     );
  
     if (result != VK_SUCCESS){
-	return false;
+	    return false;
     }
 
     return true;
@@ -492,7 +540,7 @@ engine_t::create_depth_resources(){
     VkFormat depth_format = image_t::find_depth_format(physical_device);
 
     depth_image = new image_t(
-        physical_device, device, swapchain_extents.width, swapchain_extents.height, depth_format,
+        swapchain_extents.width, swapchain_extents.height, depth_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT
     );
