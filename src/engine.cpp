@@ -35,20 +35,20 @@ const std::vector<const char*> device_extensions = {
 };
 
 const std::vector<vertex_t> vertices = {
-    vertex_t(vec3_t({-0.5f, -0.5f,  0.0f}), vec3_t({1.0f, 0.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,  -0.5f,  0.0f}), vec3_t({0.0f, 1.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,   0.5f,  0.0f}), vec3_t({0.0f, 0.0f, 1.0f})),
-    vertex_t(vec3_t({-0.5f,  0.5f,  0.0f}), vec3_t({1.0f, 1.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f, 0.0f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,  0.0f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f})),
+    vertex_t(vec3_t({0.5f,  0.0f,  0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f, 0.0f,  0.5f}), vec3_t({1.0f, 1.0f, 1.0f})),
 
     vertex_t(vec3_t({-0.5f, -0.5f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f})),
     vertex_t(vec3_t({0.5f,  -0.5f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,   0.5f, -0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
-    vertex_t(vec3_t({-0.5f,  0.5f, -0.5f}), vec3_t({1.0f, 1.0f, 1.0f}))
+    vertex_t(vec3_t({0.5f,  -0.5f, 0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f, -0.5f, 0.5f}), vec3_t({1.0f, 1.0f, 1.0f}))
 };
 
 const std::vector<uint32_t> indices = {
-    0, 1, 2, 2, 3, 0,
-    4, 5, 6, 6, 7, 4
+    0, 2, 1, 2, 0, 3,
+    4, 6, 5, 6, 4, 7
 };
 
 void 
@@ -1252,16 +1252,7 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     mat3_t m = matrix::angle_axis(time * maths::to_radians(90), vec3_t({ 0, 1, 0 }));
     ubo.model = mat4_t(m);
 
-    glm::mat4 glmv = glm::lookAt(glm::vec3(2.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    auto myv = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
-    ubo.view = myv;
-  
-    static bool print = false;
-    if (!print){
-        std::cout << glm::to_string(glmv) << std::endl;
-        std::cout << ubo.view.to_string() << std::endl;
-        print = true;
-    }
+    ubo.view = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
 
     ubo.proj = matrix::perspective(
         maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
