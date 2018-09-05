@@ -12,6 +12,7 @@ add_subdirectory("glfw")
 set(INCLUDE_DIR
     ../include
     VulkanMemoryAllocator/src
+    stb
 )
 
 include_directories(${INCLUDE_DIR})
