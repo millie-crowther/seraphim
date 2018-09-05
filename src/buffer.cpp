@@ -115,3 +115,33 @@ buffer_t::copy(
         staging_buffer.copy_buffer(command_pool, queue, buffer, size); 
     }
 }
+
+void
+buffer_t::copy_to_image(
+    VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
+){
+    vk_utils::single_time_commands(device, pool, queue, [&](VkCommandBuffer cmd){
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {
+            width,
+            height,
+            1
+        };
+
+        vkCmdCopyBufferToImage(
+            cmd, buffer, image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &region
+        );
+    });
+}

@@ -3,10 +3,13 @@
 #include <stdexcept>
 #include "vk_utils.h"
 
+VkPhysicalDevice image_t::physical_device;
+VkDevice image_t::device;
+
 image_t::image_t(
-    VkPhysicalDevice physical_device,
-    VkDevice device, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-    VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
+    uint32_t width, uint32_t height, VkFormat format, 
+    VkImageTiling tiling, VkImageUsageFlags usage, 
+    VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
 ){
     is_swapchain = false;
     
@@ -58,8 +61,7 @@ image_t::image_t(
 }
 
 image_t::image_t(
-    VkPhysicalDevice physical_device, VkDevice device, VkImage image, VkFormat format,
-    VkImageAspectFlags aspect_flags
+    VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
 ){
     is_swapchain = true;
     this->physical_device = physical_device;
@@ -118,6 +120,11 @@ image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties
     }
 
     return -1;
+}
+
+VkImage
+image_t::get_image(){
+    return image;
 }
 
 void
@@ -235,4 +242,11 @@ image_t::find_depth_format(VkPhysicalDevice physical_device){
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
 
+}
+
+
+void
+image_t::initialise(VkPhysicalDevice pd, VkDevice d){
+    physical_device = pd;
+    device = d;
 }

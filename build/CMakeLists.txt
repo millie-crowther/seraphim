@@ -29,7 +29,6 @@ set(SOURCES
     ../src/mesh.cpp
     ../src/maths.cpp
     ../src/quat.cpp
-    ../src/dual_quat.cpp
     ../src/bounds.cpp
     ../src/marching_cubes.cpp
     ../src/mat.cpp
