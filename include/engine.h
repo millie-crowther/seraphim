@@ -84,6 +84,7 @@ private:
     image_t * depth_image;
 
     image_t * texture_image;
+    VkSampler texture_sampler;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;

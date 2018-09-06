@@ -133,8 +133,8 @@ buffer_t::copy_to_image(
 
         region.imageOffset = {0, 0, 0};
         region.imageExtent = {
-            width,
-            height,
+            (uint32_t) width,
+            (uint32_t) height,
             1
         };
 

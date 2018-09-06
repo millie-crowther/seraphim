@@ -92,12 +92,14 @@ marching_cubes_t::create_mesh_for_cell(
 
 
     for (int i = 0; tri_table[cube_index][i] != -1; i += 3){
+/*
         is.push_back(is.size());
         vs.push_back(vertex_t(vertices[tri_table[cube_index][i  ]], vec3_t(1)));
         is.push_back(is.size());
         vs.push_back(vertex_t(vertices[tri_table[cube_index][i+1]], vec3_t(1)));
         is.push_back(is.size());
         vs.push_back(vertex_t(vertices[tri_table[cube_index][i+2]], vec3_t(1)));
+        */
     } 
 }
 

@@ -35,15 +35,15 @@ const std::vector<const char*> device_extensions = {
 };
 
 const std::vector<vertex_t> vertices = {
-    vertex_t(vec3_t({-0.5f, 0.0f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,  0.0f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,  0.0f,  0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
-    vertex_t(vec3_t({-0.5f, 0.0f,  0.5f}), vec3_t({1.0f, 1.0f, 1.0f})),
+    vertex_t(vec3_t({-0.5f, 0.0f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f}), vec2_t({ 1.0f, 0.0f })),
+    vertex_t(vec3_t({0.5f,  0.0f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f}), vec2_t({ 0.0f, 0.0f })),
+    vertex_t(vec3_t({0.5f,  0.0f,  0.5f}), vec3_t({0.0f, 0.0f, 1.0f}), vec2_t({ 0.0f, 1.0f })),
+    vertex_t(vec3_t({-0.5f, 0.0f,  0.5f}), vec3_t({1.0f, 1.0f, 1.0f}), vec2_t({ 1.0f, 1.0f })),
 
-    vertex_t(vec3_t({-0.5f, -0.5f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,  -0.5f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f})),
-    vertex_t(vec3_t({0.5f,  -0.5f, 0.5f}), vec3_t({0.0f, 0.0f, 1.0f})),
-    vertex_t(vec3_t({-0.5f, -0.5f, 0.5f}), vec3_t({1.0f, 1.0f, 1.0f}))
+    vertex_t(vec3_t({-0.5f, -0.5f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f}), vec2_t({ 1.0f, 0.0f })),
+    vertex_t(vec3_t({0.5f,  -0.5f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f}), vec2_t({ 0.0f, 0.0f })),
+    vertex_t(vec3_t({0.5f,  -0.5f, 0.5f}),  vec3_t({0.0f, 0.0f, 1.0f}), vec2_t({ 0.0f, 1.0f })),
+    vertex_t(vec3_t({-0.5f, -0.5f, 0.5f}),  vec3_t({1.0f, 1.0f, 1.0f}), vec2_t({ 1.0f, 1.0f }))
 };
 
 const std::vector<uint32_t> indices = {
@@ -233,10 +233,9 @@ engine_t::create_texture_image(){
         VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        VK_IMAGE_ASPECT_COLOR_BIT // TODO: texture doesnt need image view??
+        VK_IMAGE_ASPECT_COLOR_BIT 
     );
 
-    stbi_image_free(pixels);
 
     buffer_t texture_data(
         image_size,
@@ -244,13 +243,36 @@ engine_t::create_texture_image(){
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
     );
         
-    // FIXME: segfault
- //   texture_data.copy(command_pool, graphics_queue, pixels, image_size);
+    texture_data.copy(command_pool, graphics_queue, pixels, image_size);
+    stbi_image_free(pixels);
 
-    //texture_data.copy_to_image(
-   //     command_pool, graphics_queue, texture_image->get_image(), 
-   //     texture_width, texture_height
-   // );
+    texture_data.copy_to_image(
+        command_pool, graphics_queue, texture_image->get_image(), 
+        texture_width, texture_height
+    );
+
+    // create sampler
+    VkSamplerCreateInfo sampler_info = {};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable = VK_TRUE;
+    sampler_info.maxAnisotropy = 16;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+
+    if (vkCreateSampler(device, &sampler_info, nullptr, &texture_sampler) != VK_SUCCESS){
+        return false;
+    }
 
     return true;
 }
@@ -274,6 +296,7 @@ engine_t::create_logical_device(){
     }
 
     VkPhysicalDeviceFeatures device_features = {};
+    device_features.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -450,14 +473,17 @@ engine_t::create_swapchain(){
 
 bool 
 engine_t::create_descriptor_pool(){
-    VkDescriptorPoolSize pool_size = {};
-    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size.descriptorCount = static_cast<uint32_t>(swapchain_images.size());
+    std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images.size());
+
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].descriptorCount = static_cast<uint32_t>(swapchain_images.size());
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = 1;
-    pool_info.pPoolSizes = &pool_size;
+    pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = static_cast<uint32_t>(swapchain_images.size());
 
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
@@ -490,21 +516,36 @@ engine_t::create_descriptor_sets(){
     buffer_info.offset = 0;
     buffer_info.range = sizeof(UniformBufferObject);
 
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = texture_image->get_image_view();
+    image_info.sampler = texture_sampler;
+
     VkWriteDescriptorSet desc_write = {};
     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desc_write.dstBinding = 0;
     desc_write.dstArrayElement = 0;
-    desc_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     desc_write.descriptorCount = 1;
     desc_write.pBufferInfo = &buffer_info;
-    desc_write.pImageInfo = nullptr;
+    desc_write.pImageInfo = &image_info;
     desc_write.pTexelBufferView = nullptr;
 
     for (int i = 0; i < swapchain_images.size(); i++){
-	buffer_info.buffer = uniform_buffers[i]->get_buffer();
-	desc_write.dstSet = desc_sets[i];
+   	     buffer_info.buffer = uniform_buffers[i]->get_buffer();
 
-	vkUpdateDescriptorSets(device, 1, &desc_write, 0, nullptr);
+         std::array<VkWriteDescriptorSet, 2> desc_writes = {};
+         desc_write.dstSet = desc_sets[i];
+
+         desc_writes[0] = desc_write;
+	     desc_writes[0].dstSet = desc_sets[i];
+         desc_writes[0].dstBinding = 0;
+         desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+
+         desc_writes[1] = desc_write;
+	     desc_writes[1].dstSet = desc_sets[i];
+         desc_writes[1].dstBinding = 1;
+         desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	     vkUpdateDescriptorSets(device, desc_writes.size(), desc_writes.data(), 0, nullptr);
     }
 
     return true;
@@ -519,10 +560,23 @@ engine_t::create_descriptor_set_layout(){
     ubo_layout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout.pImmutableSamplers = nullptr;
     
+
+    VkDescriptorSetLayoutBinding sampler_layout_binding = {};
+    sampler_layout_binding.binding = 1;
+    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sampler_layout_binding.pImmutableSamplers = nullptr;
+    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+        ubo_layout,
+        sampler_layout_binding
+    };
+
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = 1;
-    layout_info.pBindings = &ubo_layout;
+    layout_info.bindingCount = bindings.size();
+    layout_info.pBindings = bindings.data();
 
     VkResult result = vkCreateDescriptorSetLayout(
         device, &layout_info, nullptr, &descriptor_layout
@@ -531,6 +585,7 @@ engine_t::create_descriptor_set_layout(){
     if (result != VK_SUCCESS){
 	    return false;
     }
+
 
     return true;
 }
@@ -1005,7 +1060,7 @@ engine_t::is_suitable_device(VkPhysicalDevice phys_device){
     // check device can do geometry shaders
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(phys_device, &features);
-    if (!features.geometryShader){
+    if (!features.geometryShader || ! features.samplerAnisotropy){
 	return false;
     }
 
@@ -1246,7 +1301,10 @@ engine_t::cleanup(){
     uniform_buffers.clear();
 
     cleanup_swapchain();
-   
+
+    vkDestroySampler(device, texture_sampler, nullptr);  
+    delete texture_image;
+
     delete mesh;
     mesh = nullptr;
 
