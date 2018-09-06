@@ -13,6 +13,7 @@ set(INCLUDE_DIR
     ../include
     VulkanMemoryAllocator/src
     stb
+    tinyobjloader
 )
 
 include_directories(${INCLUDE_DIR})
