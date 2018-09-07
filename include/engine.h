@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "image.h"
+#include "texture.h"
 #include "mesh.h"
 
 class engine_t {
@@ -44,8 +44,6 @@ private:
     bool create_descriptor_set_layout();
     bool create_descriptor_pool();
     bool create_descriptor_sets();
-
-    bool create_texture_image();
 
     bool create_render_pass();
     bool create_framebuffers();
@@ -83,8 +81,7 @@ private:
     // depth buffer
     image_t * depth_image;
 
-    image_t * texture_image;
-    VkSampler texture_sampler;
+    texture_t * texture;
 
     VkPhysicalDevice physical_device;
     VkInstance instance;

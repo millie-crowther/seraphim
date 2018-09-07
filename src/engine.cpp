@@ -156,10 +156,8 @@ engine_t::init(){
     	throw std::runtime_error("Error: Failed to create command pool.");
     }
 
-    if (!create_texture_image()){
-        throw std::runtime_error("Error: Failed to create texture image.");
-    }
-
+    texture = new texture_t("../resources/erin.jpg", command_pool, graphics_queue, device);
+    
     if (!create_depth_resources()){
         throw std::runtime_error("Error: Failed to create depth resources.");
     }
@@ -210,71 +208,6 @@ engine_t::load_file(std::string filename){
     file.close();
 
     return buffer;
-}
-
-bool 
-engine_t::create_texture_image(){
-    int texture_width;
-    int texture_height;
-    int texture_channels;
-    stbi_uc * pixels = stbi_load(
-        "../resources/erin.jpg", 
-        &texture_width, &texture_height, &texture_channels, STBI_rgb_alpha
-    );
-
-    if (!pixels){
-        return false;
-    }
-
-    VkDeviceSize image_size = texture_width * texture_height * 4;
-
-    texture_image = new image_t(
-        texture_width, texture_height, VK_FORMAT_R8G8B8A8_UNORM, 
-        VK_IMAGE_TILING_OPTIMAL, 
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        VK_IMAGE_ASPECT_COLOR_BIT 
-    );
-
-
-    buffer_t texture_data(
-        image_size,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    );
-        
-    texture_data.copy(command_pool, graphics_queue, pixels, image_size);
-    stbi_image_free(pixels);
-
-    texture_data.copy_to_image(
-        command_pool, graphics_queue, texture_image->get_image(), 
-        texture_width, texture_height
-    );
-
-    // create sampler
-    VkSamplerCreateInfo sampler_info = {};
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.minFilter = VK_FILTER_LINEAR;
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.anisotropyEnable = VK_TRUE;
-    sampler_info.maxAnisotropy = 16;
-    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    sampler_info.unnormalizedCoordinates = VK_FALSE;
-    sampler_info.compareEnable = VK_FALSE;
-    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler_info.mipLodBias = 0.0f;
-    sampler_info.minLod = 0.0f;
-    sampler_info.maxLod = 0.0f;
-
-    if (vkCreateSampler(device, &sampler_info, nullptr, &texture_sampler) != VK_SUCCESS){
-        return false;
-    }
-
-    return true;
 }
 
 bool
@@ -518,8 +451,8 @@ engine_t::create_descriptor_sets(){
 
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = texture_image->get_image_view();
-    image_info.sampler = texture_sampler;
+    image_info.imageView = texture->get_image_view();
+    image_info.sampler = texture->get_sampler();
 
     VkWriteDescriptorSet desc_write = {};
     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1302,8 +1235,7 @@ engine_t::cleanup(){
 
     cleanup_swapchain();
 
-    vkDestroySampler(device, texture_sampler, nullptr);  
-    delete texture_image;
+    delete texture;
 
     delete mesh;
     mesh = nullptr;
