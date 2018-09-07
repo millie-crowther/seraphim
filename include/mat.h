@@ -98,6 +98,18 @@ public:
         return result;
     }
 
+    vec_t<N> operator*(const vec_t<N>& v) const {
+        vec_t<N> result;
+
+        for (int i = 0; i < N; i++){
+            for (int j = 0; j < M; j++){
+                result[i] += columns[i][j] * v[i];
+            }
+        }
+
+        return result;
+    }
+
     // factories
     static mat_t<N, M> identity(){
         return mat_t<N, M>(1);

@@ -81,8 +81,6 @@ private:
     // depth buffer
     image_t * depth_image;
 
-    texture_t * texture;
-
     VkPhysicalDevice physical_device;
     VkInstance instance;
     VkDevice device;

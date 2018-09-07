@@ -1,10 +1,14 @@
 #include "mesh.h"
 
-#include "bounds.h"
+#include "tiny_obj_loader.h"
+#include <stdexcept>
+#include "mat.h"
+#include "maths.h"
+
 
 mesh_t::mesh_t(
     VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t>& vs, 
-    const std::vector<unsigned int>& is
+    const std::vector<uint32_t>& is, texture_t * tx
 ){
     VkDeviceSize v_size = sizeof(vertex_t) * vs.size();
     vertices = new buffer_t(
@@ -14,18 +18,24 @@ mesh_t::mesh_t(
     );
     vertices->copy(cmd_pool, queue, (void *) vs.data(), v_size);
 
-    VkDeviceSize i_size = sizeof(unsigned int) * is.size();
+    VkDeviceSize i_size = sizeof(uint32_t) * is.size();
     indices = new buffer_t(
         i_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
     );
     indices->copy(cmd_pool, queue, (void *) is.data(), i_size);
+
+    index_count = is.size();
+
+    texture = tx;
 }
 
 mesh_t::~mesh_t(){
     delete vertices;
     delete indices;
+
+    delete texture;
 }
 
 buffer_t *
@@ -36,4 +46,58 @@ mesh_t::get_vertex_buffer(){
 buffer_t * 
 mesh_t::get_index_buffer(){
     return indices;
+}
+
+mesh_t *
+mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue, VkDevice device){
+    const std::string texture_name = "../resources/mesh/" + name + "/" + name + ".jpg";
+    texture_t * t = new texture_t(texture_name, pool, queue, device);
+            
+    const std::string mesh_name = "../resources/mesh/" + name + "/" + name + ".obj";
+
+    tinyobj::attrib_t attr;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string err;
+
+    if (!tinyobj::LoadObj(&attr, &shapes, &materials, &err, mesh_name.c_str())){
+        throw std::runtime_error("Error: Couldn't load mesh: " + err);
+    }
+
+    std::vector<vertex_t> vs;
+    std::vector<uint32_t> is;
+
+    for (const auto& shape : shapes){
+        for (const auto& index : shape.mesh.indices){
+            vec3_t pos({
+                attr.vertices[3 * index.vertex_index + 0],   
+                attr.vertices[3 * index.vertex_index + 1],    
+                attr.vertices[3 * index.vertex_index + 2] 
+            });
+
+            vec2_t tex_coord({
+                attr.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attr.texcoords[2 * index.texcoord_index + 1]
+            });
+
+            vec3_t colour({ 1.0f, 1.0f, 1.0f });
+
+            mat3_t r = matrix::angle_axis(maths::to_radians(90), vec3_t({ 1, 0, 0 }));
+
+            vs.push_back(vertex_t(pos, colour, tex_coord));
+            is.push_back(is.size());
+        }
+    }
+
+    return new mesh_t(pool, queue, vs, is, t);
+}
+
+texture_t *
+mesh_t::get_texture(){
+    return texture;
+}
+
+int
+mesh_t::get_index_count(){
+    return index_count;
 }

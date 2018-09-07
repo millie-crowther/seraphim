@@ -34,23 +34,6 @@ const std::vector<const char*> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-const std::vector<vertex_t> vertices = {
-    vertex_t(vec3_t({-0.5f, 0.0f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f}), vec2_t({ 1.0f, 0.0f })),
-    vertex_t(vec3_t({0.5f,  0.0f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f}), vec2_t({ 0.0f, 0.0f })),
-    vertex_t(vec3_t({0.5f,  0.0f,  0.5f}), vec3_t({0.0f, 0.0f, 1.0f}), vec2_t({ 0.0f, 1.0f })),
-    vertex_t(vec3_t({-0.5f, 0.0f,  0.5f}), vec3_t({1.0f, 1.0f, 1.0f}), vec2_t({ 1.0f, 1.0f })),
-
-    vertex_t(vec3_t({-0.5f, -0.5f, -0.5f}), vec3_t({1.0f, 0.0f, 0.0f}), vec2_t({ 1.0f, 0.0f })),
-    vertex_t(vec3_t({0.5f,  -0.5f, -0.5f}), vec3_t({0.0f, 1.0f, 0.0f}), vec2_t({ 0.0f, 0.0f })),
-    vertex_t(vec3_t({0.5f,  -0.5f, 0.5f}),  vec3_t({0.0f, 0.0f, 1.0f}), vec2_t({ 0.0f, 1.0f })),
-    vertex_t(vec3_t({-0.5f, -0.5f, 0.5f}),  vec3_t({1.0f, 1.0f, 1.0f}), vec2_t({ 1.0f, 1.0f }))
-};
-
-const std::vector<uint32_t> indices = {
-    0, 2, 1, 2, 0, 3,
-    4, 6, 5, 6, 4, 7
-};
-
 void 
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
@@ -155,8 +138,6 @@ engine_t::init(){
     if (!create_command_pool()){
     	throw std::runtime_error("Error: Failed to create command pool.");
     }
-
-    texture = new texture_t("../resources/erin.jpg", command_pool, graphics_queue, device);
     
     if (!create_depth_resources()){
         throw std::runtime_error("Error: Failed to create depth resources.");
@@ -166,7 +147,7 @@ engine_t::init(){
     	throw std::runtime_error("Error: Failed to create framebuffers.");
     }
 
-    mesh = new mesh_t(command_pool, graphics_queue, vertices, indices);
+    mesh = mesh_t::load("chalet", command_pool, graphics_queue, device);
 
     // create uniform buffers
     VkDeviceSize size = sizeof(UniformBufferObject);
@@ -451,6 +432,8 @@ engine_t::create_descriptor_sets(){
 
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    texture_t * texture = mesh->get_texture();
     image_info.imageView = texture->get_image_view();
     image_info.sampler = texture->get_sampler();
 
@@ -664,7 +647,7 @@ engine_t::create_command_buffers(){
 		        0, 1, &desc_sets[i], 0, nullptr
 	        );
 
-	        vkCmdDrawIndexed(command_buffers[i], (uint32_t) indices.size(), 1, 0, 0, 0);
+	        vkCmdDrawIndexed(command_buffers[i], (uint32_t) mesh->get_index_count(), 1, 0, 0, 0);
 	    vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
@@ -1234,8 +1217,6 @@ engine_t::cleanup(){
     uniform_buffers.clear();
 
     cleanup_swapchain();
-
-    delete texture;
 
     delete mesh;
     mesh = nullptr;
