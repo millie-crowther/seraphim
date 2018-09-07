@@ -162,6 +162,10 @@ public:
         return vec_t<N>(ys);
     }
 
+    bool operator==(const vec_t<N>& v) const {
+        return (*this - v).length() < maths::epsilon;
+    }
+
     vec_t<N> operator/(float scale) const {
         return *this * (1.0f / scale);
     }

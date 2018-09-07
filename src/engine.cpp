@@ -1268,7 +1268,7 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     UniformBufferObject ubo = {};
-    mat3_t m = matrix::angle_axis(time * maths::to_radians(90), vec3_t({ 0, 1, 0 }));
+    mat3_t m = matrix::angle_axis(time * maths::to_radians(45), vec3_t({ 0, 1, 0 }));
     ubo.model = mat4_t(m);
 
     ubo.view = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));

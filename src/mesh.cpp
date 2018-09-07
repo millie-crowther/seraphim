@@ -69,12 +69,14 @@ mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue, VkDevice devic
 
     for (const auto& shape : shapes){
         for (const auto& index : shape.mesh.indices){
+            // flip axes to account for different system
             vec3_t pos({
                 attr.vertices[3 * index.vertex_index + 0],   
-                attr.vertices[3 * index.vertex_index + 1],    
-                attr.vertices[3 * index.vertex_index + 2] 
+                attr.vertices[3 * index.vertex_index + 2],    
+                -attr.vertices[3 * index.vertex_index + 1] 
             });
 
+            // change tex coords for different standard
             vec2_t tex_coord({
                 attr.texcoords[2 * index.texcoord_index + 0],
                 1.0f - attr.texcoords[2 * index.texcoord_index + 1]
@@ -82,7 +84,7 @@ mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue, VkDevice devic
 
             vec3_t colour({ 1.0f, 1.0f, 1.0f });
 
-            mat3_t r = matrix::angle_axis(maths::to_radians(90), vec3_t({ 1, 0, 0 }));
+       //     mat3_t r = matrix::angle_axis(maths::to_radians(90), vec3_t({ 1, 0, 0 }));
 
             vs.push_back(vertex_t(pos, colour, tex_coord));
             is.push_back(is.size());

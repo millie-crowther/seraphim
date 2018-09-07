@@ -106,7 +106,7 @@ public:
                 result[i] += columns[i][j] * v[i];
             }
         }
-
+        
         return result;
     }
 

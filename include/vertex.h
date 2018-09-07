@@ -17,6 +17,10 @@ struct vertex_t {
         tex_coord = tc;
     } 
 
+    bool operator==(const vertex_t& v){
+        return position == v.position && colour == v.colour && tex_coord == v.tex_coord;
+    }
+
     static VkVertexInputBindingDescription get_binding_description(){
         VkVertexInputBindingDescription binding_desc = {};
         binding_desc.binding = 0;
@@ -46,5 +50,14 @@ struct vertex_t {
         return attr_desc;
     }
 };
+
+namespace std {
+    template<> struct hash<vertex_t>{
+        size_t operator()(vertex_t const& vertex) const {
+            //TODO
+            return 0;
+        } 
+    };
+}
 
 #endif
