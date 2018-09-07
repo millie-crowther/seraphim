@@ -127,6 +127,8 @@ typedef mat_t<2, 2> mat2_t;
 typedef mat_t<3, 3> mat3_t;
 typedef mat_t<4, 4> mat4_t;
 
+typedef vec_t<3> vec3_t;
+
 // factories
 namespace matrix {
     mat3_t angle_axis(float angle, const vec3_t & axis);
