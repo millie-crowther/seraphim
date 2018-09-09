@@ -1274,13 +1274,9 @@ engine_t::update_uniform_buffers(uint32_t image_index){
     mat3_t m = matrix::angle_axis(time * maths::to_radians(45), vec3_t({ 0, 1, 0 }));
     ubo.model = mat4_t(m);
 
-    ubo.view = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
-
-    ubo.proj = renderer->get_proj_matrix();/*matrix::perspective(
-        maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
-        0.1f, 10.0f
-    );*/
-
+    ubo.view = renderer->get_view_matrix();
+    ubo.proj = renderer->get_proj_matrix();
+    
     uniform_buffers[image_index]->copy(
         command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
     );

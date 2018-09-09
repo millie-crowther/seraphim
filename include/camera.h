@@ -20,7 +20,6 @@ public:
     float get_fov();
     float get_near();
     float get_far();
-    
 };
 
 #endif
