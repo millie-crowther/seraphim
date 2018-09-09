@@ -6,10 +6,6 @@
 
 class buffer_t {
 private:
-    // static fields
-    static VkPhysicalDevice physical_device;
-    static VkDevice device;
-
     // fields
     bool is_host_visible;
     VkBuffer buffer;
@@ -25,9 +21,6 @@ public:
     // constructors and destructors
     buffer_t(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
     ~buffer_t();
-
-    // static methods
-    static void initialise(VkPhysicalDevice physical_d, VkDevice d);
 
     // public methods
     void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);

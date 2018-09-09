@@ -4,15 +4,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cstring>
-
-VkPhysicalDevice buffer_t::physical_device;
-VkDevice buffer_t::device;
-
-void
-buffer_t::initialise(VkPhysicalDevice physical_d, VkDevice d){
-    physical_device = physical_d;
-    device = d;
-}
+#include "engine.h"
 
 buffer_t::buffer_t(
     VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
@@ -23,12 +15,12 @@ buffer_t::buffer_t(
     create_info.usage = usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(device, &create_info, nullptr, &buffer) != VK_SUCCESS){
+    if (vkCreateBuffer(engine_t::get_device(), &create_info, nullptr, &buffer) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create buffer.");
     }
 
     VkMemoryRequirements memory_req;
-    vkGetBufferMemoryRequirements(device, buffer, &memory_req);
+    vkGetBufferMemoryRequirements(engine_t::get_device(), buffer, &memory_req);
 
     int memory_type = find_memory_type(memory_req.memoryTypeBits, properties);
     if (memory_type == -1){
@@ -40,23 +32,23 @@ buffer_t::buffer_t(
     alloc_info.allocationSize = size;
     alloc_info.memoryTypeIndex = memory_type;
 
-    if (vkAllocateMemory(device, &alloc_info, nullptr, &memory) != VK_SUCCESS){
+    if (vkAllocateMemory(engine_t::get_device(), &alloc_info, nullptr, &memory) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to allocate buffer memory.");
     }
-    vkBindBufferMemory(device, buffer, memory, 0);   
+    vkBindBufferMemory(engine_t::get_device(), buffer, memory, 0);   
    
     is_host_visible = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT & properties) != 0;
 }
 
 buffer_t::~buffer_t(){
-    vkDestroyBuffer(device, buffer, nullptr);
-    vkFreeMemory(device, memory, nullptr);
+    vkDestroyBuffer(engine_t::get_device(), buffer, nullptr);
+    vkFreeMemory(engine_t::get_device(), memory, nullptr);
 }
 
 int
 buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(engine_t::get_physical_device(), &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -79,7 +71,7 @@ void
 buffer_t::copy_buffer(
     VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
 ){
-    vk_utils::single_time_commands(device, command_pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(engine_t::get_device(), command_pool, queue, [&](VkCommandBuffer cmd){
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = 0;
@@ -100,9 +92,9 @@ buffer_t::copy(
 ){
     if (is_host_visible){
 	    void * mem_map;
-        vkMapMemory(device, memory, 0, size, 0, &mem_map);
+        vkMapMemory(engine_t::get_device(), memory, 0, size, 0, &mem_map);
 	        std::memcpy(mem_map, data, size);
-	    vkUnmapMemory(device, memory);
+	    vkUnmapMemory(engine_t::get_device(), memory);
 	 
     } else {
         buffer_t staging_buffer(
@@ -120,7 +112,7 @@ void
 buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
-    vk_utils::single_time_commands(device, pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(engine_t::get_device(), pool, queue, [&](VkCommandBuffer cmd){
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;

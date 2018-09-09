@@ -12,11 +12,11 @@
 #include "vk_utils.h"
 #include "maths.h"
 #include "mat.h"
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
-#include <glm/gtx/string_cast.hpp> 
 #include "stb_image.h"
+
+VkPhysicalDevice engine_t::physical_device;
+VkDevice engine_t::device;
 
 struct UniformBufferObject {
     mat4_t model;
@@ -62,6 +62,8 @@ engine_t::init(){
     if (sizeof(vec3_t) != 12){
         throw std::runtime_error("Error: 'float' is wrong size");
     }
+
+    renderer = new renderer_t();
 
     // initialise GLFW
     glfwInit();
@@ -109,9 +111,6 @@ engine_t::init(){
 	    throw std::runtime_error("Error: Couldn't create logical device.");
     }
 
-    buffer_t::initialise(physical_device, device);
-    image_t::initialise(physical_device, device);
-
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
     allocator_info.physicalDevice = physical_device;
@@ -147,7 +146,7 @@ engine_t::init(){
     	throw std::runtime_error("Error: Failed to create framebuffers.");
     }
 
-    mesh = mesh_t::load("chalet", command_pool, graphics_queue, device);
+    mesh = mesh_t::load("chalet", command_pool, graphics_queue);
 
     // create uniform buffers
     VkDeviceSize size = sizeof(UniformBufferObject);
@@ -243,28 +242,28 @@ engine_t::create_logical_device(){
 
 VkExtent2D
 engine_t::select_swap_extent(){
-     VkSurfaceCapabilitiesKHR capabilities;
-     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
 
-     // check if we need to supply width and height
-     if (capabilities.currentExtent.width == ~((uint32_t) 0)){
-          int width, height;
-          glfwGetFramebufferSize(window, &width, &height);
-	  VkExtent2D extents = { (uint32_t) width, (uint32_t) height };
-	  
-	  extents.width = std::max(
-	      capabilities.minImageExtent.width, 
-	      std::min(extents.width, capabilities.maxImageExtent.width)
-	  );
-	  extents.height = std::max(
-	      capabilities.minImageExtent.height, 
-	      std::min(extents.height, capabilities.maxImageExtent.height)
-	  );
-          
-	  return extents;
-     } else {
-	  return capabilities.currentExtent;
-     }
+    // check if we need to supply width and height
+    if (capabilities.currentExtent.width == ~((uint32_t) 0)){
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        VkExtent2D extents = { (uint32_t) width, (uint32_t) height };
+        
+        extents.width = std::max(
+            capabilities.minImageExtent.width, 
+            std::min(extents.width, capabilities.maxImageExtent.width)
+        );
+        extents.height = std::max(
+            capabilities.minImageExtent.height, 
+            std::min(extents.height, capabilities.maxImageExtent.height)
+        );
+            
+        return extents;
+    } else {
+        return capabilities.currentExtent;
+    }
 }
 
 VkPresentModeKHR
@@ -382,6 +381,9 @@ engine_t::create_swapchain(){
 
     swapchain_extents = extents;
 
+    float aspect = swapchain_extents.width / (float) swapchain_extents.height;
+    renderer->set_aspect_ratio(aspect);
+
     return true;
 }
 
@@ -475,7 +477,6 @@ engine_t::create_descriptor_set_layout(){
     ubo_layout.descriptorCount = 1;
     ubo_layout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout.pImmutableSamplers = nullptr;
-    
 
     VkDescriptorSetLayoutBinding sampler_layout_binding = {};
     sampler_layout_binding.binding = 1;
@@ -614,7 +615,7 @@ engine_t::create_command_buffers(){
 	    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
         if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS){
-                return false;
+            return false;
         }
 
         VkRenderPassBeginInfo render_pass_info = {};
@@ -667,17 +668,17 @@ engine_t::select_surface_format(){
     
     // check if all formats supported
     if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED){
-	return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+	    return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
     }
 
     // check for preferred
     for (auto available_format : formats){
-	if (
-	    available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-	    available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-	){
-	    return available_format;
-	}
+        if (
+            available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+            available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
+        ){
+            return available_format;
+        }
     }
 
     // default
@@ -695,16 +696,16 @@ engine_t::check_validation_layers(){
     for (auto layer : validation_layers){
         bool found = false;
 	
-	for (auto layer_property : available_layers){ 
+        for (auto layer_property : available_layers){ 
             if (layer == std::string(layer_property.layerName)){
-		found = true;
-		break;
-	    }
-	}
+                found = true;
+                break;
+            }
+        }
 
-	if (!found){
-	    return false;
-	}
+        if (!found){
+            return false;
+        }
     }
 
     return true;
@@ -733,9 +734,9 @@ engine_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
    
     for (int i = 0; i < queue_family_count; i++){
-	if (q_families[i].queueCount > 0 && q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
-	    return i;
-	}
+        if (q_families[i].queueCount > 0 && q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
+            return i;
+        }
     }
 
     return -1;    
@@ -753,9 +754,9 @@ engine_t::get_present_queue_family(VkPhysicalDevice phys_device){
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(phys_device, i, surface, &present_support);
 
-	if (q_families[i].queueCount > 0 && present_support){
-	    return i;
-	}
+        if (q_families[i].queueCount > 0 && present_support){
+            return i;
+        }
     }
 
     return -1;    
@@ -770,7 +771,7 @@ engine_t::create_shader_module(const std::vector<char>& code, bool * success){
 
     VkShaderModule shader_module;
     if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS){
-	*success = false;
+	    *success = false;
     }
     return shader_module;
 }
@@ -781,7 +782,7 @@ engine_t::create_graphics_pipeline(){
     auto fragment_shader_code = load_file("../src/shaders/shader.frag");
 
     if (vertex_shader_code.size() == 0 || fragment_shader_code.size() == 0){
-	return false;
+	    return false;
     }
 
     bool success = true;
@@ -789,7 +790,7 @@ engine_t::create_graphics_pipeline(){
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code, &success);
     
     if (!success){
-	return false;
+	    return false;
     }
 
     VkPipelineShaderStageCreateInfo vert_create_info = {}; 
@@ -805,8 +806,8 @@ engine_t::create_graphics_pipeline(){
     frag_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[2] = {
-	vert_create_info,
-	frag_create_info
+        vert_create_info,
+        frag_create_info
     };
 
     auto vert_desc = vertex_t::get_binding_description();
@@ -900,9 +901,9 @@ engine_t::create_graphics_pipeline(){
     pipeline_layout_info.pPushConstantRanges = nullptr;
 
     if (vkCreatePipelineLayout(
-	device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
+	    device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
-	return false;
+	    return false;
     }
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -936,9 +937,9 @@ engine_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(
-	device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS
+	    device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS
     ){
-	return false;
+	    return false;
     }
 
     vkDestroyShaderModule(device, vert_shader_module, nullptr);
@@ -952,13 +953,13 @@ engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
     if (count == 0){
-	return false;
+	    return false;
     }
 
     count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, nullptr);
     if (count == 0){
-	return false;
+        return false;
     }
 
     return true;
@@ -977,26 +978,26 @@ engine_t::is_suitable_device(VkPhysicalDevice phys_device){
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(phys_device, &features);
     if (!features.geometryShader || ! features.samplerAnisotropy){
-	return false;
+	    return false;
     }
 
     // check device has at least one graphics queue family
     if (get_graphics_queue_family(phys_device) == -1){
-	return false;
+	    return false;
     }
 
     if (get_present_queue_family(phys_device) == -1){
-	return false;
+	    return false;
     }
 
     for (auto extension : device_extensions){
-	if (!device_has_extension(phys_device, extension)){
+        if (!device_has_extension(phys_device, extension)){
             return false;
-	}
+        }
     }
 
     if (!has_adequate_swapchain(phys_device)){
-	return false;
+	    return false;
     }
 
     return true;
@@ -1013,9 +1014,9 @@ engine_t::device_has_extension(VkPhysicalDevice phys_device, const char * extens
     );
 
     for (auto available_extension : available_extensions){
-	if (std::string(extension) == std::string(available_extension.extensionName)){
-	    return true;
-	}
+        if (std::string(extension) == std::string(available_extension.extensionName)){
+            return true;
+        }
     }
 
     return false;
@@ -1026,16 +1027,16 @@ engine_t::select_device(){
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0){
-	return VK_NULL_HANDLE;
+	    return VK_NULL_HANDLE;
     }
 
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
     
     for (auto phys_device : devices){
-	if (is_suitable_device(phys_device)){
+        if (is_suitable_device(phys_device)){
             return phys_device;
-	}
+        }
     }
 
     return VK_NULL_HANDLE;
@@ -1044,7 +1045,7 @@ engine_t::select_device(){
 void
 engine_t::create_instance(){
     if (is_debug && !check_validation_layers()){
-	throw std::runtime_error("Requested validation layers not available.");
+	    throw std::runtime_error("Requested validation layers not available.");
     }
 
     VkApplicationInfo app_info = {};
@@ -1187,7 +1188,7 @@ engine_t::cleanup_swapchain(){
     depth_image = nullptr;
 
     for (auto framebuffer : swapchain_framebuffers){
-	vkDestroyFramebuffer(device, framebuffer, nullptr);
+	    vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
 
     vkFreeCommandBuffers(
@@ -1207,6 +1208,8 @@ engine_t::cleanup_swapchain(){
 
 void
 engine_t::cleanup(){
+    delete renderer;
+
     vkDeviceWaitIdle(device);
 
     vkDestroyDescriptorSetLayout(device, descriptor_layout, nullptr);
@@ -1273,10 +1276,10 @@ engine_t::update_uniform_buffers(uint32_t image_index){
 
     ubo.view = matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}));
 
-    ubo.proj = matrix::perspective(
+    ubo.proj = renderer->get_proj_matrix();/*matrix::perspective(
         maths::to_radians(45.0f), swapchain_extents.width / (float) swapchain_extents.height, 
         0.1f, 10.0f
-    );
+    );*/
 
     uniform_buffers[image_index]->copy(
         command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
@@ -1351,4 +1354,14 @@ engine_t::run(){
     }
 
     cleanup();
+}
+
+VkPhysicalDevice
+engine_t::get_physical_device(){
+    return physical_device;
+}
+
+VkDevice
+engine_t::get_device(){
+    return device;
 }

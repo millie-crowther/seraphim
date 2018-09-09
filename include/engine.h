@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "texture.h"
 #include "mesh.h"
+#include "renderer.h"
 
 class engine_t {
 private:
@@ -81,9 +81,9 @@ private:
     // depth buffer
     image_t * depth_image;
 
-    VkPhysicalDevice physical_device;
+    renderer_t * renderer;
+
     VkInstance instance;
-    VkDevice device;
     VkSurfaceKHR surface;
     VkQueue graphics_queue;
     VkQueue present_queue;
@@ -114,12 +114,20 @@ private:
  
     GLFWwindow * window;
 
+    // static fields
+    static VkPhysicalDevice physical_device;
+    static VkDevice device;
+
 public:
     engine_t(bool is_debug);
 
     void window_resize(int w, int h);
 
     void run();
+
+    // static getters
+    static VkDevice get_device();
+    static VkPhysicalDevice get_physical_device();
 };
 
 #endif

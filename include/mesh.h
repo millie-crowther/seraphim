@@ -30,7 +30,7 @@ public:
     int get_index_count();
 
     // factory methods
-    static mesh_t * load(std::string name, VkCommandPool pool, VkQueue queue, VkDevice device);
+    static mesh_t * load(std::string name, VkCommandPool pool, VkQueue queue);
 };
 
 #endif

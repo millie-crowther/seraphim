@@ -15,7 +15,7 @@ private:
 
 public:
     // constructors and destructors
-    texture_t(std::string filename, VkCommandPool pool, VkQueue queue, VkDevice device);
+    texture_t(std::string filename, VkCommandPool pool, VkQueue queue);
     ~texture_t();
 
     // getters

@@ -49,9 +49,9 @@ mesh_t::get_index_buffer(){
 }
 
 mesh_t *
-mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue, VkDevice device){
+mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue){
     const std::string texture_name = "../resources/mesh/" + name + "/" + name + ".jpg";
-    texture_t * t = new texture_t(texture_name, pool, queue, device);
+    texture_t * t = new texture_t(texture_name, pool, queue);
             
     const std::string mesh_name = "../resources/mesh/" + name + "/" + name + ".obj";
 

@@ -2,11 +2,9 @@
 
 #include "stb_image.h"
 #include <stdexcept>
-#include "buffer.h"
+#include "engine.h"
 
-texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue, VkDevice device){
-    this->device = device;
-
+texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue){
     int channels;
     
     // load data
@@ -53,14 +51,14 @@ texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue, Vk
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(engine_t::get_device(), &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
 
 }
 
 texture_t::~texture_t(){
-    vkDestroySampler(device, sampler, nullptr);
+    vkDestroySampler(engine_t::get_device(), sampler, nullptr);
 
     delete image;
 }

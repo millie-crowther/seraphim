@@ -34,6 +34,8 @@ set(SOURCES
     ../src/marching_cubes.cpp
     ../src/mat.cpp
     ../src/texture.cpp
+    ../src/camera.cpp
+    ../src/transform.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

@@ -3,8 +3,7 @@
 #include <stdexcept>
 #include "vk_utils.h"
 
-VkPhysicalDevice image_t::physical_device;
-VkDevice image_t::device;
+#include "engine.h"
 
 image_t::image_t(
     uint32_t width, uint32_t height, VkFormat format, 
@@ -13,8 +12,6 @@ image_t::image_t(
 ){
     is_swapchain = false;
     
-    this->physical_device = physical_device;
-    this->device = device;
     this->format = format;
 
     // create image
@@ -35,26 +32,26 @@ image_t::image_t(
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkResult result = vkCreateImage(device, &image_info, nullptr, &image);
+    VkResult result = vkCreateImage(engine_t::get_device(), &image_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	throw std::runtime_error("Error: Failed to create image.");
     }
 
     // allocate memory
     VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(device, image, &mem_req);
+    vkGetImageMemoryRequirements(engine_t::get_device(), image, &mem_req);
 
     VkMemoryAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = mem_req.size;
     alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(device, &alloc_info, nullptr, &memory);
+    result = vkAllocateMemory(engine_t::get_device(), &alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    vkBindImageMemory(device, image, memory, 0);
+    vkBindImageMemory(engine_t::get_device(), image, memory, 0);
 
     // create image view
     create_image_view(aspect_flags);
@@ -64,8 +61,6 @@ image_t::image_t(
     VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
 ){
     is_swapchain = true;
-    this->physical_device = physical_device;
-    this->device = device;
     this->format = format;
     this->image = image;
 
@@ -90,25 +85,25 @@ image_t::create_image_view(VkImageAspectFlags aspect_flags){
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    VkResult result = vkCreateImageView(device, &view_info, nullptr, &image_view);
+    VkResult result = vkCreateImageView(engine_t::get_device(), &view_info, nullptr, &image_view);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image view.");
     }
 }
 
 image_t::~image_t(){
-    vkDestroyImageView(device, image_view, nullptr);
+    vkDestroyImageView(engine_t::get_device(), image_view, nullptr);
     
     if (!is_swapchain){
-        vkDestroyImage(device, image, nullptr);
-        vkFreeMemory(device, memory, nullptr);
+        vkDestroyImage(engine_t::get_device(), image, nullptr);
+        vkFreeMemory(engine_t::get_device(), memory, nullptr);
     }
 }
 
 int
 image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(engine_t::get_physical_device(), &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -129,7 +124,7 @@ image_t::get_image(){
 
 void
 image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageLayout new_layout){
-    vk_utils::single_time_commands(device, cmd_pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(engine_t::get_device(), cmd_pool, queue, [&](VkCommandBuffer cmd){
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -242,11 +237,4 @@ image_t::find_depth_format(VkPhysicalDevice physical_device){
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
 
-}
-
-
-void
-image_t::initialise(VkPhysicalDevice pd, VkDevice d){
-    physical_device = pd;
-    device = d;
 }

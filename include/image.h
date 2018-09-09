@@ -15,10 +15,6 @@ private:
     VkFormat format;
     VkImageLayout layout;
 
-    // static fields
-    static VkDevice device;
-    static VkPhysicalDevice physical_device;
-
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
     void create_image_view(VkImageAspectFlags aspect_flags);
@@ -48,7 +44,6 @@ public:
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkFormat find_depth_format(VkPhysicalDevice physical_device);
-    static void initialise(VkPhysicalDevice pd, VkDevice d);
 };
 
 #endif
