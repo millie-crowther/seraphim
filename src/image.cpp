@@ -142,7 +142,6 @@ image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageL
         VkPipelineStageFlags src_stage;
         VkPipelineStageFlags dst_stage;
 
-
         if (
             old_layout == VK_IMAGE_LAYOUT_UNDEFINED &&
             new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -192,7 +191,6 @@ image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageL
     });
 
     layout = new_layout;
-
 }
 
 VkImageView

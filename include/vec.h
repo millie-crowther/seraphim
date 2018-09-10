@@ -163,7 +163,7 @@ public:
     }
 
     bool operator==(const vec_t<N>& v) const {
-        return (*this - v).length() < maths::epsilon;
+        return (*this - v).square_length() < maths::epsilon * maths::epsilon;
     }
 
     vec_t<N> operator/(float scale) const {

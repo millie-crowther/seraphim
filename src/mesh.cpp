@@ -82,11 +82,7 @@ mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue){
                 1.0f - attr.texcoords[2 * index.texcoord_index + 1]
             });
 
-            vec3_t colour({ 1.0f, 1.0f, 1.0f });
-
-       //     mat3_t r = matrix::angle_axis(maths::to_radians(90), vec3_t({ 1, 0, 0 }));
-
-            vs.push_back(vertex_t(pos, colour, tex_coord));
+            vs.push_back(vertex_t(pos, vec3_t(1), tex_coord));
             is.push_back(is.size());
         }
     }

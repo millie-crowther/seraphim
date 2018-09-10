@@ -36,6 +36,8 @@ set(SOURCES
     ../src/texture.cpp
     ../src/camera.cpp
     ../src/transform.cpp
+    ../src/vertex.cpp
+    ../src/input.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

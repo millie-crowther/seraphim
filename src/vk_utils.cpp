@@ -1,5 +1,7 @@
 #include "vk_utils.h"
 
+#include <iostream>
+
 namespace vk_utils {
     void
     single_time_commands(
@@ -38,7 +40,7 @@ namespace vk_utils {
         submit_info.pWaitDstStageMask = nullptr;
         submit_info.signalSemaphoreCount = 0;
         submit_info.pSignalSemaphores = nullptr;
-
+            
         vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
         vkQueueWaitIdle(queue);
 
