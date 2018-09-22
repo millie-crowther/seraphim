@@ -9,7 +9,6 @@
 #include <fstream>
 #include "vertex.h"
 #include <cstring>
-#include "vk_utils.h"
 #include "maths.h"
 #include "mat.h"
 
@@ -39,11 +38,10 @@ engine_t::window_resize(int w, int h){
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
 
-    if (is_debug){
-	    std::cout << "Running in debug mode." << std::endl;
-    } else {
-	    std::cout << "Running in release mode." << std::endl;
-    }
+    std::cout << 
+        "Running in " << 
+        (is_debug ? "debug" : "release") << 
+        " mode." << std::endl;
 }
 
 void

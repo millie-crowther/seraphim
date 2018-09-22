@@ -70,7 +70,6 @@ renderer_t::init(
         return false;
     }
 
-
     return true;
 }
 
