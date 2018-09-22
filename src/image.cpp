@@ -124,7 +124,7 @@ image_t::get_image(){
 
 void
 image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageLayout new_layout){
-    vk_utils::single_time_commands(engine_t::get_device(), cmd_pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(cmd_pool, queue, [&](VkCommandBuffer cmd){
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};

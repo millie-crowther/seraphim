@@ -51,8 +51,6 @@ private:
 
     VkInstance instance;
     VkSurfaceKHR surface;
-    VkQueue graphics_queue;
-    VkQueue present_queue;
  
     GLFWwindow * window;
 

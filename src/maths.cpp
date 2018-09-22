@@ -13,6 +13,6 @@ namespace maths {
     }
 
     bool approx(float a, float b){
-	return std::abs(a - b) < epsilon;
+	    return std::abs(a - b) < epsilon;
     }
 }

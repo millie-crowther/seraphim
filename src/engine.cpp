@@ -33,9 +33,7 @@ window_resize_callback(GLFWwindow * window, int width, int height){
 
 void
 engine_t::window_resize(int w, int h){
-    int graphics_fam = get_graphics_queue_family(physical_device);
-    int present_fam = get_present_queue_family(physical_device);
-    renderer.window_resize(w, h, graphics_fam, present_fam);
+    renderer.window_resize(w, h);
 }
 
 engine_t::engine_t(bool is_debug){
@@ -115,21 +113,21 @@ engine_t::init(){
     uint32_t graphics_family = get_graphics_queue_family(physical_device);
     uint32_t present_family = get_present_queue_family(physical_device);
 
-    if (!renderer.init(surface, graphics_family, present_family, window_extents, graphics_queue, present_queue)){
+    if (!renderer.init(surface, graphics_family, present_family, window_extents)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
 }
 
 bool
 engine_t::create_logical_device(){
-    int graphics = get_graphics_queue_family(physical_device);
-    int present = get_present_queue_family(physical_device);
+    uint32_t graphics = get_graphics_queue_family(physical_device);
+    uint32_t present = get_present_queue_family(physical_device);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<int> unique_queue_families = { graphics, present };
+    std::set<uint32_t> unique_queue_families = { graphics, present };
     
     float queue_priority = 1.0f;
-    for (int queue_family : unique_queue_families){
+    for (uint32_t queue_family : unique_queue_families){
         VkDeviceQueueCreateInfo queue_create_info = {};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
@@ -163,9 +161,6 @@ engine_t::create_logical_device(){
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
 	    return false;
     }
-
-    vkGetDeviceQueue(device, graphics, 0, &graphics_queue);
-    vkGetDeviceQueue(device, present, 0, &present_queue);
 
     return true;
 }
@@ -204,7 +199,7 @@ engine_t::get_required_extensions(){
 
     std::vector<const char *> req_ext(glfw_extensions, glfw_extensions + extension_count);
     if (is_debug){
-	req_ext.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+	    req_ext.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
 
     return req_ext;
@@ -370,8 +365,8 @@ engine_t::create_instance(){
     }
 
     if (is_debug){
-	create_info.ppEnabledLayerNames = validation_layers.data();
-	create_info.enabledLayerCount = validation_layers.size();
+        create_info.ppEnabledLayerNames = validation_layers.data();
+        create_info.enabledLayerCount = validation_layers.size();
     } else {
         create_info.enabledLayerCount = 0;
     }
@@ -404,7 +399,7 @@ debug_callback(
 bool
 engine_t::setup_debug_callback(){
     if (!is_debug){
-	return true;
+	    return true;
     }
 
     VkDebugReportCallbackCreateInfoEXT create_info = {};
@@ -447,9 +442,9 @@ engine_t::cleanup(){
         auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
             instance, "vkDestroyDebugReportCallbackEXT"
         );
-	if (func != nullptr){
-	    func(instance, callback, nullptr);
-	}
+        if (func != nullptr){
+            func(instance, callback, nullptr);
+        }
     }
    
     vkDestroySurfaceKHR(instance, surface, nullptr);
