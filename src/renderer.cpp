@@ -16,12 +16,15 @@ renderer_t::~renderer_t(){
 bool
 renderer_t::init(
     VkSurfaceKHR surface, uint32_t graphics_family, uint32_t present_family, 
-    VkExtent2D window_extents, VkQueue graphics_queue, VkQueue present_queue
+    VkExtent2D window_extents
 ){
     this->surface = surface;
     this->window_extents = window_extents;
     this->graphics_queue = graphics_queue;
     this->present_queue = present_queue;
+
+    vkGetDeviceQueue(engine_t::get_device(), graphics_family, 0, &graphics_queue);
+    vkGetDeviceQueue(engine_t::get_device(), present_family, 0, &present_queue);
 
     if (!create_swapchain(graphics_family, present_family)){
         return false;
@@ -53,8 +56,6 @@ renderer_t::init(
 
     create_uniform_buffers();
 
-    mesh = mesh_t::load("chalet", command_pool, graphics_queue);
-
     if (!create_descriptor_pool()){
         return false;
     }
@@ -63,10 +64,12 @@ renderer_t::init(
         return false;
     }
 
-    if (!create_command_buffers()){
+    chalet = mesh_t::load("chalet", command_pool, graphics_queue);
+    update_descriptor_sets(chalet->get_texture());
+
+    if (!create_command_buffers(chalet)){
         return false;
     }
-
 
     return true;
 }
@@ -264,7 +267,7 @@ renderer_t::recreate_swapchain(uint32_t graphics_family, uint32_t present_family
     create_graphics_pipeline();
     create_depth_resources();
     create_framebuffers();
-    create_command_buffers();
+    create_command_buffers(chalet);
 }
 
 void 
@@ -289,11 +292,6 @@ renderer_t::cleanup_swapchain(){
     }
 
     vkDestroySwapchainKHR(engine_t::get_device(), swapchain, nullptr);
-}
-
-int
-renderer_t::swapchain_images_count(){
-    return swapchain_images.size();
 }
 
 bool
@@ -571,7 +569,7 @@ renderer_t::create_framebuffers(){
 }
 
 bool
-renderer_t::create_command_buffers(){
+renderer_t::create_command_buffers(mesh_t * mesh){
     // create command buffers
     command_buffers.resize(swapchain_framebuffers.size());
     
@@ -608,7 +606,7 @@ renderer_t::create_command_buffers(){
         render_pass_info.clearValueCount = clear_values.size();
         render_pass_info.pClearValues = clear_values.data();
 
-        vkCmdBeginRenderPass(command_buffers[i], &render_pass_info,VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
@@ -678,6 +676,11 @@ renderer_t::create_descriptor_sets(){
 	    return false;
     }
 
+    return true;
+}
+
+void
+renderer_t::update_descriptor_sets(texture_t * texture){
     VkDescriptorBufferInfo buffer_info = {};
     buffer_info.offset = 0;
     buffer_info.range = sizeof(uniform_buffer_data_t);
@@ -685,9 +688,10 @@ renderer_t::create_descriptor_sets(){
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    texture_t * texture = mesh->get_texture();
-    image_info.imageView = texture->get_image_view();
-    image_info.sampler = texture->get_sampler();
+    if (texture != nullptr){
+        image_info.imageView = texture->get_image_view();
+        image_info.sampler = texture->get_sampler();
+    }
 
     VkWriteDescriptorSet desc_write = {};
     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -697,7 +701,7 @@ renderer_t::create_descriptor_sets(){
     desc_write.pImageInfo = &image_info;
     desc_write.pTexelBufferView = nullptr;
 
-    for (int i = 0; i < n; i++){
+    for (int i = 0; i < swapchain_images.size(); i++){
    	     buffer_info.buffer = uniform_buffers[i]->get_buffer();
 
          std::array<VkWriteDescriptorSet, 2> desc_writes = {};
@@ -715,8 +719,6 @@ renderer_t::create_descriptor_sets(){
 
 	     vkUpdateDescriptorSets(engine_t::get_device(), desc_writes.size(), desc_writes.data(), 0, nullptr);
     }
-
-    return true;
 }
 
 bool
@@ -904,8 +906,7 @@ renderer_t::cleanup(){
 
     vkDestroyCommandPool(engine_t::get_device(), command_pool, nullptr);
 
-    delete mesh;
-    mesh = nullptr;
+    delete chalet;
 }
 
 VkShaderModule

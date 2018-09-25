@@ -115,7 +115,7 @@ engine_t::init(){
     uint32_t graphics_family = get_graphics_queue_family(physical_device);
     uint32_t present_family = get_present_queue_family(physical_device);
 
-    if (!renderer.init(surface, graphics_family, present_family, window_extents, graphics_queue, present_queue)){
+    if (!renderer.init(surface, graphics_family, present_family, window_extents)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
 }
@@ -163,9 +163,6 @@ engine_t::create_logical_device(){
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
 	    return false;
     }
-
-    vkGetDeviceQueue(device, graphics, 0, &graphics_queue);
-    vkGetDeviceQueue(device, present, 0, &present_queue);
 
     return true;
 }

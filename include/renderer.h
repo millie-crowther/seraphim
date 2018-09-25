@@ -50,9 +50,8 @@ private:
     VkQueue present_queue;
 
     image_t * depth_image;
-    mesh_t * mesh;
+    mesh_t * chalet;
 
-    // graphics pipeline
     VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
     bool create_swapchain(uint32_t graphics_family, uint32_t present_family);
@@ -60,14 +59,15 @@ private:
     bool create_graphics_pipeline();    
     bool create_depth_resources();
     bool create_framebuffers();
-    bool create_command_buffers();
+    bool create_command_buffers(mesh_t * mesh);
     void create_uniform_buffers();
     bool create_descriptor_set_layout();
     bool create_descriptor_sets();
     bool create_command_pool(uint32_t graphics_family);
     bool create_descriptor_pool();
-    bool create_desciprtor_pool();
     bool create_sync();
+
+    void update_descriptor_sets(texture_t * texture);
 
     VkSurfaceFormatKHR select_surface_format(); 
     VkPresentModeKHR select_present_mode();
@@ -84,8 +84,7 @@ public:
 
     bool init(
         VkSurfaceKHR surface, uint32_t graphics_fam, uint32_t present_fam, 
-        VkExtent2D window_extents, VkQueue graphics_queue, 
-        VkQueue present_queue
+        VkExtent2D window_extents
     );
 
     void update_uniform_buffers(uint32_t image_index);
@@ -101,7 +100,6 @@ public:
     // accessors
     mat4_t get_view_matrix();
     mat4_t get_proj_matrix();
-    int swapchain_images_count();
 
     void cleanup();
 };
