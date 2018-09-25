@@ -20,13 +20,13 @@ renderer_t::init(
 ){
     this->surface = surface;
     this->window_extents = window_extents;
-    this->graphics_queue = graphics_queue;
-    this->present_queue = present_queue;
+    this->graphics_family = graphics_family;
+    this->present_family = present_family;
 
     vkGetDeviceQueue(engine_t::get_device(), graphics_family, 0, &graphics_queue);
     vkGetDeviceQueue(engine_t::get_device(), present_family, 0, &present_queue);
 
-    if (!create_swapchain(graphics_family, present_family)){
+    if (!create_swapchain()){
         return false;
     }
 
@@ -42,7 +42,7 @@ renderer_t::init(
         return false;
     }
 
-    if (!create_command_pool(graphics_family)){
+    if (!create_command_pool()){
         return false;
     }
 
@@ -109,7 +109,7 @@ renderer_t::get_proj_matrix(){
 }
 
 bool
-renderer_t::create_swapchain(uint32_t graphics_family, uint32_t present_family){
+renderer_t::create_swapchain(){
     VkSurfaceFormatKHR format = select_surface_format();
     VkPresentModeKHR mode = select_present_mode();
     VkExtent2D extents = select_swap_extent();
@@ -257,12 +257,12 @@ renderer_t::select_surface_format(){
 }
 
 void
-renderer_t::recreate_swapchain(uint32_t graphics_family, uint32_t present_family){
+renderer_t::recreate_swapchain(){
     vkDeviceWaitIdle(engine_t::get_device());
   
     cleanup_swapchain();
     
-    create_swapchain(graphics_family, present_family);
+    create_swapchain();
     create_render_pass();
     create_graphics_pipeline();
     create_depth_resources();
@@ -760,7 +760,7 @@ renderer_t::create_descriptor_set_layout(){
 }
 
 bool
-renderer_t::create_command_pool(uint32_t graphics_family){
+renderer_t::create_command_pool(){
     // create command pool
     VkCommandPoolCreateInfo command_pool_info = {};
     command_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -876,8 +876,7 @@ renderer_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     uniform_buffer_data_t ubo = {};
-    mat3_t m = matrix::angle_axis(time * maths::to_radians(45), vec3_t({ 0, 1, 0 }));
-    ubo.model = mat4_t(m);
+    ubo.model = mat4_t::identity();
 
     ubo.view = get_view_matrix();
     ubo.proj = get_proj_matrix();
@@ -924,7 +923,7 @@ renderer_t::create_shader_module(const std::vector<char>& code, bool * success){
 }
 
 void
-renderer_t::window_resize(int width, int height, uint32_t graphics_fam, uint32_t present_fam){
+renderer_t::window_resize(int width, int height){
     window_extents = { (uint32_t) width, (uint32_t) height };
-    recreate_swapchain(graphics_fam, present_fam);
+    recreate_swapchain();
 }

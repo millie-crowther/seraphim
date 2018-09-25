@@ -8,7 +8,7 @@
 
 namespace vk_utils {
     void single_time_commands(
-       VkDevice device, VkCommandPool command_pool, VkQueue queue, 
+       VkCommandPool command_pool, VkQueue queue, 
        std::function<void(VkCommandBuffer)> commands
     );
 }

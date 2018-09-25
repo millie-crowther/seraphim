@@ -71,7 +71,7 @@ void
 buffer_t::copy_buffer(
     VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
 ){
-    vk_utils::single_time_commands(engine_t::get_device(), command_pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(command_pool, queue, [&](VkCommandBuffer cmd){
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = 0;
@@ -112,7 +112,7 @@ void
 buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
-    vk_utils::single_time_commands(engine_t::get_device(), pool, queue, [&](VkCommandBuffer cmd){
+    vk_utils::single_time_commands(pool, queue, [&](VkCommandBuffer cmd){
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;

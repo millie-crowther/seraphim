@@ -48,13 +48,15 @@ private:
     std::vector<buffer_t *> uniform_buffers;
     VkQueue graphics_queue;
     VkQueue present_queue;
+    uint32_t graphics_family;
+    uint32_t present_family;
 
     image_t * depth_image;
     mesh_t * chalet;
 
     VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
-    bool create_swapchain(uint32_t graphics_family, uint32_t present_family);
+    bool create_swapchain();
     bool create_render_pass();
     bool create_graphics_pipeline();    
     bool create_depth_resources();
@@ -63,7 +65,7 @@ private:
     void create_uniform_buffers();
     bool create_descriptor_set_layout();
     bool create_descriptor_sets();
-    bool create_command_pool(uint32_t graphics_family);
+    bool create_command_pool();
     bool create_descriptor_pool();
     bool create_sync();
 
@@ -73,7 +75,7 @@ private:
     VkPresentModeKHR select_present_mode();
     VkExtent2D select_swap_extent();
 
-    void recreate_swapchain(uint32_t graphics_family, uint32_t present_family);
+    void recreate_swapchain();
 
     void cleanup_swapchain();
 
@@ -89,7 +91,7 @@ public:
 
     void update_uniform_buffers(uint32_t image_index);
 
-    void window_resize(int width, int height, uint32_t graphics_fam, uint32_t present_fam);
+    void window_resize(int width, int height);
 
     // main method
     void render();
