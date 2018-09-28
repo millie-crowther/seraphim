@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include <string>
 #include "texture.h"
+#include <memory>
 
 class mesh_t {
 private:
@@ -30,7 +31,8 @@ public:
     int get_index_count();
 
     // factory methods
-    static mesh_t * load(std::string name, VkCommandPool pool, VkQueue queue);
+    // TODO: add a proxy to stop it always being loaded
+    static std::shared_ptr<mesh_t> load(std::string name, VkCommandPool pool, VkQueue queue);
 };
 
 #endif

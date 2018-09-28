@@ -38,6 +38,8 @@ set(SOURCES
     ../src/transform.cpp
     ../src/vertex.cpp
     ../src/input.cpp
+    ../src/prop.cpp
+    ../src/effector.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

@@ -5,8 +5,6 @@
 
 #include <string>
 #include <vector>
-
-#include "mesh.h"
 #include "renderer.h"
 
 class engine_t {
@@ -42,8 +40,6 @@ private:
     VkDebugReportCallbackEXT callback;
 
     VmaAllocator allocator;
-
-    mesh_t * mesh;
 
     image_t * depth_image;
 

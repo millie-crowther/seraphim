@@ -5,7 +5,6 @@
 #include "mat.h"
 #include "maths.h"
 
-
 mesh_t::mesh_t(
     VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t>& vs, 
     const std::vector<uint32_t>& is, texture_t * tx
@@ -34,7 +33,6 @@ mesh_t::mesh_t(
 mesh_t::~mesh_t(){
     delete vertices;
     delete indices;
-
     delete texture;
 }
 
@@ -48,7 +46,7 @@ mesh_t::get_index_buffer(){
     return indices;
 }
 
-mesh_t *
+std::shared_ptr<mesh_t>
 mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue){
     const std::string texture_name = "../resources/mesh/" + name + "/" + name + ".jpg";
     texture_t * t = new texture_t(texture_name, pool, queue);
@@ -87,7 +85,7 @@ mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue){
         }
     }
 
-    return new mesh_t(pool, queue, vs, is, t);
+    return std::make_shared<mesh_t>(pool, queue, vs, is, t);
 }
 
 texture_t *

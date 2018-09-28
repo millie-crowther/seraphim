@@ -64,10 +64,11 @@ renderer_t::init(
         return false;
     }
 
-    chalet = mesh_t::load("chalet", command_pool, graphics_queue);
-    update_descriptor_sets(chalet->get_texture());
+    auto chalet_mesh = mesh_t::load("chalet", command_pool, graphics_queue);
+    chalet = new prop_t(chalet_mesh);
+    update_descriptor_sets(chalet_mesh->get_texture());
 
-    if (!create_command_buffers(chalet)){
+    if (!create_command_buffers(chalet_mesh)){
         return false;
     }
 
@@ -267,7 +268,7 @@ renderer_t::recreate_swapchain(){
     create_graphics_pipeline();
     create_depth_resources();
     create_framebuffers();
-    create_command_buffers(chalet);
+    create_command_buffers(chalet->get_mesh());
 }
 
 void 
@@ -569,7 +570,7 @@ renderer_t::create_framebuffers(){
 }
 
 bool
-renderer_t::create_command_buffers(mesh_t * mesh){
+renderer_t::create_command_buffers(const std::shared_ptr<mesh_t>& mesh){
     // create command buffers
     command_buffers.resize(swapchain_framebuffers.size());
     
@@ -868,17 +869,8 @@ renderer_t::render(){
 
 void
 renderer_t::update_uniform_buffers(uint32_t image_index){
-    static auto start = std::chrono::high_resolution_clock::now();
-    auto current = std::chrono::high_resolution_clock::now();
-    
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(
-        current - start
-    ).count();
-
     uniform_buffer_data_t ubo = {};
-    mat3_t r = matrix::angle_axis(maths::pi * time / 4.0f, vec3_t({ 0, 1, 0 }));
-
-    ubo.model = mat4_t(r);
+    ubo.model = chalet->get_model_matrix();
     ubo.view = get_view_matrix();
     ubo.proj = get_proj_matrix();
     
