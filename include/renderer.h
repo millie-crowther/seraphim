@@ -3,7 +3,7 @@
 
 #include "camera.h"
 #include "buffer.h"
-#include "prop.h"
+#include "chalet.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -52,7 +52,6 @@ private:
     uint32_t present_family;
 
     image_t * depth_image;
-    prop_t * chalet;
 
     VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
@@ -95,6 +94,8 @@ public:
 
     // main method
     void render();
+    
+    chalet_t * chalet;
 
     // setters
     void set_main_camera(camera_t * camera);

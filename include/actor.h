@@ -6,7 +6,7 @@
 
 class actor_t : public prop_t, public effector_t {
 public:
-    actor_t(const std::shared_ptr<mesh_t>& mesh);
+    actor_t();
 };
 
 #endif

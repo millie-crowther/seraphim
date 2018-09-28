@@ -14,11 +14,12 @@ public:
     // constructors and destructors
     transform_t();
 
-    // getters
+    // accessors
     mat4_t get_tf_matrix();
 
-    // setters
+    // modifiers
     void set_tf_matrix(const mat4_t& m);
+    void transform(const transform_t & tf);
 };
 
 #endif

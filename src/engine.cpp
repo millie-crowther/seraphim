@@ -424,6 +424,8 @@ engine_t::setup_debug_callback(){
 void 
 engine_t::update(){
     glfwPollEvents();
+
+    renderer.chalet->tick_template(input);
 }
 
 void

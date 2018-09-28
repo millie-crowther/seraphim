@@ -44,6 +44,7 @@ private:
     image_t * depth_image;
 
     renderer_t renderer;
+    input_t input;
 
     VkInstance instance;
     VkSurfaceKHR surface;

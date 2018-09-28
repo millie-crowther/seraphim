@@ -65,7 +65,8 @@ renderer_t::init(
     }
 
     auto chalet_mesh = mesh_t::load("chalet", command_pool, graphics_queue);
-    chalet = new prop_t(chalet_mesh);
+    chalet = new chalet_t();
+    chalet->set_mesh(chalet_mesh);
     update_descriptor_sets(chalet_mesh->get_texture());
 
     if (!create_command_buffers(chalet_mesh)){

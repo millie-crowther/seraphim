@@ -13,10 +13,13 @@ protected:
 
 public:
     // constructors and destructors
-    prop_t(const std::shared_ptr<mesh_t>& mesh);
+    prop_t();
 
     // getters
     std::shared_ptr<mesh_t> get_mesh();
+
+    // setters
+    void set_mesh(const std::shared_ptr<mesh_t>& mesh);
 
     // accessors
     mat4_t get_model_matrix();

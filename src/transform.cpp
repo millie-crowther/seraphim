@@ -14,3 +14,8 @@ void
 transform_t::set_tf_matrix(const mat4_t& m){
     tf = m;
 }
+
+void
+transform_t::transform(const transform_t& tf){
+    //TODO
+}

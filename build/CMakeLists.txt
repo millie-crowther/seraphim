@@ -40,6 +40,8 @@ set(SOURCES
     ../src/input.cpp
     ../src/prop.cpp
     ../src/effector.cpp
+    ../src/actor.cpp
+    ../src/chalet.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

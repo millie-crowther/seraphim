@@ -2,7 +2,12 @@
 
 #include <chrono>
 
-prop_t::prop_t(const std::shared_ptr<mesh_t>& mesh){
+prop_t::prop_t(){
+    
+}
+
+void
+prop_t::set_mesh(const std::shared_ptr<mesh_t>& mesh){
     this->mesh = mesh;
 }
 
