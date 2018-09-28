@@ -876,8 +876,9 @@ renderer_t::update_uniform_buffers(uint32_t image_index){
     ).count();
 
     uniform_buffer_data_t ubo = {};
-    ubo.model = mat4_t::identity();
+    mat3_t r = matrix::angle_axis(maths::pi * time / 4.0f, vec3_t({ 0, 1, 0 }));
 
+    ubo.model = mat4_t(r);
     ubo.view = get_view_matrix();
     ubo.proj = get_proj_matrix();
     

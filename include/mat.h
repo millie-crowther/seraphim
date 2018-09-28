@@ -35,6 +35,15 @@ public:
         }
     }
 
+    template <unsigned int P, unsigned int Q>
+    mat_t(const mat_t<P, Q>& m) : mat_t(1) {
+        for (int x = 0; x < std::min(N, P); x++){
+            for (int y = 0; y < std::min(M, Q); y++){
+                columns[x][y] = m[x][y];
+            }
+        }
+    }
+
     mat_t<M, N> transpose() const {
         mat_t<M, N> result;
         for (int x = 0; x < N; x++){
