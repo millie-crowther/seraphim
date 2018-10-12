@@ -2,9 +2,9 @@
 #define PROP_H
 
 #include "transform.h"
-#include "mesh.h"
+#include "renderable.h"
 
-class prop_t {
+class prop_t : public renderable_t {
 private:
     std::shared_ptr<mesh_t> mesh;
 
@@ -15,14 +15,11 @@ public:
     // constructors and destructors
     prop_t();
 
-    // getters
-    std::shared_ptr<mesh_t> get_mesh();
-
     // setters
     void set_mesh(const std::shared_ptr<mesh_t>& mesh);
-
-    // accessors
-    mat4_t get_model_matrix();
+ 
+    // overridden functions
+    model_t get_model() override;
 };
 
 #endif
