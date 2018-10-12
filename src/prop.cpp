@@ -11,13 +11,8 @@ prop_t::set_mesh(const std::shared_ptr<mesh_t>& mesh){
     this->mesh = mesh;
 }
 
-std::shared_ptr<mesh_t> 
-prop_t::get_mesh(){
-    return mesh;
-}
-
-mat4_t
-prop_t::get_model_matrix(){
+model_t
+prop_t::get_model(){
     static auto start = std::chrono::high_resolution_clock::now();
     auto current = std::chrono::high_resolution_clock::now();    
     float time = std::chrono::duration<float, std::chrono::seconds::period>(
@@ -28,5 +23,7 @@ prop_t::get_model_matrix(){
 
     transform.set_tf_matrix(mat4_t(r));
 
-    return transform.get_tf_matrix();
+    mat4_t m = transform.get_tf_matrix();
+
+    return model_t(m, mesh);
 }
