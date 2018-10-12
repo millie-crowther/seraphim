@@ -10,6 +10,9 @@ private:
     std::chrono::high_resolution_clock::time_point last_tick;
 
 protected:
+    // protected constructor for abstract class
+    effector_t();
+
     // template method 
     virtual void tick(float delta, const input_t& input);
 

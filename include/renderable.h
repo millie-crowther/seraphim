@@ -14,6 +14,10 @@ struct model_t {
 };
 
 class renderable_t {
+protected:
+    // protected constructor for abstract class
+    renderable_t();
+    
 public:
     // virtual methods
     virtual bool is_visible(){ return true; }
