@@ -4,10 +4,13 @@
 #include "mesh.h"
 
 struct model_t {
-//    glm::mat4 tf;
-    mesh_t * mesh;
+    mat4_t tf;
+    std::shared_ptr<mesh_t> mesh;
 
-    //model_t(glm::mat4 t, mesh_t * m){ tf = t; mesh = m; }
+    model_t(const mat4_t& t, const std::shared_ptr<mesh_t> m){ 
+        tf = t; 
+        mesh = m; 
+    }
 };
 
 class renderable_t {
