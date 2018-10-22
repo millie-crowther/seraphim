@@ -269,7 +269,9 @@ renderer_t::recreate_swapchain(){
     create_graphics_pipeline();
     create_depth_resources();
     create_framebuffers();
-    create_command_buffers(chalet->get_mesh());
+
+    model_t m = chalet->get_model();
+    create_command_buffers(m.mesh);
 }
 
 void 
@@ -870,8 +872,10 @@ renderer_t::render(){
 
 void
 renderer_t::update_uniform_buffers(uint32_t image_index){
+    model_t m = chalet->get_model();
+
     uniform_buffer_data_t ubo = {};
-    ubo.model = chalet->get_model_matrix();
+    ubo.model = m.tf;
     ubo.view = get_view_matrix();
     ubo.proj = get_proj_matrix();
     
