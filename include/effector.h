@@ -17,9 +17,6 @@ protected:
     virtual void tick(float delta, const input_t& input);
 
 public:
-    // constructor
-    effector_t();
-
     // public method
     void tick_template(const input_t& input);
 };
