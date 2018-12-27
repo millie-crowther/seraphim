@@ -171,11 +171,6 @@ engine_t::check_validation_layers(){
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-    std::cout << available_layers.size() << std::endl;
-    for (auto l : available_layers){
-        std::cout << std::string(l.layerName) << std::endl;
-    }
-
     for (auto layer : validation_layers){
         bool found = false;
 	
@@ -345,13 +340,32 @@ engine_t::create_instance(){
 	    throw std::runtime_error("Requested validation layers not available.");
     }
 
+    // determine vulkan version
+    typedef VkResult (*vulkan_version_func_t)(uint32_t *);
+    auto vk_version_func = (vulkan_version_func_t) vkGetInstanceProcAddr(instance, "vkEnumerateInstanceVersion");
+    
+    uint32_t version;
+    int major, minor, patch;
+    if (vk_version_func != nullptr && vk_version_func(&version) == VK_SUCCESS){
+        major = version >> 22;
+        minor = (version - (major << 22)) >> 12;
+        patch = version - (major << 22) - (minor << 12);
+    } else {
+        major = 1;
+        minor = 0;
+        patch = 0;
+    }
+
+    std::cout << "Vulkan version: " << major << '.' << minor << '.' << patch << std::endl;
+
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    app_info.pApplicationName = "Blaspheme";
+    app_info.pNext = nullptr;
+    app_info.pApplicationName = "Chalet test";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.pEngineName = "No Engine";
+    app_info.pEngineName = "BLASPHEME";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.apiVersion = VK_API_VERSION_1_0;
+    app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
