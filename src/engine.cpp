@@ -60,7 +60,7 @@ engine_t::init(){
     VkExtent2D window_extents = { 640, 480 };
 
     window = glfwCreateWindow(
-        window_extents.width, window_extents.height, "Vulkan", nullptr, nullptr
+        window_extents.width, window_extents.height, "Blaspheme", nullptr, nullptr
     );
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback);   
@@ -170,6 +170,11 @@ engine_t::check_validation_layers(){
 
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    std::cout << available_layers.size() << std::endl;
+    for (auto l : available_layers){
+        std::cout << std::string(l.layerName) << std::endl;
+    }
 
     for (auto layer : validation_layers){
         bool found = false;
@@ -374,8 +379,10 @@ engine_t::create_instance(){
         std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::endl;
     }
 
-    if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS){
-	throw std::runtime_error("Failed to create Vulkan instance!");
+    auto result = vkCreateInstance(&create_info, nullptr, &instance);
+    if (result != VK_SUCCESS){
+        std::cout << result << " : " << VK_ERROR_INCOMPATIBLE_DRIVER << std::endl;
+	    throw std::runtime_error("Failed to create Vulkan instance!");
     }
 }
 
@@ -442,6 +449,7 @@ engine_t::cleanup(){
         auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
             instance, "vkDestroyDebugReportCallbackEXT"
         );
+
         if (func != nullptr){
             func(instance, callback, nullptr);
         }

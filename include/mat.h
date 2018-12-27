@@ -116,7 +116,7 @@ public:
     }
 };
 
-// operatiors
+// operatirs
 template <unsigned int N, unsigned int M>
 mat_t<N, M> operator*(float scale, const mat_t<N, M>& m){
     return m * scale;
