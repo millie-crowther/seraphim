@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.7)
 set (CMAKE_CXX_STANDARD 17)
 project (blaspheme)
 
-set(VULKAN_SDK_PATH "/home/millie/VulkanSDK/1.1.73.0/x86_64")
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+find_package ( Threads REQUIRED )
+
+set(VULKAN_SDK_PATH /Users/amelia/vulkansdk-macos-1.1.92.1/macOS)
 set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/include")
-set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.so")
+set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.dylib")
 find_package(Vulkan REQUIRED)
 
 add_subdirectory("glfw")
@@ -12,8 +15,8 @@ add_subdirectory("glfw")
 set(INCLUDE_DIR
     ../include
     VulkanMemoryAllocator/src
-    stb
     tinyobjloader
+    stb
 )
 
 include_directories(${INCLUDE_DIR})

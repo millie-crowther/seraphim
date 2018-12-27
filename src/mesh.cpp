@@ -57,8 +57,9 @@ mesh_t::load(std::string name, VkCommandPool pool, VkQueue queue){
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string err;
+    std::string warning;
 
-    if (!tinyobj::LoadObj(&attr, &shapes, &materials, &err, mesh_name.c_str())){
+    if (!tinyobj::LoadObj(&attr, &shapes, &materials, &warning, &err, mesh_name.c_str())){
         throw std::runtime_error("Error: Couldn't load mesh: " + err);
     }
 

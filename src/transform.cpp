@@ -1,7 +1,7 @@
 #include "transform.h"
 
 transform_t::transform_t(){
-    parent == nullptr;
+    parent = nullptr;
     tf = mat4_t::identity();
 }
 

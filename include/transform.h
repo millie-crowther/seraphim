@@ -7,7 +7,7 @@ class transform_t {
 private:
     // private fields
     transform_t * parent;
-    std::vector<transform_t *> children;
+    // std::vector<transform_t *> children;
     mat4_t tf;
 
 public:
