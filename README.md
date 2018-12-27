@@ -6,6 +6,7 @@ rendering engine
 * Linux: `./dependency_install.sh`
 * macOS: need to make the bash script handle macOS
 
+
 ## usage
 
 `projectBuild.sh`
