@@ -3,35 +3,35 @@
 
 #include "input.h"
 #include <queue>
+#include <vector>
+#include <thread>
+#include <functional>
 
 class scheduler_t {
 private:
     bool is_running;
-    std::atomic<int> running_effectors;
 
     // static fields
-    static bool is_initialised;
+    static bool is_initialised = false;
+
+    std::vector<std::thread> thread_pool;
+    std::queue<std::function<void(void)>> tasks;
 
 public:
     scheduler_t(){
         is_running = true;
-        running_effectors.store(0);
+
+        if (!is_initialised){
+
+        }
     }
 
     template<class effector_t>
     void submit(const effector_t effector){
         if (is_running){
-            effector(this);
-            running_effectors++;
-        }
-    }
-
-    // notifies the scheduler that an effector has completed its action
-    void effector_complete(){
-        running_effectors--;
-
-        if (!is_running && running_effectors.load() <= 0){
-            //notify all
+            tasks.push([this](){
+                effector(this);
+            })
         }
     }
 
