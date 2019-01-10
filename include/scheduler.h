@@ -40,6 +40,10 @@ public:
         }
     }
 
+    ~scheduler_t(){
+        is_running = false;
+    }
+
     template<class effector_t>
     void submit(const effector_t effector){
         if (is_running){
@@ -47,12 +51,6 @@ public:
                 effector(this);
             })
         }
-    }
-
-    void halt(){
-        is_running = false;
-
-        // wait for running effectors to finish
     }
 };
 
