@@ -1,23 +1,19 @@
 #include "effector.h"
 
-effector_t::effector_t(){
+effector_t::effector_t(const effector_func_t& f){
     last_tick = std::chrono::high_resolution_clock::now();
+    this->f = f;
 }
 
 void 
-effector_t::tick(float delta, const input_t& input){
-    // by default, no behaviour
-}
-
-void 
-effector_t::tick_template(const input_t& input){
+effector_t::run(const std::shared_ptr<scheduler_t> scheduler){
     auto now = std::chrono::high_resolution_clock::now();
 
-    float delta = std::chrono::duration<float, std::chrono::seconds::period>(
+    double delta = std::chrono::duration<double, std::chrono::seconds::period>(
         now - last_tick
     ).count();
 
     last_tick = now;
 
-    tick(delta, input);
+    f(delta, scheduler);
 }

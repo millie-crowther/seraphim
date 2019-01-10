@@ -9,7 +9,7 @@
 
 class scheduler_t;
 
-typedef std::function<void(double, const std::shared_ptr<scheduler_t>&)> effector_func_t;
+typedef std::function<void(double, const std::shared_ptr<scheduler_t>)> effector_func_t;
 
 class effector_t {
 private:
@@ -20,7 +20,7 @@ private:
 public:
     effector_t(const effector_func_t& f);
 
-    void tick(const std::shared_ptr<scheduler_t>& scheduler);
+    void run(const std::shared_ptr<scheduler_t> scheduler);
 };
 
 #endif
