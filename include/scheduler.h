@@ -9,15 +9,15 @@
 #include <mutex>
 
 namespace scheduler_t {
-    bool is_running;
-
+    bool is_running = false;
     bool is_initialised = false;
+
     const int num_threads = 4;
 
     const double minimum_update_period = 0.16666; // 60 FPS
 
     std::vector<std::thread> thread_pool;
-    std::mutex mutex;
+    std::mutex task_lock;
  
     struct task_t {
         std::function<void(void)> f;
@@ -30,26 +30,24 @@ namespace scheduler_t {
         };
     };
 
-
     std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
 
-
     void start(){
-        is_running = true;
-
         if (!is_initialised){
+            is_running = true;
+
             for (int i = 0; i < num_threads; i++){
                 thread_pool.push_back(std::thread([&](){
                     while (is_running){
-                        mutex.lock();
+                        task_lock.lock();
                         if (tasks.empty()){
-                            mutex.unlock();
+                            task_lock.unlock();
                             // TODO: sleep until tasks available
                         } else {
                             auto task = tasks.top();
                             // TODO: if first task is scheduled for a while, sleep
                             tasks.pop();
-                            mutex.unlock();
+                            task_lock.unlock();
                             task.f();
                         }
                     }
@@ -63,11 +61,11 @@ namespace scheduler_t {
     void halt(){
         is_running = false;
 
-        mutex.lock();
+        task_lock.lock();
         while (!tasks.empty()){
             tasks.pop();
         }
-        mutex.unlock();
+        task_lock.unlock();
 
         for (auto& thread : thread_pool){
             thread.join(); 
@@ -84,12 +82,12 @@ namespace scheduler_t {
     template<class effector_t>
     void submit_after(const effector_t effector, double t){
         if (is_running){
-            mutex.lock();
+            task_lock.lock();
             tasks.push({
                 [=](){ effector(); },
                 std::chrono::high_resolution_clock::now() + std::chrono::seconds(t)
             });
-            mutex.unlock();
+            task_lock.unlock();
         }
     }
 }
