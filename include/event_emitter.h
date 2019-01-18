@@ -10,8 +10,13 @@ private:
 public:
     typedef std::function<void(void)> callback_t;
 
-    void on(std::string event, const callback_t& cb);
-    void emit(std::string event);
+    void on(std::string event, const callback_t& cb){
+
+    }
+
+    void emit(std::string event){
+        
+    }
 };
 
 #endif

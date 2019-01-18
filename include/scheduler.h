@@ -75,12 +75,12 @@ namespace scheduler_t {
     }
 
     template<class effector_t>
-    void submit(const effector_t effector){
+    void submit(const effector_t& effector){
         submit_after(effector, minimum_update_period);
     }
 
     template<class effector_t>
-    void submit_after(const effector_t effector, double t){
+    void submit_after(const effector_t& effector, double t){
         if (is_running){
             task_lock.lock();
             tasks.push({
