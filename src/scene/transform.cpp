@@ -11,7 +11,7 @@ transform_t::transform_t(transform_t & parent){
 }
 
 mat4_t
-transform_t::get_matrix(){
+transform_t::get_matrix() const {
     return matrix;
 }
 

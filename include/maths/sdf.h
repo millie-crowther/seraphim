@@ -18,8 +18,7 @@ public:
     vec3_t normal(const vec3_t& p) const;
     float distance(const vec3_t& v) const;
  
-    // virtuals
-    virtual bounds_t get_bounds() const;
+    bounds_t get_bounds() const;
 };
 
 #endif

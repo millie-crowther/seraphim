@@ -15,9 +15,9 @@ public:
     renderable_t(transform_t& parent, const std::shared_ptr<mesh_t>& mesh);
 
     // getters
-    bool is_visible();
-    std::shared_ptr<mesh_t> get_mesh();
-    mat4_t get_matrix();
+    bool is_visible() const;
+    std::shared_ptr<mesh_t> get_mesh() const;
+    mat4_t get_matrix() const;
 };
 
 #endif

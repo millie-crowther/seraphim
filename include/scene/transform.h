@@ -16,7 +16,7 @@ public:
     transform_t(transform_t & parent);
 
     // accessors
-    mat4_t get_matrix();
+    mat4_t get_matrix() const;
 
     // modifiers
     void set_parent(transform_t & parent);
