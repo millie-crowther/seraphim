@@ -1,10 +1,8 @@
 #include "chalet.h"
 
-chalet_t::chalet_t(){
+chalet_t::chalet_t(const std::shared_ptr<mesh_t> & mesh) : renderable(transform, mesh){}
 
-}
-
-void 
-chalet_t::tick(float delta, const input_t& input){
-    
+renderable_t 
+chalet_t::get_renderable(){
+    return renderable;
 }

@@ -234,5 +234,4 @@ image_t::find_depth_format(VkPhysicalDevice physical_device){
         VK_IMAGE_TILING_OPTIMAL,
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
-
 }

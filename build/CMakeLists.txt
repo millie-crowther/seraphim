@@ -33,11 +33,10 @@ set(SOURCES
     ../src/maths.cpp
     ../src/quat.cpp
     ../src/bounds.cpp
-    ../src/marching_cubes.cpp
     ../src/mat.cpp
     ../src/render/texture.cpp
     ../src/render/camera.cpp
-    ../src/transform.cpp
+    ../src/scene/transform.cpp
     ../src/render/vertex.cpp
     ../src/input.cpp
     ../src/chalet.cpp

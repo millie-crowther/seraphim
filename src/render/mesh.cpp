@@ -1,4 +1,4 @@
-#include "mesh.h"
+#include "render/mesh.h"
 
 #include "tiny_obj_loader.h"
 #include <stdexcept>

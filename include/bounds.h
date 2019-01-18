@@ -1,7 +1,7 @@
 #ifndef BOUNDS_H
 #define BOUNDS_H
 
-#include "sdf.h"
+#include "vec.h"
 
 class bounds_t {
 private:

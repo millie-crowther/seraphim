@@ -64,7 +64,8 @@ renderer_t::init(
         return false;
     }
 
-    chalet = new chalet_t(mesh_t::load("chalet", command_pool, graphics_queue));
+    auto chalet_mesh = mesh_t::load("chalet", command_pool, graphics_queue);
+    chalet = new chalet_t(chalet_mesh);
     update_descriptor_sets(chalet_mesh->get_texture());
 
     if (!create_command_buffers(chalet_mesh)){
@@ -95,7 +96,7 @@ renderer_t::set_main_camera(camera_t * camera){
 
 mat4_t
 renderer_t::get_view_matrix(){
-    return main_camera->get_transform()->get_tf_matrix();
+    return main_camera->get_transform()->get_matrix();
 }
 
 mat4_t
@@ -268,8 +269,7 @@ renderer_t::recreate_swapchain(){
     create_depth_resources();
     create_framebuffers();
 
-    model_t m = chalet->get_model();
-    create_command_buffers(m.mesh);
+    create_command_buffers(chalet->get_renderable().get_mesh());
 }
 
 void 
@@ -870,10 +870,8 @@ renderer_t::render(){
 
 void
 renderer_t::update_uniform_buffers(uint32_t image_index){
-    model_t m = chalet->get_model();
-
     uniform_buffer_data_t ubo = {};
-    ubo.model = m.tf;
+    ubo.model = chalet->get_renderable().get_matrix();
     ubo.view = get_view_matrix();
     ubo.proj = get_proj_matrix();
     

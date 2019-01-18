@@ -1,7 +1,7 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "transform.h"
+#include "scene/transform.h"
 
 class camera_t {
 private:

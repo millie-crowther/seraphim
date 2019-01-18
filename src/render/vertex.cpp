@@ -1,4 +1,4 @@
-#include "vertex.h"
+#include "render/vertex.h"
 
 vertex_t::vertex_t(vec3_t p, vec3_t c, vec2_t tc){
     position = p;

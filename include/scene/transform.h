@@ -7,19 +7,19 @@ class transform_t {
 private:
     // private fields
     transform_t * parent;
-    // std::vector<transform_t *> children;
-    mat4_t tf;
+
+    mat4_t matrix;
 
 public:
     // constructors and destructors
     transform_t();
+    transform_t(transform_t & parent);
 
     // accessors
-    mat4_t get_tf_matrix();
+    mat4_t get_matrix();
 
     // modifiers
-    void set_tf_matrix(const mat4_t& m);
-    void transform(const transform_t & tf);
+    void set_parent(transform_t & parent);
 };
 
 #endif
