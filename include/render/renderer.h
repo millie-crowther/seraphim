@@ -4,6 +4,8 @@
 #include "camera.h"
 #include "buffer.h"
 #include "chalet.h"
+#include "mesh.h"
+#include "input.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

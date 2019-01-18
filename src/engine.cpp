@@ -7,7 +7,7 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
-#include "vertex.h"
+#include "render/vertex.h"
 #include <cstring>
 #include "maths.h"
 #include "mat.h"
@@ -446,7 +446,7 @@ void
 engine_t::update(){
     glfwPollEvents();
 
-    renderer.chalet->tick_template(input);
+    // renderer.chalet->tick_template(input);
 }
 
 void

@@ -24,27 +24,24 @@ include_directories(${INCLUDE_DIR})
 set(SOURCES
     ../src/main.cpp
     ../src/engine.cpp
-    ../src/sdf.cpp
     ../src/lib.cpp
     ../src/buffer.cpp
     ../src/vk_utils.cpp
-    ../src/renderer.cpp
-    ../src/image.cpp
-    ../src/mesh.cpp
+    ../src/render/renderer.cpp
+    ../src/render/image.cpp
+    ../src/render/mesh.cpp
     ../src/maths.cpp
     ../src/quat.cpp
     ../src/bounds.cpp
     ../src/marching_cubes.cpp
     ../src/mat.cpp
-    ../src/texture.cpp
-    ../src/camera.cpp
+    ../src/render/texture.cpp
+    ../src/render/camera.cpp
     ../src/transform.cpp
-    ../src/vertex.cpp
+    ../src/render/vertex.cpp
     ../src/input.cpp
-    ../src/prop.cpp
-    ../src/effector.cpp
-    ../src/actor.cpp
     ../src/chalet.cpp
+    ../src/render/renderable.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

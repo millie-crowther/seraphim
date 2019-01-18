@@ -36,10 +36,10 @@ public:
 
     std::string to_string() const {
         std::string r = "[";
-	for (int i = 0; i < N - 1; i++){
+	    for (int i = 0; i < N - 1; i++){
             r += std::to_string(xs[i]) + ", ";
-	}
-	return r + std::to_string(xs[N-1]) + "]";
+        }
+        return r + std::to_string(xs[N-1]) + "]";
     }
 
     vec_t<3> cross(const vec_t<3>& v) const {
@@ -171,7 +171,7 @@ public:
     }
 
     vec_t<3> operator%(const vec_t<3> v) const {
-	return cross(v);
+	    return cross(v);
     }
 };
 

@@ -1,4 +1,4 @@
-#include "image.h"
+#include "render/image.h"
 
 #include <stdexcept>
 #include "vk_utils.h"

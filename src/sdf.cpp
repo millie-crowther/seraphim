@@ -4,7 +4,8 @@
 #include <iostream>
 #include "bounds.h"
 
-constexpr float sdf_t::epsilon;
+#include "maths.h"
+
 
 sdf_t::sdf_t(std::function<float(const vec3_t&)> phi){
     this->phi = phi;
@@ -18,9 +19,9 @@ sdf_t::distance(const vec3_t& p) const {
 vec3_t
 sdf_t::normal(const vec3_t& p) const {
     return vec3_t({
-        phi(p + vec3_t({ epsilon, 0, 0 })) - phi(p - vec3_t({ epsilon, 0, 0 })),      
-        phi(p + vec3_t({ 0, epsilon, 0 })) - phi(p - vec3_t({ 0, epsilon, 0 })),      
-        phi(p + vec3_t({ 0, 0, epsilon })) - phi(p - vec3_t({ 0, 0, epsilon }))
+        phi(p + vec3_t({ maths::epsilon, 0, 0 })) - phi(p - vec3_t({ maths::epsilon, 0, 0 })),      
+        phi(p + vec3_t({ 0, maths::epsilon, 0 })) - phi(p - vec3_t({ 0, maths::epsilon, 0 })),      
+        phi(p + vec3_t({ 0, 0, maths::epsilon })) - phi(p - vec3_t({ 0, 0, maths::epsilon }))
     }).normalise();
 }
 

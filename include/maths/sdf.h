@@ -8,8 +8,6 @@ class bounds_t;
 
 class sdf_t {
 private:
-    static constexpr float epsilon = 0.0001f;
-
     std::function<float(const vec3_t&)> phi;
 
 public:

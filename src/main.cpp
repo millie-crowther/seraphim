@@ -3,9 +3,6 @@
 #include <cstring>
 #include "engine.h"
 
-#include "sdf.h"
-#include "bounds.h"
-
 int 
 main(int argc, char ** argv) {
     bool is_debug = false;
