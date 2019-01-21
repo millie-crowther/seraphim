@@ -10,7 +10,6 @@
 
 namespace scheduler_t {
     bool is_running = false;
-    bool is_initialised = false;
 
     const int num_threads = 4;
 
@@ -33,7 +32,7 @@ namespace scheduler_t {
     std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
 
     void start(){
-        if (!is_initialised){
+        if (!is_running){
             is_running = true;
 
             for (int i = 0; i < num_threads; i++){
@@ -53,8 +52,6 @@ namespace scheduler_t {
                     }
                 }));
             }
-
-            is_initialised = true;
         }
     }
 
