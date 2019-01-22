@@ -2,7 +2,7 @@
 #define RAY_H
 
 #include "maths/vec.h"
-#include "physics/collider.h"
+#include "sdf.h"
 
 class ray_t {
 private:
@@ -16,7 +16,7 @@ public:
 
     ray_t(const vec3_t& o, const vec3_t& d);
 
-    intersection_t cast(const std::vector<collider_t>& colliders);
+    intersection_t cast(const sdf_t& collider);
 };
 
 #endif
