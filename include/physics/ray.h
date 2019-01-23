@@ -10,8 +10,8 @@ private:
     vec3_t direction;
 
 public:
-    class intersection_t {
-        
+    struct intersection_t {
+        bool hit;
     };
 
     ray_t(const vec3_t& o, const vec3_t& d);

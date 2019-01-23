@@ -6,7 +6,7 @@ private:
     
 
 public:
-    class intersection_t {
+    struct intersection_t {
         
     };
 
