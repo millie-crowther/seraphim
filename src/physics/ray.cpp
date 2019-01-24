@@ -21,7 +21,7 @@ ray_t::cast(const sdf_t& sdf) const {
         p += d * direction;
     }
 
-    result.isHit    = d <= constants::epsilon;
+    result.is_hit   = d <= constants::epsilon;
     result.position = p;
     result.normal   = sdf.normal(p);
     
