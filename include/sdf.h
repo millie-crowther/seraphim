@@ -12,7 +12,7 @@ private:
 
 public:
     // constructors and destructors
-    sdf_t(std::function<float(const vec3_t&)> phi); 
+    sdf_t(const std::function<float(const vec3_t&)>& phi); 
 
     // accessors
     vec3_t normal(const vec3_t& p) const;

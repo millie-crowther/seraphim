@@ -1,6 +1,6 @@
 #include "physics/ray.h"
 
-#include "maths/constants.h"
+#include "core/constant.h"
 
 ray_t::ray_t(const vec3_t& o, const vec3_t& d){
     origin    = o;
@@ -13,15 +13,15 @@ ray_t::cast(const sdf_t& sdf) const {
     double d = sdf(p);
     double total = d;
 
-    ray_t::intersection_t result;
-
-    while (d > constants::epsilon && total < constants::rho){
+    intersection_t result;
+ 
+    while (d > constant::epsilon && total < constant::rho){
         d = sdf(p);
         total += d;
         p += d * direction;
     }
 
-    result.is_hit   = d <= constants::epsilon;
+    result.is_hit   = d <= constant::epsilon;
     result.position = p;
     result.normal   = sdf.normal(p);
     

@@ -1,7 +1,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-namespace constants {
+namespace constant {
     const float pi = 3.14159265359f;
 
     // smallest distance in engine = 1um

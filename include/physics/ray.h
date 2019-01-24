@@ -12,6 +12,7 @@ private:
 public:
     struct intersection_t {
         bool   is_hit;
+        double min_distance;
         vec3_t position;
         vec3_t normal; 
     };
