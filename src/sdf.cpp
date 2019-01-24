@@ -6,8 +6,9 @@
 
 #include "core/constant.h"
 
+sdf_t::sdf_t() : sdf_t([](const vec3_t& v){ return 1; }){}
 
-sdf_t::sdf_t(const std::function<float(const vec3_t&)>& phi){
+sdf_t::sdf_t(const std::function<double(const vec3_t&)>& phi){
     this->phi = phi;
 }
 
@@ -29,4 +30,11 @@ bounds_t
 sdf_t::get_bounds() const {
     // TODO
     return bounds_t();
+}
+
+sdf_t
+sdf_t::intersection(const sdf_t& sdf) const {
+    return sdf_t([&](const vec3_t& v){
+        return std::max(phi(v), sdf(v));
+    });
 }
