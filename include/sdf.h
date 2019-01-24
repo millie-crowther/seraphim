@@ -16,7 +16,8 @@ public:
 
     // accessors
     vec3_t normal(const vec3_t& p) const;
-    float distance(const vec3_t& v) const;
+    double distance(const vec3_t& v) const;
+    double operator()(const vec3_t& v) const;
  
     bounds_t get_bounds() const;
 };

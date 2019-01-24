@@ -2,8 +2,8 @@
 #define MATHS_H
 
 namespace maths {
-    const float pi = 3.14159265359f;
-    const float epsilon = 0.000001f;
+
+    // largest distance in 
 
     float to_radians(float degrees);
     float to_degrees(float radians);
