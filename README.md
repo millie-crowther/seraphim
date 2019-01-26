@@ -1,13 +1,12 @@
 # blaspheme
 
-rendering engine
+lightweight game engine using vulkan
 
 ## install
-* Linux: `./dependency_install.sh`
-* macOS: need to make the bash script handle macOS
+`./dependency_install.sh`
 
 
-## usage
+## usage
 
 `projectBuild.sh`
 
@@ -15,7 +14,3 @@ rendering engine
 * vulkan memory allocator
 * stb (will try to remove when possible)
 * tinyobjloader (will try to remove)
-
-## todo
-* use vulkan mem alloc
-* everything
