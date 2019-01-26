@@ -8,7 +8,7 @@ find_package ( Threads REQUIRED )
 #set(VULKAN_SDK_PATH /Users/amelia/vulkansdk-macos-1.1.92.1/macOS)
 set(VULKAN_SDK_PATH /home/millie/VulkanSDK/1.1.73.0/x86_64)
 set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/include")
-set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.dylib")
+set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.so")
 find_package(Vulkan REQUIRED)
 
 add_subdirectory("glfw")
