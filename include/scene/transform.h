@@ -1,7 +1,7 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "mat.h"
+#include "maths/mat.h"
 
 class transform_t {
 private:

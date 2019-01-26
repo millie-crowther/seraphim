@@ -5,7 +5,8 @@ project (blaspheme)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package ( Threads REQUIRED )
 
-set(VULKAN_SDK_PATH /Users/amelia/vulkansdk-macos-1.1.92.1/macOS)
+#set(VULKAN_SDK_PATH /Users/amelia/vulkansdk-macos-1.1.92.1/macOS)
+set(VULKAN_SDK_PATH /home/millie/VulkanSDK/1.1.73.0/x86_64)
 set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/include")
 set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.dylib")
 find_package(Vulkan REQUIRED)
@@ -30,16 +31,16 @@ set(SOURCES
     ../src/render/renderer.cpp
     ../src/render/image.cpp
     ../src/render/mesh.cpp
-    ../src/maths.cpp
-    ../src/quat.cpp
+    ../src/maths/maths.cpp
     ../src/bounds.cpp
-    ../src/mat.cpp
+    ../src/maths/mat.cpp
     ../src/render/texture.cpp
     ../src/render/camera.cpp
     ../src/scene/transform.cpp
     ../src/render/vertex.cpp
     ../src/input.cpp
     ../src/chalet.cpp
+    ../src/maths/quat.cpp
     ../src/render/renderable.cpp
 )
 

@@ -1,6 +1,6 @@
-#include "mat.h"
+#include "maths/mat.h"
 
-#include "quat.h"
+#include "maths/quat.h"
 
 namespace matrix {
     mat3_t

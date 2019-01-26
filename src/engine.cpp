@@ -10,7 +10,7 @@
 #include "render/vertex.h"
 #include <cstring>
 #include "maths.h"
-#include "mat.h"
+#include "maths/mat.h"
 
 VkPhysicalDevice engine_t::physical_device;
 VkDevice engine_t::device;

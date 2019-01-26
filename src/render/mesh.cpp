@@ -2,7 +2,7 @@
 
 #include "tiny_obj_loader.h"
 #include <stdexcept>
-#include "mat.h"
+#include "maths/mat.h"
 #include "maths.h"
 
 mesh_t::mesh_t(

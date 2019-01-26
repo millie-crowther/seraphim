@@ -9,6 +9,7 @@ template <unsigned int N, unsigned int M> class mat_t;
 #include "mat.h"
 #include <iostream>
 #include <algorithm>
+#include "core/constant.h"
 
 template <unsigned int N>
 class vec_t {
@@ -163,7 +164,7 @@ public:
     }
 
     bool operator==(const vec_t<N>& v) const {
-        return (*this - v).square_length() < maths::epsilon * maths::epsilon;
+        return (*this - v).square_length() < constant::epsilon * constant::epsilon;
     }
 
     vec_t<N> operator/(float scale) const {

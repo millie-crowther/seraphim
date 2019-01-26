@@ -4,7 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <array>
-#include "vec.h"
+#include "maths/vec.h"
 
 class vertex_t {
 private:
