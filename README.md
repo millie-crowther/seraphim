@@ -8,7 +8,7 @@ lightweight game engine using vulkan
 
 ## usage
 
-`projectBuild.sh`
+`./run.sh`
 
 ## dependencies
 * vulkan memory allocator
