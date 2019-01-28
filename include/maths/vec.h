@@ -11,7 +11,7 @@ template <unsigned int N, unsigned int M> class mat_t;
 #include <algorithm>
 #include "core/constant.h"
 
-template <unsigned int N>
+template<unsigned int N>
 class vec_t {
 protected:
     std::array<float, N> xs;
