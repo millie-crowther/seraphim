@@ -9,7 +9,9 @@ private:
 
 public:
     struct intersection_t {
-        bool is_hit;
+        bool   is_hit;
+        vec3_t position;
+        double distance;
     };
 
     collider_t(const sdf_t& sdf);

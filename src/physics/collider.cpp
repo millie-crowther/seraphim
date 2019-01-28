@@ -10,7 +10,7 @@ collider_t::collide(const collider_t& c) const {
 
     // gradient descent approach to function minimisation
     vec3_t p(0);
-    float d = psi(p);
+    double d = psi(p);
     vec3_t grad = -psi.normal(p) * d;
     while (grad.square_length() > constant::epsilon * constant::epsilon){
         p += grad;
@@ -21,6 +21,7 @@ collider_t::collide(const collider_t& c) const {
     intersection_t result;
     result.is_hit   = d <= 0;
     result.position = p;
+    result.distance = d;
 
     return result;
 } 
