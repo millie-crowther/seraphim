@@ -9,7 +9,7 @@ private:
 
 public:
     struct intersection_t {
-        
+        bool is_hit;
     };
 
     collider_t(const sdf_t& sdf);

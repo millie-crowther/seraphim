@@ -15,7 +15,7 @@ ray_t::cast(const sdf_t& sdf) const {
 
     intersection_t result;
  
-    while (d > constant::epsilon && total < constant::rho){
+    for (int i = 0; d > constant::epsilon && total < constant::rho && i < max_iterations; i++){
         d = sdf(p);
         total += d;
         p += d * direction;

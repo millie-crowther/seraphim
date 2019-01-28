@@ -9,6 +9,8 @@ private:
     vec3_t origin;
     vec3_t direction;  
 
+    static constexpr int max_iterations = 64;
+
 public:
     struct intersection_t {
         bool   is_hit;
