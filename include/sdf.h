@@ -10,6 +10,8 @@ class sdf_t {
 private:
     std::function<double(const vec3_t&)> phi;
 
+    bool is_dynamic;
+
 public:
     // constructors and destructors
     sdf_t();
@@ -18,6 +20,9 @@ public:
     // accessors
     vec3_t normal(const vec3_t& p) const;
     double operator()(const vec3_t& v) const;
+
+    // setters
+    void set_is_dynamic(bool is_dynamic);
  
     bounds_t get_bounds() const;
     double volume();

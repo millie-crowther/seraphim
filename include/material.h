@@ -3,9 +3,8 @@
 
 class material_t {
 private:
-    double density;
-public:
 
+public:
 };
 
 #endif
