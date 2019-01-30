@@ -20,6 +20,7 @@ public:
     double operator()(const vec3_t& v) const;
  
     bounds_t get_bounds() const;
+    double volume();
 
     // factories
     sdf_t intersection(const sdf_t& sdf) const;
