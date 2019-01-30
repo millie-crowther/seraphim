@@ -20,6 +20,8 @@ public:
 
     void serialize(std::vector<vec3_t>& psi);
 
+    vec3_t operator()(const vec3_t& v);
+
 private:
     std::vector<warp_func_t> psis;
     int resolution;
