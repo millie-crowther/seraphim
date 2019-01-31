@@ -10,7 +10,8 @@ private:
     std::vector<rigidbody_t> rigidbodies;
 
 public:
-
+    void start();
+    void halt();
 };
 
 #endif
