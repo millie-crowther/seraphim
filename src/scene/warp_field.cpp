@@ -1,8 +1,8 @@
 #include "scene/warp_field.h"
 
+// TODO: add read/write lock on psis
+
 warp_field_t::warp_field_t(){
-    resolution = default_resolution;
-    size = default_size;
 }
 
 void
@@ -10,18 +10,16 @@ warp_field_t::add_warp_function(const warp_func_t& psi){
     psis.push_back(psi);
 }
 
-void
-warp_field_t::set_size(int size){
-    this->size = size;
-}
-
-void 
-warp_field_t::set_resolution(int resolution){
-    this->resolution = resolution;
-}
-
 vec3_t
 warp_field_t::operator()(const vec3_t& v){
-    // TODO
-    return vec3_t(); 
+    vec3_t psi_v;
+    for (warp_func_t& psi : psis){
+        psi_v += psi(v);
+    }
+    return psi_v;
+} 
+
+void
+warp_field_t::serialize(std::vector<vec3_t>& psi, double size, double resolution){
+    
 }

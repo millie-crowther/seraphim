@@ -2,7 +2,7 @@
 #define CONSTANTS_H
 
 namespace constant {
-    constexpr float pi = 3.14159265359f;
+    constexpr double pi = 3.14159265359;
 
     // smallest distance in engine = 10um
     constexpr double epsilon = 0.00001;
