@@ -2,7 +2,7 @@
 
 void 
 event_emitter_t::on(std::string event, const callback_t& cb){
-    if (callbacks.find(event) == callbacks.end()){
+    if (callbacks.count(event) == 0){
         callbacks[event] = std::vector<callback_t>();
     }
 
@@ -11,7 +11,7 @@ event_emitter_t::on(std::string event, const callback_t& cb){
 
 void 
 event_emitter_t::emit(std::string event){
-    if (callbacks.find(event) != callbacks.end()){
+    if (callbacks.count(event) > 0){
         for (auto& callback : callbacks[event]){
             callback();
         } 

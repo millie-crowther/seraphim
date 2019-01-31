@@ -2,7 +2,7 @@
 #define CONSTANTS_H
 
 namespace constant {
-    constexpr double pi = 3.14159265359;
+    constexpr double pi = 3.141592653589793238462643;
 
     // smallest distance in engine = 10um
     constexpr double epsilon = 0.00001;
