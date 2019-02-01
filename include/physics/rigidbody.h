@@ -25,6 +25,8 @@ public:
     void add_force_at(const vec3_t & f, const vec3_t & s);
 
     void add_child(transform_t & child);
+
+    void check_collision(rigidbody_t & rigidbody);
 };
 
 #endif 

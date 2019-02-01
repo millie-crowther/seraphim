@@ -3,15 +3,22 @@
 
 #include <vector>
 
-#include "rigidbody.h"
+#include "collider.h"
 
 class physics_t {
 private:
-    std::vector<rigidbody_t> rigidbodies;
+    std::vector<collider_t> colliders;
+
+    void run();
+    void tick();
+    
+    bool is_running;
+    std::thread thread;
 
 public:
+    physics_t();
+    ~physics_t();
     void start();
-    void halt();
 };
 
 #endif

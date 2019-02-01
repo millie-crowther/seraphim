@@ -65,7 +65,9 @@ namespace scheduler {
         task_lock.unlock();
 
         for (auto& thread : thread_pool){
-            thread.join(); 
+            if (thread.joinable()){
+                thread.join();  
+            }
         }
 
         thread_pool.clear();

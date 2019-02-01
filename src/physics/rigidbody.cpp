@@ -14,5 +14,4 @@ void
 rigidbody_t::add_force_at(const vec3_t & f, const vec3_t & s){
     
 
-    // TODO angular 
 }
