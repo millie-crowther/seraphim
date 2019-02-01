@@ -10,7 +10,7 @@ private:
     std::vector<collider_t> colliders;
 
     void run();
-    void tick();
+    void perform_collision_check();
     
     bool is_running;
     std::thread thread;
