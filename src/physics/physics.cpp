@@ -22,6 +22,7 @@ physics_t::run(){
     auto last_update = std::chrono::high_resolution_clock::now();
 
     while (is_running){
+        // limit on max framerate
         auto now = std::chrono::high_resolution_clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::seconds>(now - last_update).count();
         if (delta < constant::iota / 2){
@@ -29,6 +30,7 @@ physics_t::run(){
         }
         last_update = now;
 
+        // check for collisions
         perform_collision_check();
     }
 }
