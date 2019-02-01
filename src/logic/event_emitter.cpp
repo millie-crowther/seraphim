@@ -1,5 +1,7 @@
 #include "logic/event_emitter.h"
 
+#include "logic/scheduler.h"
+
 void 
 event_emitter_t::on(std::string event, const callback_t& cb){
     if (callbacks.count(event) == 0){
@@ -13,7 +15,7 @@ void
 event_emitter_t::emit(std::string event){
     if (callbacks.count(event) > 0){
         for (auto& callback : callbacks[event]){
-            callback();
+            scheduler_t::submit(callback);
         } 
     }
 }
