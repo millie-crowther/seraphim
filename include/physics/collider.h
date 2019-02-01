@@ -2,9 +2,9 @@
 #define COLLIDER_H
 
 #include "sdf.h"
-#include "logic/event_emitter.h"
+#include "logic/emitter.h"
 
-class collider_t : public event_emitter_t { 
+class collider_t : public emitter_t<collider_t::intersection_t> { 
 private:
     sdf_t sdf;
 
@@ -15,9 +15,9 @@ public:
         double distance;
     };
 
-    collider_t(const sdf_t& sdf);
+    collider_t(const sdf_t & sdf);
 
-    intersection_t collide(const collider_t& c) const; 
+    intersection_t collide(const collider_t & c) const; 
 };
 
 #endif

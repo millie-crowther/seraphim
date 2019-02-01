@@ -8,12 +8,12 @@
 #include <chrono>
 #include <mutex>
 
-namespace scheduler_t {
+#include "core/constant.h"
+
+namespace scheduler {
     bool is_running = false;
 
     const int num_threads = 4;
-
-    const double minimum_update_period = 0.16666; // 60 FPS
 
     std::vector<std::thread> thread_pool;
     std::mutex task_lock;
@@ -73,7 +73,8 @@ namespace scheduler_t {
 
     template<class effector_t>
     void submit(const effector_t& effector){
-        submit_after(effector, minimum_update_period);
+        // TODO: possibly more sophisticated scheduling here?
+        submit_after(effector, constant::iota / 2.0);
     }
 
     template<class effector_t>
