@@ -16,7 +16,7 @@ private:
     vec3_t velocity;
     quat_t omega;
 
-    std::vector<collider_t> colliders;
+    collider_t collider;
 
     transform_t transform;
     

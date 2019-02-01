@@ -2,8 +2,9 @@
 #define COLLIDER_H
 
 #include "sdf.h"
+#include "logic/event_emitter.h"
 
-class collider_t { 
+class collider_t : public event_emitter_t { 
 private:
     sdf_t sdf;
 
