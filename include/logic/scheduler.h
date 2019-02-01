@@ -82,7 +82,7 @@ namespace scheduler {
         if (is_running){
             task_lock.lock();
             tasks.push({
-                [=](){ effector(); },
+                effector,
                 std::chrono::high_resolution_clock::now() + std::chrono::seconds(t)
             });
             task_lock.unlock();
