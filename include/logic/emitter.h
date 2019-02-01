@@ -6,6 +6,8 @@
 
 #include "logic/scheduler.h"
 
+// TODO: read / write synchronisation on effectors vector
+
 template<class output_t>
 class emitter_t {
 public:
