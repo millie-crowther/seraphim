@@ -24,7 +24,7 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     ../src/main.cpp
-    ../src/engine.cpp
+    ../src/core/engine.cpp
     ../src/lib.cpp
     ../src/buffer.cpp
     ../src/vk_utils.cpp

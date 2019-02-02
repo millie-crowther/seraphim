@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include "vk_utils.h"
 
-#include "engine.h"
+#include "core/engine.h"
 
 image_t::image_t(
     uint32_t width, uint32_t height, VkFormat format, 

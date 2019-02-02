@@ -2,7 +2,7 @@
 
 #include "stb_image.h"
 #include <stdexcept>
-#include "engine.h"
+#include "core/engine.h"
 
 texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue){
     int channels;

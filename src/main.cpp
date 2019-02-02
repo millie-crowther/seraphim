@@ -1,7 +1,8 @@
 #include <stdexcept>
 #include <iostream>
 #include <cstring>
-#include "engine.h"
+
+#include "core/engine.h"
 
 int 
 main(int argc, char ** argv) {
