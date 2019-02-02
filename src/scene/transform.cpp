@@ -19,3 +19,8 @@ void
 transform_t::set_parent(transform_t& parent){
     this->parent = &parent;
 }
+
+void
+transform_t::set_matrix(const mat4_t & matrix){
+    this->matrix = matrix;
+}

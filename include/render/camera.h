@@ -6,7 +6,7 @@
 class camera_t {
 private:
     // private fields
-    transform_t tf;
+    transform_t transform;
     float fov;
     float near;
     float far;
