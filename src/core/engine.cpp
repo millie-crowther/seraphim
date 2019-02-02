@@ -12,6 +12,8 @@
 #include "maths.h"
 #include "maths/mat.h"
 
+#include "logic/scheduler.h"
+
 VkPhysicalDevice engine_t::physical_device;
 VkDevice engine_t::device;
 
@@ -114,6 +116,8 @@ engine_t::init(){
     if (!renderer.init(surface, graphics_family, present_family, window_extents)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
+
+    scheduler::start();
 }
 
 bool
@@ -451,6 +455,8 @@ engine_t::update(){
 
 void
 engine_t::cleanup(){
+    scheduler::halt();    
+
     vkDeviceWaitIdle(device);
 
     renderer.cleanup();

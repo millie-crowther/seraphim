@@ -1,6 +1,8 @@
 #include "render/camera.h"
 
-#include "scheduler.h"
+#include <iostream>
+
+#include "logic/scheduler.h"
 
 camera_t::camera_t(float fov, float near, float far){
     this->fov = fov;
@@ -11,7 +13,9 @@ camera_t::camera_t(float fov, float near, float far){
         matrix::look_at(vec3_t(-2), vec3_t(0), vec3_t({0, 1, 0}))
     );
 
-
+    scheduler::submit([&](){
+        std::cout << "hewwo" << std::endl;
+    });    
 }
 
 transform_t *

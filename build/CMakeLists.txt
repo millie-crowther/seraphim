@@ -24,24 +24,32 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     ../src/main.cpp
+  
     ../src/core/engine.cpp
+    
+    ../src/logic/scheduler.cpp
+
     ../src/lib.cpp
-    ../src/buffer.cpp
-    ../src/vk_utils.cpp
-    ../src/render/renderer.cpp
-    ../src/render/image.cpp
-    ../src/render/mesh.cpp
-    ../src/maths/maths.cpp
     ../src/bounds.cpp
-    ../src/maths/mat.cpp
-    ../src/render/texture.cpp
-    ../src/render/camera.cpp
-    ../src/scene/transform.cpp
-    ../src/render/vertex.cpp
     ../src/input.cpp
     ../src/chalet.cpp
-    ../src/maths/quat.cpp
+    ../src/buffer.cpp
+    ../src/vk_utils.cpp
+    
+    ../src/render/renderer.cpp
+    ../src/render/image.cpp
     ../src/render/renderable.cpp
+    ../src/render/mesh.cpp
+    ../src/render/vertex.cpp
+    ../src/render/texture.cpp
+    ../src/render/camera.cpp
+    
+    ../src/maths/maths.cpp
+    ../src/maths/quat.cpp
+    ../src/maths/mat.cpp
+    
+    
+    ../src/scene/transform.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

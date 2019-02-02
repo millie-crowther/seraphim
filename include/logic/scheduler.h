@@ -11,84 +11,47 @@
 #include "core/constant.h"
 
 namespace scheduler {
-    bool is_running = false;
+    namespace {
+        bool is_running = false;
 
-    const int num_threads = 4;
+        //std::mutex task_lock;
+     
+        struct task_t {
+            std::function<void(void)> f;
+            std::chrono::time_point<std::chrono::high_resolution_clock> t; 
 
-    std::vector<std::thread> thread_pool;
-    std::mutex task_lock;
- 
-    struct task_t {
-        std::function<void(void)> f;
-        std::chrono::time_point<std::chrono::high_resolution_clock> t; 
+            task_t(
+                const std::function<void(void)> & f,
+                const std::chrono::time_point<std::chrono::high_resolution_clock> & t 
+            );
 
-        struct comparator_t {
-            bool operator()(const task_t& t1, const task_t& t2){
-                return t1.t > t2.t;
-            }
+            struct comparator_t {
+                bool operator()(const task_t& t1, const task_t& t2);
+            };
         };
-    };
 
-    std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
-
-    void start(){
-        if (!is_running){
-            is_running = true;
-
-            for (int i = 0; i < num_threads; i++){
-                thread_pool.push_back(std::thread([&](){
-                    while (is_running){
-                        task_lock.lock();
-                        if (tasks.empty()){
-                            task_lock.unlock();
-                            // TODO: sleep until tasks available
-                        } else {
-                            auto task = tasks.top();
-                            // TODO: if first task is scheduled for a while, sleep
-                            tasks.pop();
-                            task_lock.unlock();
-                            task.f();
-                        }
-                    }
-                }));
-            }
-        }
+        std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
     }
 
-    void halt(){
-        is_running = false;
-
-        task_lock.lock();
-        while (!tasks.empty()){
-            tasks.pop();
-        }
-        task_lock.unlock();
-
-        for (auto& thread : thread_pool){
-            if (thread.joinable()){
-                thread.join();  
-            }
-        }
-
-        thread_pool.clear();
-    }
+    void start();
+    void halt();
 
     template<class effector_t>
-    void submit(const effector_t& effector){
-        // TODO: possibly more sophisticated scheduling here?
-        submit_after(effector, constant::iota / 2.0);
-    }
-
-    template<class effector_t>
-    void submit_after(const effector_t& effector, double t){
+    void submit_after(const effector_t & effector, double t){
         if (is_running){
-            task_lock.lock();
-            tasks.push({
+            //task_lock.lock();
+            tasks.emplace(
                 effector,
                 std::chrono::high_resolution_clock::now() + std::chrono::seconds(t)
-            });
-            task_lock.unlock();
+            );
+            //task_lock.unlock();
         }
+    }
+    
+    template<class effector_t>
+    void submit(const effector_t & effector){
+        // TODO: possibly more sophisticated scheduling here?
+        submit_after(effector, constant::iota / 2.0);
     }
 }
 
