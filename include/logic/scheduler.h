@@ -15,14 +15,18 @@ namespace scheduler {
         bool is_running = false;
 
         //std::mutex task_lock;
+
+        using task_clock = std::chrono::high_resolution_clock;
      
         struct task_t {
+            typedef std::chrono::time_point<task_clock, std::chrono::microseconds> time_point_t;
+
             std::function<void(void)> f;
-            std::chrono::time_point<std::chrono::high_resolution_clock> t; 
+            time_point_t t; 
 
             task_t(
                 const std::function<void(void)> & f,
-                const std::chrono::time_point<std::chrono::high_resolution_clock> & t 
+                const time_point_t & t 
             );
 
             struct comparator_t {
@@ -40,9 +44,11 @@ namespace scheduler {
     void submit_after(const effector_t & effector, double t){
         if (is_running){
             //task_lock.lock();
+            task_t::time_point_t time_point = std::chrono::time_point_cast<task_t::time_point_t::duration>(task_clock::time_point(task_clock::now()));
+            // time_point += std::chrono::seconds(t);
             tasks.emplace(
                 effector,
-                std::chrono::high_resolution_clock::now() + std::chrono::seconds(t)
+                time_point
             );
             //task_lock.unlock();
         }

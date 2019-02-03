@@ -7,7 +7,7 @@ namespace scheduler {
    namespace {
        task_t::task_t(
            const std::function<void(void)> & f,
-           const std::chrono::time_point<std::chrono::high_resolution_clock> & t
+           const task_t::time_point_t & t
        ){
            this->f = f;
            this->t = t;
