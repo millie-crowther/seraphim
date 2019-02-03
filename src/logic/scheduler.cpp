@@ -1,68 +1,96 @@
 #include "logic/scheduler.h"
 
-const int num_threads = 1;
-std::vector<std::thread> thread_pool;
+#include <vector>
+#include <queue>
+#include <thread>
+#include <chrono>
 
-namespace scheduler {
-   namespace {
-       task_t::task_t(
-           const std::function<void(void)> & f,
-           const task_t::time_point_t & t
-       ){
-           this->f = f;
-           this->t = t;
-       }
+#include "core/constant.h"
 
-       bool 
-       task_t::comparator_t::operator()(const task_t & t1, const task_t & t2){
-           return t1.t > t2.t;
-       }
-   }
+static bool is_running = false;
+static constexpr int num_threads = 1;
+static std::vector<std::thread> thread_pool;   
 
-   void 
-   halt(){
-        is_running = false;
+struct task_t {
+    typedef std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::microseconds> time_point_t;
+    time_point_t t;
 
-        //task_lock.lock();
-        while (!tasks.empty()){
-            tasks.pop();
-        }
-        //task_lock.unlock();
+    std::function<void(void)> f;
 
-        for (auto & thread : thread_pool){
-            if (thread.joinable()){
-                thread.join();
-            }
-        }
-
-        thread_pool.clear();
+    task_t(const std::function<void(void)> & f, double delay){
+        this->f = f;
+        t = std::chrono::time_point_cast<time_point_t::duration>(std::chrono::high_resolution_clock::now());
+        // t += std::chrono::seconds(delay);
     }
 
-    void 
-    start(){
-        if (!is_running){
-            is_running = true;
+    struct comparator_t {
+        bool operator()(const task_t& t1, const task_t& t2){
+            return t1.t > t2.t;
+        }
+    };
+};
 
-            for (int i = 0; i < num_threads; i++){
-                thread_pool.push_back(std::thread([&](){
-                    while (is_running){
-                        //task_lock.lock();
-                        if (tasks.empty()){
-                            //task_lock.unlock();
-                            // TODO: sleep until tasks available
-                        } else {
-                            auto task = tasks.top();
-                            // TODO: if first task is scheduled for a while, sleep
-                            
-                            if (task.t >= std::chrono::high_resolution_clock::now()){
-                                tasks.pop();
-                                //task_lock.unlock();
-                                task.f();
-                            }
-                        }
+static std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
+
+void 
+scheduler::start(){
+    if (!is_running){
+        is_running = true;
+
+        auto thread_func = [&](){
+            while (is_running){
+                //task_lock.lock();
+                if (tasks.empty()){
+                    //task_lock.unlock();
+                    // TODO: sleep until tasks available
+                } else {
+                    auto task = tasks.top();
+                    // TODO: if first task is scheduled for a while, sleep
+                    
+                    if (task.t >= std::chrono::high_resolution_clock::now()){
+                        tasks.pop();
+                        //task_lock.unlock();
+                        task.f();
                     }
-                }));
+                }
             }
+        };
+
+        for (int i = 0; i < num_threads; i++){
+            thread_pool.push_back(std::thread(thread_func));
         }
     }
+}
+
+void 
+scheduler::halt(){
+    is_running = false;
+
+    //task_lock.lock(); 
+    while (!tasks.empty()){
+        tasks.pop();
+    }
+    //task_lock.unlock();
+
+    for (auto & thread : thread_pool){
+        if (thread.joinable()){
+            thread.join();
+        }
+    }
+
+    thread_pool.clear();
+}
+
+void 
+scheduler::submit_after(const effector_t & effector, double delay){
+    if (is_running){
+        //task_lock.lock();
+        tasks.emplace(effector, delay);
+        //task_lock.unlock();
+    }
+}
+
+void 
+scheduler::submit(const effector_t & effector){
+    submit_after(effector, constant::iota / 2.0);
 }

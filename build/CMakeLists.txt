@@ -26,9 +26,9 @@ set(SOURCES
     ../src/main.cpp
   
     ../src/core/engine.cpp
-    
-    ../src/logic/scheduler.cpp
 
+    ../src/logic/scheduler.cpp
+    
     ../src/lib.cpp
     ../src/bounds.cpp
     ../src/input.cpp
@@ -47,7 +47,6 @@ set(SOURCES
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp
     ../src/maths/mat.cpp
-    
     
     ../src/scene/transform.cpp
 )
