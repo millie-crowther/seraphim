@@ -37,6 +37,8 @@ physics_t::run(){
 
 void
 physics_t::perform_collision_check(){
+    // TODO: this is O(n^2)
+    //       using an octree, i think it can be reduced to O(n log(n))
     for (int i = 0; i < colliders.size(); i++){
         for (int j = i + 1; j < colliders.size(); j++){
             colliders[i].collide(colliders[j]);
