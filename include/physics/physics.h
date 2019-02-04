@@ -12,7 +12,7 @@ private:
 
     void run();
 
-    void collision_helper(const std::vector<std::weak_ptr<collider_t>> & cs);
+    void collision_helper(const std::vector<std::shared_ptr<collider_t>> & cs);
     void perform_collision_check();
     
     bool is_running;
