@@ -21,6 +21,7 @@ public:
     vec3_t get_centre() const;
 
     void collide(const collider_t & c) const; 
+    bool intersects_plane(const vec3_t & v, const vec3_t & n) const; // TODO: move this to dop since we actually want an approximation not the real deal
 };
 
 #endif
