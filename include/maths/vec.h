@@ -139,8 +139,12 @@ public:
         xs = (*this + v).xs;
     }
 
-    void operator*=(float scale){
+    void operator*=(double scale){
         xs = (*this * scale).xs;
+    }
+
+    void operator/=(double scale){
+        *this *= 1.0 / scale;
     }
   
     vec_t<N> operator-(const vec_t<N>& v) const {
