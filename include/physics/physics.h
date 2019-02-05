@@ -12,9 +12,13 @@ private:
 
     void run();
 
-    void cartesian_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const; 
-    void planar_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const;
     void collision_check();
+
+    // O(n^2)
+    void cartesian_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const; 
+
+    // O(n * log(n))
+    void planar_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const;
     
     bool is_running;
     std::thread thread;

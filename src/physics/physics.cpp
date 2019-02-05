@@ -38,9 +38,6 @@ physics_t::run(){
 
 void
 physics_t::collision_check(){
-    // TODO: this is O(n^2)
-    //       i think it can be reduced to O(n log(n))
-
     std::vector<std::shared_ptr<collider_t>> cs;
     
 }
@@ -49,7 +46,7 @@ void
 physics_t::cartesian_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const {
     for (int i = 0; i < cs.size(); i++){
         for (int j = i + 1; j < cs.size(); j++){
-            cs[i]->collide(*cs[j]);
+            cs[i]->collide(cs[j]);
         }
     }
 }
@@ -78,7 +75,7 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
 
     bool is_degenerate = true; // tee-hee 
     for (auto & collider : cs){
-        if (collider->intersects_plane(mean, variance)){
+        if (collider->intersects_plane(mean, variance)){ 
             a.push_back(collider);
             b.push_back(collider);
         } else {
@@ -97,13 +94,13 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
         cartesian_collision_check(cs);
     } else {
         if (a.size() == 2){
-            a[0]->collide(*a[1]);
+            a[0]->collide(a[1]);
         } else if (a.size() > 2) {
             planar_collision_check(a);
         }
 
         if (b.size() == 2){
-            b[0]->collide(*b[0]);
+            b[0]->collide(b[0]);
         } else if (b.size() > 2){
             planar_collision_check(b);
         }
@@ -115,6 +112,6 @@ physics_t::start(){
     if (!is_running){
         is_running = true;
 
-        thread = std::thread(std::bind(physics_t::run, this));
+        thread = std::thread(std::bind(&physics_t::run, this));
     }
 }

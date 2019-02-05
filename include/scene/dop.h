@@ -15,9 +15,15 @@ public:
 
     }
 
-    bool intersects(const dop_t<K> & dop) const {
+    template<unsigned int L>
+    bool intersects(const dop_t<L> & dop) const {
         // TODO
         return true; 
+    }
+
+    bool intersects_plane(const vec3_t & v, const vec3_t & n) const {
+        // TODO
+        return true;
     }
 };
 

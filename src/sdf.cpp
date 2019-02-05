@@ -6,20 +6,20 @@
 
 #include "core/constant.h"
 
-sdf_t::sdf_t() : sdf_t([](const vec3_t& v){ return 1; }){}
+sdf_t::sdf_t() : sdf_t([](const vec3_t & v){ return 1; }){}
 
-sdf_t::sdf_t(const std::function<double(const vec3_t&)>& phi){
+sdf_t::sdf_t(const std::function<double(const vec3_t &)> & phi){
     this->phi = phi;
     is_dynamic = false;
 }
 
 double
-sdf_t::operator()(const vec3_t& v) const {
+sdf_t::operator()(const vec3_t & v) const {
     return phi(v);
 }
  
 vec3_t
-sdf_t::normal(const vec3_t& p) const {
+sdf_t::normal(const vec3_t & p) const {
     return vec3_t({
         phi(p + vec3_t({ constant::epsilon, 0, 0 })) - phi(p - vec3_t({ constant::epsilon, 0, 0 })),      
         phi(p + vec3_t({ 0, constant::epsilon, 0 })) - phi(p - vec3_t({ 0, constant::epsilon, 0 })),      
@@ -39,8 +39,14 @@ sdf_t::get_bounds() const {
 }
 
 sdf_t
-sdf_t::intersection(const sdf_t& sdf) const {
-    return sdf_t([&](const vec3_t& v){
+sdf_t::intersection(const sdf_t & sdf) const {
+    return sdf_t([&](const vec3_t & v){
         return std::max(phi(v), sdf(v));
     });
+}
+
+bool
+sdf_t::intersects_plane(const vec3_t & v, const vec3_t & n) const {
+
+    return true;
 }

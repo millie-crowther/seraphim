@@ -27,6 +27,8 @@ public:
     bounds_t get_bounds() const;
     double volume();
 
+    bool intersects_plane(const vec3_t & v, const vec3_t & n) const;
+
     // factories
     sdf_t intersection(const sdf_t& sdf) const;
 };
