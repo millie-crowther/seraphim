@@ -2,6 +2,7 @@
 #define RIGIDBODY_H
 
 #include <vector>
+#include <memory>
 
 #include "maths/quat.h"
 #include "maths/vec.h"
@@ -16,7 +17,7 @@ private:
     vec3_t velocity;
     quat_t omega;
 
-    collider_t collider;
+    std::shared_ptr<collider_t> collider;
 
     transform_t transform;
     
@@ -25,8 +26,6 @@ public:
     void add_force_at(const vec3_t & f, const vec3_t & s);
 
     void add_child(transform_t & child);
-
-    void check_collision(rigidbody_t & rigidbody);
 };
 
 #endif 
