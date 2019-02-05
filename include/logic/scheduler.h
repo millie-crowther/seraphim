@@ -4,7 +4,6 @@
 #include <functional>
 
 namespace scheduler {    
-    void start();
     void halt();
 
     typedef std::function<void(void)> effector_t;
