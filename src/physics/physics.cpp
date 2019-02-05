@@ -20,16 +20,17 @@ physics_t::~physics_t(){
 
 void
 physics_t::run(){
-    auto last_update = std::chrono::high_resolution_clock::now();
+    using clock = std::chrono::high_resolution_clock;
 
+    auto last_update = clock::now();
     while (is_running){
         // limit on max framerate
-        auto now = std::chrono::high_resolution_clock::now();
+        auto now = clock::now();
         auto delta = std::chrono::duration_cast<std::chrono::seconds>(now - last_update).count();
-        if (delta < constant::iota / 2){
+        if (delta < constant::iota){
             // TODO: sleep until next tick should be done
         }
-        last_update = std::chrono::high_resolution_clock::now();
+        last_update = clock::now();
 
         // check for collisions
         // perform_collision_check();
@@ -40,6 +41,17 @@ void
 physics_t::collision_check(){
     std::vector<std::shared_ptr<collider_t>> cs;
     
+    // lock colliders list
+    for (auto & collider_ptr : colliders){
+        if (auto collider = collider_ptr.lock()){
+            cs.push_back(collider);
+        }
+    }
+    // TODO not sure this line works but youd think it would???
+    std::remove_if(colliders.begin(), colliders.end(), &std::weak_ptr<collider_t>::expired);
+    // unlock colliders list
+
+    cartesian_collision_check(cs); // TODO: use planar check
 }
 
 void 

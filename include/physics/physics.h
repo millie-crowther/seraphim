@@ -1,14 +1,14 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include <vector>
+#include <list>
 #include <memory>
 
 #include "collider.h"
 
 class physics_t {
 private:
-    std::vector<std::weak_ptr<collider_t>> colliders;
+    std::list<std::weak_ptr<collider_t>> colliders;
 
     void run();
 
