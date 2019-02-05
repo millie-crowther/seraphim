@@ -83,6 +83,6 @@ physics_t::start(){
     if (!is_running){
         is_running = true;
 
-
+        thread = std::thread(std::bind(physics_t::run, this));
     }
 }
