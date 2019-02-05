@@ -32,29 +32,36 @@ struct task_t {
 
 static std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> tasks;
 
+//
+// private functions
+//
+void
+thread_func(){
+    while (is_running){
+        //task_lock.lock();
+        if (tasks.empty()){
+            //task_lock.unlock();
+            // TODO: sleep until tasks available
+        } else {
+            auto task = tasks.top();
+            // TODO: if first task is scheduled for a while, sleep
+            
+            if (task.t >= std::chrono::high_resolution_clock::now()){
+                tasks.pop();
+                //task_lock.unlock();
+                task.f();
+            }
+        }
+    }
+}
+
+//
+// public functions
+//
 void 
 scheduler::start(){
     if (!is_running){
         is_running = true;
-
-        auto thread_func = [&](){
-            while (is_running){
-                //task_lock.lock();
-                if (tasks.empty()){
-                    //task_lock.unlock();
-                    // TODO: sleep until tasks available
-                } else {
-                    auto task = tasks.top();
-                    // TODO: if first task is scheduled for a while, sleep
-                    
-                    if (task.t >= std::chrono::high_resolution_clock::now()){
-                        tasks.pop();
-                        //task_lock.unlock();
-                        task.f();
-                    }
-                }
-            }
-        };
 
         for (int i = 0; i < num_threads; i++){
             thread_pool.push_back(std::thread(thread_func));
