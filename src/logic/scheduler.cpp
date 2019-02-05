@@ -92,5 +92,5 @@ scheduler::submit_after(const effector_t & effector, double delay){
 
 void 
 scheduler::submit(const effector_t & effector){
-    submit_after(effector, constant::iota / 2.0);
+    submit_after(effector, constant::iota);
 }
