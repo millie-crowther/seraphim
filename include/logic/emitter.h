@@ -13,7 +13,7 @@ class emitter_t {
 public:
     typedef std::function<void(const output_t)> effector_t;
 
-    void on_emit(const effector_t & effector){
+    void consume(const effector_t & effector){
         effectors.push_back(effector);
     }
 

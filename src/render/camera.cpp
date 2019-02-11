@@ -19,21 +19,21 @@ camera_t::camera_t(float fov, float near, float far){
 }
 
 transform_t *
-camera_t::get_transform(){
+camera_t::get_transform() const {
     return &transform;
 }
 
 float
-camera_t::get_fov(){
+camera_t::get_fov() const {
     return fov;
 }
 
 float 
-camera_t::get_near(){
+camera_t::get_near() const {
     return near;
 }
 
 float 
-camera_t::get_far(){
+camera_t::get_far() const {
     return far;
 }
