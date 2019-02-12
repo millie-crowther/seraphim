@@ -24,7 +24,18 @@ public:
         xs.fill(x);
     }
 
-    vec_t(const std::initializer_list<double> & l) : xs(l) {} // possibly static assert here
+    vec_t(const std::initializer_list<double> & l) : xs(l) {}
+
+    /*
+        TODO:
+        
+        template<typename T, std::size_t N>
+        void Do(const T(&list)[N]) { // Good!
+            static_assert(N == 3, "Exactly three elements are required.");
+        }
+
+        void Test() { Do({1,2,3}); }
+    */
 
     double dot(const vec_t<N>& o) const {
         double result = 0;
