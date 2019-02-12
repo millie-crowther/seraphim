@@ -10,47 +10,38 @@ template <unsigned int N, unsigned int M> class mat_t;
 #include <iostream>
 #include <algorithm>
 #include "core/constant.h"
+#include <initializer_list>
 
 template<unsigned int N>
 class vec_t {
 protected:
-    std::array<float, N> xs;
+    std::array<double, N> xs;
 
 public:
-    vec_t() : vec_t(0.0f){}
+    vec_t() : vec_t(0){}
 
-    vec_t(float x){
+    vec_t(double x){
         xs.fill(x);
     }
 
-    vec_t(const std::array<float, N>& xs){
-        this->xs = xs;
-    }
+    vec_t(const std::initializer_list<double> & l) : xs(l) {} // possibly static assert here
 
-    float dot(const vec_t<N>& o) const {
-        float result = 0;
+    double dot(const vec_t<N>& o) const {
+        double result = 0;
         for (int i = 0; i < N; i++){
             result += xs[i] * o.xs[i];
         }
         return result;
     }
 
-    std::string to_string() const {
-        std::string r = "[";
-	    for (int i = 0; i < N - 1; i++){
-            r += std::to_string(xs[i]) + ", ";
-        }
-        return r + std::to_string(xs[N-1]) + "]";
-    }
-
     /*
        norms
     */
-    float square_norm() const {
+    double square_norm() const {
         return dot(*this);
     }
 
-    float norm() const {
+    double norm() const {
         return sqrt(square_norm());
     }   
 
@@ -70,7 +61,7 @@ public:
         return (*this - o).project_plane(n);
     }
 
-    float angle(const vec_t<N> & v){
+    double angle(const vec_t<N> & v){
         return std::acos(
             dot(v) * 
             maths::inverse_square_root(square_norm()) * 
@@ -78,8 +69,8 @@ public:
         );
     }
 
-    vec_t<N> lerp(const vec_t<N> & v, float alpha){
-        return *this * (1.0f - alpha) + v * alpha;
+    vec_t<N> lerp(const vec_t<N> & v, double alpha){
+        return *this * (1.0 - alpha) + v * alpha;
     }
 
     vec_t<N> hadamard(const vec_t<N> & o) const {
@@ -97,11 +88,11 @@ public:
     /*
        overloaded operators
     */
-    float operator[](int i) const {
+    double operator[](int i) const {
         return xs[i];
     }
 
-    float& operator[](int i){
+    double& operator[](int i){
         return xs[i];
     }
 
@@ -149,18 +140,28 @@ public:
         return (*this - v).square_length() < constant::epsilon * constant::epsilon;
     }
 
-    vec_t<N> operator/(float scale) const {
+    vec_t<N> operator/(double scale) const {
         return *this * (1.0f / scale);
     }
 };
 
+template <unsigned int N>
+vec_t<N> 
+operator*(double scale, const vec_t<N>& v){
+    return v * scale;
+}
+
 typedef vec_t<2> vec2_t;
 typedef vec_t<4> vec4_t;
 
-template <unsigned int N>
-vec_t<N> 
-operator*(float scale, const vec_t<N>& v){
-    return v * scale;
-}
+class vec3_t : public vec_t<3> {
+public:
+    vec3_t();
+    vec3_t(double x);
+    vec3_t(const std::initializer_list<double> & l);
+
+    vec3_t cross(const vec3_t & v) const;
+    vec3_t operator%(const vec3_t & v) const;
+};
 
 #endif
