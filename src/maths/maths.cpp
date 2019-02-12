@@ -1,18 +1,14 @@
 #include "maths.h"
 
 #include <cmath>
-#include "core/constant.h"
 
-namespace maths {
-    float to_radians(float degrees){
-        return degrees * constant::pi / 180.0f;
-    }
-
-    float to_degrees(float radians){
-        return radians / constant::pi * 180.0f;
-    }
-
-    bool approx(float a, float b){
-	    return std::abs(a - b) < constant::epsilon;
-    }
+float 
+maths::inverse_square_root(float x){
+	float halfx = 0.5f * x;
+	float y = x;
+	long i = *(long*)&y;
+	i = 0x5f3759df - (i>>1);
+	y = *(float*)&i;
+	y = y * (1.5f - (halfx * y * y));
+	return y; 
 }

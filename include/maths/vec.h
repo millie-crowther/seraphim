@@ -46,46 +46,38 @@ public:
     /*
        norms
     */
-    float square_length() const {
+    float square_norm() const {
         return dot(*this);
     }
 
-    float length() const {
-        return sqrt(square_length());
+    float norm() const {
+        return sqrt(square_norm());
     }   
-
-    float max_norm() const {
-        return *std::max_element(xs.begin(), xs.end()); 
-    } 
-
-    bool approx(const vec_t<N>& v){
-	    return maths::approx((*this - v).square_length(), 0);
-    }
 
     /*
        projections
     */
-    vec_t<N> project_vector(const vec_t<N>& v) const {
+    vec_t<N> project_vector(const vec_t<N> & v) const {
         return dot(v.normalise()) * v.normalise();
     }
 
-    vec_t<N> project_plane(const vec_t<N>& n) const {
+    vec_t<N> project_plane(const vec_t<N> & n) const {
         return *this - project_vector(n);
     }
 
-    vec_t<N> project_plane(const vec_t<N>& o, const vec_t<N>& n) const {
+    vec_t<N> project_plane(const vec_t<N> & o, const vec_t<N> & n) const {
         return (*this - o).project_plane(n);
     }
 
-    float angle(const vec_t<N>& v){
+    float angle(const vec_t<N> & v){
         return std::acos(dot(v) / length() / v.length());
     }
 
-    vec_t<N> lerp(const vec_t<N>& v, float alpha){
-        return (*this) * (1.0f - alpha) + v * alpha;
+    vec_t<N> lerp(const vec_t<N> & v, float alpha){
+        return *this * (1.0f - alpha) + v * alpha;
     }
-    
-    vec_t<N> hadamard(const vec_t<N>& o){
+
+    vec_t<N> hadamard(const vec_t<N> & o) const {
         vec_t<N> result = *this;
         for (int i = 0; i < N; i++){
             result.xs[i] *= o.xs[i];
@@ -94,7 +86,7 @@ public:
     }
 
     vec_t<N> normalise() const {
-        return (*this) / length();
+        return *this * maths::inverse_square_root(square_norm());
     }
  
     /*
