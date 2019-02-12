@@ -58,7 +58,8 @@ public:
        projections
     */
     vec_t<N> project_vector(const vec_t<N> & v) const {
-        return dot(v.normalise()) * v.normalise();
+        auto v_n = v.normalise();
+        return dot(v_n) * v_n;
     }
 
     vec_t<N> project_plane(const vec_t<N> & n) const {
@@ -70,7 +71,11 @@ public:
     }
 
     float angle(const vec_t<N> & v){
-        return std::acos(dot(v) / length() / v.length());
+        return std::acos(
+            dot(v) * 
+            maths::inverse_square_root(square_norm()) * 
+            maths::inverse_square_root(v.square_norm())
+        );
     }
 
     vec_t<N> lerp(const vec_t<N> & v, float alpha){
@@ -78,7 +83,7 @@ public:
     }
 
     vec_t<N> hadamard(const vec_t<N> & o) const {
-        vec_t<N> result = *this;
+        auto result = *this;
         for (int i = 0; i < N; i++){
             result.xs[i] *= o.xs[i];
         }
@@ -125,14 +130,14 @@ public:
     } 
 
     vec_t<N> operator-() const {
-        vec_t<N> result = *this;
+        auto result = *this;
         for (int i = 0; i < N; i++){
             result.xs[i] = -xs[i];
         }
         return result;
     }
 
-    vec_t<N> operator*(float scale) const {
+    vec_t<N> operator*(double scale) const {
         auto ys = xs;
         for (int i = 0; i < N; i++){
             ys[i] *= scale;
