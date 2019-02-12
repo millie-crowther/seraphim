@@ -3,6 +3,8 @@
 #include <cstring>
 
 uuid_t::uuid_t(){
+    // TODO: (1) seed mersenne twister
+    //       (2) use timestamp to reduce (admittedly extremely small) chance of collision
     for (int i = 0; i < 4; i++){
         id[i] = engine();
     }

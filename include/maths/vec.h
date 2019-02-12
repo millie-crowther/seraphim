@@ -43,14 +43,6 @@ public:
         return r + std::to_string(xs[N-1]) + "]";
     }
 
-    vec_t<3> cross(const vec_t<3>& v) const {
-        return vec_t<3>({
-            xs[1] * v.xs[2] - xs[2] * v.xs[1],
-            xs[2] * v.xs[0] - xs[0] * v.xs[2],
-            xs[0] * v.xs[1] - xs[1] * v.xs[0] 
-        });
-    }
-
     /*
        norms
     */
@@ -92,18 +84,7 @@ public:
     vec_t<N> lerp(const vec_t<N>& v, float alpha){
         return (*this) * (1.0f - alpha) + v * alpha;
     }
-
-    template <unsigned int M>
-    mat_t<M, N> tensor(const vec_t<M>& o){
-        mat_t<M, N> result;
-        for (int i = 0; i < N; i++){
-            for (int j = 0; j < M; j++){
-                result[j][i] = xs[i] * o.xs[j];
-            }
-        }
-        return result;
-    }
-
+    
     vec_t<N> hadamard(const vec_t<N>& o){
         vec_t<N> result = *this;
         for (int i = 0; i < N; i++){
@@ -174,14 +155,9 @@ public:
     vec_t<N> operator/(float scale) const {
         return *this * (1.0f / scale);
     }
-
-    vec_t<3> operator%(const vec_t<3> v) const {
-	    return cross(v);
-    }
 };
 
 typedef vec_t<2> vec2_t;
-typedef vec_t<3> vec3_t;
 typedef vec_t<4> vec4_t;
 
 template <unsigned int N>
