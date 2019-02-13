@@ -14,6 +14,8 @@ template <unsigned int N, unsigned int M> class mat_t;
 
 template<unsigned int N>
 class vec_t {
+private:
+
 protected:
     std::array<double, N> xs;
 
@@ -21,21 +23,13 @@ public:
     vec_t() : vec_t(0){}
 
     vec_t(double x){
-        xs.fill(x);
+        xs.fill(x); 
     }
 
-    vec_t(const std::initializer_list<double> & l) : xs(l) {}
-
-    /*
-        TODO:
-        
-        template<typename T, std::size_t N>
-        void Do(const T(&list)[N]) { // Good!
-            static_assert(N == 3, "Exactly three elements are required.");
-        }
-
-        void Test() { Do({1,2,3}); }
-    */
+    template<class... T, typename std::enable_if<sizeof...(T) == N, double>::type = 0>
+    vec_t(T... _xs){
+        // TODO
+    }
 
     double dot(const vec_t<N>& o) const {
         double result = 0;
@@ -169,7 +163,7 @@ class vec3_t : public vec_t<3> {
 public:
     vec3_t();
     vec3_t(double x);
-    vec3_t(const std::initializer_list<double> & l);
+    vec3_t(double x, double y, double z);
 
     vec3_t cross(const vec3_t & v) const;
     vec3_t operator%(const vec3_t & v) const;
