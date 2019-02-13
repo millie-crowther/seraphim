@@ -14,8 +14,6 @@ template <unsigned int N, unsigned int M> class mat_t;
 
 template<unsigned int N>
 class vec_t {
-private:
-
 protected:
     std::array<double, N> xs;
 
