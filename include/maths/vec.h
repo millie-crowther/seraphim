@@ -31,8 +31,8 @@ public:
     }
 
     // cross product only defined on three dimensional vectors
-    typename std::enable_if<N == 3, vec_t<3>>::type
-    cross(const vec_t<3> & v) const {
+    typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
+    cross(const vec_t<vec_type_t, 3> & v) const {
         return vec3_t(
             xs[1] * v.xs[2] - xs[2] * v.xs[1],
             xs[2] * v.xs[0] - xs[0] * v.xs[2],
@@ -67,7 +67,7 @@ public:
         return (*this - o).project_plane(n);
     }
 
-    vec_type_t angle(const vec_t<N> & v){
+    double angle(const vec_t<N> & v){
         return std::acos(
             dot(v) * 
             maths::inverse_square_root(square_norm()) * 
