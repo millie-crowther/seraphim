@@ -11,7 +11,7 @@
 template<class output_t>
 class emitter_t {
 public:
-    typedef std::function<void(const output_t &)> effector_t;
+    typedef std::function<void(const output_t)> effector_t;
 
     void consume(const effector_t & effector){
         effectors.push_back(effector);
@@ -19,7 +19,7 @@ public:
 
     void emit(const output_t & output){
         for (auto & effector : effectors){
-            scheduler::submit([&](){ effector(output); });
+            scheduler::submit(std::bind(effector, output));
         }
     }
 
