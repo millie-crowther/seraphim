@@ -22,7 +22,7 @@ public:
     template<class... Tail>
     vec_t(typename std::enable_if<sizeof...(Tail)+1 == N, vec_type_t>::type head, Tail... tail) : xs({ head : tail...}) {}
 
-    vec_type_t dot(const vec_t<N>& o) const {
+    vec_type_t dot(const vec_t<vec_type_t, N>& o) const {
         vec_type_t result = 0;
         for (int i = 0; i < N; i++){
             result += xs[i] * o.xs[i];
@@ -51,23 +51,7 @@ public:
         return sqrt(square_norm());
     }   
 
-    /*
-       projections
-    */
-    vec_t<N> project_vector(const vec_t<N> & v) const {
-        auto v_n = v.normalise();
-        return dot(v_n) * v_n;
-    }
-
-    vec_t<N> project_plane(const vec_t<N> & n) const {
-        return *this - project_vector(n);
-    }
-
-    vec_t<N> project_plane(const vec_t<N> & o, const vec_t<N> & n) const {
-        return (*this - o).project_plane(n);
-    }
-
-    double angle(const vec_t<N> & v){
+    double angle(const vec_t<vec_type_t, N> & v){
         return std::acos(
             dot(v) * 
             maths::inverse_square_root(square_norm()) * 
@@ -75,11 +59,11 @@ public:
         );
     }
 
-    vec_t<N> lerp(const vec_t<N> & v, vec_type_t alpha){
+    vec_t<vec_type_t, N> lerp(const vec_t<vec_type_t, N> & v, vec_type_t alpha){
         return *this * (1.0 - alpha) + v * alpha;
     }
 
-    vec_t<N> hadamard(const vec_t<N> & o) const {
+    vec_t<vec_type_t, N> hadamard(const vec_t<vec_type_t, N> & o) const {
         auto result = *this;
         for (int i = 0; i < N; i++){
             result.xs[i] *= o.xs[i];
@@ -87,7 +71,7 @@ public:
         return result;
     }
 
-    vec_t<N> normalise() const {
+    vec_t<vec_type_t, N> normalise() const {
         return *this * maths::inverse_square_root(square_norm());
     }
  
@@ -102,7 +86,7 @@ public:
         return xs[i];
     }
 
-    vec_t<N> operator+(const vec_t<N>& v) const {
+    vec_t<vec_type_t, N> operator+(const vec_t<vec_type_t, N>& v) const {
         auto ys = xs;
         for (int i = 0; i < N; i++){
             ys[i] += v.xs[i];
@@ -110,7 +94,7 @@ public:
         return vec_t<N>(ys);
     }
 
-    void operator+=(const vec_t<N>& v){
+    void operator+=(const vec_t<vec_type_t, N>& v){
         xs = (*this + v).xs;
     }
 
@@ -122,11 +106,11 @@ public:
         *this *= 1.0 / scale;
     }
   
-    vec_t<N> operator-(const vec_t<N>& v) const {
+    vec_t<vec_type_t, N> operator-(const vec_t<vec_type_t, N>& v) const {
          return (*this) + (-v);
     } 
 
-    vec_t<N> operator-() const {
+    vec_t<vec_type_t, N> operator-() const {
         auto result = *this;
         for (int i = 0; i < N; i++){
             result.xs[i] = -xs[i];
@@ -134,7 +118,7 @@ public:
         return result;
     }
 
-    vec_t<N> operator*(vec_type_t scale) const {
+    vec_t<vec_type_t, N> operator*(vec_type_t scale) const {
         auto ys = xs;
         for (int i = 0; i < N; i++){
             ys[i] *= scale;
@@ -142,15 +126,15 @@ public:
         return vec_t<N>(ys);
     }
 
-    bool operator==(const vec_t<N>& v) const {
+    bool operator==(const vec_t<vec_type_t, N>& v) const {
         return (*this - v).square_length() < constant::epsilon * constant::epsilon;
     }
 
-    vec_t<N> operator/(vec_type_t scale) const {
+    vec_t<vec_type_t, N> operator/(vec_type_t scale) const {
         return *this * (1.0f / scale);
     }
 
-    vec3_t operator%(const vec3_t & v) const {
+    vec_t<vec_type_t, 3> operator%(const vec_t<vec_type_t, 3> & v) const {
         return cross(v);
     }
 };
