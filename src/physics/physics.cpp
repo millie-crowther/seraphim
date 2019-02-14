@@ -44,7 +44,9 @@ physics_t::collision_check(){
     // lock colliders list
     for (auto & collider_ptr : colliders){
         if (auto collider = collider_ptr.lock()){
-            cs.push_back(collider);
+            if (collider->is_colliding()){
+                cs.push_back(collider);
+            }
         }
     }
     // TODO not sure this line works but youd think it would???
@@ -67,13 +69,13 @@ void
 physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const {
     // calculate mean and variance of collider centres
     vec3_t mean;
-    for (auto & collider : cs){
+    for (const auto & collider : cs){
         mean += collider->get_centre();
     }
     mean /= cs.size();
 
     vec3_t variance;
-    for (auto & collider : cs){
+    for (const auto & collider : cs){
         vec3_t centre = collider->get_centre();
         for (int i = 0; i < 3; i++){
             variance[i] += (centre[i] - mean[i]) * (centre[i] - mean[i]);

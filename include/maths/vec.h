@@ -9,7 +9,7 @@
 
 template<class vec_type_t, unsigned int N>
 class vec_t {
-protected:
+private:
     std::array<vec_type_t, N> xs;
 
 public:
@@ -94,7 +94,7 @@ public:
         return vec_t<N>(ys);
     }
 
-    void operator+=(const vec_t<vec_type_t, N>& v){
+    void operator+=(const vec_t<vec_type_t, N> & v){
         xs = (*this + v).xs;
     }
 
@@ -106,7 +106,7 @@ public:
         *this *= 1.0 / scale;
     }
   
-    vec_t<vec_type_t, N> operator-(const vec_t<vec_type_t, N>& v) const {
+    vec_t<vec_type_t, N> operator-(const vec_t<vec_type_t, N> & v) const {
          return (*this) + (-v);
     } 
 
@@ -126,7 +126,7 @@ public:
         return vec_t<N>(ys);
     }
 
-    bool operator==(const vec_t<vec_type_t, N>& v) const {
+    bool operator==(const vec_t<vec_type_t, N> & v) const {
         return (*this - v).square_length() < constant::epsilon * constant::epsilon;
     }
 
@@ -141,7 +141,7 @@ public:
 
 template <class vec_type_t, unsigned int N>
 vec_t<vec_type_t, N> 
-operator*(vec_type_t scale, const vec_t<vec_type_t, N>& v){
+operator*(vec_type_t scale, const vec_t<vec_type_t, N> & v){
     return v * scale;
 }
 

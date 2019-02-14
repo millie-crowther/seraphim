@@ -11,7 +11,7 @@
 template<class output_t>
 class emitter_t {
 public:
-    typedef std::function<void(const output_t)> effector_t;
+    typedef std::function<void(const output_t &)> effector_t;
 
     void consume(const effector_t & effector){
         effectors.push_back(effector);
@@ -21,6 +21,10 @@ public:
         for (auto & effector : effectors){
             scheduler::submit([&](){ effector(output); });
         }
+    }
+
+    bool has_listeners() const {
+        return !effectors.empty();
     }
 
 private:
