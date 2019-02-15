@@ -30,6 +30,7 @@ public:
     // factories
     static quat_t identity();
     static quat_t angle_axis(double angle, const vec3_t& axis);
+    static quat_t look_at(const vec3_t & forward, const vec3_t & up);
 };
 
 #endif

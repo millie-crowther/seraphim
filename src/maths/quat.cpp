@@ -1,7 +1,5 @@
 #include "maths/quat.h"
 
-#include <iostream>
-
 quat_t::quat_t() : quat_t(1, 0, 0, 0){}
 
 quat_t::quat_t(double w, double x, double y, double z){
@@ -28,6 +26,52 @@ quat_t::normalise(){
         y = 0;
         z = 0;
     }
+}
+
+quat_t
+quat_t::look_at(const vec3_t & forward, const vec3_t & up){
+    // TODO
+    //     // your code from before
+    // F = normalize(target - camera);   // lookAt
+    // R = normalize(cross(F, worldUp)); // sideaxis
+    // U = cross(R, F);                  // rotatedup
+
+    // // note that R needed to be re-normalized
+    // // since F and worldUp are not necessary perpendicular
+    // // so must remove the sin(angle) factor of the cross-product
+    // // same not true for U because dot(R, F) = 0
+
+    // // adapted source
+    // Quaternion q;
+    // double trace = R.x + U.y + F.z;
+    // if (trace > 0.0) {
+    // double s = 0.5 / sqrt(trace + 1.0);
+    // q.w = 0.25 / s;
+    // q.x = (U.z - F.y) * s;
+    // q.y = (F.x - R.z) * s;
+    // q.z = (R.y - U.x) * s;
+    // } else {
+    // if (R.x > U.y && R.x > F.z) {
+    //     double s = 2.0 * sqrt(1.0 + R.x - U.y - F.z);
+    //     q.w = (U.z - F.y) / s;
+    //     q.x = 0.25 * s;
+    //     q.y = (U.x + R.y) / s;
+    //     q.z = (F.x + R.z) / s;
+    // } else if (U.y > F.z) {
+    //     double s = 2.0 * sqrt(1.0 + U.y - R.x - F.z);
+    //     q.w = (F.x - R.z) / s;
+    //     q.x = (U.x + R.y) / s;
+    //     q.y = 0.25 * s;
+    //     q.z = (F.y + U.z) / s;
+    // } else {
+    //     double s = 2.0 * sqrt(1.0 + F.z - R.x - U.y);
+    //     q.w = (R.y - U.x) / s;
+    //     q.x = (F.x + R.z) / s;
+    //     q.y = (F.y + U.z) / s;
+    //     q.z = 0.25 * s;
+    // }
+    // }
+    return quat_t();
 }
 
 quat_t

@@ -48,7 +48,7 @@ public:
     }
 
     vec_type_t norm() const {
-        return sqrt(square_norm());
+        return std::sqrt(square_norm());
     }   
 
     double angle(const vec_t<vec_type_t, N> & v){
@@ -57,18 +57,6 @@ public:
             maths::inverse_square_root(square_norm()) * 
             maths::inverse_square_root(v.square_norm())
         );
-    }
-
-    vec_t<vec_type_t, N> lerp(const vec_t<vec_type_t, N> & v, vec_type_t alpha){
-        return *this * (1.0 - alpha) + v * alpha;
-    }
-
-    vec_t<vec_type_t, N> hadamard(const vec_t<vec_type_t, N> & o) const {
-        auto result = *this;
-        for (int i = 0; i < N; i++){
-            result.xs[i] *= o.xs[i];
-        }
-        return result;
     }
 
     vec_t<vec_type_t, N> normalise() const {
@@ -127,7 +115,7 @@ public:
     }
 
     bool operator==(const vec_t<vec_type_t, N> & v) const {
-        return (*this - v).square_length() < constant::epsilon * constant::epsilon;
+        return (*this - v).square_norm() < constant::epsilon * constant::epsilon;
     }
 
     vec_t<vec_type_t, N> operator/(vec_type_t scale) const {
@@ -139,12 +127,6 @@ public:
         return cross(v);
     }
 };
-
-template <class vec_type_t, unsigned int N>
-vec_t<vec_type_t, N> 
-operator*(vec_type_t scale, const vec_t<vec_type_t, N> & v){
-    return v * scale;
-}
 
 typedef vec_t<double, 2> vec2_t;
 typedef vec_t<double, 3> vec3_t;
