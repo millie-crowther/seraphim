@@ -1,37 +1,34 @@
 #ifndef QUATERNION_H
 #define QUATERNION_H
 
+#include <array>
+
 #include "vec.h"
 
-class quat_t : public vec4_t {
+class quat_t {
 private:
-    quat_t(const std::array<float, 4>& xs);
+    double w, x, y, z;
+
+    void normalise();
 
 public:
     quat_t();
-    quat_t(const vec4_t& v);
+    quat_t(double w, double x, double y, double z);
 
     // accessors
-    quat_t conjugate() const;
     quat_t inverse() const;
     quat_t hamilton(const quat_t& q) const;
-    vec3_t imaginary_part();
-    float real_part();
-    mat3_t to_matrix() const;
-    vec3_t transform(const vec3_t& v) const; 
-    vec3_t inverse_transform(const vec3_t& v) const;
+    vec3_t vector() const;
+    double scalar() const;
+    vec3_t rotate(const vec3_t& v) const; 
 
     // operators
     quat_t operator*(const quat_t& q) const;
-    quat_t operator*(float s) const;
     vec3_t operator*(const vec3_t& v) const;
 
     // factories
     static quat_t identity();
-    static quat_t angle_axis(float angle, const vec3_t& axis);
-    static quat_t from_matrix(const mat3_t& m);
+    static quat_t angle_axis(double angle, const vec3_t& axis);
 };
-
-quat_t operator*(float s, const quat_t& q);
 
 #endif

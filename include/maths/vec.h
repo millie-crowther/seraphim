@@ -9,7 +9,7 @@
 
 template<class vec_type_t, unsigned int N>
 class vec_t {
-private:
+protected:
     std::array<vec_type_t, N> xs;
 
 public:
@@ -19,10 +19,10 @@ public:
         xs.fill(x); 
     }
 
-    template<class... Tail>
-    vec_t(typename std::enable_if<sizeof...(Tail)+1 == N, vec_type_t>::type head, Tail... tail) : xs({ head : tail...}) {}
+    template<class... Xs>
+    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x : _xs...}) {}
 
-    vec_type_t dot(const vec_t<vec_type_t, N>& o) const {
+    vec_type_t dot(const vec_t<vec_type_t, N> & o) const {
         vec_type_t result = 0;
         for (int i = 0; i < N; i++){
             result += xs[i] * o.xs[i];
@@ -91,7 +91,7 @@ public:
         for (int i = 0; i < N; i++){
             ys[i] += v.xs[i];
         }
-        return vec_t<N>(ys);
+        return vec_t<vec_type_t, N>(ys);
     }
 
     void operator+=(const vec_t<vec_type_t, N> & v){
@@ -134,7 +134,8 @@ public:
         return *this * (1.0f / scale);
     }
 
-    vec_t<vec_type_t, 3> operator%(const vec_t<vec_type_t, 3> & v) const {
+    typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
+    operator%(const vec_t<vec_type_t, 3> & v) const {
         return cross(v);
     }
 };
