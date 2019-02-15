@@ -23,6 +23,7 @@ public:
     vec3_t rotate(const vec3_t& v) const; 
 
     // operators
+    void operator*=(const quat_t & q);
     quat_t operator*(const quat_t& q) const;
     vec3_t operator*(const vec3_t& v) const;
 
