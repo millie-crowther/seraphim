@@ -15,8 +15,7 @@ public:
 
     }
 
-    template<unsigned int L>
-    bool intersects(const dop_t<L> & dop) const {
+    bool intersects(const dop_t<K> & dop) const {
         // TODO
         return true; 
     }
@@ -26,7 +25,5 @@ public:
         return true;
     }
 };
-
-typedef dop_t<6> aabb_t;
 
 #endif
