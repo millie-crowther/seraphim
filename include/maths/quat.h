@@ -7,11 +7,18 @@
 
 class quat_t {
 private:
+    // fields
     double w, x, y, z;
 
+    // private constructor
+    // (used to restrict unnormalised quaternions to internals of class)
+    quat_t(double w, double x, double y, double z, bool should_normalise);
+
+    // private functions
     void normalise();
 
 public:
+    // public constructors
     quat_t();
     quat_t(double w, double x, double y, double z);
 

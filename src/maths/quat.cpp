@@ -2,13 +2,17 @@
 
 quat_t::quat_t() : quat_t(1, 0, 0, 0){}
 
-quat_t::quat_t(double w, double x, double y, double z){
+quat_t::quat_t(double w, double x, double y, double z) : quat_t(w, x, y, z, true) {}
+
+quat_t::quat_t(double w, double x, double y, double z, bool should_normalise){
     this->w = w;
     this->x = x;
     this->y = y;
     this->z = z;
 
-    normalise();
+    if (should_normalise){
+        normalise();
+    }
 }
 
 void
@@ -83,8 +87,7 @@ quat_t::angle_axis(double angle, const vec3_t & axis){
 
 vec3_t
 quat_t::rotate(const vec3_t & v) const {
-    // TODO theres a normalise in here that shouldnt be
-    quat_t q = *this * quat_t(0, v[0], v[1], v[2]) * inverse();
+    quat_t q = *this * quat_t(0, v[0], v[1], v[2], false) * inverse();
     return q.vector();
 }
 
