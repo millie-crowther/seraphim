@@ -1,14 +1,15 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "maths/mat.h"
+#include "maths/quat.h"
 
 class transform_t {
 private:
     // private fields
     transform_t * parent;
 
-    mat4_t matrix;
+    vec3_t position;
+    quat_t rotation;
 
 public:
     // constructors and destructors
