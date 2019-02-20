@@ -110,7 +110,7 @@ public:
     }
 
     bool operator==(const vec_t<vec_type_t, N> & v) const {
-        return (*this - v).square_norm() < constant::epsilon * constant::epsilon;
+        return (*this - v).square_norm() <= constant::epsilon * constant::epsilon;
     }
 
     vec_t<vec_type_t, N> operator/(vec_type_t scale) const {

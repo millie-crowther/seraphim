@@ -23,6 +23,9 @@ public:
     // accessors
     vec3_t normal(const vec3_t & p) const;
 
+    // predicates
+    bool is_null() const;
+
     // overloaded operators
     double operator()(const vec3_t & v) const;
     sdf_t operator&&(const sdf_t & sdf) const;
