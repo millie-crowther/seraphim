@@ -22,29 +22,16 @@ public:
     template<class... Xs>
     vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x : _xs...}) {}
 
-    vec_type_t dot(const vec_t<vec_type_t, N> & o) const {
-        vec_type_t result = 0;
-        for (int i = 0; i < N; i++){
-            result += xs[i] * o.xs[i];
-        }
-        return result;
-    }
-
-    // cross product only defined on three dimensional vectors
     typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
-    cross(const vec_t<vec_type_t, 3> & v) const {
-        return vec3_t(
-            xs[1] * v.xs[2] - xs[2] * v.xs[1],
-            xs[2] * v.xs[0] - xs[0] * v.xs[2],
-            xs[0] * v.xs[1] - xs[1] * v.xs[0]
-        );
+    tangent() const {
+        return vec_t<vec_type_t, 3>(); // TODO
     } 
 
     /*
        norms
     */
     vec_type_t square_norm() const {
-        return dot(*this);
+        return (*this) * (*this);
     }
 
     vec_type_t norm() const {
@@ -66,6 +53,14 @@ public:
     /*
        overloaded operators
     */
+    vec_type_t operator*(const vec_t<vec_type_t, N> & o) const {
+        vec_type_t result = 0;
+        for (int i = 0; i < N; i++){
+            result += xs[i] * o.xs[i];
+        }
+        return result;
+    }
+
     vec_type_t operator[](int i) const {
         return xs[i];
     }
@@ -124,7 +119,18 @@ public:
 
     typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
     operator%(const vec_t<vec_type_t, 3> & v) const {
-        return cross(v);
+        return vec_t<vec_type_t, 3>(
+            xs[1] * v.xs[2] - xs[2] * v.xs[1],
+            xs[2] * v.xs[0] - xs[0] * v.xs[2],
+            xs[0] * v.xs[1] - xs[1] * v.xs[0]
+        );
+    }
+
+    /*
+        factories
+    */
+    vec_t<vec_type_t, N> zero(){
+        return vec_t<vec_type_t, N>();
     }
 };
 

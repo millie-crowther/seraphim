@@ -1,36 +1,33 @@
 #ifndef SDF_H
 #define SDF_H
 
-#include "vec.h"
 #include <functional>
 
-class bounds_t;
+#include "vec.h"
 
+/*
+    - continuity
+    - level set property regarding gradient magnitude
+*/
 class sdf_t {
 private:
-    std::function<double(const vec3_t&)> phi;
+    typedef std::function<double(const vec3_t &)> phi_t;
 
-    bool is_dynamic;
+    phi_t phi;
 
 public:
     // constructors and destructors
     sdf_t();
-    sdf_t(const std::function<double(const vec3_t&)>& phi); 
+    sdf_t(const phi_t & phi); 
 
     // accessors
-    vec3_t normal(const vec3_t& p) const;
-    double operator()(const vec3_t& v) const;
+    vec3_t normal(const vec3_t & p) const;
 
-    // setters
-    void set_is_dynamic(bool is_dynamic);
- 
-    bounds_t get_bounds() const;
-    double volume();
-
-    bool intersects_plane(const vec3_t & v, const vec3_t & n) const;
-
-    // factories
-    sdf_t intersection(const sdf_t& sdf) const;
+    // overloaded operators
+    double operator()(const vec3_t & v) const;
+    sdf_t operator&&(const sdf_t & sdf) const;
+    sdf_t operator||(const sdf_t & sdf) const;
+    sdf_t operator!() const;
 };
 
 #endif

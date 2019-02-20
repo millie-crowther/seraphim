@@ -12,9 +12,12 @@ collider_t::collide(std::shared_ptr<collider_t> c) const {
     }
 } 
 
-bool 
+bool
 collider_t::intersects_plane(const vec3_t & v, const vec3_t & n) const {
-    return sdf.intersects_plane(v, n); 
+    vec3_t t1 = n.tangent();
+    vec3_t t2 = n % t1;
+
+    return true; // TODO
 }
 
 bool

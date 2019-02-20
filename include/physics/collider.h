@@ -26,7 +26,7 @@ public:
     bool is_colliding() const;
 
     void collide(std::shared_ptr<collider_t> c) const; 
-    bool intersects_point(const vec3_t & v) const; 
+    bool intersects_plane(const vec3_t & v, const vec3_t & n) const; 
 };
 
 #endif
