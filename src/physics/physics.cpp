@@ -73,10 +73,16 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
     // check for base cases
     if (cs.size() <= 1){
         return;
+
     } else if (cs.size() == 2){
         cs[0]->collide(cs[1]);
-    } else if (cs.size() <= 4){
-        cartesian_collision_check(cs);
+        return;
+
+    } else if (cs.size() == 3){
+        cs[0]->collide(cs[1]);
+        cs[0]->collide(cs[2]);
+        cs[1]->collide(cs[2]);
+        return;
     }
 
     // calculate mean and variance of collider centres

@@ -66,7 +66,6 @@ renderer_t::init(
         return false;
     }
 
-    // update_descriptor_sets(chalet_mesh->get_texture());
     std::vector<vertex_t> vertices = {
         // TODO
     };
