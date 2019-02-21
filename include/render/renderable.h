@@ -12,7 +12,7 @@ private:
     
 public:
     // constructors
-    renderable_t(transform_t& parent, const std::shared_ptr<mesh_t>& mesh);
+    renderable_t(transform_t & parent, const std::shared_ptr<mesh_t>& mesh);
 
     // getters
     bool is_visible() const;

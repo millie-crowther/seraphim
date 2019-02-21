@@ -26,13 +26,12 @@ set(SOURCES
     ../src/main.cpp
   
     ../src/core/engine.cpp
+    ../src/core/sdf.cpp
 
     ../src/logic/scheduler.cpp
     
     ../src/lib.cpp
-    ../src/bounds.cpp
     ../src/input.cpp
-    ../src/chalet.cpp
     ../src/buffer.cpp
     ../src/vk_utils.cpp
     
@@ -46,7 +45,6 @@ set(SOURCES
     
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp
-    ../src/maths/mat.cpp
     
     ../src/scene/transform.cpp
 )

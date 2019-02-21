@@ -1,6 +1,8 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <memory>
+
 #include "camera.h"
 #include "buffer.h"
 #include "chalet.h"
@@ -18,7 +20,7 @@ private:
         mat4_t proj;
     };
 
-    camera_t * main_camera;
+    std::shared_ptr<camera_t> main_camera;
 
     // swapchain fields
     VkSwapchainKHR swapchain;
@@ -97,8 +99,6 @@ public:
     // main method
     void render();
     
-    chalet_t * chalet;
-
     // setters
     void set_main_camera(camera_t * camera);
 

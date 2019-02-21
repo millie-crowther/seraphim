@@ -47,7 +47,7 @@ sdf_t::operator!() const {
     auto phi_ptr = std::make_shared(phi);
     return sdf_t([phi_ptr](const vec3_t & v){
         return -(*phi_ptr)(v);
-    });
+    }); 
 }
 
 bool
