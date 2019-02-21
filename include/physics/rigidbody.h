@@ -17,12 +17,12 @@ private:
     vec3_t velocity;
     quat_t omega;
 
-    std::shared_ptr<collider_t> collider;
+    collider_t collider;
 
     transform_t transform;
     
 public:
-    rigidbody_t(const std::shared_ptr<collider_t> & collider);
+    rigidbody_t(const sdf_t & sdf);
 
     void add_force(const vec3_t & f);
     void add_force_at(const vec3_t & f, const vec3_t & s);

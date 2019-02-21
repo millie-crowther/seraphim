@@ -58,6 +58,7 @@ physics_t::collision_check(){
 
 void 
 physics_t::cartesian_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const {
+    // O(n^2) complexity
     for (int i = 0; i < cs.size(); i++){
         for (int j = i + 1; j < cs.size(); j++){
             cs[i]->collide(cs[j]);
@@ -67,6 +68,17 @@ physics_t::cartesian_collision_check(const std::vector<std::shared_ptr<collider_
 
 void
 physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>> & cs) const {
+    // O(n * log(n)) complexity
+    
+    // check for base cases
+    if (cs.size() <= 1){
+        return;
+    } else if (cs.size() == 2){
+        cs[0]->collide(cs[1]);
+    } else if (cs.size() <= 4){
+        cartesian_collision_check(cs);
+    }
+
     // calculate mean and variance of collider centres
     vec3_t mean;
     for (const auto & collider : cs){
@@ -83,7 +95,7 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
     }
     variance = variance.normalise();
 
-    // subdivide space
+    // divide and conquer
     std::vector<std::shared_ptr<collider_t>> a;
     std::vector<std::shared_ptr<collider_t>> b;
 
@@ -95,7 +107,7 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
         } else {
             is_degenerate = false;
 
-            if ((collider->get_centre() - mean).dot(variance) > 0){
+            if ((collider->get_centre() - mean) * variance > 0){
                 a.push_back(collider);
             } else {
                 b.push_back(collider);
@@ -103,21 +115,11 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
         }
     }
 
-    // recurse
     if (is_degenerate){
         cartesian_collision_check(cs);
     } else {
-        if (a.size() == 2){
-            a[0]->collide(a[1]);
-        } else if (a.size() > 2) {
-            planar_collision_check(a);
-        }
-
-        if (b.size() == 2){
-            b[0]->collide(b[0]);
-        } else if (b.size() > 2){
-            planar_collision_check(b);
-        }
+        planar_collision_check(a);
+        planar_collision_check(b);
     }
 }
 
