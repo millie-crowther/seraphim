@@ -1,8 +1,12 @@
 #include "physics/rigidbody.h"
 
-void 
-rigidbody_t::add_child(transform_t & child){
-    child.set_parent(transform);
+rigidbody_t::rigidbody_t(const std::shared_ptr<collider_t> & collider){
+    this->collider = collider;
+}
+
+std::shared_ptr<transform_t> 
+rigidbody_t::add_child(){
+    return transform.add_child();
 }
 
 void

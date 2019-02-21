@@ -22,10 +22,12 @@ private:
     transform_t transform;
     
 public:
+    rigidbody_t(const std::shared_ptr<collider_t> & collider);
+
     void add_force(const vec3_t & f);
     void add_force_at(const vec3_t & f, const vec3_t & s);
 
-    void add_child(transform_t & child);
+    std::shared_ptr<transform_t> add_child();
 };
 
 #endif 
