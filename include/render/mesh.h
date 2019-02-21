@@ -13,22 +13,20 @@ private:
     // fields
     buffer_t * vertices;
     buffer_t * indices;
-    texture_t * texture;
     int index_count;
 
 public:
     // constructors and destructors
     mesh_t(
-        VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t>& vertices, 
-        const std::vector<uint32_t>& indices, texture_t * tx
+        VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t> & vertices, 
+        const std::vector<uint32_t> & indices
     );
     ~mesh_t();
 
     // getters
-    buffer_t * get_vertex_buffer();
-    buffer_t * get_index_buffer();
-    texture_t * get_texture();
-    int get_index_count();
+    buffer_t * get_vertex_buffer() const;
+    buffer_t * get_index_buffer() const;
+    int get_index_count() const;
 
     // factory methods
     // TODO: add a proxy to stop it always being loaded

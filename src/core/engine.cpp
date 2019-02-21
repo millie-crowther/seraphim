@@ -9,8 +9,7 @@
 #include <fstream>
 #include "render/vertex.h"
 #include <cstring>
-#include "maths.h"
-#include "maths/mat.h"
+#include "maths/maths.h"
 
 #include "logic/scheduler.h"
 
@@ -116,8 +115,6 @@ engine_t::init(){
     if (!renderer.init(surface, graphics_family, present_family, window_extents)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
-
-    scheduler::start();
 }
 
 bool

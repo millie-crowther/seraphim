@@ -27,8 +27,6 @@ set(SOURCES
   
     ../src/core/engine.cpp
     ../src/core/sdf.cpp
-
-    ../src/logic/scheduler.cpp
     
     ../src/lib.cpp
     ../src/input.cpp

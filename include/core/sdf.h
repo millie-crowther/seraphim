@@ -3,7 +3,7 @@
 
 #include <functional>
 
-#include "vec.h"
+#include "maths/vec.h"
 
 /*
     - continuity

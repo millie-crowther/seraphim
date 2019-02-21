@@ -1,4 +1,4 @@
-#include "sdf.h"
+#include "core/sdf.h"
 
 #include <memory>
 
@@ -18,16 +18,16 @@ sdf_t::operator()(const vec3_t & v) const {
 vec3_t
 sdf_t::normal(const vec3_t & p) const {
     return vec3_t(
-        phi(p + vec3_t(constant::epsilon, 0, 0)) - phi(p - vec3_t(constant::epsilon, 0, 0)),      
-        phi(p + vec3_t(0, constant::epsilon, 0)) - phi(p - vec3_t(0, constant::epsilon, 0)),      
-        phi(p + vec3_t(0, 0, constant::epsilon)) - phi(p - vec3_t(0, 0, constant::epsilon))
+        phi(p + vec3_t(constant::epsilon, 0.0, 0.0)) - phi(p - vec3_t(constant::epsilon, 0.0, 0.0)),      
+        phi(p + vec3_t(0.0, constant::epsilon, 0.0)) - phi(p - vec3_t(0.0, constant::epsilon, 0.0)),      
+        phi(p + vec3_t(0.0, 0.0, constant::epsilon)) - phi(p - vec3_t(0.0, 0.0, constant::epsilon))
     ).normalise();
 }
 
 sdf_t
 sdf_t::operator&&(const sdf_t & sdf) const {
-    auto phi1 = std::shared_ptr<phi_t>(phi);
-    auto phi2 = std::make_shared(sdf.phi); 
+    auto phi1 = std::make_shared<phi_t>(phi);
+    auto phi2 = std::make_shared<phi_t>(sdf.phi);
     return sdf_t([phi1, phi2](const vec3_t & v){
         return std::max((*phi1)(v), (*phi2)(v));
     });
@@ -35,8 +35,8 @@ sdf_t::operator&&(const sdf_t & sdf) const {
 
 sdf_t
 sdf_t::operator||(const sdf_t & sdf) const {
-    auto phi1 = std::make_shared(phi);
-    auto phi2 = std::make_shared(sdf.phi);
+    auto phi1 = std::make_shared<phi_t>(phi);
+    auto phi2 = std::make_shared<phi_t>(sdf.phi);
     return sdf_t([phi1, phi2](const vec3_t & v){
         return std::min((*phi1)(v), (*phi2)(v));
     });
@@ -44,7 +44,7 @@ sdf_t::operator||(const sdf_t & sdf) const {
 
 sdf_t
 sdf_t::operator!() const {
-    auto phi_ptr = std::make_shared(phi);
+    auto phi_ptr = std::make_shared<phi_t>(phi);
     return sdf_t([phi_ptr](const vec3_t & v){
         return -(*phi_ptr)(v);
     }); 

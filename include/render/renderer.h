@@ -5,7 +5,6 @@
 
 #include "camera.h"
 #include "buffer.h"
-#include "chalet.h"
 #include "mesh.h"
 #include "input.h"
 
@@ -14,13 +13,7 @@
 
 class renderer_t {
 private:
-    struct uniform_buffer_data_t {
-        mat4_t model;
-        mat4_t view;
-        mat4_t proj;
-    };
-
-    std::shared_ptr<camera_t> main_camera;
+    struct uniform_buffer_data_t { };
 
     // swapchain fields
     VkSwapchainKHR swapchain;
@@ -57,6 +50,8 @@ private:
 
     image_t * depth_image;
 
+    mesh_t * mesh;
+
     VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
 
     bool create_swapchain();
@@ -64,7 +59,7 @@ private:
     bool create_graphics_pipeline();    
     bool create_depth_resources();
     bool create_framebuffers();
-    bool create_command_buffers(const std::shared_ptr<mesh_t>& mesh);
+    bool create_command_buffers(mesh_t * mesh);
     void create_uniform_buffers();
     bool create_descriptor_set_layout();
     bool create_descriptor_sets();
@@ -72,7 +67,7 @@ private:
     bool create_descriptor_pool();
     bool create_sync();
 
-    void update_descriptor_sets(texture_t * texture);
+    // void update_descriptor_sets(texture_t * texture);
 
     VkSurfaceFormatKHR select_surface_format(); 
     VkPresentModeKHR select_present_mode();
@@ -101,10 +96,6 @@ public:
     
     // setters
     void set_main_camera(camera_t * camera);
-
-    // accessors
-    mat4_t get_view_matrix();
-    mat4_t get_proj_matrix();
 
     void cleanup();
 };

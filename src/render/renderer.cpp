@@ -5,12 +5,14 @@
 #include <chrono>
 
 renderer_t::renderer_t(){
-    main_camera = new camera_t(maths::to_radians(45.0f), 0.1f, 10.0f);
+    // main_camera = new camera_t(maths::to_radians(45.0f), 0.1f, 10.0f);
     current_frame = 0;
+
+    mesh = nullptr;
 }
 
 renderer_t::~renderer_t(){
-    delete main_camera; //TODO delete
+    
 }
 
 bool
@@ -64,11 +66,15 @@ renderer_t::init(
         return false;
     }
 
-    auto chalet_mesh = mesh_t::load("chalet", command_pool, graphics_queue);
-    chalet = new chalet_t(chalet_mesh);
-    update_descriptor_sets(chalet_mesh->get_texture());
+    // update_descriptor_sets(chalet_mesh->get_texture());
+    std::vector<vertex_t> vertices = {
+        // TODO
+    };
 
-    if (!create_command_buffers(chalet_mesh)){
+    std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
+    mesh = new mesh_t(command_pool, graphics_queue, vertices, indices);
+
+    if (!create_command_buffers(mesh)){
         return false;
     }
 
@@ -87,26 +93,6 @@ renderer_t::create_uniform_buffers(){
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	    );
     }
-}
-
-void
-renderer_t::set_main_camera(camera_t * camera){
-    main_camera = camera;
-}
-
-mat4_t
-renderer_t::get_view_matrix(){
-    return main_camera->get_transform()->get_matrix();
-}
-
-mat4_t
-renderer_t::get_proj_matrix(){
-    return matrix::perspective(
-        main_camera->get_fov(),
-        (float) swapchain_extents.width / (float) swapchain_extents.height,
-        main_camera->get_near(),
-        main_camera->get_far()
-    );
 }
 
 bool
@@ -269,7 +255,7 @@ renderer_t::recreate_swapchain(){
     create_depth_resources();
     create_framebuffers();
 
-    create_command_buffers(chalet->get_renderable().get_mesh());
+    create_command_buffers(mesh);
 }
 
 void 
@@ -571,7 +557,7 @@ renderer_t::create_framebuffers(){
 }
 
 bool
-renderer_t::create_command_buffers(const std::shared_ptr<mesh_t>& mesh){
+renderer_t::create_command_buffers(mesh_t * mesh){
     // create command buffers
     command_buffers.resize(swapchain_framebuffers.size());
     
@@ -681,47 +667,47 @@ renderer_t::create_descriptor_sets(){
     return true;
 }
 
-void
-renderer_t::update_descriptor_sets(texture_t * texture){
-    VkDescriptorBufferInfo buffer_info = {};
-    buffer_info.offset = 0;
-    buffer_info.range = sizeof(uniform_buffer_data_t);
+// void
+// renderer_t::update_descriptor_sets(texture_t * texture){
+//     VkDescriptorBufferInfo buffer_info = {};
+//     buffer_info.offset = 0;
+//     buffer_info.range = sizeof(uniform_buffer_data_t);
 
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//     VkDescriptorImageInfo image_info = {};
+//     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-    if (texture != nullptr){
-        image_info.imageView = texture->get_image_view();
-        image_info.sampler = texture->get_sampler();
-    }
+//     if (texture != nullptr){
+//         image_info.imageView = texture->get_image_view();
+//         image_info.sampler = texture->get_sampler();
+//     }
 
-    VkWriteDescriptorSet desc_write = {};
-    desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    desc_write.dstArrayElement = 0;
-    desc_write.descriptorCount = 1;
-    desc_write.pBufferInfo = &buffer_info;
-    desc_write.pImageInfo = &image_info;
-    desc_write.pTexelBufferView = nullptr;
+//     VkWriteDescriptorSet desc_write = {};
+//     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+//     desc_write.dstArrayElement = 0;
+//     desc_write.descriptorCount = 1;
+//     desc_write.pBufferInfo = &buffer_info;
+//     desc_write.pImageInfo = &image_info;
+//     desc_write.pTexelBufferView = nullptr;
 
-    for (int i = 0; i < swapchain_images.size(); i++){
-   	     buffer_info.buffer = uniform_buffers[i]->get_buffer();
+//     for (int i = 0; i < swapchain_images.size(); i++){
+//    	     buffer_info.buffer = uniform_buffers[i]->get_buffer();
 
-         std::array<VkWriteDescriptorSet, 2> desc_writes = {};
-         desc_write.dstSet = desc_sets[i];
+//          std::array<VkWriteDescriptorSet, 2> desc_writes = {};
+//          desc_write.dstSet = desc_sets[i];
 
-         desc_writes[0] = desc_write;
-	     desc_writes[0].dstSet = desc_sets[i];
-         desc_writes[0].dstBinding = 0;
-         desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+//          desc_writes[0] = desc_write;
+// 	     desc_writes[0].dstSet = desc_sets[i];
+//          desc_writes[0].dstBinding = 0;
+//          desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
-         desc_writes[1] = desc_write;
-	     desc_writes[1].dstSet = desc_sets[i];
-         desc_writes[1].dstBinding = 1;
-         desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+//          desc_writes[1] = desc_write;
+// 	     desc_writes[1].dstSet = desc_sets[i];
+//          desc_writes[1].dstBinding = 1;
+//          desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-	     vkUpdateDescriptorSets(engine_t::get_device(), desc_writes.size(), desc_writes.data(), 0, nullptr);
-    }
-}
+// 	     vkUpdateDescriptorSets(engine_t::get_device(), desc_writes.size(), desc_writes.data(), 0, nullptr);
+//     }
+// }
 
 bool
 renderer_t::create_descriptor_set_layout(){
@@ -871,13 +857,10 @@ renderer_t::render(){
 void
 renderer_t::update_uniform_buffers(uint32_t image_index){
     uniform_buffer_data_t ubo = {};
-    ubo.model = chalet->get_renderable().get_matrix();
-    ubo.view = get_view_matrix();
-    ubo.proj = get_proj_matrix();
-    
-    uniform_buffers[image_index]->copy(
-        command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
-    );
+
+    // uniform_buffers[image_index]->copy(
+    //     command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
+    // );
 }
 
 void
@@ -899,7 +882,9 @@ renderer_t::cleanup(){
 
     vkDestroyCommandPool(engine_t::get_device(), command_pool, nullptr);
 
-    delete chalet;
+    if (mesh != nullptr){
+        delete mesh;
+    }
 }
 
 VkShaderModule

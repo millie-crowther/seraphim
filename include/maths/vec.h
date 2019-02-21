@@ -22,7 +22,8 @@ public:
     template<class... Xs>
     vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x : _xs...}) {}
 
-    typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
+    template<class T=vec_t<vec_type_t, 3>>
+    typename std::enable_if<N == 3, T>::type
     tangent() const {
         return vec_t<vec_type_t, 3>(); // TODO
     } 
@@ -70,11 +71,11 @@ public:
     }
 
     vec_t<vec_type_t, N> operator+(const vec_t<vec_type_t, N>& v) const {
-        auto ys = xs;
+        auto sum = *this;
         for (int i = 0; i < N; i++){
-            ys[i] += v.xs[i];
+            sum.xs[i] += v.xs[i];
         }
-        return vec_t<vec_type_t, N>(ys);
+        return sum;
     }
 
     void operator+=(const vec_t<vec_type_t, N> & v){
@@ -94,19 +95,15 @@ public:
     } 
 
     vec_t<vec_type_t, N> operator-() const {
-        auto result = *this;
-        for (int i = 0; i < N; i++){
-            result.xs[i] = -xs[i];
-        }
-        return result;
+        return *this * -1;
     }
 
     vec_t<vec_type_t, N> operator*(vec_type_t scale) const {
-        auto ys = xs;
+        auto product = *this;
         for (int i = 0; i < N; i++){
-            ys[i] *= scale;
+            product.xs[i] *= scale;
         }
-        return vec_t<N>(ys);
+        return product;
     }
 
     bool operator==(const vec_t<vec_type_t, N> & v) const {
@@ -114,10 +111,11 @@ public:
     }
 
     vec_t<vec_type_t, N> operator/(vec_type_t scale) const {
-        return *this * (1.0f / scale);
+        return *this * (1.0 / scale);
     }
 
-    typename std::enable_if<N == 3, vec_t<vec_type_t, 3>>::type
+    template<class T=vec_t<vec_type_t, 3>>
+    typename std::enable_if<N == 3, T>::type
     operator%(const vec_t<vec_type_t, 3> & v) const {
         return vec_t<vec_type_t, 3>(
             xs[1] * v.xs[2] - xs[2] * v.xs[1],
