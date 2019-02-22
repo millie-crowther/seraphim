@@ -71,30 +71,30 @@ physics_t::planar_collision_check(const std::vector<std::shared_ptr<collider_t>>
     // O(n * log(n)) complexity
     
     // check for base cases
-    if (cs.size() <= 1){
-        return;
+    if (cs.size() <= 3){
+        if (cs.size() == 2){
+            cs[0]->collide(cs[1]);
 
-    } else if (cs.size() == 2){
-        cs[0]->collide(cs[1]);
-        return;
-
-    } else if (cs.size() == 3){
-        cs[0]->collide(cs[1]);
-        cs[0]->collide(cs[2]);
-        cs[1]->collide(cs[2]);
+        } else if (cs.size() == 3){
+            cs[0]->collide(cs[1]);
+            cs[0]->collide(cs[2]);
+            cs[1]->collide(cs[2]);
+        }
         return;
     }
 
     // calculate mean and variance of collider centres
+    // TODO: cache collider positions so traversal of tree 
+    //       doesnt need to happen twice
     vec3_t mean;
     for (const auto & collider : cs){
-        mean += collider->get_centre();
+        mean += collider->get_position();
     }
     mean /= cs.size();
 
     vec3_t variance;
     for (const auto & collider : cs){
-        vec3_t centre = collider->get_centre();
+        vec3_t centre = collider->get_position();
         for (int i = 0; i < 3; i++){
             variance[i] += (centre[i] - mean[i]) * (centre[i] - mean[i]);
         }

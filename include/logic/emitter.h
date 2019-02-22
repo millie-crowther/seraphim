@@ -6,29 +6,30 @@
 
 #include "logic/scheduler.h"
 
-// TODO: read / write synchronisation on effectors vector
+// TODO: read / write synchronisation on listeners vector
 
 template<class output_t>
 class emitter_t {
 public:
-    typedef std::function<void(const output_t)> effector_t;
+    typedef std::function<void(const output_t)> listener_t;
 
-    void consume(const effector_t & effector){
-        effectors.push_back(effector);
+    void listen(const listener_t & listener){
+        listeners.push_back(listener);
     }
 
     void emit(const output_t & output){
-        for (auto & effector : effectors){
-            scheduler::submit(std::bind(effector, output));
+        for (auto & listener : listeners){
+            scheduler::submit(std::bind(listener, output));
         }
     }
 
+protected:
     bool has_listeners() const {
-        return !effectors.empty();
+        return !listeners.empty();
     }
 
 private:
-    std::vector<effector_t> effectors;
+    std::vector<listener_t> listeners;
 };
 
 #endif

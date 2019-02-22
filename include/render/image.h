@@ -40,7 +40,7 @@ public:
 
     // static methods
     static VkFormat find_supported_format(
-        VkPhysicalDevice physical_device, const std::vector<VkFormat>& candidates, 
+        VkPhysicalDevice physical_device, const std::vector<VkFormat> & candidates, 
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkFormat find_depth_format(VkPhysicalDevice physical_device);

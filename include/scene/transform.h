@@ -23,6 +23,8 @@ public:
     transform_t();
 
     std::shared_ptr<transform_t> add_child();
+    
+    vec3_t get_absolute_position() const;
 };
 
 #endif

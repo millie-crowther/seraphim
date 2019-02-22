@@ -21,7 +21,7 @@ private:
 public:
     collider_t(const sdf_t & sdf);
 
-    vec3_t get_centre() const;
+    vec3_t get_position() const;
 
     bool is_colliding() const;
 
