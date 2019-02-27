@@ -58,7 +58,7 @@ engine_t::init(){
     VkExtent2D window_extents = { 640, 480 };
 
     window = glfwCreateWindow(
-        window_extents.width, window_extents.height, "Blaspheme", nullptr, nullptr
+        window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
     );
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback);   
@@ -123,12 +123,12 @@ engine_t::create_logical_device(){
     std::set<uint32_t> unique_queue_families = { graphics, present };
     
     float queue_priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
     for (uint32_t queue_family : unique_queue_families){
-        VkDeviceQueueCreateInfo queue_create_info = {};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_info.queueCount = 1;
-        queue_create_info.pQueuePriorities = &queue_priority;
         queue_create_infos.push_back(queue_create_info);
     }
 
@@ -136,22 +136,18 @@ engine_t::create_logical_device(){
     device_features.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-    create_info.pQueueCreateInfos = queue_create_infos.data();
-    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-
-    create_info.pEnabledFeatures = &device_features;
-
-    
-    create_info.enabledExtensionCount = device_extensions.size();
+    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.pQueueCreateInfos       = queue_create_infos.data();
+    create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pEnabledFeatures        = &device_features;
+    create_info.enabledExtensionCount   = device_extensions.size();
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
     if (is_debug) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
         create_info.ppEnabledLayerNames = validation_layers.data();
     } else {
-	    create_info.enabledLayerCount = 0;
+	    create_info.enabledLayerCount   = 0;
     }
 
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
@@ -364,12 +360,10 @@ engine_t::create_instance(){
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
+    auto required_extensions = get_required_extensions(); 
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-
-    auto required_extensions = get_required_extensions(); 
-
     create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
@@ -380,9 +374,9 @@ engine_t::create_instance(){
 
     if (is_debug){
         create_info.ppEnabledLayerNames = validation_layers.data();
-        create_info.enabledLayerCount = validation_layers.size();
+        create_info.enabledLayerCount   = validation_layers.size();
     } else {
-        create_info.enabledLayerCount = 0;
+        create_info.enabledLayerCount   = 0;
     }
 
     std::cout << "Enabled validation layers: "  << std::endl;

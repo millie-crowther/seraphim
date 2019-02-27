@@ -21,7 +21,7 @@ public:
     }
 
     template<class... Xs>
-    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x : _xs...}) {}
+    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x, _xs...}) {}
 
     template<class T=vec_t<vec_type_t, 3>>
     typename std::enable_if<N == 3, T>::type
