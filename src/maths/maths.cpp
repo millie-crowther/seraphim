@@ -1,4 +1,4 @@
-#include "maths.h"
+#include "maths/maths.h"
 
 #include <cmath>
 

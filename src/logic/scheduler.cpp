@@ -73,21 +73,23 @@ start(){
 //
 void 
 scheduler::halt(){
-    is_finished = true;
+    if (is_initialised){
+        is_finished = true;
 
-    //task_lock.lock(); 
-    while (!tasks.empty()){
-        tasks.pop();
-    }
-    //task_lock.unlock();
-
-    for (auto & thread : thread_pool){
-        if (thread.joinable()){
-            thread.join();
+        //task_lock.lock(); 
+        while (!tasks.empty()){
+            tasks.pop();
         }
-    }
+        //task_lock.unlock();
 
-    thread_pool.clear();
+        for (auto & thread : thread_pool){
+            if (thread.joinable()){
+                thread.join();
+            }
+        }
+
+        thread_pool.clear();
+    }
 }
 
 void 

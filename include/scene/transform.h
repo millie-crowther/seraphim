@@ -22,9 +22,12 @@ public:
     // constructors and destructors
     transform_t();
 
-    std::shared_ptr<transform_t> add_child();
+    std::shared_ptr<transform_t> create_child();
     
     vec3_t get_absolute_position() const;
+
+    void set_position(const vec3_t & x);
+    void set_rotation(const quat_t & q);
 };
 
 #endif

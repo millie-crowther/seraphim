@@ -2,7 +2,6 @@
 
 #include "tiny_obj_loader.h"
 #include <stdexcept>
-#include "maths.h"
 
 mesh_t::mesh_t(
     VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t> & vs, 

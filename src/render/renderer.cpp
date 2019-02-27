@@ -39,7 +39,7 @@ renderer_t::init(
     if (!create_descriptor_set_layout()){
         return false;
     }
-
+    
     if (!create_graphics_pipeline()){
         return false;
     }
@@ -67,7 +67,10 @@ renderer_t::init(
     }
 
     std::vector<vertex_t> vertices = {
-        // TODO
+        vertex_t(vec3_t(-1, -1, 0)), 
+        vertex_t(vec3_t(-1,  1, 0)),
+        vertex_t(vec3_t( 1, -1, 0)),
+        vertex_t(vec3_t( 1,  1, 0))
     };
 
     std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -350,7 +353,7 @@ renderer_t::create_graphics_pipeline(){
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code, &success);
-    
+
     if (!success){
 	    return false;
     }
@@ -379,9 +382,7 @@ renderer_t::create_graphics_pipeline(){
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.pVertexBindingDescriptions = &vert_desc;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(
-	attr_desc.size()
-    );
+    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attr_desc.size());
     vertex_input_info.pVertexAttributeDescriptions = attr_desc.data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
@@ -467,6 +468,7 @@ renderer_t::create_graphics_pipeline(){
     ){
 	    return false;
     }
+    
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -498,9 +500,12 @@ renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(
-	    engine_t::get_device(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS
-    ){
+    VkResult result = vkCreateGraphicsPipelines(
+	    engine_t::get_device(), VK_NULL_HANDLE, 1, 
+        &pipeline_info, nullptr, &graphics_pipeline
+    );
+
+    if (result != VK_SUCCESS){
 	    return false;
     }
 

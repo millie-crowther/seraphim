@@ -63,6 +63,11 @@
         "list": "cpp",
         "__functional_03": "cpp",
         "__functional_base_03": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "*.tcc": "cpp",
+        "clocale": "cpp",
+        "unordered_map": "cpp",
+        "sstream": "cpp",
+        "cinttypes": "cpp"
     }
 }

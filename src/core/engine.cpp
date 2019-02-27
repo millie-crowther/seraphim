@@ -39,10 +39,7 @@ engine_t::window_resize(int w, int h){
 engine_t::engine_t(bool is_debug){
     this->is_debug = is_debug;
 
-    std::cout << 
-        "Running in " << 
-        (is_debug ? "debug" : "release") << 
-        " mode." << std::endl;
+    std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
 }
 
 void
@@ -110,7 +107,7 @@ engine_t::init(){
     vmaCreateAllocator(&allocator_info, &allocator);
 
     uint32_t graphics_family = get_graphics_queue_family(physical_device);
-    uint32_t present_family = get_present_queue_family(physical_device);
+    uint32_t present_family  = get_present_queue_family(physical_device);
 
     if (!renderer.init(surface, graphics_family, present_family, window_extents)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
@@ -192,9 +189,8 @@ engine_t::check_validation_layers(){
 
 std::vector<const char *>
 engine_t::get_required_extensions(){
-    uint32_t extension_count = 0;
-    const char ** glfw_extensions;
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+    uint32_t      extension_count = 0;
+    const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
     std::vector<const char *> req_ext(glfw_extensions, glfw_extensions + extension_count);
     if (is_debug){
@@ -446,13 +442,11 @@ engine_t::setup_debug_callback(){
 void 
 engine_t::update(){
     glfwPollEvents();
-
-    // renderer.chalet->tick_template(input);
 }
 
 void
 engine_t::cleanup(){
-    scheduler::halt();    
+    // scheduler::halt();    
 
     vkDeviceWaitIdle(device);
 

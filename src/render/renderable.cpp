@@ -2,7 +2,7 @@
 
 renderable_t::renderable_t(transform_t & parent){
     visible = true;
-    transform = parent.add_child();
+    transform = parent.create_child();
 }
 
 bool 
