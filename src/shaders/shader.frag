@@ -6,6 +6,9 @@ layout(location = 0) out vec4 out_colour;
 in vec4 gl_FragCoord;
 
 void main() {
-    vec2 p = gl_FragCoord.xy;
-    out_colour = vec4(1, 0, 0, 1);
+    if (length(gl_FragCoord.xy) < 100){
+        out_colour = vec4(1, 0, 1, 1);
+    } else {
+        out_colour = vec4(0.5, 0.5, 0.75, 1);
+    }
 }

@@ -77,6 +77,8 @@ private:
 
     void cleanup_swapchain();
 
+    void update_window_size_uniform(int width, int height);
+
 public:
     // constructors and destructors
     renderer_t();

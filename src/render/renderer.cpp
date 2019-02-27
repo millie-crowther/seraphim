@@ -80,6 +80,8 @@ renderer_t::init(
         return false;
     }
 
+    update_window_size_uniform(window_extents.width, window_extents.height);
+
     return true;
 }
 
@@ -95,6 +97,11 @@ renderer_t::create_uniform_buffers(){
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
 	    );
     }
+}
+
+void 
+renderer_t::update_window_size_uniform(int width, int height){
+    std::cout << "updating window size uniform " << width << ' ' << height << std::endl;
 }
 
 bool
@@ -113,34 +120,32 @@ renderer_t::create_swapchain(){
     }
 
     VkSwapchainCreateInfoKHR create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = surface;
-    create_info.minImageCount = image_count;
-    create_info.imageFormat = format.format;
-    create_info.imageColorSpace = format.colorSpace;
-    create_info.imageExtent = extents;
+    create_info.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface          = surface;
+    create_info.minImageCount    = image_count;
+    create_info.imageFormat      = format.format;
+    create_info.imageColorSpace  = format.colorSpace;
+    create_info.imageExtent      = extents;
     create_info.imageArrayLayers = 1;
-
     // if you dont wanna draw to image directly VK_IMAGE_USAGE_TRANSFER_DST_BIT
-    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;     
 
     uint32_t families[2] = { graphics_family, present_family };
 
     if (families[0] != families[1]){
-        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
         create_info.queueFamilyIndexCount = 2;
-	    create_info.pQueueFamilyIndices = families;
+	    create_info.pQueueFamilyIndices   = families;
     } else {
-	    create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	    create_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
         create_info.queueFamilyIndexCount = 0;
-	    create_info.pQueueFamilyIndices = nullptr;
+	    create_info.pQueueFamilyIndices   = nullptr;
     }
 
-    create_info.preTransform = capabilities.currentTransform;
+    create_info.preTransform   = capabilities.currentTransform;
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-
-    create_info.presentMode = mode;
-    create_info.clipped = VK_TRUE;
+    create_info.presentMode    = mode;
+    create_info.clipped        = VK_TRUE;
 
     // will need to update this field if creating a new swap chain e.g. for resized window
     create_info.oldSwapchain = VK_NULL_HANDLE;
@@ -908,5 +913,6 @@ renderer_t::create_shader_module(const std::vector<char>& code, bool * success){
 void
 renderer_t::window_resize(int width, int height){
     window_extents = { (uint32_t) width, (uint32_t) height };
+    update_window_size_uniform(width, height);
     recreate_swapchain();
 }
