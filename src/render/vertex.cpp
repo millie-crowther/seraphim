@@ -1,6 +1,6 @@
 #include "render/vertex.h"
 
-vertex_t::vertex_t(const vec3_t & p){
+vertex_t::vertex_t(const vec2_t & p){
     position = p;
 } 
 

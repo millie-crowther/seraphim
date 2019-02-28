@@ -67,10 +67,10 @@ renderer_t::init(
     }
 
     std::vector<vertex_t> vertices = {
-        vertex_t(vec3_t(-1, -1, 0.5f)), 
-        vertex_t(vec3_t(-1,  1, 0.5f)),
-        vertex_t(vec3_t( 1, -1, 0.5f)),
-        vertex_t(vec3_t( 1,  1, 0.5f))
+        vertex_t(vec2_t(-1, -1)), 
+        vertex_t(vec2_t(-1,  1)),
+        vertex_t(vec2_t( 1, -1)),
+        vertex_t(vec2_t( 1,  1))
     };
 
     std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };

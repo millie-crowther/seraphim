@@ -9,11 +9,11 @@
 class vertex_t {
 private:
     // private fields
-    vec3_t position;
+    vec2_t position;
 
 public:
     // constructors and destructors
-    vertex_t(const vec3_t & p);
+    vertex_t(const vec2_t & p);
 
     // static methods
     static VkVertexInputBindingDescription get_binding_description();
