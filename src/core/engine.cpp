@@ -312,7 +312,7 @@ engine_t::select_device(){
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0){
-	    return VK_NULL_HANDLE;
+ 	    return VK_NULL_HANDLE;
     }
 
     std::vector<VkPhysicalDevice> devices(device_count);

@@ -5,7 +5,7 @@ project (blaspheme)
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package ( Threads REQUIRED )
 
-set(VULKAN_SDK_PATH ~/VulkanSDK/1.1.97.0/x86_64)
+set(VULKAN_SDK_PATH "$ENV{HOME}/VulkanSDK/1.1.97.0/x86_64")
 set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/include")
 set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.so") # for macOS, .dylib
 find_package(Vulkan REQUIRED)
