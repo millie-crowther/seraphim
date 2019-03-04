@@ -5,25 +5,26 @@
 #include <vector>
 
 #include "logic/scheduler.h"
+#include "core/uuid.h"
 
 // TODO: read / write synchronisation on listeners vector
 
 template<class output_t>
 class emitter_t {
 public:
-    typedef std::function<void(const output_t)> listener_t;
+    typedef std::function<void(const output_t &)> listener_t;
 
     void listen(const listener_t & listener){
         listeners.push_back(listener);
     }
 
+protected:
     void emit(const output_t & output){
         for (auto & listener : listeners){
             scheduler::submit(std::bind(listener, output));
         }
     }
 
-protected:
     bool has_listeners() const {
         return !listeners.empty();
     }
