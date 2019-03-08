@@ -2,6 +2,9 @@
 
 #include <cstring>
 
+std::mt19937 uuid_t::engine;
+bool uuid_t::is_initialised = false;
+
 uuid_t::uuid_t(){
     // TODO: (1) seed mersenne twister
     //       (2) use timestamp to reduce (admittedly extremely small) chance of collision

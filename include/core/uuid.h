@@ -7,6 +7,7 @@
 class uuid_t {
 private:
     static std::mt19937 engine;
+    static bool is_initialised;
 
     // 128-bit number
     uint32_t id[4];
