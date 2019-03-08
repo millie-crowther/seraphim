@@ -14,8 +14,12 @@ class emitter_t {
 public:
     typedef std::function<void(const output_t &)> listener_t;
 
-    void listen(const listener_t & listener){
+    uuid_t listen(const listener_t & listener){
         listeners.push_back(listener);
+    }
+
+    void cancel(const uuid_t & uuid){
+        
     }
 
 protected:
