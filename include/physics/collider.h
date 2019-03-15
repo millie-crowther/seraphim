@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "sdf.h"
-#include "logic/emitter.h" 
+#include "logic/revelator.h" 
 #include "scene/transform.h"
 
 struct collision_t {
@@ -12,7 +12,7 @@ struct collision_t {
     vec3_t normal;
 };
 
-class collider_t : public emitter_t<collision_t> { 
+class collider_t : public revelator_t<collision_t> { 
 private:
     sdf_t sdf;
     transform_t transform;

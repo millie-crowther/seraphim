@@ -3,8 +3,8 @@
 rigidbody_t::rigidbody_t(const sdf_t & sdf) : collider(sdf){ }
 
 std::shared_ptr<transform_t> 
-rigidbody_t::add_child(){
-    return transform.add_child();
+rigidbody_t::create_servant(){
+    return transform.create_servant();
 }
 
 void

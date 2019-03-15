@@ -10,7 +10,7 @@
 // TODO: read / write synchronisation on listeners vector
 
 template<class output_t>
-class emitter_t {
+class revelator_t {
 public:
     typedef std::function<void(const output_t &)> listener_t;
 

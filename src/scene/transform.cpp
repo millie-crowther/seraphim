@@ -1,19 +1,19 @@
 #include "scene/transform.h"
 
 transform_t::transform_t() {
-    this->parent = nullptr;
+    this->master = nullptr;
 }
 
 
-transform_t::transform_t(transform_t * parent){
-    this->parent = parent;
+transform_t::transform_t(transform_t * master){
+    this->master = master;
 }
 
 std::shared_ptr<transform_t> 
-transform_t::create_child(){
-    std::shared_ptr<transform_t> child(this);
-    children.push_back(child);
-    return child;
+transform_t::create_servant(){
+    std::shared_ptr<transform_t> servant(this);
+    servants.push_back(servant);
+    return servant;
 }
 
 void

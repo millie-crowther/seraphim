@@ -27,7 +27,7 @@ public:
     void add_force(const vec3_t & f);
     void add_force_at(const vec3_t & f, const vec3_t & s);
 
-    std::shared_ptr<transform_t> add_child();
+    std::shared_ptr<transform_t> create_servant();
 };
 
 #endif 
