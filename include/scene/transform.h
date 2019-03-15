@@ -8,10 +8,11 @@
 
 class transform_t {
 private:
-    // private fields
+    // master and servant hierarchy
     transform_t * master;
     std::vector<std::shared_ptr<transform_t>> servants;
 
+    // physical location and orientation
     vec3_t position;
     quat_t rotation;
     

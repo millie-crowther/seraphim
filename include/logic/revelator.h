@@ -18,7 +18,7 @@ public:
         followers.push_back(follower);
     }
 
-    void cancel(const uuid_t & uuid){
+    void apostasise(const uuid_t & apostate){
         
     }
 
