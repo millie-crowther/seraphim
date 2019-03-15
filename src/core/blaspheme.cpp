@@ -1,4 +1,4 @@
-#include "core/engine.h"
+#include "core/blaspheme.h"
 
 #include <cmath>
 #include <iostream>
@@ -13,8 +13,8 @@
 
 #include "logic/scheduler.h"
 
-VkPhysicalDevice engine_t::physical_device;
-VkDevice engine_t::device;
+VkPhysicalDevice blaspheme_t::physical_device;
+VkDevice blaspheme_t::device;
 
 const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
@@ -27,23 +27,23 @@ const std::vector<const char*> device_extensions = {
 void 
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
-    engine_t * engine = reinterpret_cast<engine_t *>(data);
-    engine->window_resize(width, height);
+    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
+    blaspheme->window_resize(width, height);
 }
 
 void
-engine_t::window_resize(int w, int h){
+blaspheme_t::window_resize(int w, int h){
     renderer.window_resize(w, h);
 }
 
-engine_t::engine_t(bool is_debug){
+blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
     std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
 }
 
 void
-engine_t::init(){
+blaspheme_t::init(){
     // check compatibility of float
     if (sizeof(vec3_t) != 12){
         throw std::runtime_error("Error: 'float' is wrong size");
@@ -115,7 +115,7 @@ engine_t::init(){
 }
 
 bool
-engine_t::create_logical_device(){
+blaspheme_t::create_logical_device(){
     uint32_t graphics = get_graphics_queue_family(physical_device);
     uint32_t present = get_present_queue_family(physical_device);
 
@@ -158,7 +158,7 @@ engine_t::create_logical_device(){
 }
 
 bool
-engine_t::check_validation_layers(){
+blaspheme_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -184,7 +184,7 @@ engine_t::check_validation_layers(){
 }
 
 std::vector<const char *>
-engine_t::get_required_extensions(){
+blaspheme_t::get_required_extensions(){
     uint32_t      extension_count = 0;
     const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
@@ -197,7 +197,7 @@ engine_t::get_required_extensions(){
 }
 
 int
-engine_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
+blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
 
@@ -214,7 +214,7 @@ engine_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
 }
 
 int 
-engine_t::get_present_queue_family(VkPhysicalDevice phys_device){
+blaspheme_t::get_present_queue_family(VkPhysicalDevice phys_device){
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
 
@@ -234,7 +234,7 @@ engine_t::get_present_queue_family(VkPhysicalDevice phys_device){
 }
 
 bool
-engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
+blaspheme_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
     if (count == 0){
@@ -251,7 +251,7 @@ engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
 }
 
 bool
-engine_t::is_suitable_device(VkPhysicalDevice phys_device){
+blaspheme_t::is_suitable_device(VkPhysicalDevice phys_device){
     // check that gpu isnt integrated
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(phys_device, &properties);
@@ -289,7 +289,7 @@ engine_t::is_suitable_device(VkPhysicalDevice phys_device){
 }
 
 bool
-engine_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension){
+blaspheme_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension){
     uint32_t extension_count = 0;
     vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count, nullptr);
 
@@ -308,7 +308,7 @@ engine_t::device_has_extension(VkPhysicalDevice phys_device, const char * extens
 }
 
 VkPhysicalDevice
-engine_t::select_device(){
+blaspheme_t::select_device(){
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0){
@@ -328,7 +328,7 @@ engine_t::select_device(){
 }
 
 void
-engine_t::create_instance(){
+blaspheme_t::create_instance(){
     if (is_debug && !check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
     }
@@ -407,7 +407,7 @@ debug_callback(
 }
 
 bool
-engine_t::setup_debug_callback(){
+blaspheme_t::setup_debug_callback(){
     if (!is_debug){
 	    return true;
     }
@@ -434,12 +434,12 @@ engine_t::setup_debug_callback(){
 }
 
 void 
-engine_t::update(){
+blaspheme_t::update(){
     glfwPollEvents();
 }
 
 void
-engine_t::cleanup(){
+blaspheme_t::cleanup(){
     // scheduler::halt();    
 
     vkDeviceWaitIdle(device);
@@ -471,12 +471,12 @@ engine_t::cleanup(){
 }
 
 bool
-engine_t::should_quit(){
+blaspheme_t::should_quit(){
     return glfwWindowShouldClose(window);
 }
 
 void
-engine_t::run(){
+blaspheme_t::run(){
     init();	
 
     while (!should_quit()){
@@ -488,11 +488,11 @@ engine_t::run(){
 }
 
 VkPhysicalDevice
-engine_t::get_physical_device(){
+blaspheme_t::get_physical_device(){
     return physical_device;
 }
 
 VkDevice
-engine_t::get_device(){
+blaspheme_t::get_device(){
     return device;
 }

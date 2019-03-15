@@ -18,11 +18,14 @@ public:
         followers.push_back(follower);
     }
 
-    void apostasise(const uuid_t & apostate){
+    void renounce(const uuid_t & apostate){
         
     }
 
 protected:
+    // protected constructor enforces abstract class
+    revelator_t(){}
+
     void emit(const output_t & output){
         for (auto & follower : followers){
             scheduler::submit(std::bind(follower, output));

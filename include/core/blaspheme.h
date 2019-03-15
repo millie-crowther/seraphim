@@ -7,7 +7,7 @@
 #include <vector>
 #include "render/renderer.h"
 
-class engine_t {
+class blaspheme_t {
 private:
     /*
       initialisation functions
@@ -56,7 +56,7 @@ private:
     static VkDevice device;
 
 public:
-    engine_t(bool is_debug);
+    blaspheme_t(bool is_debug);
 
     void window_resize(int w, int h);
 
