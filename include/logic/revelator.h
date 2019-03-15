@@ -12,10 +12,10 @@
 template<class output_t>
 class revelator_t {
 public:
-    typedef std::function<void(const output_t &)> listener_t;
+    typedef std::function<void(const output_t &)> follower_t;
 
-    uuid_t listen(const listener_t & listener){
-        listeners.push_back(listener);
+    uuid_t follow(const follower_t & follower){
+        followers.push_back(follower);
     }
 
     void cancel(const uuid_t & uuid){
@@ -24,17 +24,17 @@ public:
 
 protected:
     void emit(const output_t & output){
-        for (auto & listener : listeners){
-            scheduler::submit(std::bind(listener, output));
+        for (auto & follower : followers){
+            scheduler::submit(std::bind(follower, output));
         }
     }
 
-    bool has_listeners() const {
-        return !listeners.empty();
+    bool has_followers() const {
+        return !followers.empty();
     }
 
 private:
-    std::vector<listener_t> listeners;
+    std::vector<follower_t> followers;
 };
 
 #endif

@@ -7,7 +7,7 @@ collider_t::collider_t(const sdf_t& sdf){
 
 void
 collider_t::collide(std::shared_ptr<collider_t> c) const {
-    if (colliding && (has_listeners() || c->has_listeners())){
+    if (colliding && (has_followers() || c->has_followers())){
         // TODO
     }
 } 
