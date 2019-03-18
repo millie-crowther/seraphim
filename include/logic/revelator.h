@@ -26,7 +26,7 @@ protected:
     // protected constructor enforces abstract class
     revelator_t(){}
 
-    void emit(const output_t & output){
+    void reveal(const output_t & output) const {
         for (auto & follower : followers){
             scheduler::submit(std::bind(follower, output));
         }

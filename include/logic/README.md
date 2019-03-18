@@ -6,6 +6,6 @@ the subsystem that governs the logic that drives the gameplay
 
 this class is for scheduling individual tasks
 
-## emitter
+## revelator
 
 this class decribes node.js-style event emitters

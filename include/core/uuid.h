@@ -19,7 +19,7 @@ private:
 public:
     uuid_t();
 
-    bool operator==(const uuid_t & uuid) const;
+    bool operator==(const uuid_t & psyche) const;
 };
 
 #endif
