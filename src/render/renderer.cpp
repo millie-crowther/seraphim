@@ -66,11 +66,11 @@ renderer_t::init(
         return false;
     }
 
-    std::vector<vertex_t> vertices = {
-        vertex_t(vec2_t(-1, -1)), 
-        vertex_t(vec2_t(-1,  1)),
-        vertex_t(vec2_t( 1, -1)),
-        vertex_t(vec2_t( 1,  1))
+    std::vector<vec2_t> vertices = {
+        vec2_t(-1, -1), 
+        vec2_t(-1,  1),
+        vec2_t( 1, -1),
+        vec2_t( 1,  1)
     };
 
     std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -380,15 +380,23 @@ renderer_t::create_graphics_pipeline(){
         frag_create_info
     };
 
-    auto vert_desc = vertex_t::get_binding_description();
-    auto attr_desc = vertex_t::get_attr_descriptions();
+    VkVertexInputBindingDescription binding_desc = {};
+    binding_desc.binding = 0;
+    binding_desc.stride = sizeof(vec2_t);
+    binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription attr_desc = {};
+    attr_desc.binding = 0;
+    attr_desc.location = 0;
+    attr_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
+    attr_desc.offset = 0;
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 1;
-    vertex_input_info.pVertexBindingDescriptions = &vert_desc;
-    vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attr_desc.size());
-    vertex_input_info.pVertexAttributeDescriptions = attr_desc.data();
+    vertex_input_info.pVertexBindingDescriptions = &binding_desc;
+    vertex_input_info.vertexAttributeDescriptionCount = 1;
+    vertex_input_info.pVertexAttributeDescriptions = &attr_desc;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -31,6 +31,7 @@ public:
     sdf_t operator&&(const sdf_t & sdf) const;
     sdf_t operator||(const sdf_t & sdf) const;
     sdf_t operator!() const;
+    sdf_t operator-(const sdf_t & sdf) const;
 };
 
 #endif
