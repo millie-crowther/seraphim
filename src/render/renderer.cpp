@@ -80,7 +80,7 @@ renderer_t::init(
         return false;
     }
 
-    update_window_size_uniform(window_extents.width, window_extents.height);
+    update_window_size_uniform();
 
     return true;
 }
@@ -317,22 +317,22 @@ renderer_t::create_render_pass(){
     depth_attachment_ref.attachment = 1;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-    VkSubpassDescription subpass = {};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colour_attachment_ref;
+    VkSubpassDescription subpass    = {};
+    subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount    = 1;
+    subpass.pColorAttachments       = &colour_attachment_ref;
     subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
     VkSubpassDependency dependency = {};
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass    = 0;
+    dependency.srcStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask  = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
                              | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    std::array<VkAttachmentDescription, 2> attachments = { colour_attachment, depth_attachment };
+    std::vector<VkAttachmentDescription> attachments = { colour_attachment, depth_attachment };
 
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -381,15 +381,15 @@ renderer_t::create_graphics_pipeline(){
     };
 
     VkVertexInputBindingDescription binding_desc = {};
-    binding_desc.binding = 0;
-    binding_desc.stride = sizeof(vec2_t);
+    binding_desc.binding   = 0;
+    binding_desc.stride    = sizeof(vec2_t);
     binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription attr_desc = {};
-    attr_desc.binding = 0;
+    attr_desc.binding  = 0;
     attr_desc.location = 0;
-    attr_desc.format = VK_FORMAT_R32G32B32_SFLOAT;
-    attr_desc.offset = 0;
+    attr_desc.format   = VK_FORMAT_R32G32B32_SFLOAT;
+    attr_desc.offset   = 0;
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -412,8 +412,8 @@ renderer_t::create_graphics_pipeline(){
     viewport.maxDepth = 1;
 
     VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = swapchain_extents;
+    scissor.offset   = {0, 0};
+    scissor.extent   = swapchain_extents;
 
     VkPipelineViewportStateCreateInfo viewport_state = {};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -481,7 +481,6 @@ renderer_t::create_graphics_pipeline(){
     ){
 	    return false;
     }
-    
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -921,6 +920,6 @@ renderer_t::create_shader_module(const std::vector<char>& code, bool * success){
 void
 renderer_t::window_resize(int width, int height){
     window_extents = { (uint32_t) width, (uint32_t) height };
-    update_window_size_uniform(width, height);
+    update_window_size_uniform();
     recreate_swapchain();
 }
