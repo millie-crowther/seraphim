@@ -16,6 +16,8 @@ private:
     void copy_buffer(
 	    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
     );
+    VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
+    void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
 public:
     // constructors and destructors
