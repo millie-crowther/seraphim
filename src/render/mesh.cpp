@@ -4,10 +4,10 @@
 #include <stdexcept>
 
 mesh_t::mesh_t(
-    VkCommandPool cmd_pool, VkQueue queue, const std::vector<vertex_t> & vs, 
+    VkCommandPool cmd_pool, VkQueue queue, const std::vector<vec2_t> & vs, 
     const std::vector<uint32_t> & is
 ){
-    VkDeviceSize v_size = sizeof(vertex_t) * vs.size();
+    VkDeviceSize v_size = sizeof(vec2_t) * vs.size();
     vertices = new buffer_t(
         v_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -26,17 +26,12 @@ mesh_t::mesh_t(
     index_count = is.size();
 }
 
-mesh_t::~mesh_t(){
-    delete vertices;
-    delete indices;
-}
-
-buffer_t *
+buffer_t 
 mesh_t::get_vertex_buffer() const {
      return vertices;
 }
 
-buffer_t * 
+buffer_t 
 mesh_t::get_index_buffer() const {
     return indices;
 }

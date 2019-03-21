@@ -36,7 +36,6 @@ set(SOURCES
     ../src/render/image.cpp
     ../src/render/renderable.cpp
     ../src/render/mesh.cpp
-    ../src/render/texture.cpp
     ../src/render/camera.cpp
     
     ../src/maths/maths.cpp
