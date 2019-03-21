@@ -23,11 +23,4 @@ else
     git clone https://github.com/nothings/stb.git
 fi
 
-if cd tinyobjloader; then
-    git pull
-    cd ..
-else
-    git clone https://github.com/syoyo/tinyobjloader.git
-fi
-
 cd ..
