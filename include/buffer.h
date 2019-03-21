@@ -23,8 +23,8 @@ private:
 
 public:
     // constructors and destructors
-    buffer_t(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
-    ~buffer_t();
+    raw_buffer_t(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    ~raw_buffer_t();
 
     // public methods
     void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);

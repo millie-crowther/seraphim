@@ -5,7 +5,7 @@
 #include <cstring>
 #include "core/blaspheme.h"
 
-buffer_t::buffer_t(
+raw_buffer_t::raw_buffer_t(
     VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
 ){
     VkBufferCreateInfo create_info = {};
@@ -39,13 +39,13 @@ buffer_t::buffer_t(
     is_host_visible = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT & properties) != 0;
 }
 
-buffer_t::~buffer_t(){
+raw_buffer_t::~raw_buffer_t(){
     vkDestroyBuffer(engine_t::get_device(), buffer, nullptr);
     vkFreeMemory(engine_t::get_device(), memory, nullptr);
 }
 
 VkCommandBuffer 
-buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
+raw_buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -69,7 +69,7 @@ buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
 }
 
 void 
-post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
+raw_buffer_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
     vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submit_info;
@@ -90,7 +90,7 @@ post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command
 }
 
 int
-buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
+raw_buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
     vkGetPhysicalDeviceMemoryProperties(engine_t::get_physical_device(), &memory_prop);
 
@@ -107,12 +107,12 @@ buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags propertie
 }
 
 VkBuffer
-buffer_t::get_buffer(){
+raw_buffer_t::get_buffer(){
     return buffer;
 }
 
 void
-buffer_t::copy_buffer(
+raw_buffer_t::copy_buffer(
     VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
 ){
     auto cmd = pre_commands(command_pool, queue);
@@ -126,12 +126,12 @@ buffer_t::copy_buffer(
 }
 
 VkDeviceMemory
-buffer_t::get_memory(){
+raw_buffer_t::get_memory(){
     return memory;
 }
 
 void
-buffer_t::copy(
+raw_buffer_t::copy(
     VkCommandPool command_pool, VkQueue queue, void * data, VkDeviceSize size
 ){
     if (is_host_visible){
@@ -153,7 +153,7 @@ buffer_t::copy(
 }
 
 void
-buffer_t::copy_to_image(
+raw_buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
     auto cmd = pre_commands(command_pool, queue);
