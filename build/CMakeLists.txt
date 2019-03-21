@@ -33,7 +33,7 @@ set(SOURCES
     ../src/vk_utils.cpp
     
     ../src/render/renderer.cpp
-    ../src/render/image.cpp
+    ../src/render/swapchain_image.cpp
     ../src/render/renderable.cpp
     ../src/render/mesh.cpp
     ../src/render/camera.cpp

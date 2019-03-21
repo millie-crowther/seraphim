@@ -3,8 +3,7 @@
 
 #include <vector>
 #include "buffer.h" 
-#include <string>
-#include <memory>
+#include "maths/vec.h"
 
 class mesh_t {
 private:
@@ -24,9 +23,6 @@ public:
     buffer_t get_vertex_buffer() const;
     buffer_t get_index_buffer() const;
     int get_index_count() const;
-
-    // factory methods
-    // TODO: add a proxy to stop it always being loaded
 };
 
 #endif

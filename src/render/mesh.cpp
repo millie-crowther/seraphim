@@ -28,7 +28,7 @@ mesh_t::mesh_t(
 
 buffer_t 
 mesh_t::get_vertex_buffer() const {
-     return vertices;
+    return vertices;    
 }
 
 buffer_t 
