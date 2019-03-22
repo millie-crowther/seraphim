@@ -1,9 +1,8 @@
 #include "render/image.h"
 
 #include <stdexcept>
-#include "vk_utils.h"
 
-#include "core/engine.h"
+#include "core/blaspheme.h"
 
 image_t::image_t(
     uint32_t width, uint32_t height, VkFormat format, 
@@ -32,26 +31,26 @@ image_t::image_t(
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VkResult result = vkCreateImage(engine_t::get_device(), &image_info, nullptr, &image);
+    VkResult result = vkCreateImage(blaspheme_t::get_device(), &image_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	throw std::runtime_error("Error: Failed to create image.");
     }
 
     // allocate memory
     VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(engine_t::get_device(), image, &mem_req);
+    vkGetImageMemoryRequirements(blaspheme_t::get_device(), image, &mem_req);
 
     VkMemoryAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = mem_req.size;
     alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(engine_t::get_device(), &alloc_info, nullptr, &memory);
+    result = vkAllocateMemory(blaspheme_t::get_device(), &alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    vkBindImageMemory(engine_t::get_device(), image, memory, 0);
+    vkBindImageMemory(blaspheme_t::get_device(), image, memory, 0);
 
     // create image view
     create_image_view(aspect_flags);
@@ -85,25 +84,25 @@ image_t::create_image_view(VkImageAspectFlags aspect_flags){
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    VkResult result = vkCreateImageView(engine_t::get_device(), &view_info, nullptr, &image_view);
+    VkResult result = vkCreateImageView(blaspheme_t::get_device(), &view_info, nullptr, &image_view);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image view.");
     }
 }
 
 image_t::~image_t(){
-    vkDestroyImageView(engine_t::get_device(), image_view, nullptr);
+    vkDestroyImageView(blaspheme_t::get_device(), image_view, nullptr);
     
     if (!is_swapchain){
-        vkDestroyImage(engine_t::get_device(), image, nullptr);
-        vkFreeMemory(engine_t::get_device(), memory, nullptr);
+        vkDestroyImage(blaspheme_t::get_device(), image, nullptr);
+        vkFreeMemory(blaspheme_t::get_device(), memory, nullptr);
     }
 }
 
 int
 image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(engine_t::get_physical_device(), &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(blaspheme_t::get_physical_device(), &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -122,9 +121,54 @@ image_t::get_image(){
     return image;
 }
 
+VkCommandBuffer 
+image_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = command_pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer command_buffer;
+    VkResult result = vkAllocateCommandBuffers(blaspheme_t::get_device(), &alloc_info, &command_buffer);
+    if (result != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to allocate command buffer.");
+    }
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pNext = nullptr;
+    begin_info.pInheritanceInfo = nullptr;
+
+    vkBeginCommandBuffer(command_buffer, &begin_info);
+    return command_buffer;
+}
+
+void 
+image_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
+    vkEndCommandBuffer(command_buffer);
+
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &command_buffer;
+    submit_info.pNext = nullptr;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+        
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue);
+
+    vkFreeCommandBuffers(blaspheme_t::get_device(), command_pool, 1, &command_buffer);    
+}
+
 void
 image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageLayout new_layout){
-    vk_utils::single_time_commands(cmd_pool, queue, [&](VkCommandBuffer cmd){
+    auto cmd = pre_commands(cmd_pool, queue);
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -188,7 +232,7 @@ image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageL
         vkCmdPipelineBarrier(
             cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    });
+    post_commands(cmd_pool, queue, cmd);
 
     layout = new_layout;
 }

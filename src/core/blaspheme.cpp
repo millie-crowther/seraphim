@@ -7,7 +7,6 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
-#include "render/vertex.h"
 #include <cstring>
 #include "maths/maths.h"
 
@@ -44,11 +43,6 @@ blaspheme_t::blaspheme_t(bool is_debug){
 
 void
 blaspheme_t::init(){
-    // check compatibility of float
-    if (sizeof(vec3_t) != 12){
-        throw std::runtime_error("Error: 'float' is wrong size");
-    }
-
     // initialise GLFW
     glfwInit();
 

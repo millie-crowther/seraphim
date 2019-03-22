@@ -1,6 +1,6 @@
 #include "render/renderer.h"
 
-#include "core/engine.h"
+#include "core/blaspheme.h"
 #include "input.h"
 #include <chrono>
 
@@ -25,8 +25,8 @@ renderer_t::init(
     this->graphics_family = graphics_family;
     this->present_family = present_family;
 
-    vkGetDeviceQueue(engine_t::get_device(), graphics_family, 0, &graphics_queue);
-    vkGetDeviceQueue(engine_t::get_device(), present_family, 0, &present_queue);
+    vkGetDeviceQueue(blaspheme_t::get_device(), graphics_family, 0, &graphics_queue);
+    vkGetDeviceQueue(blaspheme_t::get_device(), present_family, 0, &present_queue);
 
     if (!create_swapchain()){
         return false;
@@ -66,11 +66,11 @@ renderer_t::init(
         return false;
     }
 
-    std::vector<vec2_t> vertices = {
-        vec2_t(-1, -1), 
-        vec2_t(-1,  1),
-        vec2_t( 1, -1),
-        vec2_t( 1,  1)
+    std::vector<vec_t<float, 2>> vertices = {
+        vec_t<float, 2>(-1.0f, -1.0f), 
+        vec_t<float, 2>(-1.0f,  1.0f),
+        vec_t<float, 2>( 1.0f, -1.0f),
+        vec_t<float, 2>( 1.0f,  1.0f)
     };
 
     std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
@@ -91,7 +91,7 @@ renderer_t::create_uniform_buffers(){
     VkDeviceSize size = sizeof(uniform_buffer_data_t);
     uniform_buffers.resize(swapchain_images.size());
     for (int i = 0; i < uniform_buffers.size(); i++){
-        uniform_buffers[i] = new buffer_t(
+        uniform_buffers[i] = std::make_shared<raw_buffer_t>(
             size,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -100,8 +100,8 @@ renderer_t::create_uniform_buffers(){
 }
 
 void 
-renderer_t::update_window_size_uniform(int width, int height){
-    std::cout << "updating window size uniform " << width << ' ' << height << std::endl;
+renderer_t::update_window_size_uniform(){
+    std::cout << "updating window size uniform " << window_extents.width << ' ' << window_extents.height << std::endl;
 }
 
 bool
@@ -112,7 +112,7 @@ renderer_t::create_swapchain(){
 
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        engine_t::get_physical_device(), surface, &capabilities
+        blaspheme_t::get_physical_device(), surface, &capabilities
     );
     uint32_t image_count = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount != 0 && image_count > capabilities.maxImageCount){
@@ -150,15 +150,15 @@ renderer_t::create_swapchain(){
     // will need to update this field if creating a new swap chain e.g. for resized window
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(engine_t::get_device(), &create_info, nullptr, &swapchain) != VK_SUCCESS){
+    if (vkCreateSwapchainKHR(blaspheme_t::get_device(), &create_info, nullptr, &swapchain) != VK_SUCCESS){
 	    return false;
     }
 
     uint32_t count = 0;
-    vkGetSwapchainImagesKHR(engine_t::get_device(), swapchain, &count, nullptr);
+    vkGetSwapchainImagesKHR(blaspheme_t::get_device(), swapchain, &count, nullptr);
 
     VkImage swapchain_imgs[count];
-    vkGetSwapchainImagesKHR(engine_t::get_device(), swapchain, &count, swapchain_imgs);
+    vkGetSwapchainImagesKHR(blaspheme_t::get_device(), swapchain, &count, swapchain_imgs);
   
     swapchain_images.resize(count);
     for (int i = 0; i < count; i++){
@@ -176,7 +176,7 @@ VkExtent2D
 renderer_t::select_swap_extent(){
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        engine_t::get_physical_device(), surface, &capabilities
+        blaspheme_t::get_physical_device(), surface, &capabilities
     );
 
     // check if we need to supply width and height
@@ -202,11 +202,11 @@ VkPresentModeKHR
 renderer_t::select_present_mode(){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        engine_t::get_physical_device(), surface, &count, nullptr
+        blaspheme_t::get_physical_device(), surface, &count, nullptr
     );
     std::vector<VkPresentModeKHR> modes(count);
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        engine_t::get_physical_device(), surface, &count, modes.data()
+        blaspheme_t::get_physical_device(), surface, &count, modes.data()
     );
 
     if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()){
@@ -224,11 +224,11 @@ VkSurfaceFormatKHR
 renderer_t::select_surface_format(){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(
-        engine_t::get_physical_device(), surface, &count, nullptr
+        blaspheme_t::get_physical_device(), surface, &count, nullptr
     );
     std::vector<VkSurfaceFormatKHR> formats(count);
     vkGetPhysicalDeviceSurfaceFormatsKHR(
-        engine_t::get_physical_device(), surface, &count, formats.data()
+        blaspheme_t::get_physical_device(), surface, &count, formats.data()
     );
     
     // check if all formats supported
@@ -252,7 +252,7 @@ renderer_t::select_surface_format(){
 
 void
 renderer_t::recreate_swapchain(){
-    vkDeviceWaitIdle(engine_t::get_device());
+    vkDeviceWaitIdle(blaspheme_t::get_device());
   
     cleanup_swapchain();
     
@@ -271,22 +271,22 @@ renderer_t::cleanup_swapchain(){
     depth_image = nullptr;
 
     for (auto framebuffer : swapchain_framebuffers){
-	    vkDestroyFramebuffer(engine_t::get_device(), framebuffer, nullptr);
+	    vkDestroyFramebuffer(blaspheme_t::get_device(), framebuffer, nullptr);
     }
 
     vkFreeCommandBuffers(
-        engine_t::get_device(), command_pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
+        blaspheme_t::get_device(), command_pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
     );
 
-    vkDestroyPipeline(engine_t::get_device(), graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(engine_t::get_device(), pipeline_layout, nullptr);
-    vkDestroyRenderPass(engine_t::get_device(), render_pass, nullptr);
+    vkDestroyPipeline(blaspheme_t::get_device(), graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(blaspheme_t::get_device(), pipeline_layout, nullptr);
+    vkDestroyRenderPass(blaspheme_t::get_device(), render_pass, nullptr);
 
     for (int i = 0; i < swapchain_images.size(); i++){
         delete swapchain_images[i];
     }
 
-    vkDestroySwapchainKHR(engine_t::get_device(), swapchain, nullptr);
+    vkDestroySwapchainKHR(blaspheme_t::get_device(), swapchain, nullptr);
 }
 
 bool
@@ -304,7 +304,7 @@ renderer_t::create_render_pass(){
     colour_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription depth_attachment = {};
-    depth_attachment.format = image_t::find_depth_format(engine_t::get_physical_device());
+    depth_attachment.format = image_t::find_depth_format(blaspheme_t::get_physical_device());
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -343,7 +343,7 @@ renderer_t::create_render_pass(){
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(engine_t::get_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
+    return vkCreateRenderPass(blaspheme_t::get_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
 }
 
 bool 
@@ -477,7 +477,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_layout_info.pPushConstantRanges = nullptr;
 
     if (vkCreatePipelineLayout(
-	    engine_t::get_device(), &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
+	    blaspheme_t::get_device(), &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
 	    return false;
     }
@@ -513,7 +513,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     VkResult result = vkCreateGraphicsPipelines(
-	    engine_t::get_device(), VK_NULL_HANDLE, 1, 
+	    blaspheme_t::get_device(), VK_NULL_HANDLE, 1, 
         &pipeline_info, nullptr, &graphics_pipeline
     );
 
@@ -521,15 +521,15 @@ renderer_t::create_graphics_pipeline(){
 	    return false;
     }
 
-    vkDestroyShaderModule(engine_t::get_device(), vert_shader_module, nullptr);
-    vkDestroyShaderModule(engine_t::get_device(), frag_shader_module, nullptr);
+    vkDestroyShaderModule(blaspheme_t::get_device(), vert_shader_module, nullptr);
+    vkDestroyShaderModule(blaspheme_t::get_device(), frag_shader_module, nullptr);
 
     return true;
 }
 
 bool
 renderer_t::create_depth_resources(){
-    VkFormat depth_format = image_t::find_depth_format(engine_t::get_physical_device());
+    VkFormat depth_format = image_t::find_depth_format(blaspheme_t::get_physical_device());
 
     depth_image = new image_t(
         swapchain_extents.width, swapchain_extents.height, depth_format,
@@ -563,7 +563,7 @@ renderer_t::create_framebuffers(){
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
-            engine_t::get_device(), &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
+            blaspheme_t::get_device(), &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
         ){
             return false;
         }
@@ -583,7 +583,7 @@ renderer_t::create_command_buffers(mesh_t * mesh){
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
-    if (vkAllocateCommandBuffers(engine_t::get_device(), &alloc_info, command_buffers.data()) != VK_SUCCESS){
+    if (vkAllocateCommandBuffers(blaspheme_t::get_device(), &alloc_info, command_buffers.data()) != VK_SUCCESS){
         return false;
     }
 
@@ -653,7 +653,7 @@ renderer_t::create_descriptor_pool(){
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = static_cast<uint32_t>(swapchain_images.size());
 
-    if (vkCreateDescriptorPool(engine_t::get_device(), &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
+    if (vkCreateDescriptorPool(blaspheme_t::get_device(), &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
 	    return false;
     }
 
@@ -676,7 +676,7 @@ renderer_t::create_descriptor_sets(){
     alloc_info.pSetLayouts = layouts.data();
 
     desc_sets.resize(n);
-    if (vkAllocateDescriptorSets(engine_t::get_device(), &alloc_info, desc_sets.data()) != VK_SUCCESS){
+    if (vkAllocateDescriptorSets(blaspheme_t::get_device(), &alloc_info, desc_sets.data()) != VK_SUCCESS){
 	    return false;
     }
 
@@ -752,7 +752,7 @@ renderer_t::create_descriptor_set_layout(){
     layout_info.pBindings = bindings.data();
 
     VkResult result = vkCreateDescriptorSetLayout(
-        engine_t::get_device(), &layout_info, nullptr, &descriptor_layout
+        blaspheme_t::get_device(), &layout_info, nullptr, &descriptor_layout
     );
  
     if (result != VK_SUCCESS){
@@ -771,7 +771,7 @@ renderer_t::create_command_pool(){
     command_pool_info.queueFamilyIndex = graphics_family;
     command_pool_info.flags = 0;
 
-    if (vkCreateCommandPool(engine_t::get_device(), &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
+    if (vkCreateCommandPool(blaspheme_t::get_device(), &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
     	return false;
     }
 
@@ -793,18 +793,18 @@ renderer_t::create_sync(){
  
     for (int i = 0; i < frames_in_flight; i++){
         if (vkCreateSemaphore(
-            engine_t::get_device(), &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
+            blaspheme_t::get_device(), &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
         if (vkCreateSemaphore(
-            engine_t::get_device(), &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
+            blaspheme_t::get_device(), &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
-        if (vkCreateFence(engine_t::get_device(), &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
+        if (vkCreateFence(blaspheme_t::get_device(), &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
             return false;
         }
     }
@@ -815,12 +815,12 @@ renderer_t::create_sync(){
 
 void
 renderer_t::render(){
-    vkWaitForFences(engine_t::get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(engine_t::get_device(), 1, &in_flight_fences[current_frame]); 
+    vkWaitForFences(blaspheme_t::get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(blaspheme_t::get_device(), 1, &in_flight_fences[current_frame]); 
 
     uint32_t image_index;
     vkAcquireNextImageKHR(
-        engine_t::get_device(), swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
+        blaspheme_t::get_device(), swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
    
@@ -881,22 +881,19 @@ renderer_t::update_uniform_buffers(uint32_t image_index){
 
 void
 renderer_t::cleanup(){
-    vkDestroyDescriptorSetLayout(engine_t::get_device(), descriptor_layout, nullptr);
+    vkDestroyDescriptorSetLayout(blaspheme_t::get_device(), descriptor_layout, nullptr);
 
-    for (auto buffer : uniform_buffers){
-        delete buffer;
-    }
     uniform_buffers.clear();
 
     cleanup_swapchain();
 
     for (int i = 0; i < frames_in_flight; i++){
-        vkDestroySemaphore(engine_t::get_device(), image_available_semas[i], nullptr);
-        vkDestroySemaphore(engine_t::get_device(), render_finished_semas[i], nullptr);
-        vkDestroyFence(engine_t::get_device(), in_flight_fences[i], nullptr);
+        vkDestroySemaphore(blaspheme_t::get_device(), image_available_semas[i], nullptr);
+        vkDestroySemaphore(blaspheme_t::get_device(), render_finished_semas[i], nullptr);
+        vkDestroyFence(blaspheme_t::get_device(), in_flight_fences[i], nullptr);
     }
 
-    vkDestroyCommandPool(engine_t::get_device(), command_pool, nullptr);
+    vkDestroyCommandPool(blaspheme_t::get_device(), command_pool, nullptr);
 
     if (mesh != nullptr){
         delete mesh;
@@ -911,7 +908,7 @@ renderer_t::create_shader_module(const std::vector<char>& code, bool * success){
     create_info.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
     VkShaderModule shader_module;
-    if (vkCreateShaderModule(engine_t::get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS){
+    if (vkCreateShaderModule(blaspheme_t::get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS){
 	    *success = false;
     }
     return shader_module;

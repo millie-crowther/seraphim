@@ -6,8 +6,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-class swapchain_image_t {
+class image_t {
 private:
+    bool is_swapchain;
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory memory;
@@ -22,12 +23,12 @@ private:
 
 public:
     // constructors and destructors
-    swapchain_image_t(
+    image_t(
         uint32_t width, uint32_t height, VkFormat format, 
         VkImageTiling tiling, VkImageUsageFlags usage, 
         VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
     );
-    swapchain_image_t(
+    image_t(
         VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
     );
     ~image_t();

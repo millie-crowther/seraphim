@@ -1,14 +1,13 @@
 #include "render/mesh.h"
 
-#include "tiny_obj_loader.h"
 #include <stdexcept>
 
 mesh_t::mesh_t(
-    VkCommandPool cmd_pool, VkQueue queue, const std::vector<vec2_t> & vs, 
+    VkCommandPool cmd_pool, VkQueue queue, const std::vector<vec_t<float, 2>> & vs, 
     const std::vector<uint32_t> & is
 ){
-    VkDeviceSize v_size = sizeof(vec2_t) * vs.size();
-    vertices = new buffer_t(
+    VkDeviceSize v_size = sizeof(vec_t<float, 2>) * vs.size();
+    vertices = std::make_shared<raw_buffer_t>(
         v_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
@@ -16,7 +15,7 @@ mesh_t::mesh_t(
     vertices->copy(cmd_pool, queue, (void *) vs.data(), v_size);
 
     VkDeviceSize i_size = sizeof(uint32_t) * is.size();
-    indices = new buffer_t(
+    indices = std::make_shared<raw_buffer_t>(
         i_size,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT

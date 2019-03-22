@@ -15,7 +15,7 @@ private:
 public:
     // constructors and destructors
     mesh_t(
-        VkCommandPool cmd_pool, VkQueue queue, const std::vector<vec2_t> & vertices, 
+        VkCommandPool cmd_pool, VkQueue queue, const std::vector<vec_t<float, 2>> & vertices, 
         const std::vector<uint32_t> & indices
     );
 

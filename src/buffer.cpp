@@ -14,12 +14,12 @@ raw_buffer_t::raw_buffer_t(
     create_info.usage = usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateBuffer(engine_t::get_device(), &create_info, nullptr, &buffer) != VK_SUCCESS){
+    if (vkCreateBuffer(blaspheme_t::get_device(), &create_info, nullptr, &buffer) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create buffer.");
     }
 
     VkMemoryRequirements memory_req;
-    vkGetBufferMemoryRequirements(engine_t::get_device(), buffer, &memory_req);
+    vkGetBufferMemoryRequirements(blaspheme_t::get_device(), buffer, &memory_req);
 
     int memory_type = find_memory_type(memory_req.memoryTypeBits, properties);
     if (memory_type == -1){
@@ -31,17 +31,17 @@ raw_buffer_t::raw_buffer_t(
     alloc_info.allocationSize = size;
     alloc_info.memoryTypeIndex = memory_type;
 
-    if (vkAllocateMemory(engine_t::get_device(), &alloc_info, nullptr, &memory) != VK_SUCCESS){
+    if (vkAllocateMemory(blaspheme_t::get_device(), &alloc_info, nullptr, &memory) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to allocate buffer memory.");
     }
-    vkBindBufferMemory(engine_t::get_device(), buffer, memory, 0);   
+    vkBindBufferMemory(blaspheme_t::get_device(), buffer, memory, 0);   
    
     is_host_visible = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT & properties) != 0;
 }
 
 raw_buffer_t::~raw_buffer_t(){
-    vkDestroyBuffer(engine_t::get_device(), buffer, nullptr);
-    vkFreeMemory(engine_t::get_device(), memory, nullptr);
+    vkDestroyBuffer(blaspheme_t::get_device(), buffer, nullptr);
+    vkFreeMemory(blaspheme_t::get_device(), memory, nullptr);
 }
 
 VkCommandBuffer 
@@ -53,7 +53,7 @@ raw_buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
     alloc_info.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
-    VkResult result = vkAllocateCommandBuffers(engine_t::get_device(), &alloc_info, &command_buffer);
+    VkResult result = vkAllocateCommandBuffers(blaspheme_t::get_device(), &alloc_info, &command_buffer);
     if (result != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to allocate command buffer.");
     }
@@ -86,13 +86,13 @@ raw_buffer_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommand
     vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     vkQueueWaitIdle(queue);
 
-    vkFreeCommandBuffers(engine_t::get_device(), command_pool, 1, &command_buffer);    
+    vkFreeCommandBuffers(blaspheme_t::get_device(), command_pool, 1, &command_buffer);    
 }
 
 int
 raw_buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(engine_t::get_physical_device(), &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(blaspheme_t::get_physical_device(), &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -136,12 +136,12 @@ raw_buffer_t::copy(
 ){
     if (is_host_visible){
 	    void * mem_map;
-        vkMapMemory(engine_t::get_device(), memory, 0, size, 0, &mem_map);
+        vkMapMemory(blaspheme_t::get_device(), memory, 0, size, 0, &mem_map);
 	        std::memcpy(mem_map, data, size);
-	    vkUnmapMemory(engine_t::get_device(), memory);
+	    vkUnmapMemory(blaspheme_t::get_device(), memory);
 	 
     } else {
-        buffer_t staging_buffer(
+        raw_buffer_t staging_buffer(
             size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -156,7 +156,7 @@ void
 raw_buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
-    auto cmd = pre_commands(command_pool, queue);
+    auto cmd = pre_commands(pool, queue);
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -179,5 +179,5 @@ raw_buffer_t::copy_to_image(
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region
         );
-    post_commands(command_pool, queue, cmd);
+    post_commands(pool, queue, cmd);
 }

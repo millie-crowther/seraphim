@@ -7,6 +7,7 @@
 #include "buffer.h"
 #include "mesh.h"
 #include "input.h"
+#include "render/image.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -42,7 +43,7 @@ private:
     // command pool fields
     VkCommandPool command_pool;
     std::vector<VkCommandBuffer> command_buffers;
-    std::vector<buffer_t *> uniform_buffers;
+    std::vector<buffer_t> uniform_buffers;
     VkQueue graphics_queue;
     VkQueue present_queue;
     uint32_t graphics_family;
@@ -77,7 +78,7 @@ private:
 
     void cleanup_swapchain();
 
-    void update_window_size_uniform(int width, int height);
+    void update_window_size_uniform();
 
 public:
     // constructors and destructors
