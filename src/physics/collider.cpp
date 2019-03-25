@@ -7,7 +7,7 @@ collider_t::collider_t(const sdf_t& sdf){
 
 void
 collider_t::collide(std::shared_ptr<collider_t> c) const {
-    if (colliding && (has_followers() || c->has_followers())){
+    if (colliding && c->colliding && (has_followers() || c->has_followers())){
         // TODO
     }
 } 
@@ -19,8 +19,8 @@ collider_t::get_position() const {
 
 bool
 collider_t::intersects_plane(const vec3_t & v, const vec3_t & n) const {
-    sdf_t plane([&](const vec3_t & x){
-        return std::abs(v * n) - constant::epsilon;
+    sdf_t plane([&v, &n](const vec3_t & x){
+        return std::abs((x - v) * n) - constant::epsilon;
     });
     return !(sdf && plane).is_null();
 }

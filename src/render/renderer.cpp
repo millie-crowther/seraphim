@@ -73,8 +73,9 @@ renderer_t::init(
         vec_t<float, 2>( 1.0f,  1.0f)
     };
 
+    std::cout << "vert size " << sizeof(vertices) << std::endl;
     std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
-    mesh = new mesh_t(command_pool, graphics_queue, vertices, indices);
+    mesh = std::make_shared<mesh_t>(command_pool, graphics_queue, vertices, indices);
 
     if (!create_command_buffers(mesh)){
         return false;
@@ -382,7 +383,7 @@ renderer_t::create_graphics_pipeline(){
 
     VkVertexInputBindingDescription binding_desc = {};
     binding_desc.binding   = 0;
-    binding_desc.stride    = sizeof(vec2_t);
+    binding_desc.stride    = sizeof(vec_t<float, 2>);
     binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription attr_desc = {};
@@ -404,10 +405,10 @@ renderer_t::create_graphics_pipeline(){
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
     VkViewport viewport = {};
-    viewport.x = 0;
-    viewport.y = 0;
-    viewport.width = (float) swapchain_extents.width;
-    viewport.height = (float) swapchain_extents.height;
+    viewport.x        = 0;
+    viewport.y        = 0;
+    viewport.width    = (float) swapchain_extents.width;
+    viewport.height   = (float) swapchain_extents.height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1;
 
@@ -573,7 +574,7 @@ renderer_t::create_framebuffers(){
 }
 
 bool
-renderer_t::create_command_buffers(mesh_t * mesh){
+renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
     // create command buffers
     command_buffers.resize(swapchain_framebuffers.size());
     
@@ -755,12 +756,7 @@ renderer_t::create_descriptor_set_layout(){
         blaspheme_t::get_device(), &layout_info, nullptr, &descriptor_layout
     );
  
-    if (result != VK_SUCCESS){
-	    return false;
-    }
-
-
-    return true;
+    return result == VK_SUCCESS;
 }
 
 bool
@@ -894,14 +890,10 @@ renderer_t::cleanup(){
     }
 
     vkDestroyCommandPool(blaspheme_t::get_device(), command_pool, nullptr);
-
-    if (mesh != nullptr){
-        delete mesh;
-    }
 }
 
 VkShaderModule
-renderer_t::create_shader_module(const std::vector<char>& code, bool * success){
+renderer_t::create_shader_module(const std::vector<char> & code, bool * success){
     VkShaderModuleCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO; 
     create_info.codeSize = code.size();

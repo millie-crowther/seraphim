@@ -115,6 +115,10 @@ void
 raw_buffer_t::copy_buffer(
     VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
 ){
+    if (size == 0){
+        return;
+    }
+
     auto cmd = pre_commands(command_pool, queue);
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
@@ -134,6 +138,10 @@ void
 raw_buffer_t::copy(
     VkCommandPool command_pool, VkQueue queue, void * data, VkDeviceSize size
 ){
+    if (size == 0){
+        return;
+    }
+
     if (is_host_visible){
 	    void * mem_map;
         vkMapMemory(blaspheme_t::get_device(), memory, 0, size, 0, &mem_map);
@@ -156,6 +164,10 @@ void
 raw_buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
+    if (width <= 0 || height <= 0){
+        return;
+    }
+
     auto cmd = pre_commands(pool, queue);
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;

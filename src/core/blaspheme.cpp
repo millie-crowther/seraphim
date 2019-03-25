@@ -66,7 +66,7 @@ blaspheme_t::init(){
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
 
     std::cout << "Available extensions:" << std::endl;
-    for (const auto& extension : extensions) {
+    for (const auto & extension : extensions) {
 	    std::cout << "\t" << extension.extensionName << std::endl;
     }
 
@@ -127,9 +127,9 @@ blaspheme_t::create_logical_device(){
     }
 
     VkPhysicalDeviceFeatures device_features = {};
-    device_features.samplerAnisotropy = VK_TRUE;
+    device_features.samplerAnisotropy        = VK_TRUE;
 
-    VkDeviceCreateInfo create_info = {};
+    VkDeviceCreateInfo create_info      = {};
     create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     create_info.pQueueCreateInfos       = queue_create_infos.data();
     create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
