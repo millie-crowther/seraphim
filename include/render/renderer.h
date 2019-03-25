@@ -14,7 +14,9 @@
 
 class renderer_t {
 private:
-    struct uniform_buffer_data_t { };
+    struct push_constant_t {
+        vec_t<uint32_t, 2> window_size;
+    } push_constants;
 
     VkPhysicalDevice physical_device;
     VkDevice device;
@@ -64,14 +66,11 @@ private:
     bool create_depth_resources();
     bool create_framebuffers();
     bool create_command_buffers(std::shared_ptr<mesh_t> mesh);
-    void create_uniform_buffers();
     bool create_descriptor_set_layout();
     bool create_descriptor_sets();
     bool create_command_pool();
     bool create_descriptor_pool();
     bool create_sync();
-
-    // void update_descriptor_sets(texture_t * texture);
 
     VkSurfaceFormatKHR select_surface_format(); 
     VkPresentModeKHR select_present_mode();
@@ -81,10 +80,7 @@ private:
 
     void cleanup_swapchain();
 
-    void update_window_size_uniform();
     bool init();
-
-    void update_uniform_buffers(uint32_t image_index);
 
 public:
     // constructors and destructors
@@ -96,7 +92,7 @@ public:
     ~renderer_t();
 
 
-    void window_resize(int width, int height);
+    void window_resize(uint32_t width, uint32_t height);
 
     // main method
     void render();

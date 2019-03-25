@@ -10,7 +10,7 @@ layout( push_constant ) uniform window_block {
 in vec4 gl_FragCoord;
 
 void main() {
-    if (length(gl_FragCoord.xy) < 100){
+    if (length(gl_FragCoord.xy - push_constant.window_size / 2) < 100){
         out_colour = vec4(1, 0, 1, 1);
     } else {
         out_colour = vec4(0.5, 0.5, 0.75, 1);

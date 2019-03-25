@@ -17,6 +17,8 @@ renderer_t::renderer_t(
     this->present_family = present_family;
     this->physical_device = physical_device;
     this->device = device;
+
+    push_constants.window_size = vec_t<uint32_t, 2>(window_extents.width, window_extents.height);
     
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
@@ -72,8 +74,6 @@ renderer_t::init(){
         return false;
     }
 
-    create_uniform_buffers();
-
     if (!create_descriptor_pool()){
         return false;
     }
@@ -96,28 +96,7 @@ renderer_t::init(){
         return false;
     }
 
-    update_window_size_uniform();
-
     return true;
-}
-
-void
-renderer_t::create_uniform_buffers(){
-    // create uniform buffers
-    VkDeviceSize size = sizeof(uniform_buffer_data_t);
-    uniform_buffers.resize(swapchain_images.size());
-    for (int i = 0; i < uniform_buffers.size(); i++){
-        uniform_buffers[i] = std::make_shared<raw_buffer_t>(
-            size,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-	    );
-    }
-}
-
-void 
-renderer_t::update_window_size_uniform(){
-    std::cout << "updating window size uniform " << window_extents.width << ' ' << window_extents.height << std::endl;
 }
 
 bool
@@ -627,6 +606,15 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
         render_pass_info.pClearValues = clear_values.data();
 
         vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdPushConstants(
+                command_buffers[i],
+                pipeline_layout,
+                VK_SHADER_STAGE_FRAGMENT_BIT,
+                0,
+                sizeof(push_constants),
+                &push_constants
+            );
+
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
@@ -698,48 +686,6 @@ renderer_t::create_descriptor_sets(){
 
     return true;
 }
-
-// void
-// renderer_t::update_descriptor_sets(texture_t * texture){
-//     VkDescriptorBufferInfo buffer_info = {};
-//     buffer_info.offset = 0;
-//     buffer_info.range = sizeof(uniform_buffer_data_t);
-
-//     VkDescriptorImageInfo image_info = {};
-//     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-//     if (texture != nullptr){
-//         image_info.imageView = texture->get_image_view();
-//         image_info.sampler = texture->get_sampler();
-//     }
-
-//     VkWriteDescriptorSet desc_write = {};
-//     desc_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-//     desc_write.dstArrayElement = 0;
-//     desc_write.descriptorCount = 1;
-//     desc_write.pBufferInfo = &buffer_info;
-//     desc_write.pImageInfo = &image_info;
-//     desc_write.pTexelBufferView = nullptr;
-
-//     for (int i = 0; i < swapchain_images.size(); i++){
-//    	     buffer_info.buffer = uniform_buffers[i]->get_buffer();
-
-//          std::array<VkWriteDescriptorSet, 2> desc_writes = {};
-//          desc_write.dstSet = desc_sets[i];
-
-//          desc_writes[0] = desc_write;
-// 	     desc_writes[0].dstSet = desc_sets[i];
-//          desc_writes[0].dstBinding = 0;
-//          desc_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-
-//          desc_writes[1] = desc_write;
-// 	     desc_writes[1].dstSet = desc_sets[i];
-//          desc_writes[1].dstBinding = 1;
-//          desc_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-// 	     vkUpdateDescriptorSets(engine_t::get_device(), desc_writes.size(), desc_writes.data(), 0, nullptr);
-//     }
-// }
 
 bool
 renderer_t::create_descriptor_set_layout(){
@@ -835,8 +781,6 @@ renderer_t::render(){
         VK_NULL_HANDLE, &image_index
     );
    
-    update_uniform_buffers(image_index);
-
     VkSemaphore wait_semas[1] = { image_available_semas[current_frame] };
     VkPipelineStageFlags wait_stages[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
@@ -881,15 +825,6 @@ renderer_t::render(){
     current_frame = (current_frame + 1) % frames_in_flight;    
 }
 
-void
-renderer_t::update_uniform_buffers(uint32_t image_index){
-    uniform_buffer_data_t ubo = {};
-
-    // uniform_buffers[image_index]->copy(
-    //     command_pool, graphics_queue, (void *) &ubo, sizeof(ubo)
-    // );
-}
-
 VkShaderModule
 renderer_t::create_shader_module(const std::vector<char> & code, bool * success){
     VkShaderModuleCreateInfo create_info = {};
@@ -905,8 +840,8 @@ renderer_t::create_shader_module(const std::vector<char> & code, bool * success)
 }
 
 void
-renderer_t::window_resize(int width, int height){
-    window_extents = { (uint32_t) width, (uint32_t) height };
-    update_window_size_uniform();
+renderer_t::window_resize(uint32_t width, uint32_t height){
+    window_extents = { width, height };
+    push_constants.window_size = vec_t<uint32_t, 2>(width, height);
     recreate_swapchain();
 }

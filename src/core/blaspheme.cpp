@@ -20,7 +20,7 @@ const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
-const std::vector<const char*> device_extensions = {
+const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
@@ -50,7 +50,6 @@ blaspheme_t::init(){
     window = glfwCreateWindow(
         window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
     );
-    glfwSetWindowUserPointer(window, static_cast<void *>(renderer.get()));
     glfwSetWindowSizeCallback(window, window_resize_callback);   
 
     // initialise vulkan
@@ -102,6 +101,7 @@ blaspheme_t::init(){
     renderer = std::make_unique<renderer_t>(
         physical_device, device, surface, graphics_family, present_family, window_extents
     );
+    glfwSetWindowUserPointer(window, static_cast<void *>(renderer.get()));
 }
 
 bool
