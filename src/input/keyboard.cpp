@@ -9,5 +9,5 @@ keyboard_t::key_event(int key, int action, int mods){
 
 bool
 keyboard_t::is_key_pressed(int key){
-    return key_state[key];
+    return key_state.find(key) != key_state.end() && key_state[key];
 }
