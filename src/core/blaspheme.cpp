@@ -9,6 +9,7 @@
 #include <fstream>
 #include <cstring>
 #include "maths/maths.h"
+#include <memory>
 
 #include "logic/scheduler.h"
 
@@ -26,13 +27,8 @@ const std::vector<const char*> device_extensions = {
 void 
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
-    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
-    blaspheme->window_resize(width, height);
-}
-
-void
-blaspheme_t::window_resize(int w, int h){
-    renderer.window_resize(w, h);
+    renderer_t * renderer = reinterpret_cast<renderer_t *>(data);
+    renderer->window_resize(width, height);
 }
 
 blaspheme_t::blaspheme_t(bool is_debug){
@@ -54,7 +50,7 @@ blaspheme_t::init(){
     window = glfwCreateWindow(
         window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
     );
-    glfwSetWindowUserPointer(window, static_cast<void *>(this));
+    glfwSetWindowUserPointer(window, static_cast<void *>(renderer.get()));
     glfwSetWindowSizeCallback(window, window_resize_callback);   
 
     // initialise vulkan
@@ -103,9 +99,9 @@ blaspheme_t::init(){
     uint32_t graphics_family = get_graphics_queue_family(physical_device);
     uint32_t present_family  = get_present_queue_family(physical_device);
 
-    if (!renderer.init(surface, graphics_family, present_family, window_extents)){
-        throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
-    }
+    renderer = std::make_unique<renderer_t>(
+        physical_device, device, surface, graphics_family, present_family, window_extents
+    );
 }
 
 bool
@@ -438,7 +434,8 @@ blaspheme_t::cleanup(){
 
     vkDeviceWaitIdle(device);
 
-    renderer.cleanup();
+    // delete renderer early to release resources at appropriate time
+    renderer.reset(nullptr);
 
     // destroy logical device
     vkDestroyDevice(device, nullptr);
@@ -475,7 +472,7 @@ blaspheme_t::run(){
 
     while (!should_quit()){
 	    update();
-        renderer.render();
+        renderer->render();
     }
 
     cleanup();

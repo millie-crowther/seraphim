@@ -43,7 +43,7 @@ private:
 
     image_t * depth_image;
 
-    renderer_t renderer;
+    std::unique_ptr<renderer_t> renderer;
     input_t input;
 
     VkInstance instance;
@@ -57,8 +57,6 @@ private:
 
 public:
     blaspheme_t(bool is_debug);
-
-    void window_resize(int w, int h);
 
     void run();
 

@@ -16,6 +16,9 @@ class renderer_t {
 private:
     struct uniform_buffer_data_t { };
 
+    VkPhysicalDevice physical_device;
+    VkDevice device;
+
     // swapchain fields
     VkSwapchainKHR swapchain;
     std::vector<VkFramebuffer> swapchain_framebuffers;
@@ -79,28 +82,24 @@ private:
     void cleanup_swapchain();
 
     void update_window_size_uniform();
+    bool init();
+
+    void update_uniform_buffers(uint32_t image_index);
 
 public:
     // constructors and destructors
-    renderer_t();
+    renderer_t(
+        VkPhysicalDevice physical_device, VkDevice device,
+        VkSurfaceKHR surface, uint32_t graphics_family, 
+        uint32_t present_family,VkExtent2D window_extents
+    );
     ~renderer_t();
 
-    bool init(
-        VkSurfaceKHR surface, uint32_t graphics_fam, uint32_t present_fam, 
-        VkExtent2D window_extents
-    );
-
-    void update_uniform_buffers(uint32_t image_index);
 
     void window_resize(int width, int height);
 
     // main method
     void render();
-    
-    // setters
-    void set_main_camera(camera_t * camera);
-
-    void cleanup();
 };
 
 #endif

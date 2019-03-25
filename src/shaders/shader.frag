@@ -3,6 +3,10 @@
 
 layout(location = 0) out vec4 out_colour;
 
+layout( push_constant ) uniform window_block {
+    uvec2 window_size;
+} push_constant;
+
 in vec4 gl_FragCoord;
 
 void main() {
