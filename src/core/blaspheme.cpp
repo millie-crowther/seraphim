@@ -24,17 +24,34 @@ const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-void 
+static void 
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
-    renderer_t * renderer = reinterpret_cast<renderer_t *>(data);
-    renderer->window_resize(width, height);
+    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
+    blaspheme->window_resize(width, height);
+}
+
+static void 
+key_callback(GLFWwindow * window, int key, int scancode, int action, int mods){
+    void * data = glfwGetWindowUserPointer(window);
+    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
+    blaspheme->keyboard_event(key, action, mods);
 }
 
 blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
     std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
+}
+
+void
+blaspheme_t::window_resize(uint32_t width, uint32_t height){
+    renderer->window_resize(width, height);
+}
+
+void 
+blaspheme_t::keyboard_event(int key, int action, int mods){
+    keyboard.key_event(key, action, mods);
 }
 
 void
@@ -50,7 +67,11 @@ blaspheme_t::init(){
     window = glfwCreateWindow(
         window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
     );
+
+    glfwSetWindowUserPointer(window, static_cast<void *>(this));
+
     glfwSetWindowSizeCallback(window, window_resize_callback);   
+    glfwSetKeyCallback(window, key_callback);
 
     // initialise vulkan
     create_instance();
@@ -101,7 +122,6 @@ blaspheme_t::init(){
     renderer = std::make_unique<renderer_t>(
         physical_device, device, surface, graphics_family, present_family, window_extents
     );
-    glfwSetWindowUserPointer(window, static_cast<void *>(renderer.get()));
 }
 
 bool
@@ -463,7 +483,7 @@ blaspheme_t::cleanup(){
 
 bool
 blaspheme_t::should_quit(){
-    return glfwWindowShouldClose(window);
+    return glfwWindowShouldClose(window) || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
 void

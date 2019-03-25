@@ -39,6 +39,8 @@ set(SOURCES
     ../src/maths/quat.cpp
     
     ../src/scene/transform.cpp
+
+    ../src/input/keyboard.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

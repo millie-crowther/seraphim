@@ -155,11 +155,11 @@ renderer_t::create_swapchain(){
     VkImage swapchain_imgs[count];
     vkGetSwapchainImagesKHR(device, swapchain, &count, swapchain_imgs);
   
-    swapchain_images.resize(count);
-    for (int i = 0; i < count; i++){
-        swapchain_images[i] = new image_t(
-            swapchain_imgs[i], format.format, VK_IMAGE_ASPECT_COLOR_BIT
-        );
+    swapchain_images.clear();
+    for (auto & swapchain_image : swapchain_imgs){
+        swapchain_images.push_back(std::make_unique<image_t>(
+            swapchain_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT
+        ));
     }
 
     swapchain_extents = extents;
@@ -262,8 +262,7 @@ renderer_t::recreate_swapchain(){
 
 void 
 renderer_t::cleanup_swapchain(){
-    delete depth_image;
-    depth_image = nullptr;
+    depth_image.reset(nullptr);
 
     for (auto framebuffer : swapchain_framebuffers){
 	    vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -277,9 +276,7 @@ renderer_t::cleanup_swapchain(){
     vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
     vkDestroyRenderPass(device, render_pass, nullptr);
 
-    for (int i = 0; i < swapchain_images.size(); i++){
-        delete swapchain_images[i];
-    }
+    swapchain_images.clear();
 
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
@@ -343,7 +340,7 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    auto vertex_shader_code = input_t::load_file("../src/shaders/shader.vert");
+    auto vertex_shader_code   = input_t::load_file("../src/shaders/shader.vert");
     auto fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
 
     if (vertex_shader_code.size() == 0 || fragment_shader_code.size() == 0){
@@ -399,12 +396,12 @@ renderer_t::create_graphics_pipeline(){
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
     VkViewport viewport = {};
-    viewport.x        = 0;
-    viewport.y        = 0;
-    viewport.width    = (float) swapchain_extents.width;
-    viewport.height   = (float) swapchain_extents.height;
-    viewport.minDepth = 0;
-    viewport.maxDepth = 1;
+    viewport.x          = 0;
+    viewport.y          = 0;
+    viewport.width      = (float) swapchain_extents.width;
+    viewport.height     = (float) swapchain_extents.height;
+    viewport.minDepth   = 0;
+    viewport.maxDepth   = 1;
 
     VkRect2D scissor = {};
     scissor.offset   = {0, 0};
@@ -526,7 +523,7 @@ bool
 renderer_t::create_depth_resources(){
     VkFormat depth_format = image_t::find_depth_format(physical_device);
 
-    depth_image = new image_t(
+    depth_image = std::make_unique<image_t>(
         swapchain_extents.width, swapchain_extents.height, depth_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT
@@ -595,7 +592,7 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_info.renderPass = render_pass;
         render_pass_info.framebuffer = swapchain_framebuffers[i];
-        render_pass_info.renderArea.offset = {0, 0};
+        render_pass_info.renderArea.offset = { 0, 0 };
         render_pass_info.renderArea.extent = swapchain_extents;
 
         std::array<VkClearValue, 2> clear_values = {};
@@ -620,8 +617,8 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
             );
 
             VkBuffer vertex_buffers[1] = { mesh->get_vertex_buffer()->get_buffer() };
-            VkDeviceSize offsets[1] = { 0 };
-	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+            VkDeviceSize offset = 0;
+	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, &offset);
             vkCmdBindIndexBuffer(
                 command_buffers[i], mesh->get_index_buffer()->get_buffer(), 0, VK_INDEX_TYPE_UINT32
             );
@@ -696,22 +693,10 @@ renderer_t::create_descriptor_set_layout(){
     ubo_layout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutBinding sampler_layout_binding = {};
-    sampler_layout_binding.binding = 1;
-    sampler_layout_binding.descriptorCount = 1;
-    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    sampler_layout_binding.pImmutableSamplers = nullptr;
-    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
-        ubo_layout,
-        sampler_layout_binding
-    };
-
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = bindings.size();
-    layout_info.pBindings = bindings.data();
+    layout_info.bindingCount = 1;
+    layout_info.pBindings = &ubo_layout;
 
     VkResult result = vkCreateDescriptorSetLayout(
         device, &layout_info, nullptr, &descriptor_layout
@@ -791,9 +776,8 @@ renderer_t::render(){
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffers[image_index];
     
-    VkSemaphore signal_semas[1] = { render_finished_semas[current_frame] };
     submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = signal_semas;
+    submit_info.pSignalSemaphores = &render_finished_semas[current_frame];
 
     VkResult res = vkQueueSubmit(graphics_queue, 1, &submit_info, in_flight_fences[current_frame]);
 
@@ -804,16 +788,14 @@ renderer_t::render(){
         throw std::runtime_error("Error: Failed to submit to draw command buffer.");
     }
 
-    VkPresentInfoKHR present_info = {};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    VkPresentInfoKHR present_info   = {};
+    present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = signal_semas;
-
-    VkSwapchainKHR swapchains[1] = { swapchain };
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = swapchains;
-    present_info.pImageIndices = &image_index;
-    present_info.pResults = nullptr;
+    present_info.pWaitSemaphores    = &render_finished_semas[current_frame];
+    present_info.swapchainCount     = 1;
+    present_info.pSwapchains        = &swapchain;
+    present_info.pImageIndices      = &image_index;
+    present_info.pResults           = nullptr;
     
     res = vkQueuePresentKHR(present_queue, &present_info);
     if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR){ 

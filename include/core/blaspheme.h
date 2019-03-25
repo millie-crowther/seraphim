@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "render/renderer.h"
+#include "input/keyboard.h"
 
 class blaspheme_t {
 private:
@@ -41,13 +42,12 @@ private:
 
     VmaAllocator allocator;
 
-    image_t * depth_image;
-
     std::unique_ptr<renderer_t> renderer;
-    input_t input;
 
     VkInstance instance;
     VkSurfaceKHR surface;
+
+	keyboard_t keyboard;
  
     GLFWwindow * window;
 
@@ -59,6 +59,9 @@ public:
     blaspheme_t(bool is_debug);
 
     void run();
+	
+    void window_resize(uint32_t width, uint32_t height);
+	void keyboard_event(int key, int action, int mods);
 
     // static getters
     static VkDevice get_device();

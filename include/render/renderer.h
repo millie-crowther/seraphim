@@ -24,7 +24,7 @@ private:
     // swapchain fields
     VkSwapchainKHR swapchain;
     std::vector<VkFramebuffer> swapchain_framebuffers;
-    std::vector<image_t *> swapchain_images;
+    std::vector<std::unique_ptr<image_t>> swapchain_images;
     VkExtent2D swapchain_extents;
     VkExtent2D window_extents;
 
@@ -54,7 +54,7 @@ private:
     uint32_t graphics_family;
     uint32_t present_family;
 
-    image_t * depth_image;
+    std::unique_ptr<image_t> depth_image;
 
     std::shared_ptr<mesh_t> mesh;
 
