@@ -18,7 +18,7 @@ renderer_t::renderer_t(
     this->physical_device = physical_device;
     this->device = device;
 
-    push_constants.window_size = vec_t<uint32_t, 2>(window_extents.width, window_extents.height);
+    push_constants.window_size = uvec2_t(window_extents.width, window_extents.height);
     
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
@@ -824,6 +824,6 @@ renderer_t::create_shader_module(const std::vector<char> & code, bool * success)
 void
 renderer_t::window_resize(uint32_t width, uint32_t height){
     window_extents = { width, height };
-    push_constants.window_size = vec_t<uint32_t, 2>(width, height);
+    push_constants.window_size = uvec2_t(width, height);
     recreate_swapchain();
 }

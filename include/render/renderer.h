@@ -15,7 +15,7 @@
 class renderer_t {
 private:
     struct push_constant_t {
-        vec_t<uint32_t, 2> window_size;
+        uvec2_t window_size;
     } push_constants;
 
     VkPhysicalDevice physical_device;

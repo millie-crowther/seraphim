@@ -401,7 +401,7 @@ blaspheme_t::create_instance(){
     }
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL 
+static VKAPI_ATTR VkBool32 VKAPI_CALL 
 debug_callback(
     VkDebugReportFlagsEXT flags,
     VkDebugReportObjectTypeEXT obj_type,
@@ -432,15 +432,8 @@ blaspheme_t::setup_debug_callback(){
     auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(
         instance, "vkCreateDebugReportCallbackEXT"
     );
-    if (func == nullptr){
-        return false;
-    }
 
-    if (func(instance, &create_info, nullptr, &callback) != VK_SUCCESS){
-	return false;
-    }	
-
-    return true;
+    return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
 
 void 

@@ -137,4 +137,7 @@ typedef vec_t<double, 2> vec2_t;
 typedef vec_t<double, 3> vec3_t;
 typedef vec_t<double, 4> vec4_t;
 
+typedef vec_t<uint32_t, 2> uvec2_t;
+typedef vec_t<float, 2> fvec2_t;
+
 #endif
