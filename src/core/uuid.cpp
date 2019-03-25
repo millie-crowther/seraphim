@@ -26,3 +26,15 @@ bool
 uuid_t::operator==(const uuid_t & uuid) const {
     return std::memcmp(id, uuid.id, 16) == 0;
 }
+
+
+bool
+uuid_t::comparator_t::operator()(const uuid_t & a, const uuid_t & b) const {
+    for (int i = 0; i < 4; i++){
+        if (a.id[i] != b.id[i]){
+            return a.id[i] < b.id[i];
+        }
+    }
+
+    return false;
+}

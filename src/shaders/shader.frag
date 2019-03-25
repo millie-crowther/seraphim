@@ -42,22 +42,13 @@ int max_steps = 64;
 float epsilon = 0.005;
 float shadow_softness = 64;
 
-// data structure for a ray
 struct ray {
-    // position of the ray
     vec3 pos;
-
-    // current direction of the ray
     vec3 dir;
-
-    // distance: allows non-euclidean geometry
     float dist;
-
-    // whether or not the ray has hit something
     bool hit;
 };
 
-//data structure for a point light
 struct point_light {
     vec3 pos;
     vec4 colour;
@@ -71,11 +62,10 @@ float plane(vec3 p, vec3 n){
     return dot(p, n);
 }
 
-// signed distance function
 float phi(vec3 p){
-    //TODO: this is the big boy
     float plane = plane(p, vec3(0, 1, 0));
-    return plane;
+    float sphere = sphere(p, 0.1, vec3(1, 0.5, 0));
+    return min(plane, sphere);
 }
 
 vec3 normal(vec3 p){
@@ -99,8 +89,8 @@ ray advance(ray r){
 }
 
 ray raycast(ray r){
-    for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
-	r = advance(r);
+    for (int i = 0; /*i < max_steps &&*/ !r.hit && r.dist < render_distance; i++){
+	    r = advance(r);
     }
     return r;
 }
@@ -116,8 +106,8 @@ float shadow(vec3 l, vec3 p){
 
 ray get_ray(vec2 uv){
     vec3 camera_up = vec3(0, 1, 0);
-    vec3 camera_right = vec3(0, 0, 1);
-    vec3 camera_position = vec3(0, 0.25, 0);
+    vec3 camera_right = vec3(0, 0, -1);
+    vec3 camera_position = vec3(0, 0.5, 0);
 
     vec3 camera_forward = cross(camera_right, camera_up);
 
@@ -131,7 +121,7 @@ ray get_ray(vec2 uv){
 
 vec4 colour(vec3 p){
     if (p.y <= epsilon){
-	return vec4(0.5, 0.7, 0.9, 1.0);
+	    return vec4(0.4, 0.8, 0.6, 1.0);
     } else {
         return vec4(0.8, 0.5, 0.8, 1.0);
     }
@@ -141,7 +131,7 @@ vec4 light(vec3 p){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec3 pos = vec3(1);
-    vec4 colour = vec4(5);
+    vec4 colour = vec4(3);
     float kd = 0.5;
     float ks = 0.5;
     float shininess = 32;
@@ -172,13 +162,13 @@ vec4 light(vec3 p){
 
 vec4 sky(){
     //TODO: decide what to do with sky
-    return vec4(0);
+    return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
 void main(){
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
     uv = uv * 2.0 - 1.0;
-    uv.x *= push_constants.window_size.x / push_constants.window_size.y;
+    // uv.x *= push_constants.window_size.x / push_constants.window_size.y;
     uv.y *= -1;
     vec2 pos = uv;
     

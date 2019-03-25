@@ -257,7 +257,9 @@ renderer_t::recreate_swapchain(){
     create_depth_resources();
     create_framebuffers();
 
-    create_command_buffers(mesh);
+    if (!create_command_buffers(mesh)){
+        throw std::runtime_error("Error: failed to re-create command buffers on swapchain invalidation.");
+    }
 }
 
 void 
@@ -340,7 +342,7 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    auto vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location = 0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
+    auto vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
     auto fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
 
     if (fragment_shader_code.size() == 0){
@@ -616,9 +618,9 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
 
-            VkBuffer vertex_buffers[1] = { mesh->get_vertex_buffer()->get_buffer() };
+            VkBuffer vertex_buffer = mesh->get_vertex_buffer()->get_buffer();
             VkDeviceSize offset = 0;
-	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, &offset);
+	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer, &offset);
             vkCmdBindIndexBuffer(
                 command_buffers[i], mesh->get_index_buffer()->get_buffer(), 0, VK_INDEX_TYPE_UINT32
             );
@@ -627,7 +629,9 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
 		        0, 1, &desc_sets[i], 0, nullptr
 	        );
 
+            std::cout << "about to issue draw command" << std::endl;
 	        vkCmdDrawIndexed(command_buffers[i], (uint32_t) mesh->get_index_count(), 1, 0, 0, 0);
+            std::cout << "issued draw command" << std::endl;
 	    vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
@@ -686,23 +690,16 @@ renderer_t::create_descriptor_sets(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
-    VkDescriptorSetLayoutBinding ubo_layout = {};
-    ubo_layout.binding = 0;
-    ubo_layout.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ubo_layout.descriptorCount = 1;
-    ubo_layout.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo_layout.pImmutableSamplers = nullptr;
-
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = 1;
-    layout_info.pBindings = &ubo_layout;
+    layout_info.bindingCount = 0;
+    layout_info.pBindings = nullptr;
 
-    VkResult result = vkCreateDescriptorSetLayout(
-        device, &layout_info, nullptr, &descriptor_layout
-    );
+    if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
+        return false;
+    }
  
-    return result == VK_SUCCESS;
+    return true;
 }
 
 bool
@@ -827,5 +824,7 @@ void
 renderer_t::window_resize(uint32_t width, uint32_t height){
     window_extents = { width, height };
     push_constants.window_size = uvec2_t(width, height);
+    std::cout << "about to recreate swapchain" << std::endl;
     recreate_swapchain();
+    std::cout << "resize done" << std::endl;
 }

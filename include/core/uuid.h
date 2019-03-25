@@ -20,6 +20,11 @@ public:
     uuid_t();
 
     bool operator==(const uuid_t & psyche) const;
+
+    class comparator_t {
+    public:
+        bool operator()(const uuid_t & a, const uuid_t & b) const;
+    };
 };
 
 #endif
