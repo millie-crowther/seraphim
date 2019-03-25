@@ -58,7 +58,7 @@ private:
 
     std::shared_ptr<mesh_t> mesh;
 
-    VkShaderModule create_shader_module(const std::vector<char>& code, bool * success);
+    VkShaderModule create_shader_module(std::string code, bool * success);
 
     bool create_swapchain();
     bool create_render_pass();

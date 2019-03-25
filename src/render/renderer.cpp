@@ -340,16 +340,16 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    auto vertex_shader_code   = input_t::load_file("../src/shaders/shader.vert");
+    auto vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location = 0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
     auto fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
 
-    if (vertex_shader_code.size() == 0 || fragment_shader_code.size() == 0){
+    if (fragment_shader_code.size() == 0){
 	    return false;
     }
 
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
-    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code, &success);
+    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.data(), &success);
 
     if (!success){
 	    return false;
@@ -808,11 +808,13 @@ renderer_t::render(){
 }
 
 VkShaderModule
-renderer_t::create_shader_module(const std::vector<char> & code, bool * success){
+renderer_t::create_shader_module(std::string code, bool * success){
+    const char * c_string = code.c_str();
+    
     VkShaderModuleCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO; 
     create_info.codeSize = code.size();
-    create_info.pCode = reinterpret_cast<const uint32_t *>(code.data());
+    create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
 
     VkShaderModule shader_module;
     if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS){

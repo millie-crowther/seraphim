@@ -8,7 +8,7 @@ class input_t {
 private:
 
 public:
-    static std::vector<char> load_file(std::string filename); 
+    static std::string load_file(std::string filename); 
 };
 
 #endif
