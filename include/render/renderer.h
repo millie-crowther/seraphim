@@ -5,7 +5,6 @@
 
 #include "camera.h"
 #include "buffer.h"
-#include "mesh.h"
 #include "input.h"
 #include "render/image.h"
 
@@ -56,7 +55,7 @@ private:
 
     std::unique_ptr<image_t> depth_image;
 
-    std::shared_ptr<mesh_t> mesh;
+    buffer_t vertex_buffer;
 
     VkShaderModule create_shader_module(std::string code, bool * success);
 
@@ -65,7 +64,7 @@ private:
     bool create_graphics_pipeline();    
     bool create_depth_resources();
     bool create_framebuffers();
-    bool create_command_buffers(std::shared_ptr<mesh_t> mesh);
+    bool create_command_buffers();
     bool create_descriptor_set_layout();
     bool create_descriptor_sets();
     bool create_command_pool();

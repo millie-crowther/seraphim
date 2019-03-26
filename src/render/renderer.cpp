@@ -82,17 +82,25 @@ renderer_t::init(){
         return false;
     }
 
-    std::vector<vec_t<float, 2>> vertices = {
+    std::vector<fvec2_t> vertices = {
         vec_t<float, 2>(-1.0f, -1.0f), 
         vec_t<float, 2>(-1.0f,  1.0f),
         vec_t<float, 2>( 1.0f, -1.0f),
-        vec_t<float, 2>( 1.0f,  1.0f)
+
+        vec_t<float, 2>(-1.0f,  1.0f),
+        vec_t<float, 2>( 1.0f,  1.0f),
+        vec_t<float, 2>( 1.0f, -1.0f)
     };
 
-    std::vector<uint32_t> indices = { 0, 1, 2, 1, 3, 2 };
-    mesh = std::make_shared<mesh_t>(command_pool, graphics_queue, vertices, indices);
+    VkDeviceSize v_size = sizeof(fvec2_t) * 6;
+    vertex_buffer = std::make_shared<raw_buffer_t>(
+        v_size,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    );
+    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), v_size);
 
-    if (!create_command_buffers(mesh)){
+    if (!create_command_buffers()){
         return false;
     }
 
@@ -257,7 +265,7 @@ renderer_t::recreate_swapchain(){
     create_depth_resources();
     create_framebuffers();
 
-    if (!create_command_buffers(mesh)){
+    if (!create_command_buffers()){
         throw std::runtime_error("Error: failed to re-create command buffers on swapchain invalidation.");
     }
 }
@@ -567,7 +575,7 @@ renderer_t::create_framebuffers(){
 }
 
 bool
-renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
+renderer_t::create_command_buffers(){
     // create command buffers
     command_buffers.resize(swapchain_framebuffers.size());
     
@@ -618,19 +626,16 @@ renderer_t::create_command_buffers(std::shared_ptr<mesh_t> mesh){
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
 
-            VkBuffer vertex_buffer = mesh->get_vertex_buffer()->get_buffer();
+            VkBuffer vertex_buffer_ = vertex_buffer->get_buffer();
             VkDeviceSize offset = 0;
-	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer, &offset);
-            vkCmdBindIndexBuffer(
-                command_buffers[i], mesh->get_index_buffer()->get_buffer(), 0, VK_INDEX_TYPE_UINT32
-            );
+	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer_, &offset);
             vkCmdBindDescriptorSets(
 		        command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
 		        0, 1, &desc_sets[i], 0, nullptr
 	        );
 
             std::cout << "about to issue draw command" << std::endl;
-	        vkCmdDrawIndexed(command_buffers[i], (uint32_t) mesh->get_index_count(), 1, 0, 0, 0);
+            vkCmdDraw(command_buffers[i], 6, 1, 0, 0);
             std::cout << "issued draw command" << std::endl;
 	    vkCmdEndRenderPass(command_buffers[i]);
 
