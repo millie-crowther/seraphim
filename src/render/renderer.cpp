@@ -59,6 +59,7 @@ renderer_t::init(VmaAllocator allocator){
         return false;
     }
 
+
     if (!create_render_pass()){
         return false;
     }
@@ -101,9 +102,10 @@ renderer_t::init(VmaAllocator allocator){
         fvec2_t( 1.0f, -1.0f)
     };
 
+    std::cout << "sizeof vertices: " << sizeof(vertices) << std::endl;
+
     vertex_buffer = std::make_shared<buffer_t>(
-        allocator,
-        sizeof(fvec2_t) * 6,
+        allocator, sizeof(fvec2_t) * 6,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
@@ -522,6 +524,7 @@ renderer_t::create_graphics_pipeline(){
     );
 
     if (result != VK_SUCCESS){
+        std::cout << VK_ERROR_INVALID_SHADER_NV << " : " << result <<std::endl;
 	    return false;
     }
 
@@ -616,21 +619,17 @@ renderer_t::create_command_buffers(){
 
         vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdPushConstants(
-                command_buffers[i],
-                pipeline_layout,
-                VK_SHADER_STAGE_FRAGMENT_BIT,
-                0,
-                sizeof(push_constants),
-                &push_constants
+                command_buffers[i], pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+                0, sizeof(push_constants), &push_constants
             );
 
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
 
-            VkBuffer vertex_buffer_ = vertex_buffer->get_buffer();
+            VkBuffer raw_vertex_buffer = vertex_buffer->get_buffer();
             VkDeviceSize offset = 0;
-	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &vertex_buffer_, &offset);
+	        vkCmdBindVertexBuffers(command_buffers[i], 0, 1, &raw_vertex_buffer, &offset);
             vkCmdBindDescriptorSets(
 		        command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
 		        0, 1, &desc_sets[i], 0, nullptr
@@ -651,17 +650,17 @@ renderer_t::create_command_buffers(){
 bool 
 renderer_t::create_descriptor_pool(){
     std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
-    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = static_cast<uint32_t>(swapchain_images.size());
 
-    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[1].descriptorCount = static_cast<uint32_t>(swapchain_images.size());
 
     VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
-    pool_info.pPoolSizes = pool_sizes.data();
-    pool_info.maxSets = static_cast<uint32_t>(swapchain_images.size());
+    pool_info.pPoolSizes    = pool_sizes.data();
+    pool_info.maxSets       = static_cast<uint32_t>(swapchain_images.size());
 
     if (vkCreateDescriptorPool(device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
 	    return false;
@@ -680,10 +679,10 @@ renderer_t::create_descriptor_sets(){
     std::vector<VkDescriptorSetLayout> layouts(n, descriptor_layout);
 
     VkDescriptorSetAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = desc_pool;
+    alloc_info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    alloc_info.descriptorPool     = desc_pool;
     alloc_info.descriptorSetCount = static_cast<uint32_t>(n);
-    alloc_info.pSetLayouts = layouts.data();
+    alloc_info.pSetLayouts        = layouts.data();
 
     desc_sets.resize(n);
     if (vkAllocateDescriptorSets(device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
@@ -696,9 +695,9 @@ renderer_t::create_descriptor_sets(){
 bool
 renderer_t::create_descriptor_set_layout(){
     VkDescriptorSetLayoutCreateInfo layout_info = {};
-    layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layout_info.bindingCount = 0;
-    layout_info.pBindings = nullptr;
+    layout_info.pBindings    = nullptr;
 
     if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         return false;

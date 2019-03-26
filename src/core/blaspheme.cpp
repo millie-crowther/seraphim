@@ -42,20 +42,6 @@ blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
     std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
-}
-
-void
-blaspheme_t::window_resize(uint32_t width, uint32_t height){
-    renderer->window_resize(width, height);
-}
-
-void 
-blaspheme_t::keyboard_event(int key, int action, int mods){
-    keyboard.key_event(key, action, mods);
-}
-
-void
-blaspheme_t::init(){
     // initialise GLFW
     glfwInit();
 
@@ -124,6 +110,51 @@ blaspheme_t::init(){
     );
 }
 
+blaspheme_t::~blaspheme_t(){
+    // scheduler::halt();    
+
+    vkDeviceWaitIdle(device);
+
+    // delete renderer early to release resources at appropriate time
+    renderer.reset(nullptr);
+
+    vmaDestroyAllocator(allocator);
+
+    // destroy logical device
+    vkDestroyDevice(device, nullptr);
+
+    // destroy debug callback
+    if (is_debug){
+        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugReportCallbackEXT"
+        );
+
+        if (func != nullptr){
+            func(instance, callback, nullptr);
+        }
+    }
+   
+    vkDestroySurfaceKHR(instance, surface, nullptr);
+
+    // destroy instance
+    vkDestroyInstance(instance, nullptr);
+
+    // destory GLFW
+    glfwDestroyWindow(window);
+    glfwTerminate();
+
+}
+
+void
+blaspheme_t::window_resize(uint32_t width, uint32_t height){
+    renderer->window_resize(width, height);
+}
+
+void 
+blaspheme_t::keyboard_event(int key, int action, int mods){
+    keyboard.key_event(key, action, mods);
+}
+
 bool
 blaspheme_t::create_logical_device(){
     uint32_t graphics = get_graphics_queue_family(physical_device);
@@ -158,7 +189,7 @@ blaspheme_t::create_logical_device(){
         create_info.ppEnabledLayerNames = validation_layers.data();
     } else {
 	    create_info.enabledLayerCount   = 0;
-    }
+    } 
 
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
 	    return false;
@@ -436,46 +467,6 @@ blaspheme_t::setup_debug_callback(){
     return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
 
-void 
-blaspheme_t::update(){
-    glfwPollEvents();
-}
-
-void
-blaspheme_t::cleanup(){
-    // scheduler::halt();    
-
-    vkDeviceWaitIdle(device);
-
-    // delete renderer early to release resources at appropriate time
-    renderer.reset(nullptr);
-
-    vmaDestroyAllocator(allocator);
-
-    // destroy logical device
-    vkDestroyDevice(device, nullptr);
-
-    // destroy debug callback
-    if (is_debug){
-        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
-            instance, "vkDestroyDebugReportCallbackEXT"
-        );
-
-        if (func != nullptr){
-            func(instance, callback, nullptr);
-        }
-    }
-   
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-
-    // destroy instance
-    vkDestroyInstance(instance, nullptr);
-
-    // destory GLFW
-    glfwDestroyWindow(window);
-    glfwTerminate();
-}
-
 bool
 blaspheme_t::should_quit(){
     return glfwWindowShouldClose(window) || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
@@ -483,14 +474,10 @@ blaspheme_t::should_quit(){
 
 void
 blaspheme_t::run(){
-    init();	
-
     while (!should_quit()){
-	    update();
+	    glfwPollEvents();
         renderer->render();
     }
-
-    cleanup();
 }
 
 VkPhysicalDevice

@@ -13,7 +13,6 @@ private:
     /*
       initialisation functions
     */
-    void init();
     void create_instance();
     bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
@@ -31,10 +30,6 @@ private:
 
     // update functions
     bool should_quit();
-    void update();
-
-    // cleanup functions
-    void cleanup();
 
     // debug fields
     bool is_debug;
@@ -57,6 +52,7 @@ private:
 
 public:
     blaspheme_t(bool is_debug);
+    ~blaspheme_t();
 
     void run();
 	

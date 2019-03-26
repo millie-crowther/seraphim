@@ -89,7 +89,7 @@ ray advance(ray r){
 }
 
 ray raycast(ray r){
-    for (int i = 0; /*i < max_steps &&*/ !r.hit && r.dist < render_distance; i++){
+    for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
 	    r = advance(r);
     }
     return r;
@@ -123,7 +123,7 @@ vec4 colour(vec3 p){
     if (p.y <= epsilon){
 	    return vec4(0.4, 0.8, 0.6, 1.0);
     } else {
-        return vec4(0.8, 0.5, 0.8, 1.0);
+        return vec4(0.9, 0.5, 0.6, 1.0);
     }
 }
 
@@ -161,14 +161,13 @@ vec4 light(vec3 p){
 }
 
 vec4 sky(){
-    //TODO: decide what to do with sky
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
 void main(){
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
     uv = uv * 2.0 - 1.0;
-    // uv.x *= push_constants.window_size.x / push_constants.window_size.y;
+    uv.x *= push_constants.window_size.x / push_constants.window_size.y;
     uv.y *= -1;
     vec2 pos = uv;
     

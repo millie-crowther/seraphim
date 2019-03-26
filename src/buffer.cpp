@@ -10,8 +10,6 @@ buffer_t::buffer_t(
 ){
     this->allocator = allocator;
 
-    
-
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_info.size = size;
