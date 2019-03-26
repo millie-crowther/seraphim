@@ -47,7 +47,7 @@ private:
     // command pool fields
     VkCommandPool command_pool;
     std::vector<VkCommandBuffer> command_buffers;
-    std::vector<buffer_t> uniform_buffers;
+    std::vector<std::shared_ptr<buffer_t>> uniform_buffers;
     VkQueue graphics_queue;
     VkQueue present_queue;
     uint32_t graphics_family;
@@ -55,7 +55,7 @@ private:
 
     std::unique_ptr<image_t> depth_image;
 
-    buffer_t vertex_buffer;
+    std::shared_ptr<buffer_t> vertex_buffer;
 
     VkShaderModule create_shader_module(std::string code, bool * success);
 
@@ -80,6 +80,9 @@ private:
     void cleanup_swapchain();
 
     bool init();
+
+    static const char * vertex_shader_code;
+    std::string fragment_shader_code;
 
 public:
     // constructors and destructors

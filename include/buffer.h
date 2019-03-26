@@ -4,9 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <memory>
-
-class raw_buffer_t {
+class buffer_t {
 private:
     // fields
     bool is_host_visible;
@@ -23,8 +21,8 @@ private:
 
 public:
     // constructors and destructors
-    raw_buffer_t(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
-    ~raw_buffer_t();
+    buffer_t(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+    ~buffer_t();
 
     // public methods
     void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);
@@ -35,7 +33,5 @@ public:
     VkDeviceMemory get_memory();
     bool is_valid();
 };
-
-typedef std::shared_ptr<raw_buffer_t> buffer_t;
 
 #endif

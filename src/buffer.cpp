@@ -5,7 +5,7 @@
 #include <cstring>
 #include "core/blaspheme.h"
 
-raw_buffer_t::raw_buffer_t(
+buffer_t::buffer_t(
     VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties
 ){
     VkBufferCreateInfo create_info = {};
@@ -39,13 +39,13 @@ raw_buffer_t::raw_buffer_t(
     is_host_visible = (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT & properties) != 0;
 }
 
-raw_buffer_t::~raw_buffer_t(){
+buffer_t::~buffer_t(){
     vkDestroyBuffer(blaspheme_t::get_device(), buffer, nullptr);
     vkFreeMemory(blaspheme_t::get_device(), memory, nullptr);
 }
 
 VkCommandBuffer 
-raw_buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
+buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -69,7 +69,7 @@ raw_buffer_t::pre_commands(VkCommandPool command_pool, VkQueue queue){
 }
 
 void 
-raw_buffer_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
+buffer_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
     vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submit_info;
@@ -90,7 +90,7 @@ raw_buffer_t::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommand
 }
 
 int
-raw_buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
+buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
     vkGetPhysicalDeviceMemoryProperties(blaspheme_t::get_physical_device(), &memory_prop);
 
@@ -107,12 +107,12 @@ raw_buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags prope
 }
 
 VkBuffer
-raw_buffer_t::get_buffer(){
+buffer_t::get_buffer(){
     return buffer;
 }
 
 void
-raw_buffer_t::copy_buffer(
+buffer_t::copy_buffer(
     VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
 ){
     if (size == 0){
@@ -130,12 +130,12 @@ raw_buffer_t::copy_buffer(
 }
 
 VkDeviceMemory
-raw_buffer_t::get_memory(){
+buffer_t::get_memory(){
     return memory;
 }
 
 void
-raw_buffer_t::copy(
+buffer_t::copy(
     VkCommandPool command_pool, VkQueue queue, void * data, VkDeviceSize size
 ){
     if (size == 0){
@@ -149,7 +149,7 @@ raw_buffer_t::copy(
 	    vkUnmapMemory(blaspheme_t::get_device(), memory);
 	 
     } else {
-        raw_buffer_t staging_buffer(
+        buffer_t staging_buffer(
             size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
@@ -161,7 +161,7 @@ raw_buffer_t::copy(
 }
 
 void
-raw_buffer_t::copy_to_image(
+buffer_t::copy_to_image(
     VkCommandPool pool, VkQueue queue, VkImage image, int width, int height
 ){
     if (width <= 0 || height <= 0){

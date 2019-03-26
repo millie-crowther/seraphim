@@ -5,6 +5,9 @@
 #include <chrono>
 #include <stdexcept>
 
+const char *
+renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
+
 renderer_t::renderer_t(
     VkPhysicalDevice physical_device, VkDevice device,
     VkSurfaceKHR surface, uint32_t graphics_family, 
@@ -20,6 +23,11 @@ renderer_t::renderer_t(
 
     push_constants.window_size = uvec2_t(window_extents.width, window_extents.height);
     
+    fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
+    if (fragment_shader_code.size() == 0){
+        throw std::runtime_error("Error: Failed to load vertex shader.");
+    }
+
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
@@ -82,23 +90,22 @@ renderer_t::init(){
         return false;
     }
 
-    std::vector<fvec2_t> vertices = {
-        vec_t<float, 2>(-1.0f, -1.0f), 
-        vec_t<float, 2>(-1.0f,  1.0f),
-        vec_t<float, 2>( 1.0f, -1.0f),
+    const std::vector<fvec2_t> vertices = {
+        fvec2_t(-1.0f, -1.0f), 
+        fvec2_t(-1.0f,  1.0f),
+        fvec2_t( 1.0f, -1.0f),
 
-        vec_t<float, 2>(-1.0f,  1.0f),
-        vec_t<float, 2>( 1.0f,  1.0f),
-        vec_t<float, 2>( 1.0f, -1.0f)
+        fvec2_t(-1.0f,  1.0f),
+        fvec2_t( 1.0f,  1.0f),
+        fvec2_t( 1.0f, -1.0f)
     };
 
-    VkDeviceSize v_size = sizeof(fvec2_t) * 6;
-    vertex_buffer = std::make_shared<raw_buffer_t>(
-        v_size,
+    vertex_buffer = std::make_shared<buffer_t>(
+        sizeof(fvec2_t) * 6,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
     );
-    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), v_size);
+    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(fvec2_t) * 6);
 
     if (!create_command_buffers()){
         return false;
@@ -150,7 +157,6 @@ renderer_t::create_swapchain(){
     create_info.presentMode    = mode;
     create_info.clipped        = VK_TRUE;
 
-    // will need to update this field if creating a new swap chain e.g. for resized window
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
     if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) != VK_SUCCESS){
@@ -260,6 +266,7 @@ renderer_t::recreate_swapchain(){
     cleanup_swapchain();
     
     create_swapchain();
+
     create_render_pass();
     create_graphics_pipeline();
     create_depth_resources();
@@ -350,13 +357,6 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    auto vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
-    auto fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
-
-    if (fragment_shader_code.size() == 0){
-	    return false;
-    }
-
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.data(), &success);
@@ -634,9 +634,7 @@ renderer_t::create_command_buffers(){
 		        0, 1, &desc_sets[i], 0, nullptr
 	        );
 
-            std::cout << "about to issue draw command" << std::endl;
             vkCmdDraw(command_buffers[i], 6, 1, 0, 0);
-            std::cout << "issued draw command" << std::endl;
 	    vkCmdEndRenderPass(command_buffers[i]);
 
         if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS){
@@ -829,7 +827,5 @@ void
 renderer_t::window_resize(uint32_t width, uint32_t height){
     window_extents = { width, height };
     push_constants.window_size = uvec2_t(width, height);
-    std::cout << "about to recreate swapchain" << std::endl;
     recreate_swapchain();
-    std::cout << "resize done" << std::endl;
 }
