@@ -33,7 +33,7 @@ image_t::image_t(
 
     VkResult result = vkCreateImage(blaspheme_t::get_device(), &image_info, nullptr, &image);
     if (result != VK_SUCCESS){
-	throw std::runtime_error("Error: Failed to create image.");
+	    throw std::runtime_error("Error: Failed to create image.");
     }
 
     // allocate memory

@@ -79,7 +79,7 @@ private:
 
     void cleanup_swapchain();
 
-    bool init();
+    bool init(VmaAllocator allocator);
 
     static const char * vertex_shader_code;
     std::string fragment_shader_code;
@@ -87,6 +87,7 @@ private:
 public:
     // constructors and destructors
     renderer_t(
+        VmaAllocator allocator,
         VkPhysicalDevice physical_device, VkDevice device,
         VkSurfaceKHR surface, uint32_t graphics_family, 
         uint32_t present_family,VkExtent2D window_extents

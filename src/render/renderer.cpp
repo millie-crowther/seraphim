@@ -9,6 +9,7 @@ const char *
 renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
 
 renderer_t::renderer_t(
+    VmaAllocator allocator,
     VkPhysicalDevice physical_device, VkDevice device,
     VkSurfaceKHR surface, uint32_t graphics_family, 
     uint32_t present_family, VkExtent2D window_extents
@@ -28,7 +29,7 @@ renderer_t::renderer_t(
         throw std::runtime_error("Error: Failed to load vertex shader.");
     }
 
-    if (!init()){
+    if (!init(allocator)){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
 }
@@ -50,7 +51,7 @@ renderer_t::~renderer_t(){
 }
 
 bool
-renderer_t::init(){
+renderer_t::init(VmaAllocator allocator){
     vkGetDeviceQueue(device, graphics_family, 0, &graphics_queue);
     vkGetDeviceQueue(device, present_family, 0, &present_queue);
 
@@ -101,9 +102,10 @@ renderer_t::init(){
     };
 
     vertex_buffer = std::make_shared<buffer_t>(
+        allocator,
         sizeof(fvec2_t) * 6,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+        VMA_MEMORY_USAGE_GPU_ONLY
     );
     vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(fvec2_t) * 6);
 

@@ -26,7 +26,6 @@ const std::vector<const char *> device_extensions = {
 
 static void 
 window_resize_callback(GLFWwindow * window, int width, int height){
-    std::cout << "window resize " << width << ", " << height << std::endl;
     void * data = glfwGetWindowUserPointer(window);
     blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
     blaspheme->window_resize(width, height);
@@ -121,7 +120,7 @@ blaspheme_t::init(){
     uint32_t present_family  = get_present_queue_family(physical_device);
 
     renderer = std::make_unique<renderer_t>(
-        physical_device, device, surface, graphics_family, present_family, window_extents
+        allocator, physical_device, device, surface, graphics_family, present_family, window_extents
     );
 }
 
@@ -450,6 +449,8 @@ blaspheme_t::cleanup(){
 
     // delete renderer early to release resources at appropriate time
     renderer.reset(nullptr);
+
+    vmaDestroyAllocator(allocator);
 
     // destroy logical device
     vkDestroyDevice(device, nullptr);
