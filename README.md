@@ -1,9 +1,9 @@
 # blaspheme
 
-lightweight game engine using vulkan
+lightweight game engine based around signed distance fields. implemented in vulkan.
 
 ## install
-`./dependency_install.sh`
+`./install.sh`
 
 
 ## usage
@@ -11,6 +11,6 @@ lightweight game engine using vulkan
 `./run.sh`
 
 ## dependencies
-* vulkan memory allocator
-* stb (will try to remove when possible)
-* tinyobjloader (will try to remove)
+* vulkan
+* glfw
+* vulkan memory allocator 
