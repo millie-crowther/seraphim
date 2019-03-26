@@ -1,5 +1,4 @@
 sudo apt install libxcb1-dev xorg-dev
-sudo apt install libglm-dev
 
 cd build
 if cd glfw; then 
