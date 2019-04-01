@@ -363,7 +363,7 @@ bool
 renderer_t::create_graphics_pipeline(){
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
-    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.data(), &success);
+    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
 
     if (!success){
 	    return false;
@@ -524,7 +524,6 @@ renderer_t::create_graphics_pipeline(){
     );
 
     if (result != VK_SUCCESS){
-        std::cout << VK_ERROR_INVALID_SHADER_NV << " : " << result <<std::endl;
 	    return false;
     }
 
