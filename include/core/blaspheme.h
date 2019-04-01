@@ -1,18 +1,18 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#ifndef BLASPHEME_H
+#define BLASPHEME_H
 
 #include "vk_mem_alloc.h"
 
 #include <string>
 #include <vector>
 #include "render/renderer.h"
+#include "input/keyboard.h"
 
-class engine_t {
+class blaspheme_t {
 private:
     /*
       initialisation functions
     */
-    void init();
     void create_instance();
     bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
@@ -30,10 +30,6 @@ private:
 
     // update functions
     bool should_quit();
-    void update();
-
-    // cleanup functions
-    void cleanup();
 
     // debug fields
     bool is_debug;
@@ -41,13 +37,12 @@ private:
 
     VmaAllocator allocator;
 
-    image_t * depth_image;
-
-    renderer_t renderer;
-    input_t input;
+    std::unique_ptr<renderer_t> renderer;
 
     VkInstance instance;
     VkSurfaceKHR surface;
+
+	keyboard_t keyboard;
  
     GLFWwindow * window;
 
@@ -56,11 +51,13 @@ private:
     static VkDevice device;
 
 public:
-    engine_t(bool is_debug);
-
-    void window_resize(int w, int h);
+    blaspheme_t(bool is_debug);
+    ~blaspheme_t();
 
     void run();
+	
+    void window_resize(uint32_t width, uint32_t height);
+	void keyboard_event(int key, int action, int mods);
 
     // static getters
     static VkDevice get_device();

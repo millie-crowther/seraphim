@@ -18,6 +18,8 @@ private:
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
     void create_image_view(VkImageAspectFlags aspect_flags);
+    VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
+    void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
 public:
     // constructors and destructors
@@ -40,7 +42,7 @@ public:
 
     // static methods
     static VkFormat find_supported_format(
-        VkPhysicalDevice physical_device, const std::vector<VkFormat>& candidates, 
+        VkPhysicalDevice physical_device, const std::vector<VkFormat> & candidates, 
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkFormat find_depth_format(VkPhysicalDevice physical_device);

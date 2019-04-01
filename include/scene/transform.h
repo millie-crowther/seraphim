@@ -1,26 +1,34 @@
 #ifndef TRANSFORM_H
 #define TRANSFORM_H
 
-#include "maths/mat.h"
+#include <memory>
+#include <vector>
+
+#include "maths/quat.h"
 
 class transform_t {
 private:
-    // private fields
-    transform_t * parent;
+    // master and servant hierarchy
+    transform_t * master;
+    std::vector<std::shared_ptr<transform_t>> servants;
 
-    mat4_t matrix;
+    // physical location and orientation
+    vec3_t position;
+    quat_t rotation;
+    
+    // private constructor
+    transform_t(transform_t * master);
 
 public:
     // constructors and destructors
     transform_t();
-    transform_t(transform_t & parent);
 
-    // accessors
-    mat4_t get_matrix() const;
-    void set_matrix(const mat4_t & matrix);
+    std::shared_ptr<transform_t> create_servant();
+    
+    vec3_t get_absolute_position() const;
 
-    // modifiers
-    void set_parent(transform_t & parent);
+    void set_position(const vec3_t & x);
+    void set_rotation(const quat_t & q);
 };
 
 #endif

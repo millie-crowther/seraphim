@@ -19,9 +19,9 @@ public:
         vec3_t normal; 
     };
 
-    ray_t(const vec3_t& o, const vec3_t& d);
+    ray_t(const vec3_t & o, const vec3_t & d);
 
-    intersection_t cast(const sdf_t& sdf) const;
+    intersection_t cast(const sdf_t & sdf) const;
 };
 
 #endif

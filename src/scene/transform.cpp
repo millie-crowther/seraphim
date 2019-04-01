@@ -1,26 +1,27 @@
 #include "scene/transform.h"
 
 transform_t::transform_t() {
-    this->parent = nullptr;
-    matrix = mat4_t::identity();
+    this->master = nullptr;
 }
 
-transform_t::transform_t(transform_t & parent){
-    this->parent = &parent;
-    matrix = mat4_t::identity();
+
+transform_t::transform_t(transform_t * master){
+    this->master = master;
 }
 
-mat4_t
-transform_t::get_matrix() const {
-    return matrix;
-}
-
-void
-transform_t::set_parent(transform_t& parent){
-    this->parent = &parent;
+std::shared_ptr<transform_t> 
+transform_t::create_servant(){
+    std::shared_ptr<transform_t> servant(this);
+    servants.push_back(servant);
+    return servant;
 }
 
 void
-transform_t::set_matrix(const mat4_t & matrix){
-    this->matrix = matrix;
+transform_t::set_position(const vec3_t & x){
+    this->position = x;
+}
+
+void 
+transform_t::set_rotation(const quat_t & q){
+    this->rotation = q;
 }

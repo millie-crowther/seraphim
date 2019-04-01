@@ -1,23 +1,33 @@
 #ifndef COLLIDER_H
 #define COLLIDER_H
 
+#include <memory>
+
 #include "sdf.h"
-#include "logic/emitter.h" 
+#include "logic/revelator.h" 
+#include "scene/transform.h"
 
 struct collision_t {
     vec3_t position;
     vec3_t normal;
 };
 
-class collider_t : public emitter_t<collision_t> { 
+class collider_t : public revelator_t<collision_t> { 
 private:
     sdf_t sdf;
+    transform_t transform;
+    bool colliding;
 
 public:
-
     collider_t(const sdf_t & sdf);
 
-    void collide(const collider_t & c) const; 
+    vec3_t get_position() const;
+
+    bool is_colliding() const;
+
+    void collide(std::shared_ptr<collider_t> c) const; 
+
+    bool intersects_plane(const vec3_t & v, const vec3_t & n) const; 
 };
 
 #endif

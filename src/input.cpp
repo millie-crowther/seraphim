@@ -2,12 +2,12 @@
 
 #include <fstream>
 
-std::vector<char>
+std::string
 input_t::load_file(std::string filename){
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()){
-	    return std::vector<char>();
+	    return "";
     }
 
     size_t filesize = file.tellg();    
@@ -17,5 +17,5 @@ input_t::load_file(std::string filename){
     file.read(buffer.data(), filesize);
     file.close();
 
-    return buffer;
+    return std::string(buffer.data());
 }

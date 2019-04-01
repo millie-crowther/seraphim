@@ -1,8 +1,7 @@
-#include <stdexcept>
 #include <iostream>
 #include <cstring>
 
-#include "core/engine.h"
+#include "core/blaspheme.h"
 
 int 
 main(int argc, char ** argv) {
@@ -14,14 +13,7 @@ main(int argc, char ** argv) {
         }
     }
 
-    engine_t engine(is_debug);
-
-    try {
-        engine.run();
-    } catch (const std::runtime_error& e){
-	    std::cerr << e.what() << std::endl;
-	    return -1;
-    }
+    blaspheme_t(is_debug).run();
     
     return 0;
 }

@@ -1,8 +1,10 @@
 #include "physics/rigidbody.h"
 
-void 
-rigidbody_t::add_child(transform_t & child){
-    child.set_parent(transform);
+rigidbody_t::rigidbody_t(const sdf_t & sdf) : collider(sdf){ }
+
+std::shared_ptr<transform_t> 
+rigidbody_t::create_servant(){
+    return transform.create_servant();
 }
 
 void
@@ -13,5 +15,4 @@ rigidbody_t::add_force(const vec3_t & f){
 void 
 rigidbody_t::add_force_at(const vec3_t & f, const vec3_t & s){
     
-
 }

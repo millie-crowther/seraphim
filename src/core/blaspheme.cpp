@@ -1,4 +1,4 @@
-#include "core/engine.h"
+#include "core/blaspheme.h"
 
 #include <cmath>
 #include <iostream>
@@ -7,52 +7,41 @@
 #include <set>
 #include <algorithm>
 #include <fstream>
-#include "render/vertex.h"
 #include <cstring>
-#include "maths.h"
-#include "maths/mat.h"
+#include "maths/maths.h"
+#include <memory>
 
 #include "logic/scheduler.h"
 
-VkPhysicalDevice engine_t::physical_device;
-VkDevice engine_t::device;
+VkPhysicalDevice blaspheme_t::physical_device;
+VkDevice blaspheme_t::device;
 
 const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
-const std::vector<const char*> device_extensions = {
+const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-void 
+static void 
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
-    engine_t * engine = reinterpret_cast<engine_t *>(data);
-    engine->window_resize(width, height);
+    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
+    blaspheme->window_resize(width, height);
 }
 
-void
-engine_t::window_resize(int w, int h){
-    renderer.window_resize(w, h);
+static void 
+key_callback(GLFWwindow * window, int key, int scancode, int action, int mods){
+    void * data = glfwGetWindowUserPointer(window);
+    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
+    blaspheme->keyboard_event(key, action, mods);
 }
 
-engine_t::engine_t(bool is_debug){
+blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
-    std::cout << 
-        "Running in " << 
-        (is_debug ? "debug" : "release") << 
-        " mode." << std::endl;
-}
-
-void
-engine_t::init(){
-    // check compatibility of float
-    if (sizeof(vec3_t) != 12){
-        throw std::runtime_error("Error: 'float' is wrong size");
-    }
-
+    std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
     // initialise GLFW
     glfwInit();
 
@@ -62,10 +51,13 @@ engine_t::init(){
     VkExtent2D window_extents = { 640, 480 };
 
     window = glfwCreateWindow(
-        window_extents.width, window_extents.height, "Blaspheme", nullptr, nullptr
+        window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
     );
+
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
+
     glfwSetWindowSizeCallback(window, window_resize_callback);   
+    glfwSetKeyCallback(window, key_callback);
 
     // initialise vulkan
     create_instance();
@@ -76,7 +68,7 @@ engine_t::init(){
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
 
     std::cout << "Available extensions:" << std::endl;
-    for (const auto& extension : extensions) {
+    for (const auto & extension : extensions) {
 	    std::cout << "\t" << extension.extensionName << std::endl;
     }
 
@@ -111,17 +103,60 @@ engine_t::init(){
     vmaCreateAllocator(&allocator_info, &allocator);
 
     uint32_t graphics_family = get_graphics_queue_family(physical_device);
-    uint32_t present_family = get_present_queue_family(physical_device);
+    uint32_t present_family  = get_present_queue_family(physical_device);
 
-    if (!renderer.init(surface, graphics_family, present_family, window_extents)){
-        throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
+    renderer = std::make_unique<renderer_t>(
+        allocator, physical_device, device, surface, graphics_family, present_family, window_extents
+    );
+}
+
+blaspheme_t::~blaspheme_t(){
+    // scheduler::halt();    
+
+    vkDeviceWaitIdle(device);
+
+    // delete renderer early to release resources at appropriate time
+    renderer.reset(nullptr);
+
+    vmaDestroyAllocator(allocator);
+
+    // destroy logical device
+    vkDestroyDevice(device, nullptr);
+
+    // destroy debug callback
+    if (is_debug){
+        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
+            instance, "vkDestroyDebugReportCallbackEXT"
+        );
+
+        if (func != nullptr){
+            func(instance, callback, nullptr);
+        }
     }
+   
+    vkDestroySurfaceKHR(instance, surface, nullptr);
 
-    scheduler::start();
+    // destroy instance
+    vkDestroyInstance(instance, nullptr);
+
+    // destory GLFW
+    glfwDestroyWindow(window);
+    glfwTerminate();
+
+}
+
+void
+blaspheme_t::window_resize(uint32_t width, uint32_t height){
+    renderer->window_resize(width, height);
+}
+
+void 
+blaspheme_t::keyboard_event(int key, int action, int mods){
+    keyboard.key_event(key, action, mods);
 }
 
 bool
-engine_t::create_logical_device(){
+blaspheme_t::create_logical_device(){
     uint32_t graphics = get_graphics_queue_family(physical_device);
     uint32_t present = get_present_queue_family(physical_device);
 
@@ -129,36 +164,32 @@ engine_t::create_logical_device(){
     std::set<uint32_t> unique_queue_families = { graphics, present };
     
     float queue_priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
     for (uint32_t queue_family : unique_queue_families){
-        VkDeviceQueueCreateInfo queue_create_info = {};
-        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_info.queueCount = 1;
-        queue_create_info.pQueuePriorities = &queue_priority;
         queue_create_infos.push_back(queue_create_info);
     }
 
     VkPhysicalDeviceFeatures device_features = {};
-    device_features.samplerAnisotropy = VK_TRUE;
+    device_features.samplerAnisotropy        = VK_TRUE;
 
-    VkDeviceCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-    create_info.pQueueCreateInfos = queue_create_infos.data();
-    create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-
-    create_info.pEnabledFeatures = &device_features;
-
-    
-    create_info.enabledExtensionCount = device_extensions.size();
+    VkDeviceCreateInfo create_info      = {};
+    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.pQueueCreateInfos       = queue_create_infos.data();
+    create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pEnabledFeatures        = &device_features;
+    create_info.enabledExtensionCount   = device_extensions.size();
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
     if (is_debug) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
         create_info.ppEnabledLayerNames = validation_layers.data();
     } else {
-	    create_info.enabledLayerCount = 0;
-    }
+	    create_info.enabledLayerCount   = 0;
+    } 
 
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
 	    return false;
@@ -168,7 +199,7 @@ engine_t::create_logical_device(){
 }
 
 bool
-engine_t::check_validation_layers(){
+blaspheme_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -194,10 +225,9 @@ engine_t::check_validation_layers(){
 }
 
 std::vector<const char *>
-engine_t::get_required_extensions(){
-    uint32_t extension_count = 0;
-    const char ** glfw_extensions;
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+blaspheme_t::get_required_extensions(){
+    uint32_t      extension_count = 0;
+    const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
     std::vector<const char *> req_ext(glfw_extensions, glfw_extensions + extension_count);
     if (is_debug){
@@ -208,7 +238,7 @@ engine_t::get_required_extensions(){
 }
 
 int
-engine_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
+blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
 
@@ -225,7 +255,7 @@ engine_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
 }
 
 int 
-engine_t::get_present_queue_family(VkPhysicalDevice phys_device){
+blaspheme_t::get_present_queue_family(VkPhysicalDevice phys_device){
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
 
@@ -245,7 +275,7 @@ engine_t::get_present_queue_family(VkPhysicalDevice phys_device){
 }
 
 bool
-engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
+blaspheme_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
     if (count == 0){
@@ -262,7 +292,7 @@ engine_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
 }
 
 bool
-engine_t::is_suitable_device(VkPhysicalDevice phys_device){
+blaspheme_t::is_suitable_device(VkPhysicalDevice phys_device){
     // check that gpu isnt integrated
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(phys_device, &properties);
@@ -300,7 +330,7 @@ engine_t::is_suitable_device(VkPhysicalDevice phys_device){
 }
 
 bool
-engine_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension){
+blaspheme_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension){
     uint32_t extension_count = 0;
     vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count, nullptr);
 
@@ -319,11 +349,11 @@ engine_t::device_has_extension(VkPhysicalDevice phys_device, const char * extens
 }
 
 VkPhysicalDevice
-engine_t::select_device(){
+blaspheme_t::select_device(){
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0){
-	    return VK_NULL_HANDLE;
+ 	    return VK_NULL_HANDLE;
     }
 
     std::vector<VkPhysicalDevice> devices(device_count);
@@ -339,7 +369,7 @@ engine_t::select_device(){
 }
 
 void
-engine_t::create_instance(){
+blaspheme_t::create_instance(){
     if (is_debug && !check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
     }
@@ -371,12 +401,10 @@ engine_t::create_instance(){
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
+    auto required_extensions = get_required_extensions(); 
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-
-    auto required_extensions = get_required_extensions(); 
-
     create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
@@ -387,9 +415,9 @@ engine_t::create_instance(){
 
     if (is_debug){
         create_info.ppEnabledLayerNames = validation_layers.data();
-        create_info.enabledLayerCount = validation_layers.size();
+        create_info.enabledLayerCount   = validation_layers.size();
     } else {
-        create_info.enabledLayerCount = 0;
+        create_info.enabledLayerCount   = 0;
     }
 
     std::cout << "Enabled validation layers: "  << std::endl;
@@ -404,7 +432,7 @@ engine_t::create_instance(){
     }
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL 
+static VKAPI_ATTR VkBool32 VKAPI_CALL 
 debug_callback(
     VkDebugReportFlagsEXT flags,
     VkDebugReportObjectTypeEXT obj_type,
@@ -420,7 +448,7 @@ debug_callback(
 }
 
 bool
-engine_t::setup_debug_callback(){
+blaspheme_t::setup_debug_callback(){
     if (!is_debug){
 	    return true;
     }
@@ -435,79 +463,29 @@ engine_t::setup_debug_callback(){
     auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(
         instance, "vkCreateDebugReportCallbackEXT"
     );
-    if (func == nullptr){
-        return false;
-    }
 
-    if (func(instance, &create_info, nullptr, &callback) != VK_SUCCESS){
-	return false;
-    }	
-
-    return true;
-}
-
-void 
-engine_t::update(){
-    glfwPollEvents();
-
-    // renderer.chalet->tick_template(input);
-}
-
-void
-engine_t::cleanup(){
-    scheduler::halt();    
-
-    vkDeviceWaitIdle(device);
-
-    renderer.cleanup();
-
-    // destroy logical device
-    vkDestroyDevice(device, nullptr);
-
-    // destroy debug callback
-    if (is_debug){
-        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
-            instance, "vkDestroyDebugReportCallbackEXT"
-        );
-
-        if (func != nullptr){
-            func(instance, callback, nullptr);
-        }
-    }
-   
-    vkDestroySurfaceKHR(instance, surface, nullptr);
-
-    // destroy instance
-    vkDestroyInstance(instance, nullptr);
-
-    // destory GLFW
-    glfwDestroyWindow(window);
-    glfwTerminate();
+    return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
 
 bool
-engine_t::should_quit(){
-    return glfwWindowShouldClose(window);
+blaspheme_t::should_quit(){
+    return glfwWindowShouldClose(window) || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
 void
-engine_t::run(){
-    init();	
-
+blaspheme_t::run(){
     while (!should_quit()){
-	    update();
-        renderer.render();
+	    glfwPollEvents();
+        renderer->render();
     }
-
-    cleanup();
 }
 
 VkPhysicalDevice
-engine_t::get_physical_device(){
+blaspheme_t::get_physical_device(){
     return physical_device;
 }
 
 VkDevice
-engine_t::get_device(){
+blaspheme_t::get_device(){
     return device;
 }

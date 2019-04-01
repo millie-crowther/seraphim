@@ -2,6 +2,7 @@
 #define RIGIDBODY_H
 
 #include <vector>
+#include <memory>
 
 #include "maths/quat.h"
 #include "maths/vec.h"
@@ -21,12 +22,12 @@ private:
     transform_t transform;
     
 public:
+    rigidbody_t(const sdf_t & sdf);
+
     void add_force(const vec3_t & f);
     void add_force_at(const vec3_t & f, const vec3_t & s);
 
-    void add_child(transform_t & child);
-
-    void check_collision(rigidbody_t & rigidbody);
+    std::shared_ptr<transform_t> create_servant();
 };
 
 #endif 

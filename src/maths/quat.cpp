@@ -1,47 +1,113 @@
 #include "maths/quat.h"
 
-#include <iostream>
+quat_t::quat_t() : quat_t(1, 0, 0, 0){}
 
-quat_t::quat_t() : vec4_t({ 1, 0, 0, 0 }){ }
+quat_t::quat_t(double w, double x, double y, double z) : quat_t(w, x, y, z, true) {}
 
-quat_t::quat_t(const std::array<float, 4>& xs) : quat_t(vec4_t(xs)){ }
+quat_t::quat_t(double w, double x, double y, double z, bool should_normalise){
+    this->w = w;
+    this->x = x;
+    this->y = y;
+    this->z = z;
 
-quat_t::quat_t(const vec4_t& v){
-    vec4_t v_n = v.normalise();
-    xs = { v_n[0], v_n[1], v_n[2], v_n[3] };
+    if (should_normalise){
+        normalise();
+    }
+}
+
+void
+quat_t::normalise(){
+    double s = maths::inverse_square_root(w * w + x * x + y * y + z * z);
+    
+    if (s > 0){
+        w *= s;
+        x *= s;
+        y *= s;
+        z *= s;
+    } else {
+        w = 1;
+        x = 0;
+        y = 0;
+        z = 0;
+    }
 }
 
 quat_t
-quat_t::angle_axis(float angle, const vec3_t& axis){
+quat_t::look_at(const vec3_t & forward, const vec3_t & up){
+    // TODO
+    //     // your code from before
+    // F = normalize(target - camera);   // lookAt
+    // R = normalize(cross(F, worldUp)); // sideaxis
+    // U = cross(R, F);                  // rotatedup
+
+    // // note that R needed to be re-normalized
+    // // since F and worldUp are not necessary perpendicular
+    // // so must remove the sin(angle) factor of the cross-product
+    // // same not true for U because dot(R, F) = 0
+
+    // // adapted source
+    // Quaternion q;
+    // double trace = R.x + U.y + F.z;
+    // if (trace > 0.0) {
+    // double s = 0.5 / sqrt(trace + 1.0);
+    // q.w = 0.25 / s;
+    // q.x = (U.z - F.y) * s;
+    // q.y = (F.x - R.z) * s;
+    // q.z = (R.y - U.x) * s;
+    // } else {
+    // if (R.x > U.y && R.x > F.z) {
+    //     double s = 2.0 * sqrt(1.0 + R.x - U.y - F.z);
+    //     q.w = (U.z - F.y) / s;
+    //     q.x = 0.25 * s;
+    //     q.y = (U.x + R.y) / s;
+    //     q.z = (F.x + R.z) / s;
+    // } else if (U.y > F.z) {
+    //     double s = 2.0 * sqrt(1.0 + U.y - R.x - F.z);
+    //     q.w = (F.x - R.z) / s;
+    //     q.x = (U.x + R.y) / s;
+    //     q.y = 0.25 * s;
+    //     q.z = (F.y + U.z) / s;
+    // } else {
+    //     double s = 2.0 * sqrt(1.0 + F.z - R.x - U.y);
+    //     q.w = (R.y - U.x) / s;
+    //     q.x = (F.x + R.z) / s;
+    //     q.y = (F.y + U.z) / s;
+    //     q.z = 0.25 * s;
+    // }
+    // }
+    return quat_t();
+}
+
+quat_t
+quat_t::angle_axis(double angle, const vec3_t & axis){
     vec3_t axis_n = axis.normalise();
-    float s = std::sin(angle / 2.0f);
-    return quat_t({ std::cos(angle / 2.0f), axis_n[0] * s, axis_n[1] * s, axis_n[2] * s });
-}
-
-quat_t
-quat_t::conjugate() const {
-    return quat_t({ xs[0], -xs[1], -xs[2], -xs[3] });
+    double s = std::sin(angle / 2);
+    return quat_t(std::cos(angle / 2), axis_n[0] * s, axis_n[1] * s, axis_n[2] * s);
 }
 
 vec3_t
-quat_t::inverse_transform(const vec3_t& v) const {
-    return conjugate().transform(v);
+quat_t::rotate(const vec3_t & v) const {
+    quat_t q = *this * quat_t(0, v[0], v[1], v[2], false) * inverse();
+    return q.vector();
 }
 
-vec3_t
-quat_t::transform(const vec3_t& v) const {
-    quat_t q = (*this) * quat_t({ 0, v[0], v[1], v[2] }) * conjugate();
-    return q.imaginary_part();
+void
+quat_t::operator*=(const quat_t & q){
+    quat_t q1 = hamilton(q);
+    w = q1.w;
+    x = q1.x;
+    y = q1.y;
+    z = q1.z; 
 }
 
 quat_t
-quat_t::operator*(const quat_t& q) const {
+quat_t::operator*(const quat_t & q) const {
     return hamilton(q);
 }
 
 vec3_t
-quat_t::operator*(const vec3_t& v) const {
-    return transform(v);
+quat_t::operator*(const vec3_t & v) const {
+    return rotate(v);
 }
 
 quat_t
@@ -51,69 +117,26 @@ quat_t::identity(){
 
 quat_t
 quat_t::inverse() const {
-    return conjugate() / square_length();
+    return quat_t(w, -x, -y, -z);
 }
 
 vec3_t
-quat_t::imaginary_part(){
-    return vec3_t({ xs[1], xs[2], xs[3] });
+quat_t::vector() const {
+    return vec3_t(x, y, z);
 }
 
-float
-quat_t::real_part(){
-    return xs[0];
+double
+quat_t::scalar() const {
+    return w;
 }
 
 quat_t
 quat_t::hamilton(const quat_t& q) const {
-    return quat_t({
-        xs[0] * q.xs[1] + xs[1] * q.xs[0] + xs[2] * q.xs[3] - xs[3] * q.xs[2],
-        xs[0] * q.xs[2] - xs[1] * q.xs[3] + xs[2] * q.xs[0] + xs[3] * q.xs[1],
-        xs[0] * q.xs[3] + xs[1] * q.xs[2] - xs[2] * q.xs[1] + xs[3] * q.xs[0],
-        xs[0] * q.xs[0] - xs[1] * q.xs[1] - xs[2] * q.xs[2] - xs[3] * q.xs[3]
-    });
-}
-
-mat3_t
-quat_t::to_matrix() const {
-    mat3_t r({
-        -xs[2] * xs[2] - xs[3] * xs[3], 
-         xs[1] * xs[2] - xs[0] * xs[3], 
-         xs[1] * xs[3] + xs[0] * xs[2],
- 
-         xs[1] * xs[2] + xs[0] * xs[3], 
-        -xs[1] * xs[1] - xs[3] * xs[3], 
-         xs[2] * xs[3] - xs[0] * xs[1],
-
-         xs[1] * xs[3] - xs[0] * xs[2], 
-         xs[2] * xs[3] + xs[0] * xs[1], 
-        -xs[1] * xs[1] - xs[2] * xs[2],      
-    });    
-
-    return mat3_t::identity() + 2.0f * r;
-}
-
-quat_t
-quat_t::from_matrix(const mat3_t& m){
-    float w = std::sqrt(1.0f + m[0][0] + m[1][1] + m[2][2]) * 2.0f;
-    return quat_t({
-        w / 4.0f,
-        (m[1][2] - m[2][1]) / w,
-        (m[2][0] - m[0][2]) / w,
-        (m[0][1] - m[1][0]) / w
-    });
-}
-
-quat_t
-quat_t::operator*(float s) const {
-    quat_t r = *this;
-    for (int i = 0; i < 4; i++){
-	    r[i] *= s;
-    }
-    return r;
-}
-
-quat_t
-operator*(float s, const quat_t& q){
-    return q * s;
+    // TODO
+    return quat_t(
+        // qs[0] * q.qs[1] + qs[1] * q.qs[0] + qs[2] * q.qs[3] - qs[3] * q.qs[2],
+        // qs[0] * q.qs[2] - qs[1] * q.qs[3] + qs[2] * q.qs[0] + qs[3] * q.qs[1],
+        // qs[0] * q.qs[3] + qs[1] * q.qs[2] - qs[2] * q.qs[1] + qs[3] * q.qs[0],
+        // qs[0] * q.qs[0] - qs[1] * q.qs[1] - qs[2] * q.qs[2] - qs[3] * q.qs[3]
+    );
 }
