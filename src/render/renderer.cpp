@@ -12,18 +12,17 @@ renderer_t::renderer_t(
     VmaAllocator allocator,
     VkPhysicalDevice physical_device, VkDevice device,
     VkSurfaceKHR surface, uint32_t graphics_family, 
-    uint32_t present_family, VkExtent2D window_extents
+    uint32_t present_family, const u32vec2_t & window_size
 ){
     current_frame = 0;
     this->surface = surface;
-    this->window_extents = window_extents;
     this->graphics_family = graphics_family;
     this->present_family = present_family;
     this->physical_device = physical_device;
     this->device = device;
     this->allocator = allocator;
 
-    push_constants.window_size = u32vec2_t(window_extents.width, window_extents.height);
+    push_constants.window_size = window_size;
     
     fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
     if (fragment_shader_code.size() == 0){
@@ -193,15 +192,15 @@ renderer_t::select_swap_extent(){
 
     // check if we need to supply width and height
     if (capabilities.currentExtent.width == ~((uint32_t) 0)){
-        VkExtent2D extents = window_extents;
+        VkExtent2D extents;
         
         extents.width = std::max(
             capabilities.minImageExtent.width, 
-            std::min(extents.width, capabilities.maxImageExtent.width)
+            std::min(push_constants.window_size[0], capabilities.maxImageExtent.width)
         );
         extents.height = std::max(
             capabilities.minImageExtent.height, 
-            std::min(extents.height, capabilities.maxImageExtent.height)
+            std::min(push_constants.window_size[1], capabilities.maxImageExtent.height)
         );
             
         return extents;
@@ -536,7 +535,7 @@ bool
 renderer_t::create_depth_resources(){
     VkFormat depth_format = image_t::find_depth_format(physical_device);
 
-    auto size = u32vec2_t(swapchain_extents.width, swapchain_extents.height);
+    u32vec2_t size(swapchain_extents.width, swapchain_extents.height);
     depth_image = std::make_unique<image_t>(
         allocator,
         size, depth_format,
@@ -825,7 +824,6 @@ renderer_t::create_shader_module(std::string code, bool * success){
 
 void
 renderer_t::window_resize(const u32vec2_t & size){
-    window_extents = { size[0], size[1] };
     push_constants.window_size = size;
     recreate_swapchain();
 }

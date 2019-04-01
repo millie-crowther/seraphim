@@ -26,7 +26,6 @@ private:
     std::vector<VkFramebuffer> swapchain_framebuffers;
     std::vector<std::unique_ptr<image_t>> swapchain_images;
     VkExtent2D swapchain_extents;
-    VkExtent2D window_extents;
 
     VkSurfaceKHR surface;
     VkRenderPass render_pass;
@@ -91,7 +90,7 @@ public:
         VmaAllocator allocator,
         VkPhysicalDevice physical_device, VkDevice device,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family, VkExtent2D window_extents
+        uint32_t present_family, const u32vec2_t & window_size
     );
     ~renderer_t();
 

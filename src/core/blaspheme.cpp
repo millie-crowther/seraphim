@@ -48,11 +48,9 @@ blaspheme_t::blaspheme_t(bool is_debug){
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    VkExtent2D window_extents = { 640, 480 };
+    u32vec2_t window_size(640u, 480u);
 
-    window = glfwCreateWindow(
-        window_extents.width, window_extents.height, "BLASPHEME", nullptr, nullptr
-    );
+    window = glfwCreateWindow(window_size[0], window_size[1], "BLASPHEME", nullptr, nullptr);
 
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
 
@@ -106,7 +104,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t present_family  = get_present_queue_family(physical_device);
 
     renderer = std::make_unique<renderer_t>(
-        allocator, physical_device, device, surface, graphics_family, present_family, window_extents
+        allocator, physical_device, device, surface, graphics_family, present_family, window_size
     );
 }
 
