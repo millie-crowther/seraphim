@@ -5,20 +5,22 @@
 #include "core/blaspheme.h"
 
 image_t::image_t(
-    uint32_t width, uint32_t height, VkFormat format, 
+    VmaAllocator allocator,
+    u32vec2_t & size, VkFormat format, 
     VkImageTiling tiling, VkImageUsageFlags usage, 
-    VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
+    VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
 ){
     is_swapchain = false;
     
     this->format = format;
+    this->allocator = allocator;
 
     // create image
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.extent.width = width;
-    image_info.extent.height = height;
+    image_info.extent.width = size[0];
+    image_info.extent.height = size[1];
     image_info.extent.depth = 1;
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
@@ -31,26 +33,52 @@ image_t::image_t(
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+    VmaAllocationCreateInfo alloc_create_info = {};
+    alloc_create_info.usage = vma_usage; 
+
+    VmaAllocation allocation;
+    VmaAllocationInfo alloc_info;
+
+    // TODO: Use VMA to do the allocation. not sure why below approach doesn't work.
+    //       screen goes black if you try this way
+    //  
+    //
+    // VkResult result = vmaCreateImage(
+    //     allocator, &image_info, &alloc_create_info,
+    //     &image, &allocation, &alloc_info
+    // );
+
+    // if (result != VK_SUCCESS){
+	//     throw std::runtime_error("Error: Failed to create image.");
+    // }
+
+    // memory = alloc_info.deviceMemory;
+
+
+    // // allocate memory 
     VkResult result = vkCreateImage(blaspheme_t::get_device(), &image_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
-
-    // allocate memory
     VkMemoryRequirements mem_req;
     vkGetImageMemoryRequirements(blaspheme_t::get_device(), image, &mem_req);
 
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.allocationSize = mem_req.size;
-    alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
+    VkMemoryAllocateInfo mem_alloc_info = {};
+    mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mem_alloc_info.allocationSize = mem_req.size;
+    auto properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(blaspheme_t::get_device(), &alloc_info, nullptr, &memory);
+    result = vkAllocateMemory(blaspheme_t::get_device(), &mem_alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    vkBindImageMemory(blaspheme_t::get_device(), image, memory, 0);
+    result = vkBindImageMemory(blaspheme_t::get_device(), image, memory, 0);
+
+    if (result != VK_SUCCESS){
+	    throw std::runtime_error("Error: Failed to create image.");
+    }
 
     // create image view
     create_image_view(aspect_flags);
@@ -96,6 +124,7 @@ image_t::~image_t(){
     if (!is_swapchain){
         vkDestroyImage(blaspheme_t::get_device(), image, nullptr);
         vkFreeMemory(blaspheme_t::get_device(), memory, nullptr);
+        // vmaDestroyImage(allocator, image, allocation);
     }
 }
 

@@ -28,7 +28,7 @@ static void
 window_resize_callback(GLFWwindow * window, int width, int height){
     void * data = glfwGetWindowUserPointer(window);
     blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
-    blaspheme->window_resize(width, height);
+    blaspheme->window_resize(u32vec2_t((uint32_t) width, (uint32_t) height));
 }
 
 static void 
@@ -146,8 +146,8 @@ blaspheme_t::~blaspheme_t(){
 }
 
 void
-blaspheme_t::window_resize(uint32_t width, uint32_t height){
-    renderer->window_resize(width, height);
+blaspheme_t::window_resize(const u32vec2_t & size){
+    renderer->window_resize(size);
 }
 
 void 

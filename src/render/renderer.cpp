@@ -21,15 +21,16 @@ renderer_t::renderer_t(
     this->present_family = present_family;
     this->physical_device = physical_device;
     this->device = device;
+    this->allocator = allocator;
 
-    push_constants.window_size = uvec2_t(window_extents.width, window_extents.height);
+    push_constants.window_size = u32vec2_t(window_extents.width, window_extents.height);
     
     fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
     if (fragment_shader_code.size() == 0){
         throw std::runtime_error("Error: Failed to load vertex shader.");
     }
 
-    if (!init(allocator)){
+    if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
 }
@@ -51,7 +52,7 @@ renderer_t::~renderer_t(){
 }
 
 bool
-renderer_t::init(VmaAllocator allocator){
+renderer_t::init(){
     vkGetDeviceQueue(device, graphics_family, 0, &graphics_queue);
     vkGetDeviceQueue(device, present_family, 0, &present_queue);
 
@@ -92,24 +93,22 @@ renderer_t::init(VmaAllocator allocator){
         return false;
     }
 
-    const std::vector<fvec2_t> vertices = {
-        fvec2_t(-1.0f, -1.0f), 
-        fvec2_t(-1.0f,  1.0f),
-        fvec2_t( 1.0f, -1.0f),
+    const std::vector<f32vec2_t> vertices = {
+        f32vec2_t(-1.0f, -1.0f), 
+        f32vec2_t(-1.0f,  1.0f),
+        f32vec2_t( 1.0f, -1.0f),
 
-        fvec2_t(-1.0f,  1.0f),
-        fvec2_t( 1.0f,  1.0f),
-        fvec2_t( 1.0f, -1.0f)
+        f32vec2_t(-1.0f,  1.0f),
+        f32vec2_t( 1.0f,  1.0f),
+        f32vec2_t( 1.0f, -1.0f)
     };
 
-    std::cout << "sizeof vertices: " << sizeof(vertices) << std::endl;
-
     vertex_buffer = std::make_shared<buffer_t>(
-        allocator, sizeof(fvec2_t) * 6,
+        allocator, sizeof(f32vec2_t) * 6,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(fvec2_t) * 6);
+    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6);
 
     if (!create_command_buffers()){
         return false;
@@ -537,10 +536,12 @@ bool
 renderer_t::create_depth_resources(){
     VkFormat depth_format = image_t::find_depth_format(physical_device);
 
+    auto size = u32vec2_t(swapchain_extents.width, swapchain_extents.height);
     depth_image = std::make_unique<image_t>(
-        swapchain_extents.width, swapchain_extents.height, depth_format,
+        allocator,
+        size, depth_format,
         VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_DEPTH_BIT
+        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_DEPTH_BIT
     );
 
     depth_image->transition_image_layout(
@@ -754,7 +755,6 @@ renderer_t::create_sync(){
     return true;
 }
 
-
 void
 renderer_t::render(){
     vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
@@ -824,8 +824,8 @@ renderer_t::create_shader_module(std::string code, bool * success){
 }
 
 void
-renderer_t::window_resize(uint32_t width, uint32_t height){
-    window_extents = { width, height };
-    push_constants.window_size = uvec2_t(width, height);
+renderer_t::window_resize(const u32vec2_t & size){
+    window_extents = { size[0], size[1] };
+    push_constants.window_size = size;
     recreate_swapchain();
 }

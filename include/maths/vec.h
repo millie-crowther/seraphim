@@ -133,11 +133,14 @@ public:
     }
 };
 
-typedef vec_t<double, 2> vec2_t;
-typedef vec_t<double, 3> vec3_t;
-typedef vec_t<double, 4> vec4_t;
+typedef vec_t<uint32_t, 2> u32vec2_t;
 
-typedef vec_t<uint32_t, 2> uvec2_t;
-typedef vec_t<float, 2> fvec2_t;
+typedef vec_t<float, 2> f32vec2_t;
+
+typedef vec_t<double, 2> f64vec2_t;
+typedef vec_t<double, 3> f64vec3_t;
+
+typedef f64vec2_t vec2_t;
+typedef f64vec3_t vec3_t;
 
 #endif

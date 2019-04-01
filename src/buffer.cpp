@@ -18,10 +18,9 @@ buffer_t::buffer_t(
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.usage = vma_usage;
 
-    vmaCreateBuffer(allocator, &buffer_info, &alloc_create_info, &buffer, &allocation, nullptr);
-   
     VmaAllocationInfo alloc_info = {};
-    vmaGetAllocationInfo(allocator, allocation, &alloc_info);
+    vmaCreateBuffer(allocator, &buffer_info, &alloc_create_info, &buffer, &allocation, &alloc_info);
+   
     memory = alloc_info.deviceMemory;
     
     vkBindBufferMemory(blaspheme_t::get_device(), buffer, memory, 0); 

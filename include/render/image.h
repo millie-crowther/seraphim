@@ -2,6 +2,8 @@
 #define IMAGE_H
 
 #include <vector>
+#include "vk_mem_alloc.h"
+#include "maths/vec.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -14,6 +16,8 @@ private:
     VkDeviceMemory memory;
     VkFormat format;
     VkImageLayout layout;
+    VmaAllocation allocation;
+    VmaAllocator allocator;
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
@@ -24,9 +28,10 @@ private:
 public:
     // constructors and destructors
     image_t(
-        uint32_t width, uint32_t height, VkFormat format, 
+        VmaAllocator allocator,
+        u32vec2_t & size, VkFormat format, 
         VkImageTiling tiling, VkImageUsageFlags usage, 
-        VkMemoryPropertyFlags properties, VkImageAspectFlags aspect_flags
+        VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
     );
     image_t(
         VkImage image, VkFormat format, VkImageAspectFlags aspect_flags

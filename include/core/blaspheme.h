@@ -56,7 +56,7 @@ public:
 
     void run();
 	
-    void window_resize(uint32_t width, uint32_t height);
+    void window_resize(const u32vec2_t & size);
 	void keyboard_event(int key, int action, int mods);
 
     // static getters

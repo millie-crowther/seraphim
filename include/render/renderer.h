@@ -14,11 +14,12 @@
 class renderer_t {
 private:
     struct push_constant_t {
-        uvec2_t window_size;
+        u32vec2_t window_size;
     } push_constants;
 
     VkPhysicalDevice physical_device;
     VkDevice device;
+    VmaAllocator allocator;
 
     // swapchain fields
     VkSwapchainKHR swapchain;
@@ -79,7 +80,7 @@ private:
 
     void cleanup_swapchain();
 
-    bool init(VmaAllocator allocator);
+    bool init();
 
     static const char * vertex_shader_code;
     std::string fragment_shader_code;
@@ -90,12 +91,12 @@ public:
         VmaAllocator allocator,
         VkPhysicalDevice physical_device, VkDevice device,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family,VkExtent2D window_extents
+        uint32_t present_family, VkExtent2D window_extents
     );
     ~renderer_t();
 
 
-    void window_resize(uint32_t width, uint32_t height);
+    void window_resize(const u32vec2_t & size);
 
     // main method
     void render();
