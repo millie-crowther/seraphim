@@ -167,7 +167,8 @@ vec4 sky(){
 void main(){
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
     uv = uv * 2.0 - 1.0;
-    uv.x *= push_constants.window_size.x / push_constants.window_size.y;
+    uv.x *= push_constants.window_size.x;
+    uv.x /= push_constants.window_size.y;
     uv.y *= -1;
     vec2 pos = uv;
     
