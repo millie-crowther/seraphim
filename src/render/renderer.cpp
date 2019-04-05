@@ -26,7 +26,12 @@ renderer_t::renderer_t(
     
     fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
     if (fragment_shader_code.size() == 0){
-        throw std::runtime_error("Error: Failed to load vertex shader.");
+        throw std::runtime_error("Error: Failed to load fragment shader.");
+    }    
+
+    compute_shader_code = input_t::load_file("../src/shaders/shader.comp");
+    if (compute_shader_code.size() == 0){
+        throw std::runtime_error("Error: Failed to load compute shader.");
     }
 
     if (!init()){
@@ -362,6 +367,7 @@ renderer_t::create_graphics_pipeline(){
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
+    // VkShaderModule comp_shader_module = create_shader_module(compute_shader_code.c_str(), &success);
 
     if (!success){
 	    return false;
@@ -372,6 +378,12 @@ renderer_t::create_graphics_pipeline(){
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vert_create_info.module = vert_shader_module;
     vert_create_info.pName = "main";
+
+    // VkPipelineShaderStageCreateInfo comp_create_info = {}; 
+    // vert_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    // vert_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    // vert_create_info.module = comp_shader_module;
+    // vert_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo frag_create_info = {}; 
     frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -386,7 +398,7 @@ renderer_t::create_graphics_pipeline(){
 
     VkVertexInputBindingDescription binding_desc = {};
     binding_desc.binding   = 0;
-    binding_desc.stride    = sizeof(vec_t<float, 2>);
+    binding_desc.stride    = sizeof(f32vec2_t);
     binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
     VkVertexInputAttributeDescription attr_desc = {};
