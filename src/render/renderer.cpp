@@ -5,7 +5,7 @@
 #include <chrono>
 #include <stdexcept>
 
-const char *
+std::string
 renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
 
 renderer_t::renderer_t(
@@ -63,7 +63,6 @@ renderer_t::init(){
     if (!create_swapchain()){
         return false;
     }
-
 
     if (!create_render_pass()){
         return false;
@@ -365,11 +364,12 @@ renderer_t::create_render_pass(){
 bool 
 renderer_t::create_graphics_pipeline(){
     bool success = true;
-    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
+    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code.c_str(), &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
-    // VkShaderModule comp_shader_module = create_shader_module(compute_shader_code.c_str(), &success);
+    VkShaderModule comp_shader_module = create_shader_module(compute_shader_code.c_str(), &success);
 
     if (!success){
+        std::cout << "Error: Failed to create one of the shader modules" << std::endl;
 	    return false;
     }
 
@@ -379,11 +379,11 @@ renderer_t::create_graphics_pipeline(){
     vert_create_info.module = vert_shader_module;
     vert_create_info.pName = "main";
 
-    // VkPipelineShaderStageCreateInfo comp_create_info = {}; 
-    // vert_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    // vert_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    // vert_create_info.module = comp_shader_module;
-    // vert_create_info.pName = "main";
+    VkPipelineShaderStageCreateInfo comp_create_info = {}; 
+    comp_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    comp_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    comp_create_info.module = comp_shader_module;
+    comp_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo frag_create_info = {}; 
     frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -428,7 +428,7 @@ renderer_t::create_graphics_pipeline(){
     viewport.maxDepth   = 1;
 
     VkRect2D scissor = {};
-    scissor.offset   = {0, 0};
+    scissor.offset   = { 0, 0 };
     scissor.extent   = swapchain_extents;
 
     VkPipelineViewportStateCreateInfo viewport_state = {};
@@ -495,6 +495,7 @@ renderer_t::create_graphics_pipeline(){
     if (vkCreatePipelineLayout(
 	    device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
+        std::cout << "Error: Failed to create pipeline layout." << std::endl;
 	    return false;
     }
 
@@ -534,11 +535,14 @@ renderer_t::create_graphics_pipeline(){
     );
 
     if (result != VK_SUCCESS){
+        std::cout << "Error: Failed to create graphics pipeline." << std::endl;
+        std::cout << result << " = " << VK_ERROR_INVALID_SHADER_NV << std::endl;
 	    return false;
     }
 
     vkDestroyShaderModule(device, vert_shader_module, nullptr);
     vkDestroyShaderModule(device, frag_shader_module, nullptr);
+    vkDestroyShaderModule(device, comp_shader_module, nullptr);
 
     return true;
 }

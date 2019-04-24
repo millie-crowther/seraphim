@@ -23,7 +23,6 @@ public:
     }
 
 protected:
-    // protected constructor enforces abstract class
     revelator_t(){}
 
     void reveal(const output_t & output) const {

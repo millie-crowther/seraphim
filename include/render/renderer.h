@@ -81,7 +81,7 @@ private:
 
     bool init();
 
-    static const char * vertex_shader_code;
+    static std::string vertex_shader_code;
     std::string fragment_shader_code;
     std::string compute_shader_code;
 
