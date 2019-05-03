@@ -391,8 +391,9 @@ renderer_t::create_graphics_pipeline(){
     frag_create_info.module = frag_shader_module;
     frag_create_info.pName = "main";
 
-    VkPipelineShaderStageCreateInfo shader_stages[2] = {
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
         vert_create_info,
+        // comp_create_info,
         frag_create_info
     };
 
@@ -513,8 +514,8 @@ renderer_t::create_graphics_pipeline(){
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = 2;
-    pipeline_info.pStages = shader_stages;
+    pipeline_info.stageCount = shader_stages.size();
+    pipeline_info.pStages = shader_stages.data();
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
     pipeline_info.pViewportState = &viewport_state;

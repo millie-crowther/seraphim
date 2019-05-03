@@ -4,15 +4,13 @@
 
 #include "core/constant.h"
 
-sdf_t::sdf_t() : sdf_t([](const vec3_t & v){ return 1; }){}
-
 sdf_t::sdf_t(const phi_t & phi){
     this->phi = phi;
 }
 
 double
 sdf_t::operator()(const vec3_t & v) const {
-    return phi(v);
+    return std::max(-constant::rho, std::min(phi(v), constant::rho));
 }
  
 vec3_t
@@ -26,6 +24,8 @@ sdf_t::normal(const vec3_t & p) const {
 
 sdf_t
 sdf_t::operator&&(const sdf_t & sdf) const {
+    // TODO: use truncation properties to make more efficient
+
     auto phi1 = std::make_shared<sdf_t>(phi);
     auto phi2 = std::make_shared<sdf_t>(sdf.phi);
     return sdf_t([phi1, phi2](const vec3_t & v){
@@ -35,6 +35,8 @@ sdf_t::operator&&(const sdf_t & sdf) const {
 
 sdf_t
 sdf_t::operator||(const sdf_t & sdf) const {
+    // TODO: use truncation properties to make more efficient
+
     auto phi1 = std::make_shared<sdf_t>(phi);
     auto phi2 = std::make_shared<sdf_t>(sdf.phi);
     return sdf_t([phi1, phi2](const vec3_t & v){

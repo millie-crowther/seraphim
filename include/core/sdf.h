@@ -17,7 +17,6 @@ private:
 
 public:
     // constructors and destructors
-    sdf_t();
     sdf_t(const phi_t & phi); 
 
     // accessors
