@@ -16,6 +16,20 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
     request_helper(x, camera, universal_aabb, visible_renderables);
 }
 
+int
+octree_t::get_node(const vec3_t & x){
+    if (!universal_aabb.contains(x)){
+        return -1;
+    } else {
+        return get_node_helper(x, 0);
+    }
+}
+
+int
+octree_t::get_node_helper(const vec3_t & x, int i){
+
+}
+
 void 
 octree_t::request_helper(
     const vec3_t & x, const vec3_t & camera, 
