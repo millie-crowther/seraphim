@@ -17,16 +17,16 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
 }
 
 int
-octree_t::get_node(const vec3_t & x){
-    if (!universal_aabb.contains(x)){
+octree_t::get_node(const vec3_t & x, aabb_t * aabb){
+    if (!universal_aabb.contains(x) || aabb == nullptr){
         return -1;
     } else {
-        return get_node_helper(x, 0);
+        return get_node_helper(x, 0, aabb);
     }
 }
 
 int
-octree_t::get_node_helper(const vec3_t & x, int i){
+octree_t::get_node_helper(const vec3_t & x, int i, aabb_t * aabb){
 
 }
 
