@@ -21,12 +21,12 @@ octree_t::lookup(const vec3_t & x, aabb_t * aabb) const {
     if (!universal_aabb.contains(x)){
         return -1;
     } else {
-        return lookup_helper(x, 0, aabb);
+        return lookup_helper(x, 0, universal_aabb, aabb);
     }
 }
 
 int
-octree_t::lookup_helper(const vec3_t & x, int i, aabb_t * aabb) const {
+octree_t::lookup_helper(const vec3_t & x, int i, const aabb_t & aabb, aabb_t * output_aabb) const {
     if (structure[i] == 0){
         // subdivide
     } else if (structure[i] & is_leaf_flag) {
@@ -35,9 +35,9 @@ octree_t::lookup_helper(const vec3_t & x, int i, aabb_t * aabb) const {
     } 
     
     // tail recursion
-    int octant; // = aabb.get_octant(x);
-    int index = (structure[i] & child_pointer_mask) + octant;
-    return lookup_helper(x, index, aabb);
+    int octant; //TODO
+    int index = (structure[i] & child_pointer_mask) + aabb.get_octant(octant);
+    return lookup_helper(x, index, aabb, output_aabb);
 }
 
 void 
