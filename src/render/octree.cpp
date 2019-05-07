@@ -2,18 +2,27 @@
 
 void
 octree_t::request(const vec3_t & x, const vec3_t & camera){
+    aabb_t volume;
+    int index = lookup(x, &volume);
+
+    uint32_t node = structure[i];
+
+    if (node != 0){
+        // TODO: subdivide if higher LOD or just don't bother
+    }
+
     // remove invisible renderables
-    std::vector<std::weak_ptr<renderable_t>> visible_renderables;
+    std::vector<std::weak_ptr<renderable_t>> renderables;
     for (auto & renderable_ptr : universal_renderables){
         if (auto renderable = renderable_ptr.lock()){
-            if (renderable->is_visible()){
-                visible_renderables.push_back(renderable_ptr);
+            if (renderable->is_visible() && renderable->intersects(volume)){
+                renderables.push_back(renderable_ptr);
             }
         }
     }
 
     // call recursive helper method at top level
-    request_helper(x, camera, universal_aabb, visible_renderables);
+    request_helper(index, x, camera, volume, renderables);
 }
 
 int
@@ -42,6 +51,7 @@ octree_t::lookup_helper(const vec3_t & x, int i, const aabb_t & aabb, aabb_t * o
 
 void 
 octree_t::request_helper(
+    int index,
     const vec3_t & x, const vec3_t & camera, 
     const aabb_t & aabb,
     const std::vector<std::weak_ptr<renderable_t>> & renderables
