@@ -37,7 +37,7 @@ octree_t::lookup_helper(const vec3_t & x, int i, aabb_t * aabb) const {
     // tail recursion
     int octant; // = aabb.get_octant(x);
     int index = (structure[i] & child_pointer_mask) + octant;
-    return lookup_helper(x, index, aabb) 
+    return lookup_helper(x, index, aabb);
 }
 
 void 
