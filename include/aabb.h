@@ -14,6 +14,7 @@ public:
     vec3_t get_centre() const;
     double get_upper_radius() const;
     double get_size() const;
+    bool contains(const vec3_t & x) const;
 };
 
 #endif

@@ -17,17 +17,27 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
 }
 
 int
-octree_t::get_node(const vec3_t & x, aabb_t * aabb){
-    if (!universal_aabb.contains(x) || aabb == nullptr){
+octree_t::lookup(const vec3_t & x, aabb_t * aabb) const {
+    if (!universal_aabb.contains(x)){
         return -1;
     } else {
-        return get_node_helper(x, 0, aabb);
+        return lookup_helper(x, 0, aabb);
     }
 }
 
 int
-octree_t::get_node_helper(const vec3_t & x, int i, aabb_t * aabb){
-
+octree_t::lookup_helper(const vec3_t & x, int i, aabb_t * aabb) const {
+    if (structure[i] == 0){
+        // subdivide
+    } else if (structure[i] & is_leaf_flag) {
+        // TODO: set aabb (need to pass it in)
+        return i;
+    } 
+    
+    // tail recursion
+    int octant; // = aabb.get_octant(x);
+    int index = (structure[i] & child_pointer_mask) + octant;
+    return lookup_helper(x, index, aabb) 
 }
 
 void 
