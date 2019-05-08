@@ -15,14 +15,10 @@ aabb_t::get_octant(const vec3_t & x) const {
 
 void
 aabb_t::refine(int octant){
-    if (octant >= 8 || octant < 0){
-        return;
-    } else {
-        size /= 2;
-        for (int i = 0; i < 3; i++){
-            if (octant & (1 << i)){
-                min[i] += size;
-            }
+    size /= 2;
+    for (int i = 0; i < 3; i++){
+        if (octant & (1 << i)){
+            min[i] += size;
         }
     }
 }
