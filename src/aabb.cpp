@@ -2,10 +2,29 @@
 
 #include "maths/maths.h"
 
-aabb_t
-aabb_t::get_octant(int octant) const {
-    // TODO
-    return aabb_t();
+int
+aabb_t::get_octant(const vec3_t & x) const {
+    int result = 0;
+    for (int i = 0; i < 3; i++){
+        if (x[i] > min[i] + size / 2){
+            result &= 1 << i;
+        } 
+    }
+    return result;
+}
+
+void
+aabb_t::refine(int octant){
+    if (octant >= 8 || octant < 0){
+        return;
+    } else {
+        size /= 2;
+        for (int i = 0; i < 3; i++){
+            if (octant & (1 << i)){
+                min[i] += size;
+            }
+        }
+    }
 }
 
 vec3_t
