@@ -9,9 +9,9 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
     aabb_t aabb = universal_aabb;
     int index = lookup(x, 0, aabb);
 
-    uint32_t node = structure[i];
+    uint32_t node = structure[index];
 
-    if (node != 0){
+    if (node == 0){
         // TODO: subdivide if higher LOD or just don't bother
     }
 
@@ -19,33 +19,33 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
     std::vector<std::weak_ptr<renderable_t>> renderables;
     for (auto & renderable_ptr : universal_renderables){
         if (auto renderable = renderable_ptr.lock()){
-            if (renderable->is_visible() && renderable->intersects(volume)){
+            if (renderable->is_visible() && renderable->intersects(aabb)){
                 renderables.push_back(renderable_ptr);
             }
         }
     }
-
-    // call recursive helper method at top level
-    request_helper(index, x, camera, volume, renderables);
 }
 
 int
 octree_t::lookup(const vec3_t & x, int i, aabb_t & aabb) const {
-    if (structure[i] == 0){
-        // subdivide
-    } else if (structure[i] & is_leaf_flag) {
-        // TODO: set aabb (need to pass it in)
+    // base cases
+    if (structure[i] == 0 || (structure[i] & is_leaf_flag)) {
         return i;
     } 
     
-    // tail recursion
-    int octant; //TODO
-    int index = (structure[i] & child_pointer_mask) + aabb.get_octant(octant);
+    // refine octant
+    int octant = aabb.get_octant(x);
+    aabb.refine(octant);
+    
+    // find child
+    int index = (structure[i] & child_pointer_mask) + octant;
+   
+    // tail recurse
     return lookup(x, index, aabb);
 }
 
 void 
-octree_t::request_helper(
+octree_t::subdivide(
     int index,
     const vec3_t & x, const vec3_t & camera, 
     const aabb_t & aabb,
@@ -66,7 +66,8 @@ octree_t::request_helper(
         return;
     }
 
-    for (int i = 0; i < 8; i++){
+    // TODO
+    
         aabb_t new_aabb = aabb.get_octant(i);
 
         std::vector<std::weak_ptr<renderable_t>> new_renderables;
@@ -78,8 +79,8 @@ octree_t::request_helper(
             }
         }
 
-        request_helper(x, camera, new_aabb, new_renderables);
-    }
+        subdivide(x, camera, new_aabb, new_renderables);
+    
 }
 
 bool 
