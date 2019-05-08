@@ -8,9 +8,11 @@ private:
     vec3_t min;
     double size;
 public:
+    // modifiers
+    void refine(int octant);
 
     // accessors
-    aabb_t get_octant(int octant) const;
+    int get_octant(const vec3_t & x) const;
     vec3_t get_centre() const;
     double get_upper_radius() const;
     double get_size() const;
