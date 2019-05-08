@@ -2,8 +2,12 @@
 
 void
 octree_t::request(const vec3_t & x, const vec3_t & camera){
-    aabb_t volume;
-    int index = lookup(x, &volume);
+    if (!universal_aabb.contains(x)){
+        return;
+    }
+
+    aabb_t aabb = universal_aabb;
+    int index = lookup(x, 0, aabb);
 
     uint32_t node = structure[i];
 
@@ -26,16 +30,7 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
 }
 
 int
-octree_t::lookup(const vec3_t & x, aabb_t & aabb) const {
-    if (!universal_aabb.contains(x)){
-        return -1;
-    } else {
-        return lookup_helper(x, 0, aabb);
-    }
-}
-
-int
-octree_t::lookup_helper(const vec3_t & x, int i, aabb_t & aabb) const {
+octree_t::lookup(const vec3_t & x, int i, aabb_t & aabb) const {
     if (structure[i] == 0){
         // subdivide
     } else if (structure[i] & is_leaf_flag) {
@@ -46,7 +41,7 @@ octree_t::lookup_helper(const vec3_t & x, int i, aabb_t & aabb) const {
     // tail recursion
     int octant; //TODO
     int index = (structure[i] & child_pointer_mask) + aabb.get_octant(octant);
-    return lookup_helper(x, index, aabb);
+    return lookup(x, index, aabb);
 }
 
 void 
