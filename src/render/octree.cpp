@@ -9,10 +9,8 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
     aabb_t aabb = universal_aabb;
     int index = lookup(x, 0, aabb);
 
-    uint32_t node = structure[index];
-
-    if (node == 0){
-        // TODO: subdivide if higher LOD or just don't bother
+    if (structure[index] != 0){
+        return;
     }
 
     // remove invisible renderables
@@ -24,6 +22,8 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
             }
         }
     }
+    
+    subdivide(index, x, camera, aabb, renderables);
 }
 
 int
@@ -66,21 +66,26 @@ octree_t::subdivide(
         return;
     }
 
-    // TODO
-    
-        aabb_t new_aabb = aabb.get_octant(i);
+    // create children and point to them
+    structure[index] = static_cast<uint32_t>(structure.size());
+    for (int i = 0; i < 8; i++){
+        structure.push_back(0);
+    }
 
-        std::vector<std::weak_ptr<renderable_t>> new_renderables;
-        for (auto & renderable_ptr : renderables){
-            if (auto renderable = renderable_ptr.lock()){
-                if (renderable->intersects(new_aabb)){
-                    new_renderables.push_back(renderable_ptr);
-                }
+    int octant = aabb.get_octant(x);
+    uint32_t new_index = structure[i] + octant;
+    aabb.refine(octant);
+
+    std::vector<std::weak_ptr<renderable_t>> new_renderables;
+    for (auto & renderable_ptr : renderables){
+        if (auto renderable = renderable_ptr.lock()){
+            if (renderable->intersects(new_aabb)){
+                new_renderables.push_back(renderable_ptr);
             }
         }
+    }
 
-        subdivide(x, camera, new_aabb, new_renderables);
-    
+    subdivide(new_index, x, camera, aabb, new_renderables); 
 }
 
 bool 
