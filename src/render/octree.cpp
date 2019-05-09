@@ -29,7 +29,7 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
 int
 octree_t::lookup(const vec3_t & x, int i, aabb_t & aabb) const {
     // base cases
-    if (structure[i] == 0 || (structure[i] & is_leaf_flag)) {
+    if (structure[i] == null_node || (structure[i] & is_leaf_flag)) {
         return i;
     } 
     
@@ -46,7 +46,7 @@ octree_t::lookup(const vec3_t & x, int i, aabb_t & aabb) const {
 
 void 
 octree_t::subdivide(
-    int index,
+    int i,
     const vec3_t & x, const vec3_t & camera, 
     const aabb_t & aabb,
     const std::vector<std::weak_ptr<renderable_t>> & renderables
@@ -67,13 +67,11 @@ octree_t::subdivide(
     }
 
     // create children and point to them
-    structure[index] = static_cast<uint32_t>(structure.size());
-    for (int i = 0; i < 8; i++){
-        structure.push_back(0);
-    }
+    structure[i] = structure.size();
+    structure.resize(structure.size() + 8, null_node);
 
     int octant = aabb.get_octant(x);
-    uint32_t new_index = structure[i] + octant;
+    i = structure[i] + octant;
     aabb.refine(octant);
 
     std::vector<std::weak_ptr<renderable_t>> new_renderables;
@@ -85,7 +83,7 @@ octree_t::subdivide(
         }
     }
 
-    subdivide(new_index, x, camera, aabb, new_renderables); 
+    subdivide(i, x, camera, aabb, new_renderables); 
 }
 
 bool 
