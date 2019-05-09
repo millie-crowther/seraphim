@@ -19,9 +19,9 @@ if L:
     else:
         X = pointer to brick data
 else: 
-    [H|X] = pointer to first child
-    if [H|X] = 0: 
-        there is no child; flag to CPU to stream in data.
+    [H|D|X] = pointer to first child
+    if [H|D|X] = 0: 
+        there is no child; signal CPU to stream in data.
 
 + a null node can be described by the literal 0
 
@@ -33,22 +33,23 @@ private:
     static constexpr uint32_t is_homogenous_flag = 1 << 30;
     static constexpr uint32_t brick_pointer_mask = ~(1 << 31 || 1 << 30);
     static constexpr uint32_t child_pointer_mask = ~(1 << 31);
+    static constexpr uint32_t null_node = 0;
 
     std::vector<uint32_t> structure;
     std::vector<std::weak_ptr<renderable_t>> universal_renderables;
     aabb_t universal_aabb;
 
-    // predicates
-    bool is_empty(const aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables) const;
-    bool is_homogenous(const aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables) const;
-    bool is_leaf(const vec3_t & x, const vec3_t & camera, const aabb_t & aabb) const;
+    bool is_leaf(
+        const vec3_t & x, const vec3_t & camera, const aabb_t & aabb, 
+        const std::vector<std::weak_ptr<renderable_t>> & renderables
+    ) const;
 
-    int lookup(const vec3_t & x, aabb_t * aabb) const;
-    int lookup_helper(const vec3_t & x, int i, aabb_t * aabb) const;
+    uint32_t lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const;
 
-    void request_helper(
+    void subdivide(
+        uint32_t i,
         const vec3_t & x, const vec3_t & camera, 
-        const aabb_t & aabb, 
+        aabb_t & aabb, 
         const std::vector<std::weak_ptr<renderable_t>> & renderables
     );
 
