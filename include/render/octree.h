@@ -32,7 +32,6 @@ private:
     static constexpr uint32_t is_leaf_flag = 1 << 31;
     static constexpr uint32_t is_homogenous_flag = 1 << 30;
     static constexpr uint32_t brick_pointer_mask = ~(1 << 31 || 1 << 30);
-    static constexpr uint32_t child_pointer_mask = ~(1 << 31);
     static constexpr uint32_t null_node = 0;
 
     std::vector<uint32_t> structure;

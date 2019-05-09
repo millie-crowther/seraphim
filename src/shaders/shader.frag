@@ -20,12 +20,23 @@ struct ray_t {
 layout(location = 0) out vec4 out_colour;
 
 //
-// inputs
+// push constants
 //
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
 } push_constants;
 
+//
+// buffers
+//
+layout(location = 1) {
+    uint structure[10];
+} octree;
+
+
+//
+// GLSL inputs
+//
 in vec4 gl_FragCoord;
 
 //
@@ -41,33 +52,71 @@ float render_distance = 1000.0;
 int max_steps = 64;
 float epsilon = 0.005;
 float shadow_softness = 64;
+const uint is_leaf_flag = 1 << 31;
+const uint null_node = 0;
 
-struct ray {
+struct ray_t {
     vec3 pos;
     vec3 dir;
     float dist;
     bool hit;
 };
 
-struct point_light {
+struct point_light_t {
     vec3 pos;
     vec4 colour;
 };
 
-float sphere(vec3 p, float r, vec3 c){
-    return length(p - c) - r;
-}
+struct node_t {
+    bool is_valid;
+    uint i;
+    vec3 min;
+    float size;
+};
 
-float plane(vec3 p, vec3 n){
-    return dot(p, n);
-}
+node_t octree_lookup(vec3 x){
 
+    node_t node = base_node;
+    bool found = false;
+    while (!found){
+        if (octree.structure[node.i] & is_leaf_flag){
+            node.is_valid = true;
+            found = true;
+        } else if (octree.structure[node.i] == null_node) {
+            node.is_valid = false;
+            // TODO: signal CPU for data
+            found = true;
+        } else {
+            node.i = octree.structure[node.i];
+            node.size /= 2;
+
+            if (x.x > node.min.x + node.size / 2){
+                node.min.x += node.size;
+                node.i += 1;
+            }
+
+            if (x.y > node.min.y + node.size / 2){
+                node.min.y += node.size;
+                node.i += 2;
+            }
+
+            if (x.z > node.min.z + node.size / 2){
+                node.min.z += node.size;
+                node.i += 4;
+            }
+        }
+    }
+
+    return node;
+}
+/*
 float phi(vec3 p){
     float plane = plane(p, vec3(0, 1, 0));
     float sphere = sphere(p, 0.1, vec3(1, 0.5, 0));
     return min(plane, sphere);
-}
+}*/
 
+/*
 vec3 normal(vec3 p){
     vec3 dx = vec3(epsilon, 0, 0); 
     vec3 dy = vec3(0, epsilon, 0); 
@@ -78,17 +127,15 @@ vec3 normal(vec3 p){
         phi(p + dy) - phi(p - dy),
         phi(p + dz) - phi(p - dz)
     ));
-}
+}*/
 
-ray advance(ray r){
-    float dist = phi(r.pos);
-    r.pos += r.dir * dist;
-    r.hit = dist <= epsilon;
-    r.dist += dist;
+ray_t advance(ray_t r){
+    node_t node = octree_lookup(r.pos);
+    // advance through aabb
     return r;
 }
 
-ray raycast(ray r){
+ray_t raycast(ray_t r){
     for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
 	    r = advance(r);
     }
@@ -96,7 +143,7 @@ ray raycast(ray r){
 }
 
 float shadow(vec3 l, vec3 p){
-    ray r = raycast(ray(l, normalize(p - l), 0, false));
+    ray r = raycast(ray_t(l, normalize(p - l), 0, false));
     if (length(r.pos - p) > epsilon * 2){
         return 0.0;
     } else {
@@ -104,7 +151,7 @@ float shadow(vec3 l, vec3 p){
     }
 }
 
-ray get_ray(vec2 uv){
+ray_t get_ray(vec2 uv){
     vec3 camera_up = vec3(0, 1, 0);
     vec3 camera_right = vec3(0, 0, -1);
     vec3 camera_position = vec3(0, 0.5, 0);
@@ -116,7 +163,7 @@ ray get_ray(vec2 uv){
     dir += camera_right * uv.x;
     dir = normalize(dir);
    
-    return ray(camera_position, dir, 0, false);
+    return ray_t(camera_position, dir, 0, false);
 }
 
 vec4 colour(vec3 p){
@@ -144,7 +191,7 @@ vec4 light(vec3 p){
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    ray ry = ray(pos, normalize(p - pos), 0, false);
+    ray ry = ray_t(pos, normalize(p - pos), 0, false);
     ry = raycast(ry);
     float shadow = shadow(pos, p);
 

@@ -366,7 +366,6 @@ renderer_t::create_graphics_pipeline(){
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code.c_str(), &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
-    VkShaderModule comp_shader_module = create_shader_module(compute_shader_code.c_str(), &success);
 
     if (!success){
         std::cout << "Error: Failed to create one of the shader modules" << std::endl;
@@ -379,11 +378,6 @@ renderer_t::create_graphics_pipeline(){
     vert_create_info.module = vert_shader_module;
     vert_create_info.pName = "main";
 
-    VkPipelineShaderStageCreateInfo comp_create_info = {}; 
-    comp_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    comp_create_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    comp_create_info.module = comp_shader_module;
-    comp_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo frag_create_info = {}; 
     frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -393,7 +387,6 @@ renderer_t::create_graphics_pipeline(){
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
         vert_create_info,
-        // comp_create_info,
         frag_create_info
     };
 
@@ -543,7 +536,6 @@ renderer_t::create_graphics_pipeline(){
 
     vkDestroyShaderModule(device, vert_shader_module, nullptr);
     vkDestroyShaderModule(device, frag_shader_module, nullptr);
-    vkDestroyShaderModule(device, comp_shader_module, nullptr);
 
     return true;
 }

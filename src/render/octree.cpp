@@ -24,7 +24,12 @@ octree_t::request(const vec3_t & x, const vec3_t & camera){
         }
     }
     
+    uint32_t start = structure.size();
     subdivide(i, x, camera, aabb, renderables);
+    uint32_t end = structure.size();
+
+    // perform copy to GPU
+    
 }
 
 uint32_t
