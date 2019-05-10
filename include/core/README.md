@@ -18,6 +18,3 @@ a class representing arbitrary signed distance fields
 
 a class for generating universally unique identifiers (UUIDs)
 
-## body
-
-might be moved idk

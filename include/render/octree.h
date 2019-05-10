@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "renderable.h"
+#include "buffer.h"
 
 /*
 
@@ -35,6 +36,7 @@ private:
     static constexpr uint32_t null_node = 0;
 
     std::vector<uint32_t> structure;
+    std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<renderable_t>> universal_renderables;
     aabb_t universal_aabb;
 
@@ -55,7 +57,7 @@ private:
 
 public:
     // TODO: remove
-    octree_t(double render_distance, std::weak_ptr<renderable_t> renderable);
+    octree_t(VmaAllocator allocator, double render_distance, std::weak_ptr<renderable_t> renderable);
 
     void request(const vec3_t & x, const vec3_t & camera);
 
