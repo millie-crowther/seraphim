@@ -12,7 +12,6 @@ renderable_t::is_visible() const {
 
 bool
 renderable_t::intersects(const aabb_t & aabb) const {
-    std::cout << "intersection test: " << sdf(aabb.get_centre()) << " < " << aabb.get_upper_radius() << std::endl;
     return sdf(aabb.get_centre()) < aabb.get_upper_radius();
 }
 

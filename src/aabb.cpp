@@ -1,6 +1,6 @@
 #include "aabb.h"
 
-#include "maths/maths.h"
+#include <math.h>
 
 aabb_t::aabb_t(){}
 
@@ -37,7 +37,7 @@ aabb_t::get_centre() const {
 
 double
 aabb_t::get_upper_radius() const {
-    return maths::inverse_square_root(0.75 * size * size);
+    return sqrt(0.75 * size * size);
 }
 
 double 
