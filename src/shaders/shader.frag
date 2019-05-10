@@ -10,8 +10,21 @@ struct intersection_t {
 };
 
 struct ray_t {
-    vec3 o;
-    vec3 d;
+    vec3 pos;
+    vec3 dir;
+    float dist;
+    bool hit;
+};
+
+struct point_light_t {
+    vec3 pos;
+    vec4 colour;
+};
+
+struct node_t {
+    uint i;
+    vec3 min;
+    float size;
 };
 
 // 
@@ -39,14 +52,6 @@ layout(location = 1) {
 //
 in vec4 gl_FragCoord;
 
-//
-// functions
-//
-// intersection_t
-// intersect(ray_t r){
-
-// }
-
 float f = 1.0;
 float render_distance = 1000.0;
 int max_steps = 64;
@@ -55,26 +60,7 @@ float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
-struct ray_t {
-    vec3 pos;
-    vec3 dir;
-    float dist;
-    bool hit;
-};
-
-struct point_light_t {
-    vec3 pos;
-    vec4 colour;
-};
-
-struct node_t {
-    uint i;
-    vec3 min;
-    float size;
-};
-
 node_t octree_lookup(vec3 x){
-
     node_t node = base_node;
     while (true){
         if (octree.structure[node.i] & is_leaf_flag){
@@ -108,25 +94,6 @@ node_t octree_lookup(vec3 x){
 
     return node;
 }
-/*
-float phi(vec3 p){
-    float plane = plane(p, vec3(0, 1, 0));
-    float sphere = sphere(p, 0.1, vec3(1, 0.5, 0));
-    return min(plane, sphere);
-}*/
-
-/*
-vec3 normal(vec3 p){
-    vec3 dx = vec3(epsilon, 0, 0); 
-    vec3 dy = vec3(0, epsilon, 0); 
-    vec3 dz = vec3(0, 0, epsilon);
-
-    return normalize(vec3(
-        phi(p + dx) - phi(p - dx),
-        phi(p + dy) - phi(p - dy),
-        phi(p + dz) - phi(p - dz)
-    ));
-}*/
 
 ray_t advance(ray_t r){
     node_t node = octree_lookup(r.pos);
