@@ -1,10 +1,15 @@
 #include "render/octree.h"
 
+#include <iostream>
+
 constexpr uint32_t octree_t::null_node;
 
 octree_t::octree_t(double render_distance, std::weak_ptr<renderable_t> renderable){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
+    structure.push_back(null_node);
     paint(0, universal_aabb, renderable);
+    std::cout << "octree successfully created, size: " << structure.size() << std::endl;
+    
 }
 
 void

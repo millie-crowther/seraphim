@@ -85,6 +85,10 @@ private:
     static std::string vertex_shader_code;
     std::string fragment_shader_code;
 
+    transform_t renderable_transform;
+    std::shared_ptr<renderable_t> renderable;
+    std::shared_ptr<octree_t> octree;
+
 public:
     // constructors and destructors
     renderer_t(

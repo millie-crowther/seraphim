@@ -32,6 +32,16 @@ renderer_t::renderer_t(
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
+
+    sdf_t scene = sdf_t([](const vec3_t & x){
+        double plane = x[1];
+        double sphere = (x - vec3_t(1.0, 0.5, 0.0)).norm() - 0.1;
+        return std::min(plane, sphere);
+    });
+
+    renderable = std::make_shared<renderable_t>(scene, renderable_transform);
+
+    octree = std::make_shared<octree_t>(100, renderable);
 }
 
 renderer_t::~renderer_t(){
