@@ -42,9 +42,9 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
-layout(location = 1) {
-    uint structure[10];
-} octree;
+// layout(location = 1) {
+//     uint structure[10];
+// } octree;
 
 
 //
@@ -53,44 +53,46 @@ layout(location = 1) {
 in vec4 gl_FragCoord;
 
 float f = 1.0;
-float render_distance = 1000.0;
+float render_distance = 100;
 int max_steps = 64;
 float epsilon = 0.005;
 float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
+node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
+
 node_t octree_lookup(vec3 x){
     node_t node = base_node;
-    while (true){
-        if (octree.structure[node.i] & is_leaf_flag){
-            break;
-        }
-        //  else if (octree.structure[node.i] == null_node) {
-        //     node.is_valid = false;
-        //     // TODO: signal CPU for data
-        //     found = true;
-        // }
-         else {
-            node.i = octree.structure[node.i];
-            node.size /= 2;
+    // while (true){
+    //     if (octree.structure[node.i] & is_leaf_flag){
+    //         break;
+    //     }
+    //     //  else if (octree.structure[node.i] == null_node) {
+    //     //     node.is_valid = false;
+    //     //     // TODO: signal CPU for data
+    //     //     found = true;
+    //     // }
+    //      else {
+    //         node.i = octree.structure[node.i];
+    //         node.size /= 2;
 
-            if (x.x > node.min.x + node.size / 2){
-                node.min.x += node.size;
-                node.i += 1;
-            }
+    //         if (x.x > node.min.x + node.size / 2){
+    //             node.min.x += node.size;
+    //             node.i += 1;
+    //         }
 
-            if (x.y > node.min.y + node.size / 2){
-                node.min.y += node.size;
-                node.i += 2;
-            }
+    //         if (x.y > node.min.y + node.size / 2){
+    //             node.min.y += node.size;
+    //             node.i += 2;
+    //         }
 
-            if (x.z > node.min.z + node.size / 2){
-                node.min.z += node.size;
-                node.i += 4;
-            }
-        }
-    }
+    //         if (x.z > node.min.z + node.size / 2){
+    //             node.min.z += node.size;
+    //             node.i += 4;
+    //         }
+    //     }
+    // }
 
     return node;
 }
@@ -109,7 +111,7 @@ ray_t raycast(ray_t r){
 }
 
 float shadow(vec3 l, vec3 p){
-    ray r = raycast(ray_t(l, normalize(p - l), 0, false));
+    ray_t r = raycast(ray_t(l, normalize(p - l), 0, false));
     if (length(r.pos - p) > epsilon * 2){
         return 0.0;
     } else {
@@ -141,36 +143,37 @@ vec4 colour(vec3 p){
 }
 
 vec4 light(vec3 p){
+    return vec4(1);
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
-    vec3 pos = vec3(1);
-    vec4 colour = vec4(3);
-    float kd = 0.5;
-    float ks = 0.5;
-    float shininess = 32;
+    // vec3 pos = vec3(1);
+    // vec4 colour = vec4(3);
+    // float kd = 0.5;
+    // float ks = 0.5;
+    // float shininess = 32;
 
-    // attenuation
-    float dist = length(pos - p);
-    float attenuation = 1.0 / (dist * dist);
+    // // attenuation
+    // float dist = length(pos - p);
+    // float attenuation = 1.0 / (dist * dist);
 
-    //ambient 
-    vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
+    // //ambient 
+    // vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
-    //shadows
-    ray ry = ray_t(pos, normalize(p - pos), 0, false);
-    ry = raycast(ry);
-    float shadow = shadow(pos, p);
+    // //shadows
+    // ray_t ry = ray_t(pos, normalize(p - pos), 0, false);
+    // ry = raycast(ry);
+    // float shadow = shadow(pos, p);
 
-    //diffuse
-    vec3 l = normalize(pos - p);
-    vec3 n = normal(p);
-    vec4 d = kd * dot(l, n) * colour;
+    // //diffuse
+    // vec3 l = normalize(pos - p);
+    // vec3 n = normal(p);
+    // vec4 d = kd * dot(l, n) * colour;
 
-    //specular
-    vec3 v = normalize(p);
-    vec3 r = reflect(l, n);
-    vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
-    return a + (d + s) * attenuation * shadow;
+    // //specular
+    // vec3 v = normalize(p);
+    // vec3 r = reflect(l, n);
+    // vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
+    // return a + (d + s) * attenuation * shadow;
 }
 
 vec4 sky(){
@@ -185,7 +188,7 @@ void main(){
     uv.y *= -1;
     vec2 pos = uv;
     
-    ray r = get_ray(pos);
+    ray_t r = get_ray(pos);
     r = raycast(r);
     
     if (r.hit){

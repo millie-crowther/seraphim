@@ -7,15 +7,16 @@ constexpr uint32_t octree_t::null_node;
 octree_t::octree_t(VmaAllocator allocator, double render_distance, std::weak_ptr<renderable_t> renderable){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node);
+    std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
     std::cout << "octree successfully created, size: " << structure.size() << std::endl;
     
-    uint32_t size = 1000 * sizeof(uint32_t);
-    buffer = std::make_unique<buffer_t>(
-        allocator, size,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
-    );
+    // uint32_t size = 1000 * sizeof(uint32_t);
+    // buffer = std::make_unique<buffer_t>(
+    //     allocator, size,
+    //     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+    //     VMA_MEMORY_USAGE_CPU_TO_GPU
+    // );
 
     // copy to buffer
 }
@@ -133,6 +134,7 @@ octree_t::is_leaf(
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
+    std::cout << "painting " << i << std::endl;
     bool is_empty = true;
     bool is_leaf = aabb.get_size() <= 0.1;
     if (auto renderable = renderable_ptr.lock()){
@@ -157,8 +159,11 @@ octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderabl
 
     for (int octant = 0; octant < 8; octant++){
         structure.push_back(null_node);
+    }
+
+    for (int octant = 0; octant < 8; octant++){
         aabb_t new_aabb = aabb;
         new_aabb.refine(octant);
-        paint(structure[i] + octant, new_aabb, renderable_ptr);
+        paint(structure[i] + octant + 1, new_aabb, renderable_ptr);
     }
 }
