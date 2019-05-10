@@ -16,6 +16,6 @@ renderable_t::intersects(const aabb_t & aabb) const {
 }
 
 bool
-renderable_t::contains(const aabb_t & aabb){
+renderable_t::contains(const aabb_t & aabb) const {
     return sdf(aabb.get_centre()) < -aabb.get_upper_radius();
 }

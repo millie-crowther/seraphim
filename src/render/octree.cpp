@@ -1,5 +1,7 @@
 #include "render/octree.h"
 
+constexpr uint32_t octree_t::null_node;
+
 octree_t::octree_t(double render_distance, std::weak_ptr<renderable_t> renderable){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     paint(0, universal_aabb, renderable);
