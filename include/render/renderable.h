@@ -13,7 +13,7 @@ private:
     
 public:
     // constructors
-    renderable_t(transform_t & parent);
+    renderable_t(const sdf_t & sdf, transform_t & parent);
 
     // predicates
     bool is_visible() const;

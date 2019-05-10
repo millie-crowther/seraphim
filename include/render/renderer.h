@@ -7,6 +7,7 @@
 #include "buffer.h"
 #include "input.h"
 #include "render/image.h"
+#include "render/octree.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>

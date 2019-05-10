@@ -19,8 +19,8 @@ if L:
     else:
         X = pointer to brick data
 else: 
-    [H|D|X] = pointer to first child
-    if [H|D|X] = 0: 
+    [H|X] = pointer to first child
+    if [H|X] = 0: 
         there is no child; signal CPU to stream in data.
 
 + a null node can be described by the literal 0
@@ -46,14 +46,19 @@ private:
     uint32_t lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const;
 
     void subdivide(
-        uint32_t i,
-        const vec3_t & x, const vec3_t & camera, 
-        aabb_t & aabb, 
-        const std::vector<std::weak_ptr<renderable_t>> & renderables
+        uint32_t i, const vec3_t & x, const vec3_t & camera, aabb_t & aabb, 
+        std::vector<std::weak_ptr<renderable_t>> & renderables
     );
 
+    // TODO: remove this and replace with lazy streaming version
+    void paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr);
+
 public:
+    // TODO: remove
+    octree_t(double render_distance, std::weak_ptr<renderable_t> renderable);
+
     void request(const vec3_t & x, const vec3_t & camera);
+
 };
 
 

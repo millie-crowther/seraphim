@@ -2,6 +2,13 @@
 
 #include "maths/maths.h"
 
+aabb_t::aabb_t(){}
+
+aabb_t::aabb_t(const vec3_t & min, double size){
+    this->min = min;
+    this->size = size;
+}
+
 int
 aabb_t::get_octant(const vec3_t & x) const {
     int result = 0;

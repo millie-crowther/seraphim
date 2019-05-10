@@ -29,11 +29,6 @@ renderer_t::renderer_t(
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }    
 
-    compute_shader_code = input_t::load_file("../src/shaders/shader.comp");
-    if (compute_shader_code.size() == 0){
-        throw std::runtime_error("Error: Failed to load compute shader.");
-    }
-
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }

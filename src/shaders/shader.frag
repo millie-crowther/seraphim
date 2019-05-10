@@ -68,7 +68,6 @@ struct point_light_t {
 };
 
 struct node_t {
-    bool is_valid;
     uint i;
     vec3 min;
     float size;
@@ -77,16 +76,16 @@ struct node_t {
 node_t octree_lookup(vec3 x){
 
     node_t node = base_node;
-    bool found = false;
-    while (!found){
+    while (true){
         if (octree.structure[node.i] & is_leaf_flag){
-            node.is_valid = true;
-            found = true;
-        } else if (octree.structure[node.i] == null_node) {
-            node.is_valid = false;
-            // TODO: signal CPU for data
-            found = true;
-        } else {
+            break;
+        }
+        //  else if (octree.structure[node.i] == null_node) {
+        //     node.is_valid = false;
+        //     // TODO: signal CPU for data
+        //     found = true;
+        // }
+         else {
             node.i = octree.structure[node.i];
             node.size /= 2;
 

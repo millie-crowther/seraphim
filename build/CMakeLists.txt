@@ -21,6 +21,7 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     ../src/main.cpp
+    ../src/aabb.cpp
   
     ../src/core/blaspheme.cpp
     ../src/core/sdf.cpp
@@ -32,6 +33,8 @@ set(SOURCES
     ../src/render/renderer.cpp
     ../src/render/image.cpp
     ../src/render/camera.cpp
+    ../src/render/octree.cpp
+    ../src/render/renderable.cpp
     
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp

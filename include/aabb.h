@@ -10,6 +10,9 @@ private:
     double size;
 
 public:
+    aabb_t();
+    aabb_t(const vec3_t & min, double size);
+
     // modifiers
     void refine(int octant);
 
