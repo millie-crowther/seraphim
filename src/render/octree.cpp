@@ -9,7 +9,7 @@ octree_t::octree_t(VmaAllocator allocator, double render_distance, std::weak_ptr
     structure.push_back(null_node);
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
-    std::cout << "octree successfully created, size: " << structure.size() << std::endl;
+    std::cout << "octree successfully created, size: " << structure.size() * sizeof(uint32_t) << std::endl;
     
     // uint32_t size = 1000 * sizeof(uint32_t);
     // buffer = std::make_unique<buffer_t>(

@@ -35,13 +35,13 @@ renderer_t::renderer_t(
 
     sdf_t scene = sdf_t([](const vec3_t & x){
         double plane = x[1];
-        double sphere = (x - vec3_t(1.0, 0.5, 0.0)).norm() - 0.1;
+        double sphere = (x - vec3_t(1.0, 0.5, 0.0)).norm() - 0.5;
         return std::min(plane, sphere);
     });
 
     renderable = std::make_shared<renderable_t>(scene, renderable_transform);
 
-    octree = std::make_shared<octree_t>(allocator, 100, renderable);
+    octree = std::make_shared<octree_t>(allocator, 10, renderable);
 }
 
 renderer_t::~renderer_t(){

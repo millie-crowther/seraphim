@@ -53,7 +53,7 @@ layout( push_constant ) uniform window_block {
 in vec4 gl_FragCoord;
 
 float f = 1.0;
-float render_distance = 100;
+float render_distance = 10;
 int max_steps = 64;
 float epsilon = 0.005;
 float shadow_softness = 64;
