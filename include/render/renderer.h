@@ -55,7 +55,7 @@ private:
 
     std::unique_ptr<image_t> depth_image;
 
-    std::shared_ptr<buffer_t> vertex_buffer;
+    std::unique_ptr<buffer_t> vertex_buffer;
 
     VkShaderModule create_shader_module(std::string code, bool * success);
 
@@ -66,7 +66,6 @@ private:
     bool create_framebuffers();
     bool create_command_buffers();
     bool create_descriptor_set_layout();
-    bool create_descriptor_sets();
     bool create_command_pool();
     bool create_descriptor_pool();
     bool create_sync();
