@@ -4,21 +4,21 @@
 
 constexpr uint32_t octree_t::null_node;
 
-octree_t::octree_t(VmaAllocator allocator, double render_distance, std::weak_ptr<renderable_t> renderable){
+octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node);
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
     std::cout << "octree successfully created, size: " << structure.size() * sizeof(uint32_t) << std::endl;
     
-    // uint32_t size = 1000 * sizeof(uint32_t);
-    // buffer = std::make_unique<buffer_t>(
-    //     allocator, size,
-    //     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-    //     VMA_MEMORY_USAGE_CPU_TO_GPU
-    // );
+    buffer = std::make_unique<buffer_t>(
+        allocator, structure.size() * sizeof(uint32_t),
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
 
     // copy to buffer
+    buffer->copy(pool, queue, structure.data(), structure.size() * sizeof(uint32_t));
 }
 
 void

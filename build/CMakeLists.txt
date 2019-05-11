@@ -21,14 +21,12 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     ../src/main.cpp
+    ../src/lib.cpp
     ../src/aabb.cpp
   
     ../src/core/blaspheme.cpp
     ../src/core/sdf.cpp
-    
-    ../src/lib.cpp
-    ../src/input.cpp
-    ../src/buffer.cpp
+    ../src/core/buffer.cpp
     
     ../src/render/renderer.cpp
     ../src/render/image.cpp
@@ -42,6 +40,7 @@ set(SOURCES
     ../src/scene/transform.cpp
 
     ../src/input/keyboard.cpp
+    ../src/input/resources.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

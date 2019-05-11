@@ -4,8 +4,7 @@
 #include <memory>
 
 #include "camera.h"
-#include "buffer.h"
-#include "input.h"
+#include "core/buffer.h"
 #include "render/image.h"
 #include "render/octree.h"
 

@@ -1,7 +1,8 @@
 #include "render/renderer.h"
 
 #include "core/blaspheme.h"
-#include "input.h"
+#include "input/resources.h"
+
 #include <chrono>
 #include <stdexcept>
 
@@ -24,7 +25,7 @@ renderer_t::renderer_t(
 
     push_constants.window_size = window_size;
     
-    fragment_shader_code = input_t::load_file("../src/shaders/shader.frag");
+    fragment_shader_code = resources::load_file("../src/shaders/shader.frag");
     if (fragment_shader_code.size() == 0){
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }    
@@ -41,7 +42,7 @@ renderer_t::renderer_t(
 
     renderable = std::make_shared<renderable_t>(scene, renderable_transform);
 
-    octree = std::make_shared<octree_t>(allocator, 10, renderable);
+    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 10, renderable);
 }
 
 renderer_t::~renderer_t(){

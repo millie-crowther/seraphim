@@ -5,7 +5,7 @@
 #include <memory>
 
 #include "renderable.h"
-#include "buffer.h"
+#include "core/buffer.h"
 
 /*
 
@@ -57,7 +57,7 @@ private:
 
 public:
     // TODO: remove
-    octree_t(VmaAllocator allocator, double render_distance, std::weak_ptr<renderable_t> renderable);
+    octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable);
 
     void request(const vec3_t & x, const vec3_t & camera);
 
