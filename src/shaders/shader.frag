@@ -42,8 +42,8 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
-layout(binding = 1) uniform octree_uniform {
-    uint structure[1000];
+layout(binding = 1) buffer octree_buffer {
+    uint structure[100000];
 } octree;
 
 //
