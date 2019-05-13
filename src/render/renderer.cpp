@@ -699,10 +699,17 @@ renderer_t::create_descriptor_pool(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
+    VkDescriptorSetLayoutBinding octree_structure = {};
+    octree_structure.binding = 1;
+    octree_structure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    octree_structure.descriptorCount = 1;
+    octree_structure.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    octree_structure.pImmutableSamplers = nullptr;
+
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = 0;
-    layout_info.pBindings    = nullptr;
+    layout_info.bindingCount = 1;
+    layout_info.pBindings    = &octree_structure;
 
     if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         return false;

@@ -42,10 +42,9 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
-// layout(location = 1) {
-//     uint structure[10];
-// } octree;
-
+layout(binding = 1) uniform octree_uniform {
+    uint structure[1000];
+} octree;
 
 //
 // GLSL inputs
