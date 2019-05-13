@@ -63,48 +63,49 @@ node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 node_t octree_lookup(vec3 x){
     node_t node = base_node;
-    // while (true){
-    //     if (octree.structure[node.i] & is_leaf_flag){
-    //         break;
-    //     }
+    while (true){
+       if (octree.structure[node.i] & is_leaf_flag){
+           break;
+       }
     //     //  else if (octree.structure[node.i] == null_node) {
     //     //     node.is_valid = false;
     //     //     // TODO: signal CPU for data
     //     //     found = true;
     //     // }
-    //      else {
-    //         node.i = octree.structure[node.i];
-    //         node.size /= 2;
+       else {
+           node.i = octree.structure[node.i];
+           node.size /= 2;
 
-    //         if (x.x > node.min.x + node.size / 2){
-    //             node.min.x += node.size;
-    //             node.i += 1;
-    //         }
-
-    //         if (x.y > node.min.y + node.size / 2){
-    //             node.min.y += node.size;
-    //             node.i += 2;
-    //         }
-
-    //         if (x.z > node.min.z + node.size / 2){
-    //             node.min.z += node.size;
-    //             node.i += 4;
-    //         }
-    //     }
-    // }
+           for (int j = 0; j < 3; j++){
+               if (x[j] > node.min[j] + node.size / 2){
+                   node.min[j] += node.size;
+                   node.i += 1 << j;
+               }
+           }
+        }
+    }
 
     return node;
 }
 
 ray_t advance(ray_t r){
     node_t node = octree_lookup(r.pos);
-    // advance through aabb
+    
+    if (node & is_leaf_flag){
+
+    } else {
+        // Check each axis
+        for (int i = 0; i < 3; i++){
+            
+        }
+    }
+    
     return r;
 }
 
 ray_t raycast(ray_t r){
     for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
-	    r = advance(r);
+	r = advance(r);
     }
     return r;
 }
