@@ -101,8 +101,8 @@ ray_t advance(ray_t r){
                 continue;
             }
             float p_i = node.min[i] + (r.dir[i] > 0 ? size : 0);
-            float lamda_i = (p_i - r.pos[i]) / r.dir[i];
-            if (lambda_i > lambda){
+            float lambda_i = (p_i - r.pos[i]) / r.dir[i];
+            if (lambda_i < lambda){
                 lambda = lambda_i;
             }
         }
