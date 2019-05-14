@@ -95,9 +95,20 @@ ray_t advance(ray_t r){
 
     } else {
         // Check each axis
+        float lambda = length(vec3(size));
         for (int i = 0; i < 3; i++){
-            
+            if (r.dir[i] == 0){
+                continue;
+            }
+            float p_i = node.min[i] + (r.dir[i] > 0 ? size : 0);
+            float lamda_i = (p_i - r.pos[i]) / r.dir[i];
+            if (lambda_i > lambda){
+                lambda = lambda_i;
+            }
         }
+
+        lambda += epsilon;
+        r.pos += r.dir * lambda;
     }
     
     return r;
