@@ -92,7 +92,16 @@ ray_t advance(ray_t r){
     node_t node = octree_lookup(r.pos);
     
     if (node & is_leaf_flag){
-
+        r.hit = true;
+        vec3 n;
+        // calculate normal for cube
+        if (abs(r.dir.x) > abs(r.dir.y) && abs(r.dir.x) > abs(r.dir.z)){
+            n = vec3(-sign(r.dir.x), 0 , 0);
+        } else if (abs(r.dir.y) > abs(r.dir.x) && abs(r.dir.y) > abs(r.dir.z)){
+            n = vec3(0, -sign(r.dir.y), 0);
+        } else {
+            n = vec3(0, 0, -sign(r.dir.z));
+        }
     } else {
         // Check each axis
         float lambda = length(vec3(size));
@@ -109,6 +118,7 @@ ray_t advance(ray_t r){
 
         lambda += epsilon;
         r.pos += r.dir * lambda;
+        r.dist += lambda;
     }
     
     return r;
