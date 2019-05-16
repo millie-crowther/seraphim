@@ -119,8 +119,8 @@ intersection_t raycast(ray_t r){
 }
 
 float shadow(vec3 l, vec3 p){
-    ray_t r = raycast(ray_t(l, normalize(p - l), 0, false));
-    if (length(r.pos - p) > epsilon * 2){
+    intersection_t i = raycast(ray_t(l, normalize(p - l), 0, false));
+    if (length(i.x - p) > epsilon * 2){
         return 0.0;
     } else {
         return 1.0;
@@ -135,38 +135,34 @@ vec4 colour(vec3 p){
     }
 }
 
-vec4 light(vec3 p){
-    return vec4(1);
+vec4 light(vec3 p, vec3 n){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
-    // vec3 pos = vec3(1);
-    // vec4 colour = vec4(3);
-    // float kd = 0.5;
-    // float ks = 0.5;
-    // float shininess = 32;
+    vec3 pos = vec3(1);
+    vec4 colour = vec4(3);
+    float kd = 0.5;
+    float ks = 0.5;
+    float shininess = 32;
 
-    // // attenuation
-    // float dist = length(pos - p);
-    // float attenuation = 1.0 / (dist * dist);
+    // attenuation
+    float dist = length(pos - p);
+    float attenuation = 1.0 / (dist * dist);
 
-    // //ambient 
-    // vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
+    //ambient 
+    vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
-    // //shadows
-    // ray_t ry = ray_t(pos, normalize(p - pos), 0, false);
-    // ry = raycast(ry);
-    // float shadow = shadow(pos, p);
+    //shadows
+    float shadow = shadow(pos, p);
 
     // //diffuse
-    // vec3 l = normalize(pos - p);
-    // vec3 n = normal(p);
-    // vec4 d = kd * dot(l, n) * colour;
+    vec3 l = normalize(pos - p);
+    vec4 d = kd * dot(l, n) * colour;
 
-    // //specular
-    // vec3 v = normalize(p);
-    // vec3 r = reflect(l, n);
-    // vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
-    // return a + (d + s) * attenuation * shadow;
+    //specular
+    vec3 v = normalize(p);
+    vec3 r = reflect(l, n);
+    vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
+    return a + (d + s) * attenuation * shadow;
 }
 
 vec4 sky(){
@@ -191,11 +187,10 @@ void main(){
     dir += camera_right * uv.x;
     dir = normalize(dir);
    
-    ray_t r = ray_t(camera_position, dir, 0, false);
-    r = raycast(r);
+    intersection_t i = raycast(ray_t(camera_position, dir, 0, false));
     
-    if (r.hit){
-        out_colour = colour(r.pos) * light(r.pos);
+    if (i.hit){
+        out_colour = colour(i.x) * light(i.x, i.n);
     } else {
         out_colour = sky(); 
     }
