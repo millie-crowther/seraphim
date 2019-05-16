@@ -136,7 +136,7 @@ void
 octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
     // if (i < 500) std::cout << "painting " << i << ", size: " << aabb.get_size() << std::endl;
     bool is_empty = true;
-    bool is_leaf = aabb.get_size() <= 0.1;
+    bool is_leaf = aabb.get_size() <= 0.2;
     bool is_homogenous = false;
     if (auto renderable = renderable_ptr.lock()){
         if (renderable->intersects(aabb)){

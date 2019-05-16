@@ -64,70 +64,56 @@ node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 node_t octree_lookup(vec3 x){
     node_t node = base_node;
     while (true){
-       if (octree.structure[node.i] & is_leaf_flag){
-           break;
-       }
+        if ((octree.structure[node.i] & is_leaf_flag) != 0){
+            break;
+        }
     //     //  else if (octree.structure[node.i] == null_node) {
     //     //     node.is_valid = false;
     //     //     // TODO: signal CPU for data
     //     //     found = true;
     //     // }
-       else {
-           node.i = octree.structure[node.i];
-           node.size /= 2;
+        else {
+            node.i = octree.structure[node.i];
+            node.size /= 2;
 
-           for (int j = 0; j < 3; j++){
-               if (x[j] > node.min[j] + node.size / 2){
-                   node.min[j] += node.size;
-                   node.i += 1 << j;
-               }
-           }
+            bvec3 octant = greaterThan(x, node.min + node.size);
+            node.i += int(octant.x) + int(octant.y) << 1 + int(octant.z) << 2;
+            node.min = vec3(octant) * node.size;
         }
     }
 
     return node;
 }
 
-ray_t advance(ray_t r){
-    node_t node = octree_lookup(r.pos);
-    
-    if (node & is_leaf_flag){
-        r.hit = true;
-        vec3 n;
-        // calculate normal for cube
-        if (abs(r.dir.x) > abs(r.dir.y) && abs(r.dir.x) > abs(r.dir.z)){
-            n = vec3(-sign(r.dir.x), 0 , 0);
-        } else if (abs(r.dir.y) > abs(r.dir.x) && abs(r.dir.y) > abs(r.dir.z)){
-            n = vec3(0, -sign(r.dir.y), 0);
-        } else {
-            n = vec3(0, 0, -sign(r.dir.z));
-        }
-    } else {
-        // Check each axis
-        float lambda = length(vec3(size));
-        for (int i = 0; i < 3; i++){
-            if (r.dir[i] == 0){
-                continue;
-            }
-            float p_i = node.min[i] + (r.dir[i] > 0 ? size : 0);
-            float lambda_i = (p_i - r.pos[i]) / r.dir[i];
-            if (lambda_i < lambda){
-                lambda = lambda_i;
-            }
-        }
-
-        lambda += epsilon;
-        r.pos += r.dir * lambda;
-        r.dist += lambda;
-    }
-    
-    return r;
-}
-
 ray_t raycast(ray_t r){
+    node_t node;
     for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
-	r = advance(r);
+	    node = octree_lookup(r.pos);
+    
+        if ((octree.structure[node.i] & is_leaf_flag) != 0){
+            r.hit = true;
+            vec3 n;
+            // calculate normal for cube
+            float m = max(r.dir.x, max(r.dir.y, r.dir.z));
+            n = vec3(equal(r.dir, vec3(m))) * -sign(r.dir);
+        } else {
+            vec3 lambda_i = (
+                // raw offset
+                node.min - r.pos +
+
+                // account for near / far plane of cube  
+                vec3(greaterThan(r.dir, vec3(0))) * node.size 
+            ) / (
+                // prevent division by zero
+                r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
+            );
+
+            float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
+            r.pos += r.dir * lambda;
+            r.dist += lambda;
+        }
     }
+
     return r;
 }
 
@@ -138,21 +124,6 @@ float shadow(vec3 l, vec3 p){
     } else {
         return 1.0;
     }
-}
-
-ray_t get_ray(vec2 uv){
-    vec3 camera_up = vec3(0, 1, 0);
-    vec3 camera_right = vec3(0, 0, -1);
-    vec3 camera_position = vec3(0, 0.5, 0);
-
-    vec3 camera_forward = cross(camera_right, camera_up);
-
-    vec3 dir = camera_forward * f;
-    dir += camera_up * uv.y;
-    dir += camera_right * uv.x;
-    dir = normalize(dir);
-   
-    return ray_t(camera_position, dir, 0, false);
 }
 
 vec4 colour(vec3 p){
@@ -206,10 +177,20 @@ void main(){
     uv = uv * 2.0 - 1.0;
     uv.x *= push_constants.window_size.x;
     uv.x /= push_constants.window_size.y;
-    uv.y *= -1;
-    vec2 pos = uv;
+    uv.y *= -1;    
     
-    ray_t r = get_ray(pos);
+    vec3 camera_up = vec3(0, 1, 0);
+    vec3 camera_right = vec3(0, 0, -1);
+    vec3 camera_position = vec3(0, 0.5, 0);
+
+    vec3 camera_forward = cross(camera_right, camera_up);
+
+    vec3 dir = camera_forward * f;
+    dir += camera_up * uv.y;
+    dir += camera_right * uv.x;
+    dir = normalize(dir);
+   
+    ray_t r = ray_t(camera_position, dir, 0, false);
     r = raycast(r);
     
     if (r.hit){
@@ -218,3 +199,5 @@ void main(){
         out_colour = sky(); 
     }
 }
+
+
