@@ -6,14 +6,14 @@
 //
 struct intersection_t {
     bool hit;
-    vec3 p;
+    vec3 x;
+    vec3 n;
 };
 
 struct ray_t {
     vec3 pos;
     vec3 dir;
     float dist;
-    bool hit;
 };
 
 struct point_light_t {
@@ -85,36 +85,37 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-ray_t raycast(ray_t r){
+intersection_t raycast(ray_t r){
     node_t node;
-    for (int i = 0; i < max_steps && !r.hit && r.dist < render_distance; i++){
-	    node = octree_lookup(r.pos);
+    for (int i = 0; i < max_steps && r.dist < render_distance; i++){
+	node = octree_lookup(r.pos);
     
         if ((octree.structure[node.i] & is_leaf_flag) != 0){
-            r.hit = true;
-            vec3 n;
-            // calculate normal for cube
-            float m = max(r.dir.x, max(r.dir.y, r.dir.z));
-            n = vec3(equal(r.dir, vec3(m))) * -sign(r.dir);
-        } else {
-            vec3 lambda_i = (
-                // raw offset
-                node.min - r.pos +
-
-                // account for near / far plane of cube  
-                vec3(greaterThan(r.dir, vec3(0))) * node.size 
-            ) / (
-                // prevent division by zero
-                r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
-            );
-
-            float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-            r.pos += r.dir * lambda;
-            r.dist += lambda;
+            vec3 n; 
+            // calculate normal for cube TODO
+            // float m = max(r.dir.x, max(r.dir.y, r.dir.z));
+            //n = vec3(equal(r.dir, vec3(m))) * -sign(r.dir);
+	    
+	    return intersection_t(true, r.pos, n);
         }
+	
+        vec3 lambda_i = (
+            // raw offset
+            node.min - r.pos +
+	    
+            // account for near / far plane of cube  
+            vec3(greaterThan(r.dir, vec3(0))) * node.size 
+        ) / (
+            // prevent division by zero
+            r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
+        );
+
+        float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
+        r.pos += r.dir * lambda;
+        r.dist += lambda;
     }
 
-    return r;
+    return intersection_t(false, vec3(), vec3());
 }
 
 float shadow(vec3 l, vec3 p){
