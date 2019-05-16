@@ -92,7 +92,7 @@ intersection_t raycast(ray_t r){
     
         if ((octree.structure[node.i] & is_leaf_flag) != 0){
             // calculate normal for cube 
-	    vec3 d = r.pos - node.min + node.size / 2;
+	    vec3 d = r.pos - (node.min + node.size / 2);
             vec3 n = vec3(equal(d, vec3(max(d.x, max(d.y, d.z)))) * sign(d);
 	    
 	    return intersection_t(true, r.pos, n);
