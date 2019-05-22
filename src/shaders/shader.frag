@@ -67,7 +67,7 @@ node_t octree_lookup(vec3 x){
 
             bvec3 octant = greaterThan(x, node.min + node.size);
             node.i += int(octant.x) + int(octant.y) << 1 + int(octant.z) << 2;
-            node.min = vec3(octant) * node.size;
+            node.min += vec3(octant) * node.size;
         }
     }
 
