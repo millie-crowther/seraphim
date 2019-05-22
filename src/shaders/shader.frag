@@ -16,11 +16,6 @@ struct ray_t {
     float dist;
 };
 
-struct point_light_t {
-    vec3 pos;
-    vec4 colour;
-};
-
 struct node_t {
     uint i;
     vec3 min;
@@ -66,13 +61,7 @@ node_t octree_lookup(vec3 x){
     while (true){
         if ((octree.structure[node.i] & is_leaf_flag) != 0){
             break;
-        }
-    //     //  else if (octree.structure[node.i] == null_node) {
-    //     //     node.is_valid = false;
-    //     //     // TODO: signal CPU for data
-    //     //     found = true;
-    //     // }
-        else {
+        } else {
             node.i = octree.structure[node.i];
             node.size /= 2;
 
@@ -100,13 +89,9 @@ intersection_t raycast(ray_t r){
         }
 	
         vec3 lambda_i = (
-            // raw offset
             node.min - r.pos +
-	    
-            // account for near / far plane of cube  
             vec3(greaterThan(r.dir, vec3(0))) * node.size 
         ) / (
-            // prevent division by zero
             r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
         );
 
@@ -120,16 +105,12 @@ intersection_t raycast(ray_t r){
 
 float shadow(vec3 l, vec3 p){
     intersection_t i = raycast(ray_t(l, normalize(p - l), 0, false));
-    if (length(i.x - p) > epsilon * 2){
-        return 0.0;
-    } else {
-        return 1.0;
-    }
+    return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 colour(vec3 p){
     if (p.y <= epsilon){
-	    return vec4(0.4, 0.8, 0.6, 1.0);
+	return vec4(0.4, 0.8, 0.6, 1.0);
     } else {
         return vec4(0.9, 0.5, 0.6, 1.0);
     }
