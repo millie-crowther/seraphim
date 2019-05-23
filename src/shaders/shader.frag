@@ -80,7 +80,7 @@ intersection_t raycast(ray_t r){
     // for (int i = 0; i < max_steps && r.dist < render_distance; i++){
 	//     node = octree_lookup(r.pos);
     
-    //     if ((octree.structure[node.i] & is_leaf_flag) != 0){
+    //     if (octree.structure[node.i] != is_leaf_flag){
     //         // calculate normal for cube 
     //         vec3 d = r.pos - (node.min + node.size / 2);
     //         vec3 ad = abs(d);
