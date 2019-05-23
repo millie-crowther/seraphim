@@ -22,6 +22,7 @@
 3. implement octree streaming from cpu
 4. determine best way to animate octree
 5. lower granularity of octree at distance from camera
+6. fix double free on renderable transform
 
 ### colouring
 1. determine best way to uv map surface

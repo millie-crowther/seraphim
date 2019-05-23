@@ -2,7 +2,9 @@
 
 renderable_t::renderable_t(const sdf_t & sdf, transform_t & master) : sdf(sdf){
     visible = true;
-    transform = master.create_servant();
+
+    // this line causes a double free on exit. something wierd going on with ref counting 
+    // transform = master.create_servant();
 }
 
 bool 
