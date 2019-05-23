@@ -9,7 +9,7 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     structure.push_back(null_node);
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
-    std::cout << "octree successfully created, size: " << structure.size() << std::endl;
+    std::cout << "octree successfully created " << std::endl;
     
     buffer = std::make_unique<buffer_t>(
         allocator, structure.size() * sizeof(uint32_t),
@@ -19,6 +19,15 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
 
     // copy to buffer
     buffer->copy(pool, queue, structure.data(), structure.size() * sizeof(uint32_t));
+
+    // for (int i = 0; i < structure.size(); i++){
+    //     std::cout << structure[i] << ", ";
+    //     if (i % 100 == 99){
+    //         std::cout << std::endl;
+    //     }
+    // }
+
+    std::cout << "octree size: " << structure.size() << std::endl;
 }
 
 void

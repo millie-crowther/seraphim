@@ -76,41 +76,42 @@ node_t octree_lookup(vec3 x){
 
 intersection_t raycast(ray_t r){
     node_t node;
-    for (int i = 0; i < max_steps && r.dist < render_distance; i++){
-	node = octree_lookup(r.pos);
+
+    // for (int i = 0; i < max_steps && r.dist < render_distance; i++){
+	//     node = octree_lookup(r.pos);
     
-        if ((octree.structure[node.i] & is_leaf_flag) != 0){
-            // calculate normal for cube 
-	    vec3 d = r.pos - (node.min + node.size / 2);
-	    vec3 ad = abs(d);
-            vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z)))) * sign(d);
-	    
-	    return intersection_t(true, r.pos, n);
-        }
+    //     if ((octree.structure[node.i] & is_leaf_flag) != 0){
+    //         // calculate normal for cube 
+    //         vec3 d = r.pos - (node.min + node.size / 2);
+    //         vec3 ad = abs(d);
+    //         vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
+            
+    //         return intersection_t(true, r.pos, n);
+    //     }
 	
-        vec3 lambda_i = (
-            node.min - r.pos +
-            vec3(greaterThan(r.dir, vec3(0))) * node.size 
-        ) / (
-            r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
-        );
+    //     vec3 lambda_i = (
+    //         node.min - r.pos +
+    //         vec3(greaterThan(r.dir, vec3(0))) * node.size 
+    //     ) / (
+    //         r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
+    //     );
 
-        float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-        r.pos += r.dir * lambda;
-        r.dist += lambda;
-    }
+    //     float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
+    //     r.pos += r.dir * lambda;
+    //     r.dist += lambda;
+    // }
 
-    return intersection_t(false, vec3(), vec3());
+    return intersection_t(false, vec3(0), vec3(0));
 }
 
 float shadow(vec3 l, vec3 p){
-    intersection_t i = raycast(ray_t(l, normalize(p - l), 0, false));
+    intersection_t i = raycast(ray_t(l, normalize(p - l), 0));
     return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 colour(vec3 p){
     if (p.y <= epsilon){
-	return vec4(0.4, 0.8, 0.6, 1.0);
+	    return vec4(0.4, 0.8, 0.6, 1.0);
     } else {
         return vec4(0.9, 0.5, 0.6, 1.0);
     }
@@ -168,7 +169,7 @@ void main(){
     dir += camera_right * uv.x;
     dir = normalize(dir);
    
-    intersection_t i = raycast(ray_t(camera_position, dir, 0, false));
+    intersection_t i = raycast(ray_t(camera_position, dir, 0));
     
     if (i.hit){
         out_colour = colour(i.x) * light(i.x, i.n);
