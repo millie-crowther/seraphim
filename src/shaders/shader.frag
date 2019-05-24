@@ -48,7 +48,7 @@ in vec4 gl_FragCoord;
 
 float f = 1.0;
 float render_distance = 10;
-int max_steps = 64;
+int max_steps = 1;
 float epsilon = 0.005;
 float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
@@ -57,7 +57,15 @@ const uint null_node = 0;
 node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 node_t octree_lookup(vec3 x){
+    if (
+        any(lessThan(x, base_node.min)) ||
+        any(greaterThan(x, base_node.min + base_node.size))
+    ){
+        return node_t(0, vec3(0), -1);
+    }
+
     node_t node = base_node;
+
     while (true){
         if ((octree.structure[node.i] & is_leaf_flag) != 0){
             break;
@@ -77,8 +85,14 @@ node_t octree_lookup(vec3 x){
 intersection_t raycast(ray_t r){
     node_t node;
 
+    node = octree_lookup(r.pos);
+
     // for (int i = 0; i < max_steps && r.dist < render_distance; i++){
 	//     node = octree_lookup(r.pos);
+
+    //     if (node.size < 0){
+    //         break;
+    //     }
     
     //     if (octree.structure[node.i] != is_leaf_flag){
     //         // calculate normal for cube 
@@ -132,6 +146,7 @@ vec4 light(vec3 p, vec3 n){
 
     //ambient 
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
+
 
     //shadows
     float shadow = shadow(pos, p);

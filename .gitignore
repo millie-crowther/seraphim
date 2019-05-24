@@ -36,3 +36,7 @@
 
 # build files
 build
+
+# vscode files
+*.bin
+*.ipch
