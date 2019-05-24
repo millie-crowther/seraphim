@@ -664,16 +664,17 @@ renderer_t::create_command_buffers(){
 bool 
 renderer_t::create_descriptor_pool(){
     uint32_t n = swapchain_images.size();
-    std::array<VkDescriptorPoolSize, 2> pool_sizes = {};
-    pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    std::vector<VkDescriptorPoolSize> pool_sizes(2);
+    pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pool_sizes[0].descriptorCount = n;
 
+    // TODO: remove?
     pool_sizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[1].descriptorCount = n;
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_info.poolSizeCount = pool_sizes.size();
     pool_info.pPoolSizes    = pool_sizes.data();
     pool_info.maxSets       = n;
 

@@ -5,7 +5,7 @@
 1. make `image_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
     * problem may go away if you remove depth resources (see below)
-2. remove `engine_t::get_device()` and `engine_t::get_physical_device()`
+2. remove `blaspheme_t::get_device()` and `blaspheme_t::get_physical_device()`
     * they're hacky
     * singleton pattern is gross
     * not necessary anyway
@@ -18,8 +18,18 @@
 
 ### geometry
 1. render octree successfully
+    * octree structure on the gpu filled with zeroes
+    * octree buffer never bound to ssbo in shader
+    * not sure how to do this; made myself extremely confused with descriptor sets
+    * challenge is to only have one buffer at a time because its so large so you dont want copies
+    * problem is theres things like concurrent frame rendering happening making that difficult
+    * dont think you can directly link shader to a buffer
+    * also this might explain why SSBOs seem to max out way below GPU memory size (there's several copies)
 2. figure out brick approximation
+    * single plane? 
 3. implement octree streaming from cpu
+    * create gpu-cpu buffer
+    * add a CPU phase after rendering to handle requests
 4. determine best way to animate octree
 5. lower granularity of octree at distance from camera
 6. fix double free on renderable transform

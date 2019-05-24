@@ -66,17 +66,13 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node;
 
-    while (true){
-        if ((octree.structure[node.i] & is_leaf_flag) != 0){
-            break;
-        } else {
-            node.i = octree.structure[node.i];
-            node.size /= 2;
+    for (int j = 0; j < 10 && (octree.structure[node.i] & is_leaf_flag) == 0; j++){
+        node.i = octree.structure[node.i];
+        node.size /= 2;
 
-            bvec3 octant = greaterThan(x, node.min + node.size);
-            node.i += int(octant.x) + int(octant.y) << 1 + int(octant.z) << 2;
-            node.min += vec3(octant) * node.size;
-        }
+        bvec3 octant = greaterThan(x, node.min + node.size);
+        node.i += int(octant.x) + int(octant.y) << 1 + int(octant.z) << 2;
+        node.min += vec3(octant) * node.size;
     }
 
     return node;
@@ -168,29 +164,38 @@ vec4 sky(){
 
 void main(){
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
-    uv = uv * 2.0 - 1.0;
-    uv.x *= push_constants.window_size.x;
-    uv.x /= push_constants.window_size.y;
-    uv.y *= -1;    
-    
-    vec3 camera_up = vec3(0, 1, 0);
-    vec3 camera_right = vec3(0, 0, -1);
-    vec3 camera_position = vec3(0, 0.5, 0);
-
-    vec3 camera_forward = cross(camera_right, camera_up);
-
-    vec3 dir = camera_forward * f;
-    dir += camera_up * uv.y;
-    dir += camera_right * uv.x;
-    dir = normalize(dir);
-   
-    intersection_t i = raycast(ray_t(camera_position, dir, 0));
-    
-    if (i.hit){
-        out_colour = colour(i.x) * light(i.x, i.n);
+    uint index = uint(uv.y * 99999.0);
+    if (octree.structure[index] == 0){
+        out_colour = vec4(0.8, 0.1, 0.1, 1.0);
     } else {
-        out_colour = sky(); 
+        out_colour = vec4(0.1, 0.8, 0.1, 1.0);
     }
+
+    // uv = uv * 2.0 - 1.0;
+    // uv.x *= push_constants.window_size.x;
+    // uv.x /= push_constants.window_size.y;
+    // uv.y *= -1;    
+    
+    // vec3 camera_up = vec3(0, 1, 0);
+    // vec3 camera_right = vec3(0, 0, -1);
+    // vec3 camera_position = vec3(0, 0.5, 0);
+
+    // vec3 camera_forward = cross(camera_right, camera_up);
+
+    // vec3 dir = camera_forward * f;
+    // dir += camera_up * uv.y;
+    // dir += camera_right * uv.x;
+    // dir = normalize(dir);
+   
+    // intersection_t i = raycast(ray_t(camera_position, dir, 0));
+    
+    // if (i.hit){
+    //     out_colour = colour(i.x) * light(i.x, i.n);
+    // } else {
+    //     out_colour = sky(); 
+    // }
+
+
 }
 
 

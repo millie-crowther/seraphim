@@ -28,6 +28,23 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
+
+    // VkDescriptorBufferInfo desc_buffer_info = {};
+    // desc_buffer_info.buffer = buffer->get_buffer();
+    // desc_buffer_info.offset = 0;
+    // desc_buffer_info.range = structure.size() * sizeof(uint32_t);
+
+    // VkWriteDescriptorSet write_desc_set = {};
+    // write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    // write_desc_set.pNext = nullptr;
+    // write_desc_set.dstSet = 0; // TODO
+    // write_desc_set.dstBinding = 1;
+    // write_desc_set.dstArrayElement = 0;
+    // write_desc_set.descriptorCount = 1;
+    // write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    // write_desc_set.pImageInfo = nullptr;
+    // write_desc_set.pBufferInfo = &desc_buffer_info;
+    // write_desc_set.pTexelBufferView = nullptr;
 }
 
 void
