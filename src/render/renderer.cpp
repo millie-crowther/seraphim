@@ -42,7 +42,7 @@ renderer_t::renderer_t(
 
     renderable = std::make_shared<renderable_t>(scene, renderable_transform);
 
-    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 10, renderable);
+    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 10, renderable, desc_sets);
 }
 
 renderer_t::~renderer_t(){

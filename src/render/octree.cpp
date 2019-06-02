@@ -1,10 +1,11 @@
 #include "render/octree.h"
 
 #include <iostream>
+#include "core/blaspheme.h"
 
 constexpr uint32_t octree_t::null_node;
 
-octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable){
+octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable, const std::vector<VkDescriptorSet> & desc_sets){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node);
     std::cout << "about to paint octree" << std::endl;
@@ -20,31 +21,32 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     // copy to buffer
     buffer->copy(pool, queue, structure.data(), structure.size() * sizeof(uint32_t));
 
-    // for (int i = 0; i < structure.size(); i++){
-    //     std::cout << structure[i] << ", ";
-    //     if (i % 100 == 99){
-    //         std::cout << std::endl;
-    //     }
-    // }
-
     std::cout << "octree size: " << structure.size() << std::endl;
 
-    // VkDescriptorBufferInfo desc_buffer_info = {};
-    // desc_buffer_info.buffer = buffer->get_buffer();
-    // desc_buffer_info.offset = 0;
-    // desc_buffer_info.range = structure.size() * sizeof(uint32_t);
+    // write to descriptor sets
+    VkDescriptorBufferInfo desc_buffer_info = {};
+    desc_buffer_info.buffer = buffer->get_buffer();
+    desc_buffer_info.offset = 0;
+    desc_buffer_info.range = structure.size() * sizeof(uint32_t);
 
-    // VkWriteDescriptorSet write_desc_set = {};
-    // write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    // write_desc_set.pNext = nullptr;
-    // write_desc_set.dstSet = 0; // TODO
-    // write_desc_set.dstBinding = 1;
-    // write_desc_set.dstArrayElement = 0;
-    // write_desc_set.descriptorCount = 1;
-    // write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    // write_desc_set.pImageInfo = nullptr;
-    // write_desc_set.pBufferInfo = &desc_buffer_info;
-    // write_desc_set.pTexelBufferView = nullptr;
+    VkWriteDescriptorSet write_desc_set = {};
+    write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_desc_set.pNext = nullptr;
+    write_desc_set.dstBinding = 1;
+    write_desc_set.dstArrayElement = 0;
+    write_desc_set.descriptorCount = 1;
+    write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write_desc_set.pImageInfo = nullptr;
+    write_desc_set.pBufferInfo = &desc_buffer_info;
+    write_desc_set.pTexelBufferView = nullptr;
+
+    std::vector<VkWriteDescriptorSet> write_desc_sets(desc_sets.size());
+    for (int i = 0; i < write_desc_sets.size(); i++){
+        write_desc_sets[i] = write_desc_set;
+        write_desc_sets[i].dstSet = desc_sets[i];
+    }
+
+    vkUpdateDescriptorSets(blaspheme_t::get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
 void
