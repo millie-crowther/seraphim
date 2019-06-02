@@ -37,8 +37,9 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
+const uint octree_size = 100000;
 layout(binding = 1) buffer octree_buffer {
-    uint structure[100000];
+    uint structure[octree_size];
 } octree;
 
 //
@@ -48,7 +49,7 @@ in vec4 gl_FragCoord;
 
 float f = 1.0;
 float render_distance = 10;
-int max_steps = 1;
+int max_steps = 10;
 float epsilon = 0.005;
 float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
@@ -81,35 +82,33 @@ node_t octree_lookup(vec3 x){
 intersection_t raycast(ray_t r){
     node_t node;
 
-    node = octree_lookup(r.pos);
+    for (int i = 0; i < max_steps && r.dist < render_distance; i++){
+	    node = octree_lookup(r.pos);
 
-    // for (int i = 0; i < max_steps && r.dist < render_distance; i++){
-	//     node = octree_lookup(r.pos);
-
-    //     if (node.size < 0){
-    //         break;
-    //     }
+        if (node.size < 0 || node.i >= octree_size){
+            break;
+        }
     
-    //     if (octree.structure[node.i] != is_leaf_flag){
-    //         // calculate normal for cube 
-    //         vec3 d = r.pos - (node.min + node.size / 2);
-    //         vec3 ad = abs(d);
-    //         vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
+        if (octree.structure[node.i] != is_leaf_flag){
+            // calculate normal for cube 
+            vec3 d = r.pos - (node.min + node.size / 2);
+            vec3 ad = abs(d);
+            vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
             
-    //         return intersection_t(true, r.pos, n);
-    //     }
+            return intersection_t(true, r.pos, n);
+        }
 	
-    //     vec3 lambda_i = (
-    //         node.min - r.pos +
-    //         vec3(greaterThan(r.dir, vec3(0))) * node.size 
-    //     ) / (
-    //         r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
-    //     );
+        vec3 lambda_i = (
+            node.min - r.pos +
+            vec3(greaterThan(r.dir, vec3(0))) * node.size 
+        ) / (
+            r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
+        );
 
-    //     float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-    //     r.pos += r.dir * lambda;
-    //     r.dist += lambda;
-    // }
+        float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
+        r.pos += r.dir * lambda;
+        r.dist += lambda;
+    }
 
     return intersection_t(false, vec3(0), vec3(0));
 }
@@ -143,7 +142,6 @@ vec4 light(vec3 p, vec3 n){
     //ambient 
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
-
     //shadows
     float shadow = shadow(pos, p);
 
@@ -164,38 +162,27 @@ vec4 sky(){
 
 void main(){
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
-    uint index = uint(uv.y * 99999.0);
-    if (octree.structure[index] == 0){
-        out_colour = vec4(0.8, 0.1, 0.1, 1.0);
-    } else {
-        out_colour = vec4(0.1, 0.8, 0.1, 1.0);
-    }
-
-    // uv = uv * 2.0 - 1.0;
-    // uv.x *= push_constants.window_size.x;
-    // uv.x /= push_constants.window_size.y;
-    // uv.y *= -1;    
+    uv = uv * 2.0 - 1.0;
+    uv.x *= push_constants.window_size.x;
+    uv.x /= push_constants.window_size.y;
+    uv.y *= -1;    
     
-    // vec3 camera_up = vec3(0, 1, 0);
-    // vec3 camera_right = vec3(0, 0, -1);
-    // vec3 camera_position = vec3(0, 0.5, 0);
+    vec3 camera_up = vec3(0, 1, 0);
+    vec3 camera_right = vec3(0, 0, -1);
+    vec3 camera_position = vec3(0, 0.5, 0);
 
-    // vec3 camera_forward = cross(camera_right, camera_up);
+    vec3 camera_forward = cross(camera_right, camera_up);
 
-    // vec3 dir = camera_forward * f;
-    // dir += camera_up * uv.y;
-    // dir += camera_right * uv.x;
-    // dir = normalize(dir);
+    vec3 dir = camera_forward * f;
+    dir += camera_up * uv.y;
+    dir += camera_right * uv.x;
+    dir = normalize(dir);
    
-    // intersection_t i = raycast(ray_t(camera_position, dir, 0));
+    intersection_t i = raycast(ray_t(camera_position, dir, 0));
     
-    // if (i.hit){
-    //     out_colour = colour(i.x) * light(i.x, i.n);
-    // } else {
-    //     out_colour = sky(); 
-    // }
-
-
+    if (i.hit){
+        out_colour = colour(i.x) * light(i.x, i.n);
+    } else {
+        out_colour = sky(); 
+    }
 }
-
-
