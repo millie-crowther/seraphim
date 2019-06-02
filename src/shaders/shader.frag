@@ -4,16 +4,17 @@
 //
 // types
 //
-struct intersection_t {
-    bool hit;
-    vec3 x;
-    vec3 n;
-};
-
 struct ray_t {
     vec3 pos;
     vec3 dir;
     float dist;
+};
+
+struct intersection_t {
+    bool hit;
+    vec3 x;
+    vec3 n;
+    ray_t r;
 };
 
 struct node_t {
@@ -95,7 +96,7 @@ intersection_t raycast(ray_t r){
             vec3 ad = abs(d);
             vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
             
-            return intersection_t(true, r.pos, n);
+            return intersection_t(true, r.pos, n, r);
         }
 	
         vec3 lambda_i = (
@@ -110,7 +111,7 @@ intersection_t raycast(ray_t r){
         r.dist += lambda;
     }
 
-    return intersection_t(false, vec3(0), vec3(0));
+    return intersection_t(false, vec3(0), vec3(0), r);
 }
 
 float shadow(vec3 l, vec3 p){
@@ -180,9 +181,18 @@ void main(){
    
     intersection_t i = raycast(ray_t(camera_position, dir, 0));
     
-    if (i.hit){
-        out_colour = colour(i.x) * light(i.x, i.n);
+    // FIXME: rays hit something but travel zero distance
+    if (
+        i.r.dist == 0
+    ){
+        out_colour = vec4(1, 0, 0, 1);
     } else {
-        out_colour = sky(); 
+        out_colour = vec4(0, 1, 0, 1);
     }
+
+    // if (i.hit){
+    //     out_colour = colour(i.x) * light(i.x, i.n);
+    // } else {
+    //     out_colour = sky(); 
+    // }
 }
