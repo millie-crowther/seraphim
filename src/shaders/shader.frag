@@ -90,8 +90,8 @@ intersection_t raycast(ray_t r){
             break;
         }
     
-        if (octree.structure[node.i] != is_leaf_flag){
-            // calculate normal for cube 
+        if ((octree.structure[node.i] & 1) != 0){ // TODO
+            // calculate normal for homogenous volume
             vec3 d = r.pos - (node.min + node.size / 2);
             vec3 ad = abs(d);
             vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
@@ -146,7 +146,7 @@ vec4 light(vec3 p, vec3 n){
     //shadows
     float shadow = shadow(pos, p);
 
-    // //diffuse
+    //diffuse
     vec3 l = normalize(pos - p);
     vec4 d = kd * dot(l, n) * colour;
 
@@ -180,19 +180,31 @@ void main(){
     dir = normalize(dir);
    
     intersection_t i = raycast(ray_t(camera_position, dir, 0));
-    
-    // FIXME: rays hit something but travel zero distance
-    if (
-        i.r.dist == 0
-    ){
-        out_colour = vec4(1, 0, 0, 1);
-    } else {
-        out_colour = vec4(0, 1, 0, 1);
-    }
+    node_t node = octree_lookup(camera_position);
 
-    // if (i.hit){
-    //     out_colour = colour(i.x) * light(i.x, i.n);
+    // FIXME: rays hit something but travel zero distance
+    
+    // node size is 5 here
+    // out_colour = vec4(vec3(
+    //     node.i < octree_size 
+    //     // && (octree.structure[node.i] == is_leaf_flag)
+    //     &&  ((octree.structure[node.i] & is_leaf_flag) != 0)
+    //     && ((octree.structure[node.i] & 1) == 0)
+    // ), 1);
+
+    // if (
+    //     i.r.dist == 0
+    // ){
+    //     out_colour = vec4(1, 0, 0, 1);
     // } else {
-    //     out_colour = sky(); 
+    //     out_colour = vec4(0, 1, 0, 1);
     // }
+
+    if (i.hit){
+        out_colour = colour(i.x);// * light(i.x, i.n);
+    } else {
+        out_colour = sky(); 
+    }
 }
+
+

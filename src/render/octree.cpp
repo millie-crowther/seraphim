@@ -7,7 +7,7 @@ constexpr uint32_t octree_t::null_node;
 
 octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable, const std::vector<VkDescriptorSet> & desc_sets){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
-    structure.push_back(null_node);
+    structure.push_back(null_node); 
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
     std::cout << "octree successfully created " << std::endl;

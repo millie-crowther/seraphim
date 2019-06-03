@@ -34,6 +34,7 @@ renderer_t::renderer_t(
         double plane = x[1];
         double sphere = (x - vec3_t(1.0, 0.5, 0.0)).norm() - 0.5;
         return std::min(plane, sphere);
+        // return x[1] + 1000;
     });
     
     renderable = std::make_shared<renderable_t>(scene, renderable_transform); 
