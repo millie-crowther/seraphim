@@ -10,8 +10,25 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     structure.push_back(null_node); 
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
-    std::cout << "octree successfully created " << std::endl;
     
+    int empty_nodes = 0;
+    int full_nodes = 0;
+    int branch_nodes = 0;
+
+    for (auto node : structure){
+        if (node & is_leaf_flag){
+            if (node & 1){
+                full_nodes++;
+            } else {
+                empty_nodes++;
+            }
+        } else {
+            branch_nodes++;
+        }
+    }
+
+    std::cout << "branch nodes: " << branch_nodes << "; empty nodes: " << empty_nodes << "; full nodes: " << full_nodes << std::endl;
+
     buffer = std::make_unique<buffer_t>(
         allocator, structure.size() * sizeof(uint32_t),
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -163,37 +180,46 @@ octree_t::is_leaf(
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
     // if (i < 500) std::cout << "painting " << i << ", size: " << aabb.get_size() << std::endl;
-    bool is_empty = true;
-    bool is_leaf = aabb.get_size() <= 0.2;
-    bool is_homogenous = false;
-    if (auto renderable = renderable_ptr.lock()){
-        if (renderable->intersects(aabb)){
-            is_empty = false;
-        }
+    // bool is_empty = true;
+    // bool is_leaf = aabb.get_size() <= 0.2;
+    // bool is_homogenous = false;
+    // if (auto renderable = renderable_ptr.lock()){
+    //     if (renderable->intersects(aabb)){
+    //         is_empty = false;
+    //     }
 
-        if (renderable->contains(aabb)){
-            is_homogenous = true;
-        }
-    }
+    //     if (renderable->contains(aabb)){
+    //         is_homogenous = true;
+    //     }
+    // }
 
-    if (is_empty || is_leaf || is_homogenous){
-        structure[i] = is_leaf_flag | is_homogenous_flag;
+    // if (is_empty || is_leaf || is_homogenous){
+    //     structure[i] = is_leaf_flag | is_homogenous_flag;
 
-        if (!is_empty){
-            structure[i] |= 1;
-        } 
+    //     if (!is_empty){
+    //         structure[i] |= 1;
+    //     } 
 
-        return;
-    }
+    //     return;
+    // }
 
-    structure[i] = structure.size();
+    // structure[i] = structure.size();
+    // for (int octant = 0; octant < 8; octant++){
+    //     structure.push_back(null_node);
+    // }
+
+    // for (int octant = 0; octant < 8; octant++){
+    //     aabb_t new_aabb = aabb;
+    //     new_aabb.refine(octant);
+    //     paint(structure[i] + octant + 1, new_aabb, renderable_ptr);
+    // }
+
+    structure[0] = 1;
     for (int octant = 0; octant < 8; octant++){
-        structure.push_back(null_node);
-    }
-
-    for (int octant = 0; octant < 8; octant++){
-        aabb_t new_aabb = aabb;
-        new_aabb.refine(octant);
-        paint(structure[i] + octant + 1, new_aabb, renderable_ptr);
+        uint32_t node = is_leaf_flag;
+        if ((octant & 2) == 0){
+            node |= 1;
+        }
+        structure.push_back(node);
     }
 }

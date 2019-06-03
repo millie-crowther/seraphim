@@ -50,7 +50,7 @@ in vec4 gl_FragCoord;
 
 float f = 1.0;
 float render_distance = 10;
-int max_steps = 10;
+int max_steps = 50;
 float epsilon = 0.005;
 float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
@@ -92,19 +92,16 @@ intersection_t raycast(ray_t r){
     
         if ((octree.structure[node.i] & 1) != 0){ // TODO
             // calculate normal for homogenous volume
-            vec3 d = r.pos - (node.min + node.size / 2);
-            vec3 ad = abs(d);
-            vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
+            // vec3 d = r.pos - (node.min + node.size / 2);
+            // vec3 ad = abs(d);
+            // vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
             
-            return intersection_t(true, r.pos, n, r);
+            return intersection_t(true, r.pos, vec3(0), r);
         }
 	
-        vec3 lambda_i = (
-            node.min - r.pos +
-            vec3(greaterThan(r.dir, vec3(0))) * node.size 
-        ) / (
-            r.dir + vec3(equal(r.dir, vec3(0))) * epsilon
-        );
+        vec3 lambda_i = abs(
+            node.min + sign(max(r.dir, 0)) * node.size - r.pos
+        ) / max(abs(r.dir), epsilon);
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
         r.pos += r.dir * lambda;
@@ -112,6 +109,12 @@ intersection_t raycast(ray_t r){
     }
 
     return intersection_t(false, vec3(0), vec3(0), r);
+
+    // if (r.dir.y >= 0){
+    //     return intersection_t(false, vec3(0), vec3(0), r);
+    // } else {
+    //     return intersection_t(true, r.pos + r.dir * r.pos.y / -r.dir.y, vec3(0, 1, 0), r);
+    // }
 }
 
 float shadow(vec3 l, vec3 p){
@@ -201,10 +204,12 @@ void main(){
     // }
 
     if (i.hit){
-        out_colour = colour(i.x);// * light(i.x, i.n);
+        out_colour = vec4(0.9, 0.5, 0.6, 1.0);//colour(i.x) * light(i.x, i.n);
     } else {
         out_colour = sky(); 
     }
 }
+
+
 
 
