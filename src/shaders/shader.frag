@@ -56,7 +56,7 @@ float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
-node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
+const node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 node_t octree_lookup(vec3 x){
     if (
@@ -68,12 +68,12 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node;
 
-    for (int j = 0; j < 10 && (octree.structure[node.i] & is_leaf_flag) == 0; j++){
+    for (int j = 0; j < 10 && ((octree.structure[node.i] & is_leaf_flag) == 0); j++){
         node.i = octree.structure[node.i];
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
-        node.i += int(octant.x) + int(octant.y) << 1 + int(octant.z) << 2;
+        node.i += int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
         node.min += vec3(octant) * node.size;
     }
 
@@ -86,7 +86,7 @@ intersection_t raycast(ray_t r){
     for (int i = 0; i < max_steps && r.dist < render_distance; i++){
 	    node = octree_lookup(r.pos);
 
-        if (node.size < 0 || node.i >= octree_size){
+        if (node.size < 0 || node.i >= octree_size || node.i == 0){
             break;
         }
     
@@ -185,31 +185,10 @@ void main(){
     intersection_t i = raycast(ray_t(camera_position, dir, 0));
     node_t node = octree_lookup(camera_position);
 
-    // FIXME: rays hit something but travel zero distance
-    
-    // node size is 5 here
-    // out_colour = vec4(vec3(
-    //     node.i < octree_size 
-    //     // && (octree.structure[node.i] == is_leaf_flag)
-    //     &&  ((octree.structure[node.i] & is_leaf_flag) != 0)
-    //     && ((octree.structure[node.i] & 1) == 0)
-    // ), 1);
-
-    // if (
-    //     i.r.dist == 0
-    // ){
-    //     out_colour = vec4(1, 0, 0, 1);
-    // } else {
-    //     out_colour = vec4(0, 1, 0, 1);
-    // }
-
     if (i.hit){
         out_colour = vec4(0.9, 0.5, 0.6, 1.0);//colour(i.x) * light(i.x, i.n);
     } else {
         out_colour = sky(); 
     }
 }
-
-
-
 
