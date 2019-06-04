@@ -25,7 +25,7 @@ renderer_t::renderer_t(
 
     push_constants.window_size = window_size;
     
-    fragment_shader_code = resources::load_file("../src/shaders/shader.frag");
+    fragment_shader_code = resources::load_file("../src/render/shader.frag");
     if (fragment_shader_code.size() == 0){
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   

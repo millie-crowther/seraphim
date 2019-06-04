@@ -11,10 +11,10 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
     
-    for (auto node : structure){
-        std::cout << node << ' ';
-    }
-    std::cout <<  std::endl;
+    // for (auto node : structure){
+    //     std::cout << node << ' ';
+    // }
+    // std::cout <<  std::endl;
 
     buffer = std::make_unique<buffer_t>(
         allocator, structure.size() * sizeof(uint32_t),
