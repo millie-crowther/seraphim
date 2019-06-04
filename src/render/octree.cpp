@@ -11,10 +11,11 @@ octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, do
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderable);
     
-    // for (auto node : structure){
-    //     std::cout << node << ' ';
-    // }
-    // std::cout <<  std::endl;
+    for (auto node : structure){
+        std::cout << node << ' ';
+    }
+    std::cout << std::endl;
+    std::cout << is_leaf_flag << std::endl;
 
     buffer = std::make_unique<buffer_t>(
         allocator, structure.size() * sizeof(uint32_t),
@@ -166,31 +167,22 @@ octree_t::is_leaf(
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
-    // if (auto renderable = renderable_ptr.lock()){
-    //     bool is_empty = !renderable->intersects(aabb);
-    //     if (is_empty || renderable->contains(aabb)){
-    //         structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
-    //         return;
-    //     }
-    // }
-
-    // structure[i] = structure.size();
-    // for (int octant = 0; octant < 8; octant++){
-    //     structure.push_back(null_node);
-    // }
-
-    // for (int octant = 0; octant < 8; octant++){
-    //     aabb_t new_aabb = aabb;
-    //     new_aabb.refine(octant);
-    //     paint(structure[i] + octant + 1, new_aabb, renderable_ptr);
-    // }
-
-    structure[0] = 1;
-    for (int octant = 0; octant < 8; octant++){
-        uint32_t node = is_leaf_flag;
-        if ((octant & 2) == 0){
-            node |= 1;
+    if (auto renderable = renderable_ptr.lock()){
+        bool is_empty = !renderable->intersects(aabb);
+        if (is_empty || renderable->contains(aabb)){
+            structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
+            return;
         }
-        structure.push_back(node);
+    }
+
+    structure[i] = structure.size();
+    for (int octant = 0; octant < 8; octant++){
+        structure.push_back(null_node);
+    }
+
+    for (int octant = 0; octant < 8; octant++){
+        aabb_t new_aabb = aabb;
+        new_aabb.refine(octant);
+        paint(structure[i] + octant, new_aabb, renderable_ptr);
     }
 }

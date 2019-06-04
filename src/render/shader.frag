@@ -56,7 +56,7 @@ float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
-const node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
+node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 node_t octree_lookup(vec3 x){
     if (
@@ -191,4 +191,5 @@ void main(){
         out_colour = sky(); 
     }
 }
+
 

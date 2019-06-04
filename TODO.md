@@ -17,22 +17,18 @@
 2. allow camera movement
 
 ### geometry
-1. render octree successfully
-    * octree structure on the gpu filled with zeroes
-    * octree buffer never bound to ssbo in shader
-    * not sure how to do this; made myself extremely confused with descriptor sets
-    * challenge is to only have one buffer at a time because its so large so you dont want copies
-    * problem is theres things like concurrent frame rendering happening making that difficult
-    * dont think you can directly link shader to a buffer
-    * also this might explain why SSBOs seem to max out way below GPU memory size (there's several copies)
-2. figure out brick approximation
+* construct octree correctly on CPU
+* figure out brick approximation
     * single plane? 
-3. implement octree streaming from cpu
+* implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
-4. determine best way to animate octree
-5. lower granularity of octree at distance from camera
-6. fix double free on renderable transform
+* determine best way to animate octree
+* lower granularity of octree at distance from camera
+* fix double free on renderable transform
+* `renderable_t::contains(const aabb_t & aabb)` currently assumes a convex sdf - implement a solution for concave sdfs
+* implement `renderable_t::intersects` so that it doesnt miss corners of cube
+* allow octree to accept multiple renderables
 
 ### colouring
 1. determine best way to uv map surface

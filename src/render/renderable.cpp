@@ -14,32 +14,32 @@ renderable_t::is_visible() const {
 
 bool
 renderable_t::intersects(const aabb_t & aabb) const {
-    // return sdf(aabb.get_centre()) < aabb.get_upper_radius();
-    for (int i = 0; i < 8; i++){
-        vec3_t x = aabb.get_min();
-        if (i & 1) x[0] += aabb.get_size();
-        if (i & 2) x[1] += aabb.get_size();
-        if (i & 4) x[2] += aabb.get_size();
-
-        if (contains(x)){
-            return true;
-        }
+    double centre = sdf(aabb.get_centre());
+    
+    if (centre < aabb.get_size() / 2){
+        return true;
     }
 
+    if (centre >= aabb.get_upper_radius()){
+        return false;
+    }
+
+    // TODO: implement a version that doesnt miss corners
     return false;
 }
 
 bool
 renderable_t::contains(const aabb_t & aabb) const {
-    // return sdf(aabb.get_centre()) < -aabb.get_upper_radius();
+    // TODO: assumes a convex sdf
     for (int i = 0; i < 8; i++){
         vec3_t x = aabb.get_min();
+
         if (i & 1) x[0] += aabb.get_size();
         if (i & 2) x[1] += aabb.get_size();
         if (i & 4) x[2] += aabb.get_size();
 
         if (!contains(x)){
-            return false;
+            return false; 
         }
     }
 
@@ -48,5 +48,5 @@ renderable_t::contains(const aabb_t & aabb) const {
 
 bool 
 renderable_t::contains(const vec3_t & x) const {
-    return sdf(x) < constant::epsilon;
+    return sdf(x) <= constant::epsilon;
 }
