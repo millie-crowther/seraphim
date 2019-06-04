@@ -166,28 +166,12 @@ octree_t::is_leaf(
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
-    // if (i < 500) std::cout << "painting " << i << ", size: " << aabb.get_size() << std::endl;
-    // bool is_empty = true;
-    // bool is_leaf = aabb.get_size() <= 0.2;
-    // bool is_homogenous = false;
     // if (auto renderable = renderable_ptr.lock()){
-    //     if (renderable->intersects(aabb)){
-    //         is_empty = false;
+    //     bool is_empty = !renderable->intersects(aabb);
+    //     if (is_empty || renderable->contains(aabb)){
+    //         structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
+    //         return;
     //     }
-
-    //     if (renderable->contains(aabb)){
-    //         is_homogenous = true;
-    //     }
-    // }
-
-    // if (is_empty || is_leaf || is_homogenous){
-    //     structure[i] = is_leaf_flag | is_homogenous_flag;
-
-    //     if (!is_empty){
-    //         structure[i] |= 1;
-    //     } 
-
-    //     return;
     // }
 
     // structure[i] = structure.size();

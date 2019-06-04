@@ -22,11 +22,11 @@ include_directories(${INCLUDE_DIR})
 set(SOURCES
     ../src/main.cpp
     ../src/lib.cpp
-    ../src/aabb.cpp
   
     ../src/core/blaspheme.cpp
     ../src/core/sdf.cpp
     ../src/core/buffer.cpp
+    ../src/core/aabb.cpp
     
     ../src/render/renderer.cpp
     ../src/render/image.cpp

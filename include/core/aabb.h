@@ -18,6 +18,7 @@ public:
 
     // accessors
     int get_octant(const vec3_t & x) const;
+    vec3_t get_min() const;
     vec3_t get_centre() const;
     double get_upper_radius() const;
     double get_size() const;

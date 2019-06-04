@@ -3,7 +3,7 @@
 
 #include "core/sdf.h"
 #include "scene/transform.h"
-#include "aabb.h"
+#include "core/aabb.h"
 
 class renderable_t {
 private:
@@ -19,6 +19,7 @@ public:
     bool is_visible() const;
     bool intersects(const aabb_t & aabb) const;
     bool contains(const aabb_t & aabb) const;
+    bool contains(const vec3_t & x) const;
 };
 
 #endif

@@ -1,4 +1,4 @@
-#include "aabb.h"
+#include "core/aabb.h"
 
 #include <math.h>
 
@@ -54,4 +54,9 @@ aabb_t::contains(const vec3_t & x) const {
         }
     }
     return true;
+}
+
+vec3_t
+aabb_t::get_min() const {
+    return min;
 }
