@@ -17,18 +17,19 @@
 2. allow camera movement
 
 ### geometry
-* construct octree correctly on CPU
 * figure out brick approximation
     * single plane? 
+    * Polynomial fit?
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* `renderable_t::contains(const aabb_t & aabb)` currently assumes a convex sdf - implement a solution for concave sdfs
-* implement `renderable_t::intersects` so that it doesnt miss corners of cube
-* allow octree to accept multiple renderables
+* fix `contains` and `intersects` on the `renderable_t` class
+    * Uses upper and lower radii at the moment
+    * misses corners
+    * May be able produce union with inverted cube sdf and null check
 
 ### colouring
 1. determine best way to uv map surface
@@ -46,7 +47,11 @@
 ## physics
 1. find good method for partitioning colliders to reach `O(n * log(n))` complexity
 2. implement rigidbody physics
-3. liquid physics mayhaps?
+3. material physics
+    * rigid
+    * Fluid
+    * Sand?
+    * Snow?
 
 ## logic
 1. test `scheduler_t` to make sure it even works
