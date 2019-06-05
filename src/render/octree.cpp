@@ -5,11 +5,15 @@
 
 constexpr uint32_t octree_t::null_node;
 
-octree_t::octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable, const std::vector<VkDescriptorSet> & desc_sets){
+octree_t::octree_t(
+    VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
+    const std::vector<std::weak_ptr<renderable_t>> & renderables, 
+    const std::vector<VkDescriptorSet> & desc_sets
+){
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node); 
     std::cout << "about to paint octree" << std::endl;
-    paint(0, universal_aabb, renderable);
+    paint(0, universal_aabb, renderables);
     
     for (auto node : structure){
         std::cout << node << ' ';
@@ -166,12 +170,16 @@ octree_t::is_leaf(
 }
 
 void 
-octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr){
-    if (auto renderable = renderable_ptr.lock()){
-        bool is_empty = !renderable->intersects(aabb);
-        if (is_empty || renderable->contains(aabb)){
-            structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
-            return;
+octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables){
+    bool is_leaf = aabb.get_size() <= 0.2;
+
+    for (auto renderable_ptr : renderables){
+        if (auto renderable = renderable_ptr.lock()){
+            bool is_empty = !renderable->intersects(aabb);
+            if (is_empty || renderable->contains(aabb) || is_leaf){
+                structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
+                return;
+            }
         }
     }
 
@@ -180,9 +188,10 @@ octree_t::paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderabl
         structure.push_back(null_node);
     }
 
+    // TODO: only pass renderables that intersect child volume down to next stag
     for (int octant = 0; octant < 8; octant++){
         aabb_t new_aabb = aabb;
         new_aabb.refine(octant);
-        paint(structure[i] + octant, new_aabb, renderable_ptr);
+        paint(structure[i] + octant, new_aabb, renderables);
     }
 }

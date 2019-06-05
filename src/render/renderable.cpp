@@ -30,7 +30,17 @@ renderable_t::intersects(const aabb_t & aabb) const {
 
 bool
 renderable_t::contains(const aabb_t & aabb) const {
-    // TODO: assumes a convex sdf
+    double centre = sdf(aabb.get_centre());
+    
+    if (centre > -aabb.get_size() / 2){
+        return false;
+    }
+
+    if (centre <= -aabb.get_upper_radius()){
+        return true;
+    }
+
+    // TODO: implement a version that doesnt miss corners and doesnt assume a convex sdf
     for (int i = 0; i < 8; i++){
         vec3_t x = aabb.get_min();
 

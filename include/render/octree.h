@@ -53,11 +53,18 @@ private:
     );
 
     // TODO: remove this and replace with lazy streaming version
-    void paint(uint32_t i, aabb_t & aabb, std::weak_ptr<renderable_t> renderable_ptr);
+    void paint(
+        uint32_t i, aabb_t & aabb, 
+        const std::vector<std::weak_ptr<renderable_t>> & renderable_ptr
+    );
 
 public:
-    // TODO: remove
-    octree_t(VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, std::weak_ptr<renderable_t> renderable, const std::vector<VkDescriptorSet> & desc_sets);
+    // TODO: sort this out
+    octree_t(
+        VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
+        const std::vector<std::weak_ptr<renderable_t>> & renderables, 
+        const std::vector<VkDescriptorSet> & desc_sets
+    );
 
     void request(const vec3_t & x, const vec3_t & camera);
 

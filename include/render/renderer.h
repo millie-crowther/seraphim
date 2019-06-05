@@ -84,7 +84,7 @@ private:
     std::string fragment_shader_code;
 
     transform_t renderable_transform;
-    std::shared_ptr<renderable_t> renderable;
+    std::vector<std::shared_ptr<renderable_t>> renderables;
     std::shared_ptr<octree_t> octree;
 
 public:
