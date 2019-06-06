@@ -40,6 +40,21 @@ public:
         return std::sqrt(square_norm());
     }   
 
+    vec_type_t chebyshev_norm() const {
+        vec_type_t max = std::abs(xs[0]);
+        for (int i = 1; i < N; i++){
+            max = std::max(std::abs(xs[i]), max);
+        }
+        return max;
+    }
+
+    vec_t<vec_type_t, N> normalise() const {
+        return *this * maths::inverse_square_root(square_norm());
+    }
+
+    /*
+        maths
+    */
     double angle(const vec_t<vec_type_t, N> & v){
         return std::acos(
             dot(v) * 
@@ -48,8 +63,14 @@ public:
         );
     }
 
-    vec_t<vec_type_t, N> normalise() const {
-        return *this * maths::inverse_square_root(square_norm());
+    vec_t<vec_type_t, N> abs() const {
+        vec_t<vec_type_t, N> abs_xs;
+
+        for (int i = 0; i < N; i++){
+            abs_xs[i] = std::abs(xs[i]);
+        }
+
+        return abs_xs;
     }
  
     /*

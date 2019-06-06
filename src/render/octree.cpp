@@ -19,7 +19,6 @@ octree_t::octree_t(
         std::cout << node << ' ';
     }
     std::cout << std::endl;
-    std::cout << is_leaf_flag << std::endl;
 
     buffer = std::make_unique<buffer_t>(
         allocator, structure.size() * sizeof(uint32_t),
