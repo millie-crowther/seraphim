@@ -40,7 +40,7 @@ public:
        norms
     */
     T square_norm() const {
-        return (*this) * (*this);
+        return operator*(*this);
     }
 
     T norm() const {

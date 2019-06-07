@@ -26,9 +26,10 @@
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* fix `contains` on the `renderable_t` class
+* fix `contains` and `intersects` on the `renderable_t` class
     * Uses upper and lower radii at the moment
     * misses corners
+* enable rendering of multiple renderables at a time
 
 ### colouring
 1. determine best way to uv map surface
