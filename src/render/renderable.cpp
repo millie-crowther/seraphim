@@ -15,18 +15,6 @@ renderable_t::is_visible() const {
 bool
 renderable_t::intersects(const aabb_t & aabb) const {
     return (sdf & aabb.get_sdf())(aabb.get_centre()) < aabb.get_upper_radius();
-    // double centre = sdf(aabb.get_centre());
-    
-    // if (centre < aabb.get_size() / 2){
-    //     return true;
-    // }
-
-    // if (centre >= aabb.get_upper_radius()){
-    //     return false;
-    // }
-
-    // // TODO: implement a version that doesnt miss corners
-    // return false;
 }
 
 bool

@@ -26,10 +26,9 @@
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* fix `contains` and `intersects` on the `renderable_t` class
+* fix `contains` on the `renderable_t` class
     * Uses upper and lower radii at the moment
     * misses corners
-    * May be able produce union with inverted cube sdf and null check
 
 ### colouring
 1. determine best way to uv map surface

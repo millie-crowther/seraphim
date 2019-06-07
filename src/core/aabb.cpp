@@ -60,8 +60,9 @@ sdf_t
 aabb_t::get_sdf() const {
 //     vec3 d = abs(p) - b;
 //   return length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
-    return sdf_t([&](const vec3_t & x){
-        vec3_t d = x.map([](double x){ return std::abs(x); }) - vec3_t(size);
+    return sdf_t([&](const vec3_t & v){
+
+        vec3_t d = (v - get_centre()).map([&](double x){ return std::abs(x); }) - vec3_t(size);
         d.transform([](double x){ return std::max(x, 0.0); });
 
         return d.norm() + std::min(d.chebyshev_norm(), 0.0);
