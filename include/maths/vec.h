@@ -8,149 +8,150 @@
 #include "core/constant.h"
 #include <iostream>
 
-template<class vec_type_t, unsigned int N>
+template<class T, uint32_t N>
 class vec_t {
 protected:
-    std::array<vec_type_t, N> xs;
+    /*
+        private fields
+    */
+    std::array<T, N> xs;
+
+    /*
+        private constructors
+    */
+    vec_t(const std::array<T, N> & _xs){
+        xs = _xs;
+    }
 
 public:
+    /*
+        constructors
+    */
     vec_t() : vec_t(0){}
 
-    vec_t(vec_type_t x){
+    vec_t(const T & x){
         xs.fill(x); 
     }
 
     template<class... Xs>
-    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, vec_type_t>::type x, Xs... _xs) : xs({ x, _xs...}) {}
-
-    template<class T=vec_t<vec_type_t, 3>>
-    typename std::enable_if<N == 3, T>::type
-    tangent() const {
-        return vec_t<vec_type_t, 3>(); // TODO
-    } 
+    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : xs({ x, _xs...}) {}
 
     /*
        norms
     */
-    vec_type_t square_norm() const {
+    T square_norm() const {
         return (*this) * (*this);
     }
 
-    vec_type_t norm() const {
+    T norm() const {
         return std::sqrt(square_norm());
     }   
 
-    vec_type_t chebyshev_norm() const {
-        vec_type_t max = std::abs(xs[0]);
-        for (int i = 1; i < N; i++){
-            max = std::max(std::abs(xs[i]), max);
-        }
-        return max;
+    T chebyshev_norm() const {
+        return std::accumulate(xs.begin(), xs.end(), 0, [](const T & a, const T & b){ 
+            return std::max(a, std::abs(b));
+        });
     }
 
-    vec_t<vec_type_t, N> normalise() const {
+    vec_t<T, N> normalise() const {
         return *this * maths::inverse_square_root(square_norm());
     }
 
     /*
-        maths
-    */
-    double angle(const vec_t<vec_type_t, N> & v){
-        return std::acos(
-            dot(v) * 
-            maths::inverse_square_root(square_norm()) * 
-            maths::inverse_square_root(v.square_norm())
-        );
+        modifiers
+    */ 
+    template<class F>
+    void for_each(const F & f){
+        for (uint32_t i = 0; i < N; i++){ f(i); }
     }
 
-    vec_t<vec_type_t, N> abs() const {
-        vec_t<vec_type_t, N> abs_xs;
-
-        for (int i = 0; i < N; i++){
-            abs_xs[i] = std::abs(xs[i]);
-        }
-
-        return abs_xs;
+    template<class F>
+    void transform(const F & f){
+        std::transform(xs.begin(), xs.end(), xs.begin(), f);
     }
- 
+
+    template<class F>
+    vec_t<T, N> map(const F & f) const {
+        std::array<T, N> x;
+        std::transform(xs.begin(), xs.end(), x.begin(), f);
+        return vec_t<T, N>(x);
+    }
+
     /*
-       overloaded operators
+        subscript operators
     */
-    vec_type_t operator*(const vec_t<vec_type_t, N> & o) const {
-        vec_type_t result = 0;
-        for (int i = 0; i < N; i++){
-            result += xs[i] * o.xs[i];
+    T operator[](uint32_t i) const {
+        return xs[i];
+    }
+
+    T & operator[](uint32_t i){
+        return xs[i];
+    }
+
+    /*
+        modifier operators    
+    */
+    void operator+=(const vec_t<T, N> & v){
+        for_each([&](uint32_t i){ xs[i] += v[i]; });
+    }
+
+    void operator-=(const vec_t<T, N> & v){
+        for_each([&](uint32_t i){ xs[i] -= v[i]; });
+    }
+
+    void operator*=(const T & s){
+        transform([&](const T & x){ return x * s; });
+    }
+
+    void operator/=(const T & s){
+        transform([&](const T & x){ return x / s; });
+    }
+  
+    /*
+        accessor operators
+    */
+    T operator*(const vec_t<T, N> & x) const {
+        T result = 0;
+        for (uint32_t i = 0; i < N; i++){ 
+            result += xs[i] * x.xs[i]; 
         }
         return result;
     }
 
-    vec_type_t operator[](int i) const {
-        return xs[i];
+    vec_t<T, N> operator+(const vec_t<T, N> & x) const {
+        std::array<T, N> s;
+        std::transform(xs.begin(), xs.end(), x.xs.begin(), s.begin(), std::plus<T>());
+        return vec_t<T, N>(s);
     }
 
-    vec_type_t & operator[](int i){
-        return xs[i];
-    }
-
-    vec_t<vec_type_t, N> operator+(const vec_t<vec_type_t, N>& v) const {
-        auto sum = *this;
-        for (int i = 0; i < N; i++){
-            sum.xs[i] += v.xs[i];
-        }
-        return sum;
-    }
-
-    void operator+=(const vec_t<vec_type_t, N> & v){
-        xs = (*this + v).xs;
-    }
-
-    void operator*=(vec_type_t scale){
-        xs = (*this * scale).xs;
-    }
-
-    void operator/=(vec_type_t scale){
-        *this *= 1.0 / scale;
-    }
-  
-    vec_t<vec_type_t, N> operator-(const vec_t<vec_type_t, N> & v) const {
-         return (*this) + (-v);
+    vec_t<T, N> operator-(const vec_t<T, N> & x) const {
+        return *this + -x;
     } 
 
-    vec_t<vec_type_t, N> operator-() const {
-        return *this * -1;
+    vec_t<T, N> operator-() const {
+        return map(std::negate<T>());
     }
 
-    vec_t<vec_type_t, N> operator*(vec_type_t scale) const {
-        auto product = *this;
-        for (int i = 0; i < N; i++){
-            product.xs[i] *= scale;
-        }
-        return product;
+    vec_t<T, N> operator*(const T & s) const {
+        return map([&](const T & x){ return x * s; });
     }
 
-    bool operator==(const vec_t<vec_type_t, N> & v) const {
+    vec_t<T, N> operator/(const T & s) const {
+        return map([&](const T & x){ return x / s; });
+    }
+
+    bool operator==(const vec_t<T, N> & v) const {
         return (*this - v).square_norm() <= constant::epsilon * constant::epsilon;
     }
 
-    vec_t<vec_type_t, N> operator/(vec_type_t scale) const {
-        return *this * (1.0 / scale);
-    }
-
-    template<class T=vec_t<vec_type_t, 3>>
-    typename std::enable_if<N == 3, T>::type
-    operator%(const vec_t<vec_type_t, 3> & v) const {
-        return vec_t<vec_type_t, 3>(
+    template<class T1=vec_t<T, 3>>
+    typename std::enable_if<N == 3, T1>::type
+    operator%(const vec_t<T, 3> & v) const {
+        return vec_t<T, 3>(
             xs[1] * v.xs[2] - xs[2] * v.xs[1],
             xs[2] * v.xs[0] - xs[0] * v.xs[2],
             xs[0] * v.xs[1] - xs[1] * v.xs[0]
         );
-    }
-
-    /*
-        factories
-    */
-    vec_t<vec_type_t, N> zero(){
-        return vec_t<vec_type_t, N>();
     }
 };
 

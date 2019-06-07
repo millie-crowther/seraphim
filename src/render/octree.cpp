@@ -14,10 +14,10 @@ octree_t::octree_t(
     structure.push_back(null_node); 
     std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderables);
-    
-    for (auto node : structure){
-        std::cout << node << ' ';
-    }
+
+    // for (auto node : structure){
+    //     std::cout << node << ' ';
+    // }
     std::cout << std::endl;
 
     buffer = std::make_unique<buffer_t>(
@@ -183,12 +183,12 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     }
 
     structure[i] = structure.size();
-    for (int octant = 0; octant < 8; octant++){
+    for (uint8_t octant = 0; octant < 8; octant++){
         structure.push_back(null_node);
     }
 
     // TODO: only pass renderables that intersect child volume down to next stag
-    for (int octant = 0; octant < 8; octant++){
+    for (uint8_t octant = 0; octant < 8; octant++){
         aabb_t new_aabb = aabb;
         new_aabb.refine(octant);
         paint(structure[i] + octant, new_aabb, renderables);

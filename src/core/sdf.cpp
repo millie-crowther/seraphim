@@ -23,7 +23,7 @@ sdf_t::normal(const vec3_t & p) const {
 }
 
 sdf_t
-sdf_t::operator&&(const sdf_t & sdf) const {
+sdf_t::operator&(const sdf_t & sdf) const {
     // TODO: use truncation properties to make more efficient
 
     auto phi1 = std::make_shared<sdf_t>(phi);
@@ -34,7 +34,7 @@ sdf_t::operator&&(const sdf_t & sdf) const {
 } 
 
 sdf_t
-sdf_t::operator||(const sdf_t & sdf) const {
+sdf_t::operator|(const sdf_t & sdf) const {
     // TODO: use truncation properties to make more efficient
 
     auto phi1 = std::make_shared<sdf_t>(phi);
@@ -52,12 +52,7 @@ sdf_t::operator!() const {
     }); 
 }
 
-bool
-sdf_t::is_null() const {
-    return false;
-}
-
 sdf_t 
 sdf_t::operator-(const sdf_t & sdf) const {
-    return (*this) && !sdf;
+    return *this & !sdf;
 }

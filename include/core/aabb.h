@@ -15,7 +15,7 @@ public:
     aabb_t(const vec3_t & min, double size);
 
     // modifiers
-    void refine(int octant);
+    void refine(uint8_t octant);
 
     // accessors
     int get_octant(const vec3_t & x) const;

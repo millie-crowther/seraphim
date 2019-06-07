@@ -14,18 +14,19 @@ renderable_t::is_visible() const {
 
 bool
 renderable_t::intersects(const aabb_t & aabb) const {
-    double centre = sdf(aabb.get_centre());
+    return (sdf & aabb.get_sdf())(aabb.get_centre()) < aabb.get_upper_radius();
+    // double centre = sdf(aabb.get_centre());
     
-    if (centre < aabb.get_size() / 2){
-        return true;
-    }
+    // if (centre < aabb.get_size() / 2){
+    //     return true;
+    // }
 
-    if (centre >= aabb.get_upper_radius()){
-        return false;
-    }
+    // if (centre >= aabb.get_upper_radius()){
+    //     return false;
+    // }
 
-    // TODO: implement a version that doesnt miss corners
-    return false;
+    // // TODO: implement a version that doesnt miss corners
+    // return false;
 }
 
 bool
@@ -41,17 +42,17 @@ renderable_t::contains(const aabb_t & aabb) const {
     }
 
     // TODO: implement a version that doesnt miss corners and doesnt assume a convex sdf
-    for (int i = 0; i < 8; i++){
-        vec3_t x = aabb.get_min();
+    // for (int i = 0; i < 8; i++){
+    //     vec3_t x = aabb.get_min();
 
-        if (i & 1) x[0] += aabb.get_size();
-        if (i & 2) x[1] += aabb.get_size();
-        if (i & 4) x[2] += aabb.get_size();
+    //     if (i & 1) x[0] += aabb.get_size();
+    //     if (i & 2) x[1] += aabb.get_size();
+    //     if (i & 4) x[2] += aabb.get_size();
 
-        if (!contains(x)){
-            return false; 
-        }
-    }
+    //     if (!contains(x)){
+    //         return false; 
+    //     }
+    // }
 
     return true;
 }

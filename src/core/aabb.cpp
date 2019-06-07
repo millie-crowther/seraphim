@@ -21,9 +21,9 @@ aabb_t::get_octant(const vec3_t & x) const {
 }
 
 void
-aabb_t::refine(int octant){
+aabb_t::refine(uint8_t octant){
     size /= 2;
-    for (int i = 0; i < 3; i++){
+    for (uint8_t i = 0; i < 3; i++){
         if (octant & (1 << i)){
             min[i] += size;
         }
@@ -61,6 +61,9 @@ aabb_t::get_sdf() const {
 //     vec3 d = abs(p) - b;
 //   return length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
     return sdf_t([&](const vec3_t & x){
-        return 1;
+        vec3_t d = x.map([](double x){ return std::abs(x); }) - vec3_t(size);
+        d.transform([](double x){ return std::max(x, 0.0); });
+
+        return d.norm() + std::min(d.chebyshev_norm(), 0.0);
     });
 }
