@@ -24,9 +24,11 @@ set(SOURCES
     ../src/lib.cpp
   
     ../src/core/blaspheme.cpp
-    ../src/core/sdf.cpp
     ../src/core/buffer.cpp
     ../src/core/aabb.cpp
+
+    ../src/sdf/sdf.cpp
+    ../src/sdf/primitive.cpp
     
     ../src/render/renderer.cpp
     ../src/render/image.cpp

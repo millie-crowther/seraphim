@@ -121,24 +121,24 @@ octree_t::subdivide(
     });
 
     // check for homogenous volume
-    bool is_homogenous = std::any_of(renderables.begin(), renderables.end(), [&aabb](const std::weak_ptr<renderable_t> & renderable_ptr){
-        if (auto renderable = renderable_ptr.lock()){
-            if (renderable->contains(aabb)){
-                return true;
-            }
-        }
-        return false;
-    });
+    // bool is_homogenous = std::any_of(renderables.begin(), renderables.end(), [&aabb](const std::weak_ptr<renderable_t> & renderable_ptr){
+    //     if (auto renderable = renderable_ptr.lock()){
+    //         if (renderable->contains(aabb)){
+    //             return true;
+    //         }
+    //     }
+    //     return false;
+    // });
 
-    if (renderables.empty() || is_homogenous){
-        structure[i] = is_leaf_flag | is_homogenous_flag;
+    // if (renderables.empty() || is_homogenous){
+    //     structure[i] = is_leaf_flag | is_homogenous_flag;
 
-        if (is_homogenous){
-            structure[i] |= 1;
-        }
+    //     if (is_homogenous){
+    //         structure[i] |= 1;
+    //     }
 
-        return;
-    }
+    //     return;
+    // }
 
     if (is_leaf(x, camera, aabb, renderables)){
         // TODO
@@ -175,7 +175,7 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     for (auto renderable_ptr : renderables){
         if (auto renderable = renderable_ptr.lock()){
             bool is_empty = !renderable->intersects(aabb);
-            if (is_empty || renderable->contains(aabb) || is_leaf){
+            if (is_empty || is_leaf){
                 structure[i] = is_leaf_flag | is_homogenous_flag | uint32_t(!is_empty);
                 return;
             }

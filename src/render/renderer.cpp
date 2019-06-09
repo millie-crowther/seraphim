@@ -1,6 +1,7 @@
 #include "render/renderer.h"
 
 #include "core/blaspheme.h"
+#include "sdf/primitive.h"
 #include "input/resources.h"
 
 #include <chrono>
@@ -30,13 +31,8 @@ renderer_t::renderer_t(
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   
 
-    // renderables.push_back(std::make_shared<renderable_t>(
-    //     sdf_t([](const vec3_t & x){ return x[1]; }), 
-    //     renderable_transform
-    // ));
-
     renderables.push_back(std::make_shared<renderable_t>(
-        sdf_t([](const vec3_t & x){ return (x - vec3_t(7.0, 0.0, 0.0)).norm() - 4; }), 
+        std::make_shared<primitive::sphere_t>(vec3_t(7.0, 0.0, 0.0), 4),
         renderable_transform
     ));
 
