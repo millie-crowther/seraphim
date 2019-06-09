@@ -175,9 +175,7 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     bool is_empty = true;
     for (auto renderable_ptr : renderables){
         if (auto renderable = renderable_ptr.lock()){
-            bool is_aabb_empty = !renderable->intersects(aabb);
-
-            if (!is_aabb_empty){
+            if (renderable->intersects(aabb)){
                 is_empty = false;
 
                 if (is_leaf){

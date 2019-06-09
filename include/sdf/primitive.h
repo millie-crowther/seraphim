@@ -16,6 +16,7 @@ namespace primitive {
     public:
         cube_t(const vec3_t & c, double s);
         double phi(const vec3_t & x) const override;
+        // TODO: add normal function
     };
 
     class sphere_t : public sdf_t {

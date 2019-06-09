@@ -4,7 +4,6 @@
 #include <memory>
 
 #include "maths/vec.h"
-#include "sdf/sdf.h"
 
 class aabb_t {
 private:
@@ -24,7 +23,6 @@ public:
     vec3_t get_centre() const;
     double get_upper_radius() const;
     double get_size() const;
-    std::shared_ptr<sdf_t> get_sdf() const;
 
     // predicates
     bool contains(const vec3_t & x) const;

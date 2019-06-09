@@ -57,10 +57,3 @@ aabb_t::contains(const vec3_t & x) const {
     }
     return true;
 }
-
-std::shared_ptr<sdf_t>
-aabb_t::get_sdf() const {
-//     vec3 d = abs(p) - b;
-//   return length(max(d,0.0)) + min(max(d.x,max(d.y,d.z)),0.0);
-    return std::make_shared<primitive::cube_t>(get_centre(), size);
-}
