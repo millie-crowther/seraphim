@@ -16,16 +16,14 @@
 * allow camera movement
 
 ### geometry
-* figure out brick approximation
-    * single plane? 
-    * Polynomial fit?
+* implement local approximation of surface as plane
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* make octree smaller if possible
+* make octree sparser if possible
 * make renderables and SDFs use transform class for positioning rather than internally
 
 ### colouring
