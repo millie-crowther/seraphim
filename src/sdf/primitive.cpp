@@ -25,7 +25,18 @@ primitive::sphere_t::phi(const vec3_t & x) const {
     return (x - c).norm() - r;
 }
 
+vec3_t
+primitive::sphere_t::normal(const vec3_t & x) const {
+    double l = (x - c).norm();
+    return (x - c) / l * (l < r ? -1 : 1);
+}
+
 double
 primitive::floor_t::phi(const vec3_t & x) const {
     return x[1];
+}
+
+vec3_t
+primitive::floor_t::normal(const vec3_t & x) const {
+    return vec3_t(0.0, x[1] < 0 ? -1.0 : 1.0, 0.0);
 }

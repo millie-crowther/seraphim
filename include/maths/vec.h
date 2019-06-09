@@ -54,7 +54,11 @@ public:
     }
 
     vec_t<T, N> normalise() const {
-        return *this * maths::inverse_square_root(square_norm());
+        T l = norm();
+        if (l == T(0)){
+            return vec_t<T, N>(0);
+        }
+        return *this / l;
     }
 
     /*

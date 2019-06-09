@@ -25,11 +25,13 @@ namespace primitive {
     public:
         sphere_t(const vec3_t & c, double r);
         double phi(const vec3_t & x) const override;
+        vec3_t normal(const vec3_t & x) const override;
     };    
     
     class floor_t : public sdf_t {
     public:
         double phi(const vec3_t & x) const override;
+        vec3_t normal(const vec3_t & x) const override;
     };
 }
 

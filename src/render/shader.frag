@@ -92,11 +92,11 @@ intersection_t raycast(ray_t r){
     
         if ((octree.structure[node.i] & 1) != 0){ // TODO
             // calculate normal for homogenous volume
-            // vec3 d = r.pos - (node.min + node.size / 2);
-            // vec3 ad = abs(d);
-            // vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
+            vec3 d = r.pos - (node.min + node.size / 2);
+            vec3 ad = abs(d);
+            vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
             
-            return intersection_t(true, r.pos, vec3(0), r);
+            return intersection_t(true, r.pos, n, r);
         }
 	
         vec3 lambda_i = abs(
@@ -186,7 +186,7 @@ void main(){
     node_t node = octree_lookup(camera_position);
 
     if (i.hit){
-        out_colour = vec4(0.9, 0.5, 0.6, 1.0);//colour(i.x) * light(i.x, i.n);
+        out_colour = colour(i.x) * light(i.x, i.n);
     } else {
         out_colour = sky(); 
     }

@@ -26,6 +26,7 @@
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
 * make octree smaller if possible
+* make renderables and SDFs use transform class for positioning rather than internally
 
 ### colouring
 1. determine best way to uv map surface
@@ -33,12 +34,11 @@
 3. reflective and refractive materials
 
 ### lighting
-1. blinn-phong model with only point lights initially
-2. progress to physically-based shading approach
-3. global illumination approximants
-    1. AO
-    2. bounce lighting
-    3. more sophisticated (more general?) light primitive
+* progress to physically-based shading approach
+* global illumination approximants
+    * AO
+    * bounce lighting
+    * more sophisticated (more general?) light primitive
 
 ## physics
 1. find good method for partitioning colliders to reach `O(n * log(n))` complexity
