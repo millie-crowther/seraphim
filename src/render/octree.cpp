@@ -29,7 +29,16 @@ octree_t::octree_t(
     // copy to buffer
     buffer->copy(pool, queue, structure.data(), structure.size() * sizeof(uint32_t));
 
+    int leaf_nodes = 0;
+    for (auto node : structure){
+        if (node & is_leaf_flag){
+            leaf_nodes++;
+        }
+    }
+
     std::cout << "octree size: " << structure.size() << std::endl;
+
+    std::cout << "leaf nodes "  << leaf_nodes << std::endl;
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};
@@ -170,7 +179,7 @@ octree_t::is_leaf(
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables){
-    bool is_leaf = aabb.get_size() <= 0.2;
+    bool is_leaf = aabb.get_size() <= 0.25;
 
     bool is_empty = true;
     for (auto renderable_ptr : renderables){

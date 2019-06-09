@@ -9,7 +9,7 @@ double
 primitive::cube_t::phi(const vec3_t & x) const {
     vec3_t d = (x - c).map([&](double x){ 
         return std::max(std::abs(x) - s, 0.0); 
-    });
+    }); 
 
     return d.norm() + std::min(d.chebyshev_norm(), 0.0);
 }

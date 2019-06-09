@@ -121,7 +121,7 @@ renderer_t::init(){
         weak_renderables[i] = renderables[i];
     }
 
-    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 10, weak_renderables, desc_sets);
+    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 8, weak_renderables, desc_sets);
 
     if (!create_command_buffers()){
         return false;

@@ -38,9 +38,11 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
-const uint octree_size = 100000;
+const uint structure_size = 25000;
+const uint geometry_size  = 20000;
 layout(binding = 1) buffer octree_buffer {
-    uint structure[octree_size];
+    uint structure[structure_size];
+    vec4 geometry[geometry_size];
 } octree;
 
 //
@@ -49,7 +51,7 @@ layout(binding = 1) buffer octree_buffer {
 in vec4 gl_FragCoord;
 
 float f = 1.0;
-float render_distance = 10;
+float render_distance = 8;
 int max_steps = 50;
 float epsilon = 0.005;
 float shadow_softness = 64;
@@ -86,7 +88,7 @@ intersection_t raycast(ray_t r){
     for (int i = 0; i < max_steps && r.dist < render_distance; i++){
 	    node = octree_lookup(r.pos);
 
-        if (node.size < 0 || node.i >= octree_size || node.i == 0){
+        if (node.size < 0 || node.i >= structure_size || node.i == 0){
             break;
         }
     
