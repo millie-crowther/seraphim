@@ -13,8 +13,7 @@
 ## rendering
 
 ### general
-1. remove depth resources from `renderer_t`
-2. allow camera movement
+* allow camera movement
 
 ### geometry
 * figure out brick approximation

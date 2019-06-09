@@ -87,11 +87,6 @@ renderer_t::init(){
         return false;
     }
 
-    // TODO: is this required? i dont think so
-    if (!create_depth_resources()){
-        return false;
-    }
-
     if (!create_framebuffers()){
         return false;
     }
@@ -290,7 +285,6 @@ renderer_t::recreate_swapchain(){
 
     create_render_pass();
     create_graphics_pipeline();
-    create_depth_resources();
     create_framebuffers();
 
     if (!create_command_buffers()){
@@ -300,8 +294,6 @@ renderer_t::recreate_swapchain(){
 
 void 
 renderer_t::cleanup_swapchain(){
-    depth_image.reset(nullptr);
-
     for (auto framebuffer : swapchain_framebuffers){
 	    vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
@@ -333,25 +325,11 @@ renderer_t::create_render_pass(){
     colour_attachment_ref.attachment = 0;
     colour_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-    VkAttachmentDescription depth_attachment = {};
-    depth_attachment.format = image_t::find_depth_format(physical_device);
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depth_attachment_ref = {};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     VkSubpassDescription subpass    = {};
     subpass.pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount    = 1;
     subpass.pColorAttachments       = &colour_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref;
+    subpass.pDepthStencilAttachment = nullptr;
 
     VkSubpassDependency dependency = {};
     dependency.srcSubpass    = VK_SUBPASS_EXTERNAL;
@@ -362,7 +340,7 @@ renderer_t::create_render_pass(){
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
                              | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-    std::vector<VkAttachmentDescription> attachments = { colour_attachment, depth_attachment };
+    std::vector<VkAttachmentDescription> attachments = { colour_attachment };
 
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -556,31 +534,12 @@ renderer_t::create_graphics_pipeline(){
 }
 
 bool
-renderer_t::create_depth_resources(){
-    VkFormat depth_format = image_t::find_depth_format(physical_device);
-
-    u32vec2_t size(swapchain_extents.width, swapchain_extents.height);
-    depth_image = std::make_unique<image_t>(
-        allocator,
-        size, depth_format,
-        VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_DEPTH_BIT
-    );
-
-    depth_image->transition_image_layout(
-        command_pool, graphics_queue, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
-    );
-    return true;
-}
-
-bool
 renderer_t::create_framebuffers(){
     swapchain_framebuffers.resize(swapchain_images.size());
 
     for (int i = 0; i < swapchain_framebuffers.size(); i++){
-        std::array<VkImageView, 2> attachments = {
+        std::vector<VkImageView> attachments = {
 	        swapchain_images[i]->get_image_view(),
-            depth_image->get_image_view()
 	    };
 
         VkFramebufferCreateInfo framebuffer_info = {};

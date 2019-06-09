@@ -62,7 +62,7 @@ private:
     bool create_swapchain();
     bool create_render_pass();
     bool create_graphics_pipeline();    
-    bool create_depth_resources();
+    // bool create_depth_resources();
     bool create_framebuffers();
     bool create_command_buffers();
     bool create_descriptor_set_layout();
