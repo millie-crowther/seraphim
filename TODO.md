@@ -26,7 +26,7 @@
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* enable rendering of multiple renderables at a time
+* make octree smaller if possible
 
 ### colouring
 1. determine best way to uv map surface

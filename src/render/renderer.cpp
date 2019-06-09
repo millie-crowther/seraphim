@@ -36,6 +36,10 @@ renderer_t::renderer_t(
         renderable_transform
     ));
 
+    renderables.push_back(std::make_shared<renderable_t>(
+        std::make_shared<primitive::floor_t>(),
+        renderable_transform
+    ));
 
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
