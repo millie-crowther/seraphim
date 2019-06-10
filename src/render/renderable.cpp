@@ -29,3 +29,12 @@ renderable_t::intersects(const aabb_t & aabb) const {
 
     return x.chebyshev_norm() <= aabb.get_size() / 2;
 }
+
+vec4_t 
+renderable_t::plane(const vec3_t & x) const {
+    vec3_t n = sdf->normal(x);
+    return vec4_t(
+        n[0], n[1], n[2],
+        sdf->phi(x)
+    );
+}

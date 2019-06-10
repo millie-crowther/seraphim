@@ -29,7 +29,8 @@ octree_t::octree_t(
     );
 
     // copy to buffer
-    buffer->copy(pool, queue, structure.data(), size, 0);
+    buffer->copy(pool, queue, structure.data(), sizeof(uint32_t) * structure.size(), 0);
+    buffer->copy(pool, queue, geometry.data(),  sizeof(f32vec4_t) * geometry.size(), sizeof(uint32_t) * max_structure_size);
 
     int leaf_nodes = 0;
     for (auto node : structure){
@@ -195,7 +196,8 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
                 is_empty = false;
 
                 if (is_leaf){
-                    structure[i] = is_leaf_flag | 1;
+                    structure[i] = is_leaf_flag | geometry.size();
+                    geometry.push_back(renderable->plane(aabb.get_centre()).cast<float>());
                     return;
                 }
             }

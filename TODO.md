@@ -30,6 +30,7 @@
 * fix double free on renderable transform
 * make octree sparser if possible
 * make renderables and SDFs use transform class for positioning rather than internally
+* make CPU-side buffers for octree a single buffer
 
 ### colouring
 1. determine best way to uv map surface

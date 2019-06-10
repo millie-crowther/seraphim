@@ -20,7 +20,7 @@ public:
     bool intersects(const aabb_t & aabb) const;
 
     // accessors
-    vec4_t get_local_plane(const vec3_t & x) const;
+    vec4_t plane(const vec3_t & x) const;
 };
 
 #endif

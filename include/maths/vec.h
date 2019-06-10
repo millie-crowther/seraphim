@@ -66,9 +66,11 @@ public:
     */
     template<class S>
     vec_t<S, N> cast() const {
-        std::array<S, N> ys;
-        for_each([&](uint32_t i){ ys[i] = static_cast<S>(xs[i]); });
-        return vec_t<S, N>(ys);
+        vec_t<S, N> ys;
+        for (uint32_t i = 0; i < N; i++){
+            ys[i] = static_cast<S>(xs[i]);
+        }
+        return ys;
     }
 
     /*
@@ -172,8 +174,8 @@ public:
 typedef vec_t<uint32_t, 2> u32vec2_t;
 
 typedef vec_t<float, 2> f32vec2_t;
-typedef vec_t<float, 2> f32vec3_t;
-typedef vec_t<float, 2> f32vec4_t;
+typedef vec_t<float, 3> f32vec3_t;
+typedef vec_t<float, 4> f32vec4_t;
 
 typedef vec_t<double, 2> f64vec2_t;
 typedef vec_t<double, 3> f64vec3_t;
