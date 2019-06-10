@@ -121,7 +121,7 @@ buffer_t::copy(
             VMA_MEMORY_USAGE_CPU_ONLY
         );
 
-        staging_buffer.copy(command_pool, queue, data, size, offset);
+        staging_buffer.copy(command_pool, queue, data, size, 0);
         staging_buffer.copy_buffer(command_pool, queue, buffer, size, offset); 
     }
 }

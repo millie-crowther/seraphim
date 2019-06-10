@@ -23,6 +23,8 @@ octree_t::octree_t(
 
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
 
+    std::cout << "buffer size: " << size << std::endl;
+
     buffer = std::make_unique<buffer_t>(
         allocator, size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -53,7 +55,7 @@ octree_t::octree_t(
     VkDescriptorBufferInfo desc_buffer_info = {};
     desc_buffer_info.buffer = buffer->get_buffer();
     desc_buffer_info.offset = 0;
-    desc_buffer_info.range = structure.size() * sizeof(uint32_t);
+    desc_buffer_info.range  = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size; 
 
     VkWriteDescriptorSet write_desc_set = {};
     write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

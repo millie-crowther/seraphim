@@ -116,8 +116,7 @@ intersection_t raycast(ray_t r){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
             if (index <= geometry_size){
-                out_colour = vec4(octree.geometry[index].xyz, 1.0);
-                // return intersection_t(true, r.x, octree.geometry[index].xyz);
+                return intersection_t(true, r.x, octree.geometry[index].xyz);
                 // vec4 plane = octree.geometry[index];
                 // intersection_t i = plane_intersection(r, plane.xyz, plane.w);
                 // if (i.hit && node_contains(node, i.x)){
@@ -185,8 +184,6 @@ vec4 sky(){
 }
 
 void main(){
-    out_colour = sky();
-
     vec2 uv = gl_FragCoord.xy / push_constants.window_size;
     uv = uv * 2.0 - 1.0;
     uv.x *= push_constants.window_size.x;
@@ -207,9 +204,9 @@ void main(){
     intersection_t i = raycast(ray_t(camera_position, dir));
     node_t node = octree_lookup(camera_position);
 
-    // if (i.hit){
-    //     out_colour = colour(i.x) * light(i.x, i.n);
-    // } else {
-    //     out_colour = sky(); 
-    // }
+    if (i.hit){
+        out_colour = colour(i.x) * light(i.x, i.n);
+    } else {
+        out_colour = sky(); 
+    }
 }
