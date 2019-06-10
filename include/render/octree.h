@@ -9,19 +9,15 @@
 
 /*
 
-LHXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
+LXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
 01234567 01234567 01234567 01234567
 
 L = is leaf node
 if L:
-    H = homogenous volume flag
-    if H:
-        X = data describing material (pointer?)
-    else:
-        X = pointer to brick data
+    X = pointer to brick data
 else: 
-    [H|X] = pointer to first child
-    if [H|X] = 0: 
+    X = pointer to first child
+    if X = 0: 
         there is no child; signal CPU to stream in data.
 
 + a null node can be described by the literal 0
@@ -31,11 +27,13 @@ else:
 class octree_t {
 private:
     static constexpr uint32_t is_leaf_flag = 1 << 31;
-    static constexpr uint32_t is_homogenous_flag = 1 << 30;
-    static constexpr uint32_t brick_pointer_mask = ~(1 << 31 || 1 << 30);
     static constexpr uint32_t null_node = 0;
 
+    static constexpr uint32_t max_structure_size = 25000;
+    static constexpr uint32_t max_geometry_size  = 25000;
+
     std::vector<uint32_t> structure;
+    std::vector<f32vec4_t> geometry;
     std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<renderable_t>> universal_renderables;
     aabb_t universal_aabb;

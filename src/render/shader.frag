@@ -5,23 +5,23 @@
 // types
 //
 struct ray_t {
-    vec3 pos;
-    vec3 dir;
-    float dist;
+    vec3 x;
+    vec3 d;
 };
 
 struct intersection_t {
     bool hit;
     vec3 x;
     vec3 n;
-    ray_t r;
 };
+intersection_t null_intersection = intersection_t(false, vec3(0), vec3(0));
 
 struct node_t {
     uint i;
     vec3 min;
     float size;
 };
+node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 // 
 // outputs
@@ -39,7 +39,7 @@ layout( push_constant ) uniform window_block {
 // buffers
 //
 const uint structure_size = 25000;
-const uint geometry_size  = 20000;
+const uint geometry_size  = 25000;
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
     vec4 geometry[geometry_size];
@@ -58,13 +58,14 @@ float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
-node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
+bool node_contains(node_t node, vec3 x){
+    return 
+        all(greaterThanEqual(x, base_node.min)) &&
+        all(lessThan(x, base_node.min + base_node.size));
+}
 
 node_t octree_lookup(vec3 x){
-    if (
-        any(lessThan(x, base_node.min)) ||
-        any(greaterThan(x, base_node.min + base_node.size))
-    ){
+    if (!node_contains(base_node, x)){
         return node_t(0, vec3(0), -1);
     }
 
@@ -82,6 +83,20 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
+intersection_t plane_intersection(ray_t ray, vec3 n, float d){
+    float dn = dot(ray.d, n);
+    if (dn == 0){
+        return null_intersection;
+    }
+
+    float lambda = (d - dot(ray.x, n)) / dn;
+    if (lambda < 0){
+        return null_intersection;
+    }
+
+    return intersection_t(true, ray.x + lambda * ray.d, n);
+}
+
 intersection_t raycast(ray_t r){
     node_t node;
 
@@ -92,13 +107,16 @@ intersection_t raycast(ray_t r){
             break;
         }
     
-        if ((octree.structure[node.i] & 1) != 0){ // TODO
-            // calculate normal for homogenous volume
-            vec3 d = r.pos - (node.min + node.size / 2);
-            vec3 ad = abs(d);
-            vec3 n = vec3(equal(ad, vec3(max(ad.x, max(ad.y, ad.z))))) * sign(d);
-            
-            return intersection_t(true, r.pos, n, r);
+        if (octree.structure[node.i] != is_leaf_flag){
+            uint index = octree.structure[node.i] & ~is_leaf_flag;
+
+            if (index <= geometry_size){
+                vec4 plane = octree.geometry[index];
+                intersection_t i = plane_intersection(plane.xyz, plane.w);
+                if (i.hit && node_contains(node, i.x)){
+                    return i;
+                }
+            }
         }
 	
         vec3 lambda_i = abs(
@@ -110,13 +128,7 @@ intersection_t raycast(ray_t r){
         r.dist += lambda;
     }
 
-    return intersection_t(false, vec3(0), vec3(0), r);
-
-    // if (r.dir.y >= 0){
-    //     return intersection_t(false, vec3(0), vec3(0), r);
-    // } else {
-    //     return intersection_t(true, r.pos + r.dir * r.pos.y / -r.dir.y, vec3(0, 1, 0), r);
-    // }
+    return null_intersection;
 }
 
 float shadow(vec3 l, vec3 p){
@@ -193,5 +205,3 @@ void main(){
         out_colour = sky(); 
     }
 }
-
-

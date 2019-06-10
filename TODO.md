@@ -16,12 +16,12 @@
 * allow camera movement
 
 ### geometry
-* figure out why its acting weird (probably a `<` vs `<=` problem somewhere)
 * implement local approximation of surface as plane
     * link up geometry SSBO to VkBuffer somewhere
     * estimate local plane, as well as fit of local plane
     * push to GPU
     * update raycast algorithm to handle bricks
+* early terminate octree estimation with adequates plane approximation
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests

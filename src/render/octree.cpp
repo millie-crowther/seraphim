@@ -36,6 +36,11 @@ octree_t::octree_t(
         }
     }
 
+    int redundant_nodes = 0;
+    for (int i = 1; i < structure.size(); i += 8){
+
+    }
+
     std::cout << "octree size: " << structure.size() << std::endl;
 
     std::cout << "leaf nodes "  << leaf_nodes << std::endl;
@@ -149,11 +154,11 @@ octree_t::subdivide(
     //     return;
     // }
 
-    if (is_leaf(x, camera, aabb, renderables)){
-        // TODO
-        structure[i] = is_leaf_flag | is_homogenous_flag;
-        return;
-    }
+    // if (is_leaf(x, camera, aabb, renderables)){
+    //     // TODO
+    //     structure[i] = is_leaf_flag | is_homogenous_flag;
+    //     return;
+    // }
 
     // create pointer to final element in structure
     structure[i] = structure.size();
@@ -188,7 +193,7 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
                 is_empty = false;
 
                 if (is_leaf){
-                    structure[i] = is_leaf_flag | is_homogenous_flag | 1;
+                    structure[i] = is_leaf_flag | 1;
                     return;
                 }
             }
@@ -196,7 +201,7 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     }
 
     if (is_empty){
-        structure[i] = is_leaf_flag | is_homogenous_flag;
+        structure[i] = is_leaf_flag;
         return;
     }
 

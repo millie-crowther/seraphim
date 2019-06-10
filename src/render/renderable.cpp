@@ -17,7 +17,7 @@ bool
 renderable_t::intersects(const aabb_t & aabb) const {
     double phi = std::abs(sdf->phi(aabb.get_centre()));
     
-    if (phi < aabb.get_size() / 2){
+    if (phi <= aabb.get_size() / 2){
         return true;
     }
 
@@ -27,5 +27,5 @@ renderable_t::intersects(const aabb_t & aabb) const {
 
     vec3_t x = sdf->normal(aabb.get_centre()) * phi;
 
-    return x.chebyshev_norm() < aabb.get_size() / 2;
+    return x.chebyshev_norm() <= aabb.get_size() / 2;
 }
