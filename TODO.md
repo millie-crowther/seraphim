@@ -16,8 +16,6 @@
 * allow camera movement
 
 ### geometry
-* implement local approximation of surface as plane
-    * figure out why normals are all zeroes (probably to do with descriptor set)
 * early terminate octree estimation with adequates plane approximation
 * implement octree streaming from cpu
     * create gpu-cpu buffer
@@ -25,9 +23,10 @@
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
-* make octree sparser if possible
 * make renderables and SDFs use transform class for positioning rather than internally
 * make CPU-side buffers for octree a single buffer
+* ignore parts of surface contained within other renderables
+* figure out why planes aren't being rendered properly
 
 ### colouring
 1. determine best way to uv map surface

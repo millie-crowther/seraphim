@@ -90,7 +90,7 @@ node_t octree_lookup(vec3 x){
 
 intersection_t plane_intersection(ray_t r, vec3 n, float d){
     float dn = dot(r.d, n);
-    if (dn >= 0){ // TODO: check sign on this
+    if (dn == 0){ // TODO: check sign on this
         return null_intersection;
     }
 
@@ -116,12 +116,12 @@ intersection_t raycast(ray_t r){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
             if (index <= geometry_size){
-                return intersection_t(true, r.x, octree.geometry[index].xyz);
-                // vec4 plane = octree.geometry[index];
-                // intersection_t i = plane_intersection(r, plane.xyz, plane.w);
-                // if (i.hit && node_contains(node, i.x)){
-                //     return i;
-                // }
+                // return intersection_t(true, r.x, octree.geometry[index].xyz);
+                vec4 plane = octree.geometry[index];
+                intersection_t i = plane_intersection(r, plane.xyz, plane.w);
+                if (i.hit){
+                    return i;
+                }
             }
         }
 	
@@ -210,3 +210,5 @@ void main(){
         out_colour = sky(); 
     }
 }
+
+

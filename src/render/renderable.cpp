@@ -35,6 +35,6 @@ renderable_t::plane(const vec3_t & x) const {
     vec3_t n = sdf->normal(x);
     return vec4_t(
         n[0], n[1], n[2],
-        sdf->phi(x)
+        (x * n) - sdf->phi(x) // TODO: maths here is fine afaict but comes out weird
     );
 }
