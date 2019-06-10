@@ -20,6 +20,7 @@ octree_t::octree_t(
     // }
     std::cout << std::endl;
 
+
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
 
     buffer = std::make_unique<buffer_t>(

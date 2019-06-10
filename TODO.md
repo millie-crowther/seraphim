@@ -17,10 +17,7 @@
 
 ### geometry
 * implement local approximation of surface as plane
-    * link up geometry SSBO to VkBuffer somewhere
-    * estimate local plane, as well as fit of local plane
-    * push to GPU
-    * update raycast algorithm to handle bricks
+    * figure out why normals are all zeroes (probably to do with descriptor set)
 * early terminate octree estimation with adequates plane approximation
 * implement octree streaming from cpu
     * create gpu-cpu buffer
