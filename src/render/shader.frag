@@ -2,6 +2,17 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 //
+// constants
+//
+float f = 1.0;
+float render_distance = 8;
+int max_steps = 50;
+float epsilon = 0.005;
+float shadow_softness = 64;
+const uint is_leaf_flag = 1 << 31;
+const uint null_node = 0;
+
+//
 // types
 //
 struct ray_t {
@@ -50,13 +61,7 @@ layout(binding = 1) buffer octree_buffer {
 //
 in vec4 gl_FragCoord;
 
-float f = 1.0;
-float render_distance = 8;
-int max_steps = 50;
-float epsilon = 0.005;
-float shadow_softness = 64;
-const uint is_leaf_flag = 1 << 31;
-const uint null_node = 0;
+
 
 bool node_contains(node_t node, vec3 x){
     return 
@@ -83,25 +88,25 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-intersection_t plane_intersection(ray_t ray, vec3 n, float d){
-    float dn = dot(ray.d, n);
-    if (dn == 0){
+intersection_t plane_intersection(ray_t r, vec3 n, float d){
+    float dn = dot(r.d, n);
+    if (dn >= 0){ // TODO: check sign on this
         return null_intersection;
     }
 
-    float lambda = (d - dot(ray.x, n)) / dn;
+    float lambda = (d - dot(r.x, n)) / dn;
     if (lambda < 0){
         return null_intersection;
     }
 
-    return intersection_t(true, ray.x + lambda * ray.d, n);
+    return intersection_t(true, r.x + lambda * r.d, n);
 }
 
 intersection_t raycast(ray_t r){
     node_t node;
 
-    for (int i = 0; i < max_steps && r.dist < render_distance; i++){
-	    node = octree_lookup(r.pos);
+    for (int i = 0; i < max_steps && length(r.x) < render_distance; i++){
+	    node = octree_lookup(r.x);
 
         if (node.size < 0 || node.i >= structure_size || node.i == 0){
             break;
@@ -112,7 +117,7 @@ intersection_t raycast(ray_t r){
 
             if (index <= geometry_size){
                 vec4 plane = octree.geometry[index];
-                intersection_t i = plane_intersection(plane.xyz, plane.w);
+                intersection_t i = plane_intersection(r, plane.xyz, plane.w);
                 if (i.hit && node_contains(node, i.x)){
                     return i;
                 }
@@ -120,19 +125,18 @@ intersection_t raycast(ray_t r){
         }
 	
         vec3 lambda_i = abs(
-            node.min + sign(max(r.dir, 0)) * node.size - r.pos
-        ) / max(abs(r.dir), epsilon);
+            node.min + sign(max(r.d, 0)) * node.size - r.x
+        ) / max(abs(r.d), epsilon);
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-        r.pos += r.dir * lambda;
-        r.dist += lambda;
+        r.x += r.d * lambda;
     }
 
     return null_intersection;
 }
 
 float shadow(vec3 l, vec3 p){
-    intersection_t i = raycast(ray_t(l, normalize(p - l), 0));
+    intersection_t i = raycast(ray_t(l, normalize(p - l)));
     return float(length(i.x - p) < epsilon * 2);
 }
 
@@ -196,7 +200,7 @@ void main(){
     dir += camera_right * uv.x;
     dir = normalize(dir);
    
-    intersection_t i = raycast(ray_t(camera_position, dir, 0));
+    intersection_t i = raycast(ray_t(camera_position, dir));
     node_t node = octree_lookup(camera_position);
 
     if (i.hit){

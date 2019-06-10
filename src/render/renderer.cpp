@@ -114,7 +114,7 @@ renderer_t::init(){
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6);
+    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
     std::vector<std::weak_ptr<renderable_t>> weak_renderables(renderables.size());
     for (int i = 0; i < weak_renderables.size(); i++){

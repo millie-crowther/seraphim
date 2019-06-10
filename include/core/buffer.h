@@ -19,18 +19,18 @@ private:
 
     // helper methods
     void copy_buffer(
-	    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
+	    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, uint64_t size, uint64_t offset
     );
     VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
     void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
 public:
     // constructors and destructors
-    buffer_t(VmaAllocator allocator, VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage);
+    buffer_t(VmaAllocator allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage);
     ~buffer_t();
 
     // public methods
-    void copy(VkCommandPool pool, VkQueue queue, void * data, VkDeviceSize size);
+    void copy(VkCommandPool pool, VkQueue queue, void * data, uint64_t size, uint64_t offset);
     void copy_to_image(VkCommandPool pool, VkQueue queue, VkImage image, uint32_t width, uint32_t height);
 
     // getters

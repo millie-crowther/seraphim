@@ -6,7 +6,7 @@
 #include "core/blaspheme.h"
 
 buffer_t::buffer_t(
-    VmaAllocator allocator, VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
+    VmaAllocator allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
 ){
     this->allocator = allocator;
 
@@ -84,7 +84,7 @@ buffer_t::get_buffer(){
 
 void
 buffer_t::copy_buffer(
-    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, VkDeviceSize size
+    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, uint64_t size, uint64_t offset
 ){
     if (size == 0){
         return;
@@ -93,7 +93,7 @@ buffer_t::copy_buffer(
     auto cmd = pre_commands(command_pool, queue);
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
-        copy_region.dstOffset = 0;
+        copy_region.dstOffset = offset;
         copy_region.size = size;
         
         vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
@@ -102,7 +102,7 @@ buffer_t::copy_buffer(
 
 void
 buffer_t::copy(
-    VkCommandPool command_pool, VkQueue queue, void * data, VkDeviceSize size
+    VkCommandPool command_pool, VkQueue queue, void * data, uint64_t size, uint64_t offset
 ){
     if (size == 0){
         return;
@@ -110,7 +110,7 @@ buffer_t::copy(
 
     if (is_host_visible){
 	    void * mem_map;
-        vkMapMemory(blaspheme_t::get_device(), memory, 0, size, 0, &mem_map);
+        vkMapMemory(blaspheme_t::get_device(), memory, offset, size, 0, &mem_map);
 	        std::memcpy(mem_map, data, size);
 	    vkUnmapMemory(blaspheme_t::get_device(), memory);
 	 
@@ -121,8 +121,8 @@ buffer_t::copy(
             VMA_MEMORY_USAGE_CPU_ONLY
         );
 
-        staging_buffer.copy(command_pool, queue, data, size);
-        staging_buffer.copy_buffer(command_pool, queue, buffer, size); 
+        staging_buffer.copy(command_pool, queue, data, size, offset);
+        staging_buffer.copy_buffer(command_pool, queue, buffer, size, offset); 
     }
 }
 

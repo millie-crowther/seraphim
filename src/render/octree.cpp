@@ -20,14 +20,16 @@ octree_t::octree_t(
     // }
     std::cout << std::endl;
 
+    uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
+
     buffer = std::make_unique<buffer_t>(
-        allocator, structure.size() * sizeof(uint32_t),
+        allocator, size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     // copy to buffer
-    buffer->copy(pool, queue, structure.data(), structure.size() * sizeof(uint32_t));
+    buffer->copy(pool, queue, structure.data(), size, 0);
 
     int leaf_nodes = 0;
     for (auto node : structure){
