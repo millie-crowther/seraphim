@@ -28,6 +28,7 @@
 * lerp normals
 * figure out why lighting is weird
 * dont store multiple copies of the same plane
+* remove keyboard class from renderer ( only there for testing purposes)
 
 ### colouring
 1. determine best way to uv map surface

@@ -45,6 +45,8 @@ layout(location = 0) out vec4 out_colour;
 //
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
+    uvec2 dummy; //for alignment
+    vec3 camera_position;
 } push_constants;
 
 //
@@ -89,12 +91,11 @@ node_t octree_lookup(vec3 x){
 
 intersection_t plane_intersection(ray_t r, vec3 n, float d){
     float dn = dot(r.d, n);
-    if (dn < 0){ // TODO: check sign on this 
+    if (dn > 0){
         return null_intersection;
     }
 
     float lambda = (d - dot(r.x, n)) / dn;
-
     if (lambda < 0){
         return null_intersection;
     }
@@ -193,7 +194,7 @@ void main(){
     
     vec3 camera_up = vec3(0, 1, 0);
     vec3 camera_right = vec3(0, 0, -1);
-    vec3 camera_position = vec3(0, 0.5, 0);
+    vec3 camera_position = push_constants.camera_position;
 
     vec3 camera_forward = cross(camera_right, camera_up);
 
@@ -203,14 +204,11 @@ void main(){
     dir = normalize(dir);
    
     intersection_t i = raycast(ray_t(camera_position, dir));
-    node_t node = octree_lookup(camera_position);
 
     if (i.hit){
         out_colour = colour(i.x) * light(i.x, i.n);
     } else {
         out_colour = sky(); 
     }
+    // out_colour = vec4(push_constants.camera_position, 1.0);
 }
-
-
-

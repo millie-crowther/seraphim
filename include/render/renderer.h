@@ -7,6 +7,7 @@
 #include "core/buffer.h"
 #include "render/image.h"
 #include "render/octree.h"
+#include "input/keyboard.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -15,6 +16,8 @@ class renderer_t {
 private:
     struct push_constant_t {
         u32vec2_t window_size;
+        u32vec2_t dummy; // for alignment
+        f32vec3_t camera_position;
     } push_constants;
 
     VkPhysicalDevice physical_device;
@@ -80,6 +83,8 @@ private:
 
     bool init();
 
+    keyboard_t * keyboard;
+
     static std::string vertex_shader_code;
     std::string fragment_shader_code;
 
@@ -93,7 +98,8 @@ public:
         VmaAllocator allocator,
         VkPhysicalDevice physical_device, VkDevice device,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family, const u32vec2_t & window_size
+        uint32_t present_family, const u32vec2_t & window_size,
+        keyboard_t * keyboard
     );
     ~renderer_t();
 

@@ -14,8 +14,11 @@ renderer_t::renderer_t(
     VmaAllocator allocator,
     VkPhysicalDevice physical_device, VkDevice device,
     VkSurfaceKHR surface, uint32_t graphics_family, 
-    uint32_t present_family, const u32vec2_t & window_size
+    uint32_t present_family, const u32vec2_t & window_size,
+    keyboard_t * keyboard
 ){
+    push_constants.camera_position = f32vec3_t(0.0f, 0.5f, 0.0f);
+    std::cout << sizeof(push_constant_t);
     current_frame = 0;
     this->surface = surface;
     this->graphics_family = graphics_family;
@@ -23,6 +26,7 @@ renderer_t::renderer_t(
     this->physical_device = physical_device;
     this->device = device;
     this->allocator = allocator;
+    this->keyboard = keyboard;
 
     push_constants.window_size = window_size;
     
@@ -36,14 +40,15 @@ renderer_t::renderer_t(
         renderable_transform
     ));
 
-    // renderables.push_back(std::make_shared<renderable_t>(
-    //     std::make_shared<primitive::floor_t>(),
-    //     renderable_transform
-    // ));
+    renderables.push_back(std::make_shared<renderable_t>(
+        std::make_shared<primitive::floor_t>(),
+        renderable_transform
+    ));
 
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
+
 }
 
 renderer_t::~renderer_t(){
@@ -472,12 +477,17 @@ renderer_t::create_graphics_pipeline(){
     colour_blend_info.blendConstants[3] = 0.0f;
     const VkPipelineColorBlendStateCreateInfo colour_blend_const = colour_blend_info;
 
+    VkPushConstantRange push_const_range = {};
+    push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_const_range.size = sizeof(push_constant_t);
+    push_const_range.offset = 0;
+
     VkPipelineLayoutCreateInfo pipeline_layout_info = {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 1;
     pipeline_layout_info.pSetLayouts = &descriptor_layout;
-    pipeline_layout_info.pushConstantRangeCount = 0;
-    pipeline_layout_info.pPushConstantRanges = nullptr;
+    pipeline_layout_info.pushConstantRangeCount = 1;
+    pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
 	    device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
@@ -737,6 +747,12 @@ renderer_t::create_sync(){
 
 void
 renderer_t::render(){
+    if (keyboard->is_key_pressed(GLFW_KEY_UP)){
+        std::cout << "up key pressed" << std::endl;
+        push_constants.camera_position[0] += 0.01;
+        std::cout << push_constants.camera_position[0];
+    }
+
     vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device, 1, &in_flight_fences[current_frame]); 
 

@@ -104,7 +104,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t present_family  = get_present_queue_family(physical_device);
 
     renderer = std::make_unique<renderer_t>(
-        allocator, physical_device, device, surface, graphics_family, present_family, window_size
+        allocator, physical_device, device, surface, graphics_family, present_family, window_size, &keyboard
     );
 }
 
