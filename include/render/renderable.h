@@ -18,6 +18,7 @@ public:
     // predicates
     bool is_visible() const;
     bool intersects(const aabb_t & aabb) const;
+    bool contains(const aabb_t & aabb) const;
 
     // accessors
     vec4_t plane(const vec3_t & x) const;

@@ -32,6 +32,7 @@ struct node_t {
     vec3 min;
     float size;
 };
+node_t invalid_node = node_t(0, vec3(0), -1);
 node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 // 
@@ -61,8 +62,6 @@ layout(binding = 1) buffer octree_buffer {
 //
 in vec4 gl_FragCoord;
 
-
-
 bool node_contains(node_t node, vec3 x){
     return 
         all(greaterThanEqual(x, base_node.min)) &&
@@ -71,7 +70,7 @@ bool node_contains(node_t node, vec3 x){
 
 node_t octree_lookup(vec3 x){
     if (!node_contains(base_node, x)){
-        return node_t(0, vec3(0), -1);
+        return invalid_node;
     }
 
     node_t node = base_node;
@@ -90,11 +89,12 @@ node_t octree_lookup(vec3 x){
 
 intersection_t plane_intersection(ray_t r, vec3 n, float d){
     float dn = dot(r.d, n);
-    if (dn == 0){ // TODO: check sign on this
+    if (dn < 0){ // TODO: check sign on this 
         return null_intersection;
     }
 
     float lambda = (d - dot(r.x, n)) / dn;
+
     if (lambda < 0){
         return null_intersection;
     }
@@ -116,10 +116,11 @@ intersection_t raycast(ray_t r){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
             if (index <= geometry_size){
-                // return intersection_t(true, r.x, octree.geometry[index].xyz);
                 vec4 plane = octree.geometry[index];
                 intersection_t i = plane_intersection(r, plane.xyz, plane.w);
-                if (i.hit){
+                if (i.hit 
+                && node_contains(node, i.x)
+                ){
                     return i;
                 }
             }
@@ -142,11 +143,11 @@ float shadow(vec3 l, vec3 p){
 }
 
 vec4 colour(vec3 p){
-    if (p.y <= epsilon){
-	    return vec4(0.4, 0.8, 0.6, 1.0);
-    } else {
+    // if (p.y <= epsilon){
+	//     return vec4(0.4, 0.8, 0.6, 1.0);
+    // } else {
         return vec4(0.9, 0.5, 0.6, 1.0);
-    }
+    // }
 }
 
 vec4 light(vec3 p, vec3 n){
@@ -176,7 +177,7 @@ vec4 light(vec3 p, vec3 n){
     vec3 v = normalize(p);
     vec3 r = reflect(l, n);
     vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
-    return a + (d + s) * attenuation * shadow;
+    return a + (d + s) * attenuation;// * shadow;
 }
 
 vec4 sky(){
@@ -210,5 +211,6 @@ void main(){
         out_colour = sky(); 
     }
 }
+
 
 

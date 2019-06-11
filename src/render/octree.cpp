@@ -10,6 +10,8 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<renderable_t>> & renderables, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
+    std::cout << "render distance: " << render_distance << std::endl;
+
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node); 
     std::cout << "about to paint octree" << std::endl;
@@ -195,6 +197,11 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     bool is_empty = true;
     for (auto renderable_ptr : renderables){
         if (auto renderable = renderable_ptr.lock()){
+            if (renderable->contains(aabb)){
+                structure[i] = is_leaf_flag;
+                return;
+            }
+
             if (renderable->intersects(aabb)){
                 is_empty = false;
 

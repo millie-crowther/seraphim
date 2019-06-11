@@ -25,8 +25,9 @@
 * fix double free on renderable transform
 * make renderables and SDFs use transform class for positioning rather than internally
 * make CPU-side buffers for octree a single buffer
-* ignore parts of surface contained within other renderables
-* figure out why planes aren't being rendered properly
+* lerp normals
+* figure out why lighting is weird
+* dont store multiple copies of the same plane
 
 ### colouring
 1. determine best way to uv map surface

@@ -26,8 +26,23 @@ renderable_t::intersects(const aabb_t & aabb) const {
     }
 
     vec3_t x = sdf->normal(aabb.get_centre()) * phi;
-
     return x.chebyshev_norm() <= aabb.get_size() / 2;
+}
+
+bool 
+renderable_t::contains(const aabb_t & aabb) const {
+    double phi = sdf->phi(aabb.get_centre());
+    
+    if (phi >= -aabb.get_size() / 2){
+        return false;
+    }
+
+    if (phi <= -aabb.get_upper_radius()){
+        return true;
+    }
+
+    vec3_t x = sdf->normal(aabb.get_centre()) * phi;
+    return x.chebyshev_norm() >= aabb.get_size() / 2;
 }
 
 vec4_t 
