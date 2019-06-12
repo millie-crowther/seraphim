@@ -153,7 +153,7 @@ image_t::get_image(){
 
 void
 image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageLayout new_layout){
-    auto cmd = vk_utils::pre_commands(cmd_pool, queue);
+    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), cmd_pool, queue);
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -217,7 +217,7 @@ image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageL
         vkCmdPipelineBarrier(
             cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    vk_utils::post_commands(cmd_pool, queue, cmd);
+    vk_utils::post_commands(blaspheme_t::get_device(), cmd_pool, queue, cmd);
 
     layout = new_layout;
 }

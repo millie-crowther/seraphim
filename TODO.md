@@ -9,10 +9,14 @@
     * they're hacky
     * singleton pattern is gross
     * not necessary anyway
+    * they're only still in buffer.cpp and image.cpp afaict
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
-    * remove if necessart
+    * remove if necessary
 
 ## rendering
+
+### general
+* make rays that originate outside octree intersect properly
 
 ### camera
 * add camera_up field to push constants as well
@@ -27,9 +31,14 @@
 * lower granularity of octree at distance from camera
 * fix double free on renderable transform
 * make renderables and SDFs use transform class for positioning rather than internally
-* make CPU-side buffers for octree a single buffer
+* make CPU-side buffers for octree a single `std::vector<uint8_t>`
+* reduce plane size from `f32vec4_t` to `f32vec3_t` (one element of normals redundant)
+    * perhaps reduce further e.g. `float` -> `int16_t`
+    * only problem is most things need to be 4 byte aligned 
 * lerp normals
-* figure out why lighting is weird
+* improve plane estimation 
+    * possible take averages over volume
+    * may be able to remove distance check in `plane_intersection`
 * dont store multiple copies of the same plane
 * remove keyboard class from renderer ( only there for testing purposes)
 

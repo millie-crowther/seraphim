@@ -1,10 +1,9 @@
 #include "core/vk_utils.h"
 
 #include <stdexcept>
-#include "core/blaspheme.h"
 
 VkCommandBuffer 
-vk_utils::pre_commands(VkCommandPool command_pool, VkQueue queue){
+vk_utils::pre_commands(VkDevice device, VkCommandPool command_pool, VkQueue queue){
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -12,7 +11,7 @@ vk_utils::pre_commands(VkCommandPool command_pool, VkQueue queue){
     alloc_info.commandBufferCount = 1;
 
     VkCommandBuffer command_buffer;
-    VkResult result = vkAllocateCommandBuffers(blaspheme_t::get_device(), &alloc_info, &command_buffer);
+    VkResult result = vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
     if (result != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to allocate command buffer.");
     }
@@ -28,7 +27,7 @@ vk_utils::pre_commands(VkCommandPool command_pool, VkQueue queue){
 }
 
 void 
-vk_utils::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
+vk_utils::post_commands(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer){
     vkEndCommandBuffer(command_buffer);
 
     VkSubmitInfo submit_info;
@@ -45,5 +44,5 @@ vk_utils::post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuff
     vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
     vkQueueWaitIdle(queue); // TODO: check how bad this is and remove if appropriate
 
-    vkFreeCommandBuffers(blaspheme_t::get_device(), command_pool, 1, &command_buffer);    
+    vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);    
 }

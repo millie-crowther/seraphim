@@ -10,23 +10,12 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<renderable_t>> & renderables, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    std::cout << "render distance: " << render_distance << std::endl;
 
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node); 
-    std::cout << "about to paint octree" << std::endl;
     paint(0, universal_aabb, renderables);
 
-    // for (auto node : structure){
-    //     std::cout << node << ' ';
-    // }
-    std::cout << std::endl;
-
-
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
-
-    std::cout << "buffer size: " << size << std::endl;
-
     buffer = std::make_unique<buffer_t>(
         allocator, size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -44,13 +33,12 @@ octree_t::octree_t(
         }
     }
 
-    int redundant_nodes = 0;
-    for (int i = 1; i < structure.size(); i += 8){
+    // int redundant_nodes = 0;
+    // for (int i = 1; i < structure.size(); i += 8){
 
-    }
+    // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-
     std::cout << "leaf nodes "  << leaf_nodes << std::endl;
 
     // write to descriptor sets

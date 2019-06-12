@@ -91,24 +91,44 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-intersection_t plane_intersection(ray_t r, vec3 n, float d){
+vec4 get_plane_at(vec3 x){
+    vec3  c = vec3(4, 1, 1);
+    float r = 2;
+    vec3  n = normalize(x - c);
+
+    return vec4(n, dot(x, n));
+}
+
+intersection_t plane_intersection(ray_t r, vec3 n, float d, node_t node){
     float dn = dot(r.d, n);
     if (dn > 0){
         return null_intersection;
     }
 
     float lambda = (d - dot(r.x, n)) / dn;
+    
     if (lambda < 0){
         return null_intersection;
     }
 
-    return intersection_t(true, r.x + lambda * r.d, n);
+    vec3 p = r.x + lambda * r.d;
+
+    // TODO: this check might be null once better plane estimation implemented
+    vec3 p0 = node.min + node.size / 2;
+    if (length(p - p0) > length(vec3(node.size / 2))){
+        return null_intersection;
+    }
+
+    return intersection_t(true, p, n);
 }
 
 intersection_t raycast(ray_t r){
-    node_t node;
+    node_t node = base_node;
 
     for (int i = 0; i < max_steps && length(r.x) < render_distance; i++){
+        // TODO: there's enough info here to start the lookup 
+        //       halfway through the tree instead of at the start.
+        //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
         if (node.size < 0 || node.i >= structure_size || node.i == 0){
@@ -120,9 +140,9 @@ intersection_t raycast(ray_t r){
 
             if (index <= geometry_size){
                 vec4 plane = octree.geometry[index];
-                intersection_t i = plane_intersection(r, plane.xyz, plane.w);
+                intersection_t i = plane_intersection(r, plane.xyz, plane.w, node);
                 if (i.hit 
-                && node_contains(node, i.x)
+                && node_contains(node, i.x) // TODO:not sure how necessary this check is
                 ){
                     return i;
                 }
@@ -205,12 +225,15 @@ void main(){
     dir += camera_right * uv.x;
     dir = normalize(dir);
    
+    out_colour = sky();
+
     intersection_t i = raycast(ray_t(camera_position, dir));
 
     if (i.hit){
         out_colour = colour(i.x) * light(i.x, i.n);
-    } else {
-        out_colour = sky(); 
     }
-    // out_colour = vec4(push_constants.camera_position, 1.0);
 }
+
+
+
+

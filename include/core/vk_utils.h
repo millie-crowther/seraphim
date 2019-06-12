@@ -5,8 +5,8 @@
 #include <GLFW/glfw3.h>
 
 namespace vk_utils {
-    VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
-    void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
+    VkCommandBuffer pre_commands(VkDevice device, VkCommandPool command_pool, VkQueue queue);
+    void post_commands(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 }
 
 #endif

@@ -1,6 +1,5 @@
 #include "render/renderer.h"
 
-#include "core/blaspheme.h"
 #include "sdf/primitive.h"
 #include "input/resources.h"
 #include "core/vk_utils.h"
@@ -745,12 +744,12 @@ renderer_t::create_sync(){
 
 void
 renderer_t::update_push_constants() const {
-    auto command_buffer = vk_utils::pre_commands(command_pool, graphics_queue);
+    auto command_buffer = vk_utils::pre_commands(device, command_pool, graphics_queue);
         vkCmdPushConstants(
             command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(push_constants), &push_constants
         );
-    vk_utils::post_commands(command_pool, graphics_queue, command_buffer);
+    vk_utils::post_commands(device, command_pool, graphics_queue, command_buffer);
 }
 
 void

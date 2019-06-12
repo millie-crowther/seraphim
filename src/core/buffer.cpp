@@ -46,14 +46,14 @@ buffer_t::copy_buffer(
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(command_pool, queue);
+    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), command_pool, queue);
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = offset;
         copy_region.size = size;
         
         vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
-    vk_utils::post_commands(command_pool, queue, cmd);
+    vk_utils::post_commands(blaspheme_t::get_device(), command_pool, queue, cmd);
 }
 
 void
@@ -90,7 +90,7 @@ buffer_t::copy_to_image(
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(pool, queue);
+    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), pool, queue);
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -109,5 +109,5 @@ buffer_t::copy_to_image(
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region
         );
-    vk_utils::post_commands(pool, queue, cmd);
+    vk_utils::post_commands(blaspheme_t::get_device(), pool, queue, cmd);
 }
