@@ -68,8 +68,16 @@ in vec4 gl_FragCoord;
 
 bool node_contains(node_t node, vec3 x){
     return 
-        all(greaterThanEqual(x, base_node.min)) &&
-        all(lessThan(x, base_node.min + base_node.size));
+        x.x >= node.min.x - epsilon && 
+        x.y >= node.min.y - epsilon && 
+        x.z >= node.min.z - epsilon &&
+        x.x < node.min.x + node.size + epsilon && 
+        x.y < node.min.y + node.size + epsilon && 
+        x.z < node.min.z + node.size + epsilon;
+
+        // TODO: WHY ARENT THESE THE SAME AAARGHGGH
+        // all(greaterThanEqual(x, base_node.min)) &&
+        // all(lessThan(x, base_node.min + base_node.size));
 }
 
 node_t octree_lookup(vec3 x){
@@ -91,35 +99,10 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-vec4 get_plane_at(vec3 x){
-    vec3  c = vec3(4, 1, 1);
-    float r = 2;
-    vec3  n = normalize(x - c);
-
-    return vec4(n, dot(x, n));
-}
-
-intersection_t plane_intersection(ray_t r, vec3 n, float d, node_t node){
+intersection_t plane_intersection(ray_t r, vec3 n, float d){
     float dn = dot(r.d, n);
-    if (dn > 0){
-        return null_intersection;
-    }
-
-    float lambda = (d - dot(r.x, n)) / dn;
-    
-    if (lambda < 0){
-        return null_intersection;
-    }
-
-    vec3 p = r.x + lambda * r.d;
-
-    // TODO: this check might be null once better plane estimation implemented
-    vec3 p0 = node.min + node.size / 2;
-    if (length(p - p0) > length(vec3(node.size / 2))){
-        return null_intersection;
-    }
-
-    return intersection_t(true, p, n);
+    float lambda = (d - dot(r.x, n)) / min(dn, -epsilon);
+    return intersection_t(d <= 0 && lambda >= 0, r.x + lambda * r.d, n);
 }
 
 intersection_t raycast(ray_t r){
@@ -140,10 +123,8 @@ intersection_t raycast(ray_t r){
 
             if (index <= geometry_size){
                 vec4 plane = octree.geometry[index];
-                intersection_t i = plane_intersection(r, plane.xyz, plane.w, node);
-                if (i.hit 
-                && node_contains(node, i.x) // TODO:not sure how necessary this check is
-                ){
+                intersection_t i = plane_intersection(r, plane.xyz, plane.w);
+                if (i.hit && node_contains(node, i.x)){
                     return i;
                 }
             }

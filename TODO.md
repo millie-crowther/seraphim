@@ -36,11 +36,11 @@
     * perhaps reduce further e.g. `float` -> `int16_t`
     * only problem is most things need to be 4 byte aligned 
 * lerp normals
-* improve plane estimation 
-    * possible take averages over volume
-    * may be able to remove distance check in `plane_intersection`
 * dont store multiple copies of the same plane
 * remove keyboard class from renderer ( only there for testing purposes)
+* make volumes that are contained within other renderables not render
+* fix holes at volumes where renderables intersect
+    * take union of both renderables
 
 ### colouring
 1. determine best way to uv map surface
