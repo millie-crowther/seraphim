@@ -38,10 +38,7 @@ private:
     std::vector<std::weak_ptr<renderable_t>> universal_renderables;
     aabb_t universal_aabb;
 
-    bool is_leaf(
-        const vec3_t & x, const vec3_t & camera, const aabb_t & aabb, 
-        const std::vector<std::weak_ptr<renderable_t>> & renderables
-    ) const;
+    vec4_t get_plane(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const;
 
     uint32_t lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const;
 

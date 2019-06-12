@@ -12,6 +12,7 @@
     * they're only still in buffer.cpp and image.cpp afaict
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
+* put a FPS counter in the title
 
 ## rendering
 
@@ -29,6 +30,9 @@
     * add a CPU phase after rendering to handle requests
 * determine best way to animate octree
 * lower granularity of octree at distance from camera
+    * increase granularity when you get closer (flag for LOD?)
+* delete bricks which havent been used in a while
+    * record when a brick is used
 * fix double free on renderable transform
 * make renderables and SDFs use transform class for positioning rather than internally
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
@@ -41,6 +45,7 @@
 * make volumes that are contained within other renderables not render
 * fix holes at volumes where renderables intersect
     * take union of both renderables
+* fix holes in surface (due to inadequate surface representation)
 
 ### colouring
 1. determine best way to uv map surface

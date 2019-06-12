@@ -100,15 +100,16 @@ node_t octree_lookup(vec3 x){
 }
 
 intersection_t plane_intersection(ray_t r, vec3 n, float d){
+    // TODO: can probably make this a two liner with some fancy flying
     float dn = dot(r.d, n);
-    float lambda = (d - dot(r.x, n)) / min(dn, -epsilon);
-    return intersection_t(d <= 0 && lambda >= 0, r.x + lambda * r.d, n);
+    float lambda = (d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n);
 }
 
 intersection_t raycast(ray_t r){
     node_t node = base_node;
 
-    for (int i = 0; i < max_steps && length(r.x) < render_distance; i++){
+    for (int i = 0; i < max_steps && length(r.x - push_constants.camera_position) < render_distance; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
