@@ -22,8 +22,6 @@ private:
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
     void create_image_view(VkImageAspectFlags aspect_flags);
-    VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
-    void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
 public:
     // constructors and destructors

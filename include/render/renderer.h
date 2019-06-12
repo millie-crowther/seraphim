@@ -16,8 +16,12 @@ class renderer_t {
 private:
     struct push_constant_t {
         u32vec2_t window_size;
-        u32vec2_t dummy; // for alignment
+        f32vec2_t dummy;         // alignment
+
         f32vec3_t camera_position;
+        float dummy2;            // alignment
+
+        f32vec3_t camera_right;
     } push_constants;
 
     VkPhysicalDevice physical_device;
@@ -62,6 +66,8 @@ private:
 
     VkShaderModule create_shader_module(std::string code, bool * success);
 
+    void update_push_constants() const;
+
     bool create_swapchain();
     bool create_render_pass();
     bool create_graphics_pipeline();    
@@ -84,6 +90,7 @@ private:
     bool init();
 
     keyboard_t * keyboard;
+    float theta;
 
     static std::string vertex_shader_code;
     std::string fragment_shader_code;

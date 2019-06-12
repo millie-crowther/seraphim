@@ -3,6 +3,7 @@
 #include "core/blaspheme.h"
 #include "sdf/primitive.h"
 #include "input/resources.h"
+#include "core/vk_utils.h"
 
 #include <chrono>
 #include <stdexcept>
@@ -17,8 +18,10 @@ renderer_t::renderer_t(
     uint32_t present_family, const u32vec2_t & window_size,
     keyboard_t * keyboard
 ){
+    theta = 3.14159f;
     push_constants.camera_position = f32vec3_t(0.0f, 0.5f, 0.0f);
-    std::cout << sizeof(push_constant_t);
+    push_constants.camera_right = f32vec3_t(0.0f, 0.0f, -1.0f);
+
     current_frame = 0;
     this->surface = surface;
     this->graphics_family = graphics_family;
@@ -610,11 +613,6 @@ renderer_t::create_command_buffers(){
         render_pass_info.pClearValues = clear_values.data();
 
         vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdPushConstants(
-                command_buffers[i], pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-                0, sizeof(push_constants), &push_constants
-            );
-
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );
@@ -746,12 +744,37 @@ renderer_t::create_sync(){
 }
 
 void
+renderer_t::update_push_constants() const {
+    auto command_buffer = vk_utils::pre_commands(command_pool, graphics_queue);
+        vkCmdPushConstants(
+            command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+            0, sizeof(push_constants), &push_constants
+        );
+    vk_utils::post_commands(command_pool, graphics_queue, command_buffer);
+}
+
+void
 renderer_t::render(){
-    if (keyboard->is_key_pressed(GLFW_KEY_UP)){
-        std::cout << "up key pressed" << std::endl;
-        push_constants.camera_position[0] += 0.01;
-        std::cout << push_constants.camera_position[0];
+    if (keyboard->is_key_pressed(GLFW_KEY_W)){
+        push_constants.camera_position += push_constants.camera_right % f32vec3_t(0.0f, 1.0f, 0.0f) * 0.01f;
     }
+
+    if (keyboard->is_key_pressed(GLFW_KEY_S)){
+        push_constants.camera_position -= push_constants.camera_right % f32vec3_t(0.0f, 1.0f, 0.0f) * 0.01f;
+        // push_constants.camera_position[0] -= 0.01;
+    }
+
+    if (keyboard->is_key_pressed(GLFW_KEY_A)){
+        theta -= 0.01f;
+    }
+
+    if (keyboard->is_key_pressed(GLFW_KEY_D)){
+        theta += 0.01f;
+    }
+
+    push_constants.camera_right = f32vec3_t(std::sin(theta), 0.0f, std::cos(theta));
+
+    update_push_constants();
 
     vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device, 1, &in_flight_fences[current_frame]); 

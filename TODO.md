@@ -2,18 +2,21 @@
 
 ## general
 
-1. make `image_t` use Vulkan Memory Allocator 
+* make `image_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
     * problem may go away if you remove depth resources (see below)
-2. remove `blaspheme_t::get_device()` and `blaspheme_t::get_physical_device()`
+* remove `blaspheme_t::get_device()` and `blaspheme_t::get_physical_device()`
     * they're hacky
     * singleton pattern is gross
     * not necessary anyway
+* check if `vkQueueWaitIdle` in vk_utils post commands is bad
+    * remove if necessart
 
 ## rendering
 
-### general
-* allow camera movement
+### camera
+* add camera_up field to push constants as well
+* add camera transform fields directly from a transform of the camera class
 
 ### geometry
 * early terminate octree estimation with adequates plane approximation

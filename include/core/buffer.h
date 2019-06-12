@@ -21,8 +21,6 @@ private:
     void copy_buffer(
 	    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, uint64_t size, uint64_t offset
     );
-    VkCommandBuffer pre_commands(VkCommandPool command_pool, VkQueue queue);
-    void post_commands(VkCommandPool command_pool, VkQueue queue, VkCommandBuffer command_buffer);
 
 public:
     // constructors and destructors

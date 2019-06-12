@@ -45,8 +45,10 @@ layout(location = 0) out vec4 out_colour;
 //
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
-    uvec2 dummy; //for alignment
+    vec2 dummy;             // alignment
     vec3 camera_position;
+    float dummy2;           // alignment
+    vec3 camera_right;
 } push_constants;
 
 //
@@ -193,7 +195,7 @@ void main(){
     uv.y *= -1;    
     
     vec3 camera_up = vec3(0, 1, 0);
-    vec3 camera_right = vec3(0, 0, -1);
+    vec3 camera_right = push_constants.camera_right;
     vec3 camera_position = push_constants.camera_position;
 
     vec3 camera_forward = cross(camera_right, camera_up);
