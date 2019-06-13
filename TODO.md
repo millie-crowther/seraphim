@@ -13,11 +13,13 @@
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
 * put a FPS counter in the title
+* make sdf_t class dimension-generic
 
 ## rendering
 
 ### general
 * make rays that originate outside octree intersect properly
+* make the collection of renderables a set not a vector (order unimportant)
 
 ### camera
 * add camera_up field to push constants as well
@@ -42,10 +44,11 @@
 * lerp normals
 * dont store multiple copies of the same plane
 * remove keyboard class from renderer ( only there for testing purposes)
-* make volumes that are contained within other renderables not render
 * fix holes at volumes where renderables intersect
-    * take union of both renderables
 * fix holes in surface (due to inadequate surface representation)
+    * cleverer plane estimation?
+    * polynomial fit? (can be guaranteed to have no holes iirc)
+* make `octree_t::get_plane` less of a hacky mess
 
 ### colouring
 1. determine best way to uv map surface

@@ -27,9 +27,6 @@ set(SOURCES
     ../src/core/buffer.cpp
     ../src/core/aabb.cpp
     ../src/core/vk_utils.cpp
-
-    ../src/sdf/sdf.cpp
-    ../src/sdf/primitive.cpp
     
     ../src/render/renderer.cpp
     ../src/render/image.cpp

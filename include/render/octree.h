@@ -53,6 +53,8 @@ private:
         const std::vector<std::weak_ptr<renderable_t>> & renderable_ptr
     );
 
+    double phi(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const;
+
 public:
     // TODO: sort this out
     octree_t(

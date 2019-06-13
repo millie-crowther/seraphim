@@ -115,20 +115,49 @@ octree_t::lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const {
     return lookup(x, structure[i] + octant, aabb);
 }
 
-vec4_t 
-octree_t::get_plane(
-    const std::vector<std::weak_ptr<renderable_t>> & renderables,
-    const vec3_t & x
-) const {
-    std::vector<vec4_t> planes;
+
+double 
+octree_t::phi(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const {
+    double p = constant::rho;
+
     for (auto renderable_ptr : renderables){
         if (auto renderable = renderable_ptr.lock()){
-            planes.push_back(renderable->plane(x));
+            p = std::min(p, renderable->sdf->phi(x));
         }
     }
-    
-    return std::accumulate(planes.begin(), planes.end(), vec4_t()) / std::max(planes.size(), 1);
+
+    return p;
 }
+
+// vec4_t 
+// octree_t::get_plane(
+//     const std::vector<std::weak_ptr<renderable_t>> & renderables,
+//     const vec3_t & x
+// ) const {
+    // // TODO: this is so hacky!!! fix this!!!!
+    
+    // class renderable_union_t : public sdf_t {
+    // public:
+    //     std::vector<std::weak_ptr<renderable_t>> renderables;
+    //     renderable_union_t(const std::vector<std::weak_ptr<renderable_t>> & renderables){
+    //         this->renderables = renderables;
+    //     }
+
+    //     double phi(const vec3_t & x) const override {
+    //         double p = constant::rho;
+
+    //         for (auto renderable_ptr : renderables){
+    //             if (auto renderable = renderable_ptr.lock()){
+    //                 p = std::min(p, renderable->sdf->phi(x));
+    //             }
+    //         }
+
+    //         return p;
+    //     }
+    // };
+
+    // return renderable_union_t(renderables).plane(x);
+// }
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables){
@@ -155,9 +184,8 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
 
     } else if (is_leaf){
         structure[i] = is_leaf_flag | geometry.size();
-
-        // TODO: do union of all intersecting renderables
-        geometry.push_back(new_renderables[0].lock()->plane(aabb.get_centre()).cast<float>()); 
+        geometry.push_back(new_renderables[0].lock()->sdf->plane(aabb.get_centre()).cast<float>());
+        // geometry.push_back(get_plane(new_renderables, aabb.get_centre()).cast<float>());
         return;
     } 
 

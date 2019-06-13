@@ -38,12 +38,12 @@ renderer_t::renderer_t(
     }   
 
     renderables.push_back(std::make_shared<renderable_t>(
-        std::make_shared<primitive::sphere_t>(vec3_t(4.0, 1.0, 1.0), 2.0),
+        std::make_shared<primitive::sphere_t<3>>(vec3_t(4.0, 1.0, 1.0), 2.0),
         renderable_transform
     ));
 
     renderables.push_back(std::make_shared<renderable_t>(
-        std::make_shared<primitive::floor_t>(),
+        std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
         renderable_transform
     ));
 

@@ -9,30 +9,66 @@
 //       translation operation should be performed by transform_t class
 
 namespace primitive {
-    class cube_t : public sdf_t {
+    template<uint8_t D>
+    class cube_t : public sdf_t<D> {
     private:
-        vec3_t c;
+        vec_t<double, D> c;
         double s;
     public:
-        cube_t(const vec3_t & c, double s);
-        double phi(const vec3_t & x) const override;
+        cube_t(const vec_t<double, D> & c, double s){
+            this->c = c;
+            this->s = s;
+        }
+
+        double phi(const vec_t<double, D> & x) const override {
+            vec_t<double, D> d = (x - c).map([&](double x){ 
+                return std::max(std::abs(x) - s, 0.0); 
+            }); 
+
+            return d.norm() + std::min(d.chebyshev_norm(), 0.0);
+        }
+
         // TODO: add normal function
     };
 
-    class sphere_t : public sdf_t {
+    template<uint8_t D>
+    class sphere_t : public sdf_t<D> {
     private:
-        vec3_t c;
+        vec_t<double, D> c;
         double r;
     public:
-        sphere_t(const vec3_t & c, double r);
-        double phi(const vec3_t & x) const override;
-        vec3_t normal(const vec3_t & x) const override;
-    };    
-    
-    class floor_t : public sdf_t {
+        sphere_t(const vec_t<double, D> & c, double r){
+            this->c = c;
+            this->r = r;
+        }
+
+        double phi(const vec_t<double, D> & x) const override {
+            return (x - c).norm() - r;
+        }
+
+        vec_t<double, D> normal(const vec_t<double, D> & x) const override {
+            return (x - c).normalise();
+        }
+    };  
+
+    template<uint8_t D>
+    class plane_t : public sdf_t<D> {
+    private:
+        vec_t<double, D> n;
+        double d;
     public:
-        double phi(const vec3_t & x) const override;
-        vec3_t normal(const vec3_t & x) const override;
+        plane_t(const vec_t<double, D> & n, double d){
+            this->n = n;
+            this->d = d;
+        }
+
+        double phi(const vec_t<double, D> & x) const override {
+            return x * n - d;
+        }
+
+        vec_t<double, D> normal(const vec_t<double, D> & x) const override {
+            return n;
+        }
     };
 }
 
