@@ -10,28 +10,6 @@
 
 namespace primitive {
     template<uint8_t D>
-    class cube_t : public sdf_t<D> {
-    private:
-        vec_t<double, D> c;
-        double s;
-    public:
-        cube_t(const vec_t<double, D> & c, double s){
-            this->c = c;
-            this->s = s;
-        }
-
-        double phi(const vec_t<double, D> & x) const override {
-            vec_t<double, D> d = (x - c).map([&](double x){ 
-                return std::max(std::abs(x) - s, 0.0); 
-            }); 
-
-            return d.norm() + std::min(d.chebyshev_norm(), 0.0);
-        }
-
-        // TODO: add normal function
-    };
-
-    template<uint8_t D>
     class sphere_t : public sdf_t<D> {
     private:
         vec_t<double, D> c;

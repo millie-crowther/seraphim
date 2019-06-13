@@ -71,9 +71,9 @@ bool node_contains(node_t node, vec3 x){
         x.x >= node.min.x - epsilon && 
         x.y >= node.min.y - epsilon && 
         x.z >= node.min.z - epsilon &&
-        x.x < node.min.x + node.size + epsilon && 
-        x.y < node.min.y + node.size + epsilon && 
-        x.z < node.min.z + node.size + epsilon;
+        x.x <= node.min.x + node.size + epsilon && 
+        x.y <= node.min.y + node.size + epsilon && 
+        x.z <= node.min.z + node.size + epsilon;
 
         // TODO: WHY ARENT THESE THE SAME AAARGHGGH
         // all(greaterThanEqual(x, base_node.min)) &&

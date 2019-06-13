@@ -48,7 +48,6 @@
 * fix holes in surface (due to inadequate surface representation)
     * cleverer plane estimation?
     * polynomial fit? (can be guaranteed to have no holes iirc)
-* make `octree_t::get_plane` less of a hacky mess
 
 ### colouring
 1. determine best way to uv map surface

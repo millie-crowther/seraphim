@@ -3,12 +3,15 @@
 
 #include "sdf/sdf.h"
 
-template<uint8_t D, class F>
+#include <functional>
+
+template<uint8_t D>
 class lambda_sdf_t : public sdf_t<D> {
 private:
-    F f;
+    std::function<double(const vec_t<double, D>)> f;
+    
 public:
-    lambda_sdf_t(const F & f){
+    lambda_sdf_t(const std::function<double(const vec_t<double, D>)> & f){
         this->f = f;
     }
 

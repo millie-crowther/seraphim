@@ -8,7 +8,7 @@
 #include "core/constant.h"
 #include <iostream>
 
-template<class T, uint32_t N>
+template<class T, uint8_t N>
 class vec_t {
 protected:
     /*
@@ -67,7 +67,7 @@ public:
     template<class S>
     vec_t<S, N> cast() const {
         vec_t<S, N> ys;
-        for (uint32_t i = 0; i < N; i++){
+        for (uint8_t i = 0; i < N; i++){
             ys[i] = static_cast<S>(xs[i]);
         }
         return ys;
@@ -78,7 +78,7 @@ public:
     */ 
     template<class F>
     void for_each(const F & f){
-        for (uint32_t i = 0; i < N; i++){ f(i); }
+        for (uint8_t i = 0; i < N; i++){ f(i); }
     }
 
     template<class F>
@@ -96,11 +96,11 @@ public:
     /*
         subscript operators
     */
-    T operator[](uint32_t i) const {
+    T operator[](uint8_t i) const {
         return xs[i];
     }
 
-    T & operator[](uint32_t i){
+    T & operator[](uint8_t i){
         return xs[i];
     }
 
@@ -108,11 +108,11 @@ public:
         modifier operators    
     */
     void operator+=(const vec_t<T, N> & v){
-        for_each([&](uint32_t i){ xs[i] += v[i]; });
+        for_each([&](uint8_t i){ xs[i] += v[i]; });
     }
 
     void operator-=(const vec_t<T, N> & v){
-        for_each([&](uint32_t i){ xs[i] -= v[i]; });
+        for_each([&](uint8_t i){ xs[i] -= v[i]; });
     }
 
     void operator*=(const T & s){
@@ -128,7 +128,7 @@ public:
     */
     T operator*(const vec_t<T, N> & x) const {
         T result = 0;
-        for (uint32_t i = 0; i < N; i++){ 
+        for (uint8_t i = 0; i < N; i++){ 
             result += xs[i] * x.xs[i]; 
         }
         return result;
@@ -168,6 +168,15 @@ public:
             xs[2] * v.xs[0] - xs[0] * v.xs[2],
             xs[0] * v.xs[1] - xs[1] * v.xs[0]
         );
+    }
+
+    /*
+        factories
+    */
+    static vec_t<T, N> axis(uint8_t i){
+        vec_t<T, N> x;
+        x[i] = 1;
+        return x;
     }
 };
 

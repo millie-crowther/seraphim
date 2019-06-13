@@ -18,8 +18,7 @@ public:
         vec_t<double, D> axis;
 
         for (uint8_t i = 0; i < D; i++){
-            axis = vec3_t();
-            axis[i] = constant::epsilon;
+            axis = vec_t<double, D>::axis(i) * constant::epsilon;
             result[i] = phi(x + axis) - phi(x - axis);
         }
 

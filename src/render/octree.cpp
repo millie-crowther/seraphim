@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include "core/blaspheme.h"
+#include <set>
+#include "sdf/compose.h"
 
 constexpr uint32_t octree_t::null_node;
 
@@ -129,35 +131,21 @@ octree_t::phi(const std::vector<std::weak_ptr<renderable_t>> & renderables, cons
     return p;
 }
 
-// vec4_t 
-// octree_t::get_plane(
-//     const std::vector<std::weak_ptr<renderable_t>> & renderables,
-//     const vec3_t & x
-// ) const {
-    // // TODO: this is so hacky!!! fix this!!!!
-    
-    // class renderable_union_t : public sdf_t {
-    // public:
-    //     std::vector<std::weak_ptr<renderable_t>> renderables;
-    //     renderable_union_t(const std::vector<std::weak_ptr<renderable_t>> & renderables){
-    //         this->renderables = renderables;
-    //     }
+vec4_t 
+octree_t::get_plane(
+    const std::vector<std::weak_ptr<renderable_t>> & renderables,
+    const vec3_t & x
+) const { 
+    std::set<std::shared_ptr<sdf3_t>> sdfs;
+    for (auto renderable_ptr : renderables){
+        if (auto renderable = renderable_ptr.lock()){
+            // TODO: create a lambda sdf that applies inverse transform first
+            sdfs.insert(renderable->sdf);
+        }
+    } 
 
-    //     double phi(const vec3_t & x) const override {
-    //         double p = constant::rho;
-
-    //         for (auto renderable_ptr : renderables){
-    //             if (auto renderable = renderable_ptr.lock()){
-    //                 p = std::min(p, renderable->sdf->phi(x));
-    //             }
-    //         }
-
-    //         return p;
-    //     }
-    // };
-
-    // return renderable_union_t(renderables).plane(x);
-// }
+    return compose::union_<3>(sdfs)->plane(x);
+}
 
 void 
 octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables){
@@ -184,8 +172,8 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
 
     } else if (is_leaf){
         structure[i] = is_leaf_flag | geometry.size();
-        geometry.push_back(new_renderables[0].lock()->sdf->plane(aabb.get_centre()).cast<float>());
-        // geometry.push_back(get_plane(new_renderables, aabb.get_centre()).cast<float>());
+        // geometry.push_back(new_renderables[0].lock()->sdf->plane(aabb.get_centre()).cast<float>());
+        geometry.push_back(get_plane(new_renderables, aabb.get_centre()).cast<float>());
         return;
     } 
 
