@@ -4,6 +4,7 @@
 #include "core/blaspheme.h"
 #include <set>
 #include "sdf/compose.h"
+#include "sdf/mutate.h"
 
 constexpr uint32_t octree_t::null_node;
 
@@ -144,7 +145,7 @@ octree_t::get_plane(
         }
     } 
 
-    return compose::union_<3>(sdfs)->plane(x);
+    return compose::union_t(sdfs).plane(x);
 }
 
 void 

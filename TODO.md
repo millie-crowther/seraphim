@@ -48,6 +48,7 @@
 * fix holes in surface (due to inadequate surface representation)
     * cleverer plane estimation?
     * polynomial fit? (can be guaranteed to have no holes iirc)
+* remove `lambda_sdf_t` from all mutator / compositional SDFs
 
 ### colouring
 1. determine best way to uv map surface
