@@ -32,7 +32,6 @@ set(SOURCES
     ../src/render/image.cpp
     ../src/render/camera.cpp
     ../src/render/octree.cpp
-    ../src/render/renderable.cpp
     
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp

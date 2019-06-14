@@ -37,15 +37,11 @@ renderer_t::renderer_t(
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   
 
-    renderables.push_back(std::make_shared<renderable_t>(
-        std::make_shared<primitive::sphere_t<3>>(vec3_t(4.0, 1.0, 1.0), 2.0),
-        renderable_transform
-    ));
+    sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(4.0, 1.0, 1.0), 2.0);
+    plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
 
-    renderables.push_back(std::make_shared<renderable_t>(
-        std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
-        renderable_transform
-    ));
+    renderable_sdfs.push_back(sphere);
+    renderable_sdfs.push_back(plane);
 
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
@@ -123,12 +119,7 @@ renderer_t::init(){
     );
     vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    std::vector<std::weak_ptr<renderable_t>> weak_renderables(renderables.size());
-    for (int i = 0; i < weak_renderables.size(); i++){
-        weak_renderables[i] = renderables[i];
-    }
-
-    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 8, weak_renderables, desc_sets);
+    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 8, renderable_sdfs, desc_sets);
 
     if (!create_command_buffers()){
         return false;

@@ -9,10 +9,10 @@ namespace compose {
     template<uint8_t D>
     class union_t : public sdf_t<D> {
     private:
-        std::set<std::shared_ptr<sdf_t<D>>> sdfs;
+        std::vector<std::shared_ptr<sdf_t<D>>> sdfs;
 
     public:
-        union_t(const std::set<std::shared_ptr<sdf_t<D>>> & sdfs){
+        union_t(const std::vector<std::shared_ptr<sdf_t<D>>> & sdfs){
             this->sdfs = sdfs;
         }
 
@@ -57,7 +57,7 @@ operator|(std::shared_ptr<sdf_t<D>> a, std::shared_ptr<sdf_t<D>> b){
     return std::make_shared<compose::union_t>({ a, b });
 }
 
-// TODO: possible the below operators can have more efficient normal 
+// TODO: the below operators can have more efficient normal 
 //       function overrides
 
 // intersection

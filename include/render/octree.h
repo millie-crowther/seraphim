@@ -4,8 +4,9 @@
 #include <vector>
 #include <memory>
 
-#include "renderable.h"
 #include "core/buffer.h"
+#include "core/aabb.h"
+#include "sdf/sdf.h"
 
 /*
 
@@ -35,31 +36,31 @@ private:
     std::vector<uint32_t> structure;
     std::vector<f32vec4_t> geometry;
     std::unique_ptr<buffer_t> buffer;
-    std::vector<std::weak_ptr<renderable_t>> universal_renderables;
+    std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     aabb_t universal_aabb;
-
-    vec4_t get_plane(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const;
 
     uint32_t lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const;
 
+    // TODO: move these
+    bool contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
+    bool intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
+
     void subdivide(
         uint32_t i, const vec3_t & x, const vec3_t & camera, aabb_t & aabb, 
-        std::vector<std::weak_ptr<renderable_t>> & renderables
+        std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
 
     // TODO: remove this and replace with lazy streaming version
     void paint(
-        uint32_t i, aabb_t & aabb, 
-        const std::vector<std::weak_ptr<renderable_t>> & renderable_ptr
+        uint32_t i, const aabb_t & aabb, 
+        const std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
-
-    double phi(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const;
 
 public:
     // TODO: sort this out
     octree_t(
         VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
-        const std::vector<std::weak_ptr<renderable_t>> & renderables, 
+        const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets
     );
 

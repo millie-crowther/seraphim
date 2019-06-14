@@ -95,8 +95,9 @@ private:
     static std::string vertex_shader_code;
     std::string fragment_shader_code;
 
-    transform_t renderable_transform;
-    std::vector<std::shared_ptr<renderable_t>> renderables;
+    std::shared_ptr<sdf3_t> sphere;
+    std::shared_ptr<sdf3_t> plane;
+    std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
     std::shared_ptr<octree_t> octree;
 
 public:

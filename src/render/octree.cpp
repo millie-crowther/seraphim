@@ -10,13 +10,20 @@ constexpr uint32_t octree_t::null_node;
 
 octree_t::octree_t(
     VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
-    const std::vector<std::weak_ptr<renderable_t>> & renderables, 
+    const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node); 
-    paint(0, universal_aabb, renderables);
+
+    std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
+    for (auto sdf_ptr : sdfs){
+        if (auto sdf = sdf_ptr.lock()){
+            strong_sdfs.push_back(sdf);
+        }
+    }
+
+    paint(0, universal_aabb, strong_sdfs);
 
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
     buffer = std::make_unique<buffer_t>(
@@ -118,63 +125,62 @@ octree_t::lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const {
     return lookup(x, structure[i] + octant, aabb);
 }
 
-
-double 
-octree_t::phi(const std::vector<std::weak_ptr<renderable_t>> & renderables, const vec3_t & x) const {
-    double p = constant::rho;
-
-    for (auto renderable_ptr : renderables){
-        if (auto renderable = renderable_ptr.lock()){
-            p = std::min(p, renderable->sdf->phi(x));
-        }
+bool 
+octree_t::contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
+    double phi = sdf->phi(aabb.get_centre());
+    
+    if (phi >= -aabb.get_size() / 2){
+        return false;
     }
 
-    return p;
+    if (phi <= -aabb.get_upper_radius()){
+        return true;
+    }
+
+    vec3_t x = sdf->normal(aabb.get_centre()) * phi;
+    return x.chebyshev_norm() >= aabb.get_size() / 2;
 }
 
-vec4_t 
-octree_t::get_plane(
-    const std::vector<std::weak_ptr<renderable_t>> & renderables,
-    const vec3_t & x
-) const { 
-    std::set<std::shared_ptr<sdf3_t>> sdfs;
-    for (auto renderable_ptr : renderables){
-        if (auto renderable = renderable_ptr.lock()){
-            // TODO: create a lambda sdf that applies inverse transform first
-            sdfs.insert(renderable->sdf);
-        }
-    } 
+bool 
+octree_t::intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
+    double phi = std::abs(sdf->phi(aabb.get_centre()));
+    
+    if (phi <= aabb.get_size() / 2){
+        return true;
+    }
 
-    return compose::union_t(sdfs).plane(x);
+    if (phi >= aabb.get_upper_radius()){
+        return false;
+    }
+
+    vec3_t x = sdf->normal(aabb.get_centre()) * phi;
+    return x.chebyshev_norm() <= aabb.get_size() / 2;
 }
 
 void 
-octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<renderable_t>> & renderables){
+octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     bool is_leaf = aabb.get_size() <= 0.25;
 
-    std::vector<std::weak_ptr<renderable_t>> new_renderables;
+    std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
-    for (auto renderable_ptr : renderables){
-        if (auto renderable = renderable_ptr.lock()){
-            if (renderable->contains(aabb)){
-                structure[i] = is_leaf_flag;
-                return;
-            }
+    for (auto sdf : sdfs){
+        if (contains(sdf, aabb)){
+            structure[i] = is_leaf_flag;
+            return;
+        }
 
-            if (renderable->intersects(aabb)){
-                new_renderables.push_back(renderable_ptr);
-            }
+        if (intersects(sdf, aabb)){
+            new_sdfs.push_back(sdf);
         }
     }
 
-    if (new_renderables.empty()){
+    if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
 
     } else if (is_leaf){
         structure[i] = is_leaf_flag | geometry.size();
-        // geometry.push_back(new_renderables[0].lock()->sdf->plane(aabb.get_centre()).cast<float>());
-        geometry.push_back(get_plane(new_renderables, aabb.get_centre()).cast<float>());
+        geometry.push_back(compose::union_t<3>(new_sdfs).plane(aabb.get_centre()).cast<float>());
         return;
     } 
 
@@ -186,6 +192,6 @@ octree_t::paint(uint32_t i, aabb_t & aabb, const std::vector<std::weak_ptr<rende
     for (uint8_t octant = 0; octant < 8; octant++){
         aabb_t new_aabb = aabb;
         new_aabb.refine(octant);
-        paint(structure[i] + octant, new_aabb, renderables);
+        paint(structure[i] + octant, new_aabb, new_sdfs);
     }
 }
