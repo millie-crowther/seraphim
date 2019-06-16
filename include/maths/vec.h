@@ -11,16 +11,10 @@
 template<class T, uint8_t N>
 class vec_t {
 protected:
-    /*
-        private fields
-    */
     std::array<T, N> xs;
 
-    /*
-        private constructors
-    */
-    vec_t(const std::array<T, N> & _xs){
-        xs = _xs;
+    vec_t(const std::array<T, N> & xs){
+        this->xs = xs;
     }
 
 public:

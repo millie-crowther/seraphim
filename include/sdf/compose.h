@@ -5,6 +5,7 @@
 #include <memory>
 #include <set>
 
+// TODO: make this more succinct
 namespace compose {
     template<uint8_t D>
     class union_t : public sdf_t<D> {
