@@ -17,9 +17,9 @@ public:
         factories
     */
     template<class F>
-    static std::enable_if<N == M, mat_t<T, N, N>>::value
-    hessian(const F & f, const T & delta){
-        return mat_t<T, N, N>(); // TODO
+    static mat_t<T, M, N>
+    jacobian(const F & f, const T & delta){
+        return mat_t<T, M, N>(vec_t<vec_t<T, N>, M>::nabla(f, delta));
     }
 };
 

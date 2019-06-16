@@ -80,6 +80,16 @@ public:
         std::transform(xs.begin(), xs.end(), xs.begin(), f);
     }
 
+    /* 
+        accessors
+    */
+    template<class F>
+    vec_t<T, N> enumerate(const F & f) const {
+        std::array<T, N> x;
+        for (uint8_t i = 0; i < N; i++){ x[i] = f(i); }
+        return vec_t<T, N>(x);
+    }
+
     template<class F>
     vec_t<T, N> map(const F & f) const {
         std::array<T, N> x;
@@ -129,13 +139,11 @@ public:
     }
 
     vec_t<T, N> operator+(const vec_t<T, N> & x) const {
-        std::array<T, N> s;
-        std::transform(xs.begin(), xs.end(), x.xs.begin(), s.begin(), std::plus<T>());
-        return vec_t<T, N>(s);
+        return enumerate([&](uint8_t i){ return xs[i] + x.xs[i]; });
     }
 
     vec_t<T, N> operator-(const vec_t<T, N> & x) const {
-        return *this + -x;
+        return enumerate([&](uint8_t i){ return xs[i] - x.xs[i]; });
     } 
 
     vec_t<T, N> operator-() const {
@@ -168,9 +176,15 @@ public:
         factories
     */
     static vec_t<T, N> axis(uint8_t i){
-        vec_t<T, N> x;
-        x[i] = 1;
-        return x;
+        return enumerate([&](uint8_t j){ return i == j ? T(1) : T(0); });
+    }
+
+    template<class F>
+    static vec_t<T, N> nabla(const F & f, const T & delta){
+        return enumerate([&](uint8_t i){
+            vec_t<T, N> axis = vec_t<T, N>::axis(i) * delta;
+            return f(x + axis) - f(x - axis);
+        }) / (2 * delta);
     }
 };
 

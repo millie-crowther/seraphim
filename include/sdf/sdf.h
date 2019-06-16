@@ -14,16 +14,7 @@ public:
     virtual double phi(const vec_t<double, D> & x) const = 0;
 
     virtual vec_t<double, D> normal(const vec_t<double, D> & x) const {
-        vec_t<double, D> result;
-        vec_t<double, D> axis;
-
-        for (uint8_t i = 0; i < D; i++){
-            axis = vec_t<double, D>::axis(i) * constant::epsilon;
-            result[i] = phi(x + axis) - phi(x - axis);
-        }
-
-        // TODO: if SDFs obey level set property, this can just be a scale rather than expensive sqrt
-        return result.normalise();
+        return vec_t<double, D>::nabla(std::bind(&sdf_t<D>::phi, this), constant::epsilon);
     }
 
     // concrete accessors
