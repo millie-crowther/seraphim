@@ -22,10 +22,11 @@ public:
     // accessors
     T 
     frobenius_norm() const {
-        T norm;
+        T norm(0);
         for (uint8_t i = 0; i < N; i++){
             norm += xs[i].square_norm();
         }
+
         return norm;
     }
 

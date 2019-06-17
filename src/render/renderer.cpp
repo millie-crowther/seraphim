@@ -119,7 +119,7 @@ renderer_t::init(){
     );
     vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 8, renderable_sdfs, desc_sets);
+    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 16, renderable_sdfs, desc_sets);
 
     if (!create_command_buffers()){
         return false;

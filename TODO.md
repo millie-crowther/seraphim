@@ -26,7 +26,6 @@
 * add camera transform fields directly from a transform of the camera class
 
 ### geometry
-* early terminate octree estimation with adequates plane approximation
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests

@@ -39,22 +39,17 @@ private:
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     aabb_t universal_aabb;
 
-    uint32_t lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const;
-
     // TODO: move these
     bool contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
     bool intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
-
-    void subdivide(
-        uint32_t i, const vec3_t & x, const vec3_t & camera, aabb_t & aabb, 
-        std::vector<std::shared_ptr<sdf3_t>> & sdfs
-    );
 
     // TODO: remove this and replace with lazy streaming version
     void paint(
         uint32_t i, const aabb_t & aabb, 
         const std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
+
+    uint32_t get_plane_index(const vec4_t & p);
 
 public:
     // TODO: sort this out
@@ -63,9 +58,6 @@ public:
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets
     );
-
-    void request(const vec3_t & x, const vec3_t & camera);
-
 };
 
 

@@ -5,8 +5,8 @@
 // constants
 //
 float f = 1.0;
-float render_distance = 8;
-int max_steps = 50;
+float render_distance = 16;
+int max_steps = 64;
 float epsilon = 0.005;
 float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;

@@ -78,54 +78,6 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(blaspheme_t::get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
-// void
-// octree_t::request(const vec3_t & x, const vec3_t & camera){
-//     if (!universal_aabb.contains(x)){
-//         return;
-//     }
-
-//     aabb_t aabb = universal_aabb;
-//     uint32_t i = lookup(x, 0, aabb);
-
-//     // node already has adequate data
-//     if (structure[i] != null_node){
-//         return;
-//     }
-
-//     // remove invisible renderables
-//     std::vector<std::weak_ptr<renderable_t>> renderables;
-//     for (auto & renderable_ptr : universal_renderables){
-//         if (auto renderable = renderable_ptr.lock()){
-//             if (renderable->is_visible()){
-//                 renderables.push_back(renderable_ptr);
-//             }
-//         }
-//     }
-    
-//     uint32_t start = structure.size();
-//     subdivide(i, x, camera, aabb, renderables);
-//     uint32_t end = structure.size();
-
-//     // perform copy to GPU
-    
-// }
-
-
-uint32_t
-octree_t::lookup(const vec3_t & x, uint32_t i, aabb_t & aabb) const {
-    // base cases
-    if (structure[i] == null_node || (structure[i] & is_leaf_flag)) {
-        return i;
-    } 
-    
-    // refine octant
-    int octant = aabb.get_octant(x);
-    aabb.refine(octant);
-   
-    // tail recurse
-    return lookup(x, structure[i] + octant, aabb);
-}
-
 bool 
 octree_t::contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
     double phi = sdf->phi(aabb.get_centre());
@@ -158,9 +110,15 @@ octree_t::intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
     return x.chebyshev_norm() <= aabb.get_size() / 2;
 }
 
+uint32_t
+octree_t::get_plane_index(const vec4_t & p){
+    geometry.push_back(p.cast<float>());
+    return geometry.size() - 1;
+}
+
 void 
 octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    bool is_leaf = aabb.get_size() <= 0.25;
+    bool is_leaf = aabb.get_size() <= 0.125;
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
@@ -182,15 +140,17 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
         return;
 
     } else if (is_leaf){
-        structure[i] = is_leaf_flag | geometry.size();
-        geometry.push_back(u->plane(aabb.get_centre()).cast<float>());
+        structure[i] = is_leaf_flag | get_plane_index(u->plane(aabb.get_centre()));
         return;
     } 
 
-    // auto f = std::bind(&sdf3_t::phi, u.get(), std::placeholders::_1);
     auto f = [&](const vec3_t & x){ return u->normal(x); };
     mat3_t j = mat3_t::jacobian(f, aabb.get_centre(), aabb.get_size() / 4.0);
-    // std::cout << "frobenius norm: " << j.frobenius_norm() << std::endl;
+
+    if (j.frobenius_norm() < constant::epsilon){
+        structure[i] = is_leaf_flag | get_plane_index(u->plane(aabb.get_centre()));
+        return;
+    }
 
     structure[i] = structure.size();
     for (uint8_t octant = 0; octant < 8; octant++){
