@@ -14,7 +14,12 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
+    universal_aabb = vec4_t(
+        -render_distance,
+        -render_distance,
+        -render_distance,
+        render_distance * 2
+    );
     structure.push_back(null_node); 
 
     // TODO: remove this! its only here because the zero index is 
@@ -75,38 +80,6 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(blaspheme_t::get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
-bool 
-octree_t::contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
-    double phi = sdf->phi(aabb.get_centre());
-    
-    if (phi >= -aabb.get_size() / 2){
-        return false;
-    }
-
-    if (phi <= -aabb.get_upper_radius()){
-        return true;
-    }
-
-    vec3_t x = sdf->normal(aabb.get_centre()) * phi;
-    return x.chebyshev_norm() >= aabb.get_size() / 2;
-}
-
-bool 
-octree_t::intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
-    double phi = std::abs(sdf->phi(aabb.get_centre()));
-    
-    if (phi <= aabb.get_size() / 2){
-        return true;
-    }
-
-    if (phi >= aabb.get_upper_radius()){
-        return false;
-    }
-
-    vec3_t x = sdf->normal(aabb.get_centre()) * phi;
-    return x.chebyshev_norm() <= aabb.get_size() / 2;
-}
-
 uint32_t
 octree_t::get_plane_index(const vec3_t & p){
     f32vec3_t plane = p.cast<float>();
@@ -122,22 +95,49 @@ octree_t::get_plane_index(const vec3_t & p){
     return geometry.size() - 1;
 }
 
+// TODO: this function is almost a hundred lines long!! refactor!!!
 void 
-octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    bool is_leaf = aabb.get_size() <= 0.125;
+octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+    bool is_leaf = aabb[3] <= 0.125;
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
-    vec3_t c = aabb.get_centre();
+    vec3_t c(aabb[0], aabb[1], aabb[2]);
+    c += vec3_t(aabb[3] / 2.0f);
+
+    double upper_radius = vec3_t(aabb[3] / 2).norm();
 
     for (auto sdf : sdfs){
-        if (contains(sdf, aabb)){
+        double p = sdf->phi(c);
+
+        // containment check upper bound
+        if (p <= -upper_radius){
             structure[i] = is_leaf_flag;
             return;
         }
 
-        if (intersects(sdf, aabb)){
+        // interesection check lower bound
+        if (std::abs(p) <= aabb[3] / 2){
             new_sdfs.push_back(sdf);
+            continue;
+        }
+
+        // intersection check upper bound
+        if (p >= upper_radius){
+            continue;
+        }
+
+        // containment check precise
+        double c = (sdf->normal(c) * p).chebyshev_norm();
+        if (p < 0 && c >= aabb[3] / 2){
+            structure[i] = is_leaf_flag;
+            return;
+        }
+
+        // intersection check precise
+        if (c <= aabb[3] / 2){
+            new_sdfs.push_back(sdf);
+            continue;
         }
     }
 
@@ -163,7 +163,7 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
     } 
 
     auto f = [&](const vec3_t & x){ return u.normal(x); };
-    mat3_t j = mat3_t::jacobian(f, aabb.get_centre(), aabb.get_size() / 4.0);
+    mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
 
     if (j.frobenius_norm() < constant::epsilon){
         structure[i] = is_leaf_flag | get_plane_index(plane);
@@ -176,8 +176,13 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
     }
 
     for (uint8_t octant = 0; octant < 8; octant++){
-        aabb_t new_aabb = aabb;
-        new_aabb.refine(octant);
+        vec4_t new_aabb = aabb;
+        new_aabb[3] /= 2;
+
+        if (octant & 1) new_aabb[0] += new_aabb[3];
+        if (octant & 2) new_aabb[1] += new_aabb[3];
+        if (octant & 4) new_aabb[2] += new_aabb[3];
+
         paint(structure[i] + octant, new_aabb, new_sdfs);
     }
 }

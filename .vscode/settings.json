@@ -1,18 +1,5 @@
 {
     "files.associations": {
-<<<<<<< HEAD
-        "deque": "cpp",
-        "vector": "cpp",
-        "cmath": "cpp",
-        "cstdlib": "cpp",
-        "initializer_list": "cpp",
-        "array": "cpp",
-        "utility": "cpp",
-        "cctype": "cpp",
-        "cstdarg": "cpp",
-        "cstddef": "cpp",
-        "cstdio": "cpp",
-=======
         "chrono": "cpp",
         "__bit_reference": "cpp",
         "__config": "cpp",
@@ -37,45 +24,10 @@
         "cstdint": "cpp",
         "cstdio": "cpp",
         "cstdlib": "cpp",
->>>>>>> a77d5dba08f5ff37efaf893bf250410a79d305e5
         "cstring": "cpp",
         "ctime": "cpp",
         "cwchar": "cpp",
         "cwctype": "cpp",
-<<<<<<< HEAD
-        "atomic": "cpp",
-        "strstream": "cpp",
-        "chrono": "cpp",
-        "cstdint": "cpp",
-        "iosfwd": "cpp",
-        "mutex": "cpp",
-        "ratio": "cpp",
-        "system_error": "cpp",
-        "thread": "cpp",
-        "cinttypes": "cpp",
-        "typeindex": "cpp",
-        "*.tcc": "cpp",
-        "clocale": "cpp",
-        "list": "cpp",
-        "unordered_map": "cpp",
-        "exception": "cpp",
-        "fstream": "cpp",
-        "functional": "cpp",
-        "iostream": "cpp",
-        "istream": "cpp",
-        "limits": "cpp",
-        "new": "cpp",
-        "ostream": "cpp",
-        "numeric": "cpp",
-        "sstream": "cpp",
-        "stdexcept": "cpp",
-        "streambuf": "cpp",
-        "type_traits": "cpp",
-        "tuple": "cpp",
-        "typeinfo": "cpp",
-        "iomanip": "cpp",
-        "memory": "cpp"
-=======
         "deque": "cpp",
         "exception": "cpp",
         "fstream": "cpp",
@@ -116,7 +68,8 @@
         "clocale": "cpp",
         "unordered_map": "cpp",
         "sstream": "cpp",
-        "cinttypes": "cpp"
->>>>>>> a77d5dba08f5ff37efaf893bf250410a79d305e5
+        "cinttypes": "cpp",
+        "condition_variable": "cpp",
+        "shared_mutex": "cpp"
     }
 }

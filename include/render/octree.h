@@ -6,7 +6,6 @@
 #include <map>
 
 #include "core/buffer.h"
-#include "core/aabb.h"
 #include "sdf/sdf.h"
 
 /*
@@ -43,15 +42,11 @@ private:
 
     std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
-    aabb_t universal_aabb;
-
-    // TODO: move these
-    bool contains(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
-    bool intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const;
+    vec4_t universal_aabb;
 
     // TODO: remove this and replace with lazy streaming version
     void paint(
-        uint32_t i, const aabb_t & aabb, 
+        uint32_t i, const vec4_t & aabb, 
         const std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
 

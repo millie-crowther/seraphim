@@ -25,7 +25,6 @@ set(SOURCES
   
     ../src/core/blaspheme.cpp
     ../src/core/buffer.cpp
-    ../src/core/aabb.cpp
     ../src/core/vk_utils.cpp
     
     ../src/render/renderer.cpp
