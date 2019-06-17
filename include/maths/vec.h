@@ -21,7 +21,7 @@ public:
     /*
         constructors
     */
-    vec_t() : vec_t(0){}
+    vec_t() : vec_t(T(0)){}
 
     vec_t(const T & x){
         xs.fill(x); 
@@ -162,8 +162,8 @@ public:
         return (*this - v).square_norm() <= constant::epsilon * constant::epsilon;
     }
 
-    template<class T1=vec_t<T, 3>>
-    typename std::enable_if<N == 3, T1>::type
+    template<class S = vec_t<T, 3>>
+    typename std::enable_if<N == 3, S>::type
     operator%(const vec_t<T, 3> & v) const {
         return vec_t<T, 3>(
             xs[1] * v.xs[2] - xs[2] * v.xs[1],
@@ -175,16 +175,15 @@ public:
     /*
         factories
     */
-    static vec_t<T, N> axis(uint8_t i){
-        return enumerate([&](uint8_t j){ return i == j ? T(1) : T(0); });
-    }
-
-    template<class F>
-    static vec_t<T, N> nabla(const F & f, const T & delta){
-        return enumerate([&](uint8_t i){
-            vec_t<T, N> axis = vec_t<T, N>::axis(i) * delta;
-            return f(x + axis) - f(x - axis);
-        }) / (2 * delta);
+    template<class F, class Tx, uint8_t Nx>
+    static vec_t<T, N> nabla(const F & f, const vec_t<Tx, Nx> & x, const Tx & delta){
+        // TODO: move division by (2 * delta) outside loop.
+        //       for some reason, compiler gets confused if its outside loop
+        return vec_t<T, N>().enumerate([&](uint8_t i){
+            vec_t<Tx, Nx> axis;
+            axis[i] = delta;
+            return (f(x + axis) - f(x - axis)) / (2 * delta);
+        });
     }
 };
 

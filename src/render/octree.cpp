@@ -5,6 +5,7 @@
 #include <set>
 #include "sdf/compose.h"
 #include "sdf/mutate.h"
+#include "maths/mat.h"
 
 constexpr uint32_t octree_t::null_node;
 
@@ -174,15 +175,22 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
         }
     }
 
+    std::unique_ptr<sdf3_t> u = std::make_unique<compose::union_t<3>>(new_sdfs);
+
     if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
 
     } else if (is_leaf){
         structure[i] = is_leaf_flag | geometry.size();
-        geometry.push_back(compose::union_t<3>(new_sdfs).plane(aabb.get_centre()).cast<float>());
+        geometry.push_back(u->plane(aabb.get_centre()).cast<float>());
         return;
     } 
+
+    // auto f = std::bind(&sdf3_t::phi, u.get(), std::placeholders::_1);
+    auto f = [&](const vec3_t & x){ return u->normal(x); };
+    mat3_t j = mat3_t::jacobian(f, aabb.get_centre(), aabb.get_size() / 4.0);
+    // std::cout << "frobenius norm: " << j.frobenius_norm() << std::endl;
 
     structure[i] = structure.size();
     for (uint8_t octant = 0; octant < 8; octant++){
