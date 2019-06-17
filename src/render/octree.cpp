@@ -17,6 +17,10 @@ octree_t::octree_t(
     universal_aabb = aabb_t(vec3_t(-render_distance), render_distance * 2);
     structure.push_back(null_node); 
 
+    // TODO: remove this! its only here because the zero index is 
+    //       regarded as an empty volume in the shader 
+    geometry.push_back(f32vec4_t()); 
+
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
@@ -50,7 +54,8 @@ octree_t::octree_t(
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "leaf nodes "  << leaf_nodes << std::endl;
+    std::cout << "leaf nodes: "  << leaf_nodes << std::endl;
+    std::cout << "geometry size: " << geometry.size() << std::endl;
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};
@@ -112,7 +117,16 @@ octree_t::intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
 
 uint32_t
 octree_t::get_plane_index(const vec4_t & p){
-    geometry.push_back(p.cast<float>());
+    f32vec4_t plane = p.cast<float>();
+
+    auto plane_map_it = plane_map.find(plane);
+    if (plane_map_it != plane_map.end()){
+        return plane_map_it->second;
+    }
+
+    plane_map[plane] = geometry.size();
+
+    geometry.push_back(plane);
     return geometry.size() - 1;
 }
 
@@ -133,22 +147,22 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
         }
     }
 
-    std::unique_ptr<sdf3_t> u = std::make_unique<compose::union_t<3>>(new_sdfs);
+    compose::union_t<3> u(new_sdfs);
 
     if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
 
     } else if (is_leaf){
-        structure[i] = is_leaf_flag | get_plane_index(u->plane(aabb.get_centre()));
+        structure[i] = is_leaf_flag | get_plane_index(u.plane(aabb.get_centre()));
         return;
     } 
 
-    auto f = [&](const vec3_t & x){ return u->normal(x); };
+    auto f = [&](const vec3_t & x){ return u.normal(x); };
     mat3_t j = mat3_t::jacobian(f, aabb.get_centre(), aabb.get_size() / 4.0);
 
     if (j.frobenius_norm() < constant::epsilon){
-        structure[i] = is_leaf_flag | get_plane_index(u->plane(aabb.get_centre()));
+        structure[i] = is_leaf_flag | get_plane_index(u.plane(aabb.get_centre()));
         return;
     }
 

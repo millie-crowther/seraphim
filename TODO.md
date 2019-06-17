@@ -41,7 +41,6 @@
     * perhaps reduce further e.g. `float` -> `int16_t`
     * only problem is most things need to be 4 byte aligned 
 * lerp normals
-* dont store multiple copies of the same plane
 * remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where renderables intersect
 * fix holes in surface (due to inadequate surface representation)

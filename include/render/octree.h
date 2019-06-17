@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <map>
 
 #include "core/buffer.h"
 #include "core/aabb.h"
@@ -31,10 +32,15 @@ private:
     static constexpr uint32_t null_node = 0;
 
     static constexpr uint32_t max_structure_size = 25000;
-    static constexpr uint32_t max_geometry_size  = 25000;
+    static constexpr uint32_t max_geometry_size  = 10000;
 
     std::vector<uint32_t> structure;
     std::vector<f32vec4_t> geometry;
+
+    // TODO: this might be a waste of memory. perhaps the above and below
+    //       data structures can be merged into one?
+    std::map<f32vec4_t, uint32_t> plane_map;
+
     std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     aabb_t universal_aabb;

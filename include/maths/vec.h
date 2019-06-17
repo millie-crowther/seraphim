@@ -158,10 +158,6 @@ public:
         return map([&](const T & x){ return x / s; });
     }
 
-    bool operator==(const vec_t<T, N> & v) const {
-        return (*this - v).square_norm() <= constant::epsilon * constant::epsilon;
-    }
-
     template<class S = vec_t<T, 3>>
     typename std::enable_if<N == 3, S>::type
     operator%(const vec_t<T, 3> & v) const {
@@ -170,6 +166,39 @@ public:
             xs[2] * v.xs[0] - xs[0] * v.xs[2],
             xs[0] * v.xs[1] - xs[1] * v.xs[0]
         );
+    }
+
+    /*
+        equality and ordering operators
+    */
+    bool operator==(const vec_t<T, N> & x) const {
+        for (uint8_t i = 0; i < N; i++){
+            if (xs[i] != x.xs[i]){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool operator<(const vec_t<T, N> & x) const {
+        for (uint8_t i = 0; i < N; i++){
+            if (xs[i] != x.xs[i]){
+                return xs[i] < x.xs[i];
+            }
+        }
+        return false;
+    }
+
+    bool operator>(const vec_t<T, N> & x) const {
+        return x < *this;
+    }
+
+    bool operator<=(const vec_t<T, N> & x) const {
+        return *this < x || *this == x;
+    }
+
+    bool operator>=(const vec_t<T, N> & x) const {
+        return *this > x || *this == x;
     }
 
     /*
