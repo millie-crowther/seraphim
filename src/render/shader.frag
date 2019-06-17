@@ -99,10 +99,12 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-intersection_t plane_intersection(ray_t r, vec3 n, float d){
+intersection_t plane_intersection(ray_t r, vec3 p){
+    vec3 n = vec3(p.xy, sqrt(1 - dot(p.xy, p.xy)));
+
     // TODO: can probably make this a two liner with some fancy flying
     float dn = dot(r.d, n);
-    float lambda = (d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
+    float lambda = (p.z - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
     return intersection_t(lambda >= 0, r.x + lambda * r.d, n);
 }
 
@@ -124,7 +126,7 @@ intersection_t raycast(ray_t r){
 
             if (index <= geometry_size){
                 vec4 plane = octree.geometry[index];
-                intersection_t i = plane_intersection(r, plane.xyz, plane.w);
+                intersection_t i = plane_intersection(r, plane.xyz);
                 if (i.hit && node_contains(node, i.x)){
                     return i;
                 }
@@ -176,6 +178,13 @@ vec4 light(vec3 p, vec3 n){
 
     //diffuse
     vec3 l = normalize(pos - p);
+
+    // since normals are squished into two elements, may need to flip
+    // to recover sign
+    if (dot(l, n) < 0){
+        n = -n;
+    }
+
     vec4 d = kd * dot(l, n) * colour;
 
     //specular

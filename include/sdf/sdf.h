@@ -17,18 +17,6 @@ public:
         auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
         return vec_t<double, D>::nabla(f, x, constant::epsilon);
     }
-
-    // concrete accessors
-    vec_t<double, D+1> plane(const vec_t<double, D> & x) const {
-        vec_t<double, D+1> result;
-
-        vec_t<double, D> n = normal(x);
-        for (uint8_t i = 0; i < D; i++){
-            result[i] = n[i];
-        }
-        result[D] = (x * n) - phi(x);
-        return result;
-    }
 };
 
 typedef sdf_t<2> sdf2_t;

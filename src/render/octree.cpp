@@ -41,20 +41,12 @@ octree_t::octree_t(
     buffer->copy(pool, queue, structure.data(), sizeof(uint32_t) * structure.size(), 0);
     buffer->copy(pool, queue, geometry.data(),  sizeof(f32vec4_t) * geometry.size(), sizeof(uint32_t) * max_structure_size);
 
-    int leaf_nodes = 0;
-    for (auto node : structure){
-        if (node & is_leaf_flag){
-            leaf_nodes++;
-        }
-    }
-
     // int redundant_nodes = 0;
     // for (int i = 1; i < structure.size(); i += 8){
 
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "leaf nodes: "  << leaf_nodes << std::endl;
     std::cout << "geometry size: " << geometry.size() << std::endl;
 
     // write to descriptor sets
@@ -136,6 +128,8 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
+    vec3_t c = aabb.get_centre();
+
     for (auto sdf : sdfs){
         if (contains(sdf, aabb)){
             structure[i] = is_leaf_flag;
@@ -153,8 +147,20 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
         structure[i] = is_leaf_flag;
         return;
 
-    } else if (is_leaf){
-        structure[i] = is_leaf_flag | get_plane_index(u.plane(aabb.get_centre()));
+    }  
+    
+
+    vec3_t n = u.normal(c);
+    double p = u.phi(c);
+    if (n[2] < 0){
+        n = -n;
+        p = -p;
+    }
+
+    vec4_t plane(n[0], n[1], (c * n) - p, 0.0);
+
+    if (is_leaf){
+        structure[i] = is_leaf_flag | get_plane_index(plane);
         return;
     } 
 
@@ -162,7 +168,7 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
     mat3_t j = mat3_t::jacobian(f, aabb.get_centre(), aabb.get_size() / 4.0);
 
     if (j.frobenius_norm() < constant::epsilon){
-        structure[i] = is_leaf_flag | get_plane_index(u.plane(aabb.get_centre()));
+        structure[i] = is_leaf_flag | get_plane_index(plane);
         return;
     }
 
