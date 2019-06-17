@@ -39,7 +39,7 @@ private:
 
     // TODO: this might be a waste of memory. perhaps the above and below
     //       data structures can be merged into one?
-    std::map<f32vec4_t, uint32_t> plane_map;
+    std::map<f32vec3_t, uint32_t> plane_map;
 
     std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
@@ -55,7 +55,7 @@ private:
         const std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
 
-    uint32_t get_plane_index(const vec4_t & p);
+    uint32_t get_plane_index(const vec3_t & p);
 
 public:
     // TODO: sort this out

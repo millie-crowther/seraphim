@@ -108,8 +108,8 @@ octree_t::intersects(std::shared_ptr<sdf3_t> sdf, const aabb_t & aabb) const {
 }
 
 uint32_t
-octree_t::get_plane_index(const vec4_t & p){
-    f32vec4_t plane = p.cast<float>();
+octree_t::get_plane_index(const vec3_t & p){
+    f32vec3_t plane = p.cast<float>();
 
     auto plane_map_it = plane_map.find(plane);
     if (plane_map_it != plane_map.end()){
@@ -118,7 +118,7 @@ octree_t::get_plane_index(const vec4_t & p){
 
     plane_map[plane] = geometry.size();
 
-    geometry.push_back(plane);
+    geometry.push_back(f32vec4_t(plane[0], plane[1], plane[2], 0.0f));
     return geometry.size() - 1;
 }
 
@@ -146,10 +146,8 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
     if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
-
     }  
     
-
     vec3_t n = u.normal(c);
     double p = u.phi(c);
     if (n[2] < 0){
@@ -157,7 +155,7 @@ octree_t::paint(uint32_t i, const aabb_t & aabb, const std::vector<std::shared_p
         p = -p;
     }
 
-    vec4_t plane(n[0], n[1], (c * n) - p, 0.0);
+    vec3_t plane(n[0], n[1], (c * n) - p);
 
     if (is_leaf){
         structure[i] = is_leaf_flag | get_plane_index(plane);
