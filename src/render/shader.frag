@@ -191,7 +191,7 @@ vec4 light(vec3 p, vec3 n){
     vec3 v = normalize(p);
     vec3 r = reflect(l, n);
     vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
-    return a + (d + s) * attenuation;// * shadow;
+    return a + (d + s) * attenuation * shadow;
 }
 
 vec4 sky(){

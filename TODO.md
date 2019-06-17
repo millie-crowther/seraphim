@@ -34,10 +34,10 @@
     * increase granularity when you get closer (flag for LOD?)
 * delete bricks which havent been used in a while
     * record when a brick is used
-* fix double free on renderable transform
-* make renderables and SDFs use transform class for positioning rather than internally
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
 * reduce plane size from `f32vec4_t` to `f32vec3_t` (one element of normals redundant)
+    * compression has been implemented, still takes up same space because of alignment
+    * need to investigate how much of a problem vec4 alignment will be 
     * perhaps reduce further e.g. `float` -> `int16_t`
     * only problem is most things need to be 4 byte aligned 
 * lerp normals
@@ -47,6 +47,12 @@
     * cleverer plane estimation?
     * polynomial fit? (can be guaranteed to have no holes iirc)
 * remove `lambda_sdf_t` from all mutator / compositional SDFs
+    * probably just delete the class
+    * introduces problems with hanging references
+    * difficult to override normal function which is recommended
+* possibly store planes in the space of the cube
+    * will introduce extra redundancy so more savings from `plane_map`
+    * may introduce problems with texturing down the line idk
 
 ### colouring
 1. determine best way to uv map surface
