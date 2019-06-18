@@ -13,13 +13,11 @@
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
 * put a FPS counter in the title
-* make sdf_t class dimension-generic
 
 ## rendering
 
 ### general
 * make rays that originate outside octree intersect properly
-* make the collection of renderables a set not a vector (order unimportant)
 
 ### camera
 * add camera_up field to push constants as well
@@ -43,9 +41,7 @@
 * lerp normals
 * remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where renderables intersect
-* fix holes in surface (due to inadequate surface representation)
-    * cleverer plane estimation?
-    * polynomial fit? (can be guaranteed to have no holes iirc)
+    * smooth min probably best bet
 * remove `lambda_sdf_t` from all mutator / compositional SDFs
     * probably just delete the class
     * introduces problems with hanging references
@@ -60,11 +56,7 @@
 3. reflective and refractive materials
 
 ### lighting
-* progress to physically-based shading approach
-* global illumination approximants
-    * AO
-    * bounce lighting
-    * more sophisticated (more general?) light primitive
+* physically-based shading approach
 
 ## physics
 1. find good method for partitioning colliders to reach `O(n * log(n))` complexity

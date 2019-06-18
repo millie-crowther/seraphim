@@ -116,7 +116,7 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
             return;
         }
 
-        // interesection check lower bound
+        // intersection check lower bound
         if (std::abs(p) <= aabb[3] / 2){
             new_sdfs.push_back(sdf);
             continue;

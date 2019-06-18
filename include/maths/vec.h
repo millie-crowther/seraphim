@@ -171,15 +171,6 @@ public:
     /*
         equality and ordering operators
     */
-    bool operator==(const vec_t<T, N> & x) const {
-        for (uint8_t i = 0; i < N; i++){
-            if (xs[i] != x.xs[i]){
-                return false;
-            }
-        }
-        return true;
-    }
-
     bool operator<(const vec_t<T, N> & x) const {
         for (uint8_t i = 0; i < N; i++){
             if (xs[i] != x.xs[i]){
@@ -187,6 +178,14 @@ public:
             }
         }
         return false;
+    }
+
+    bool operator==(const vec_t<T, N> & x) const {
+        return !(x < *this || *this < x);
+    }
+
+    bool operator!=(const vec_t<T, N> & x) const {
+        return x < *this || *this < x;
     }
 
     bool operator>(const vec_t<T, N> & x) const {
