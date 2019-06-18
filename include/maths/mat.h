@@ -9,19 +9,12 @@ private:
     // fields
     vec_t<vec_t<T, M>, N> xs;
 
-    // private constuctors
-    mat_t(const vec_t<vec_t<T, M>, N> & xs){
-        this->xs = xs;
-    }
-
-
 public:
     // constructors
     mat_t(){}
 
     // accessors
-    T 
-    frobenius_norm() const {
+    T frobenius_norm() const {
         T norm(0);
         for (uint8_t i = 0; i < N; i++){
             norm += xs[i].square_norm();
@@ -34,7 +27,9 @@ public:
     template<class F>
     static mat_t<T, M, N>
     jacobian(const F & f, const vec_t<T, N> & x, const T & delta){
-        return mat_t<T, M, N>(vec_t<vec_t<T, M>, N>::nabla(f, x, delta));
+        mat_t<T, M, N> m;
+        m.xs = vec_t<vec_t<T, M>, N>::nabla(f, x, delta);
+        return m;
     }
 };
 
