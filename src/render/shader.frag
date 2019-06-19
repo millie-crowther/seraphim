@@ -62,6 +62,12 @@ const uint null_node = 0;
 //
 // types
 //
+struct splat_t {
+    uint n; 
+    float d;
+    vec2 uv;
+};
+
 struct ray_t {
     vec3 x;
     vec3 d;

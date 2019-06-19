@@ -49,6 +49,28 @@ namespace compose {
             }
         }
     };
+
+
+    template<uint8_t D, uint16_t K>
+    class smooth_union_t : public sdf_t<D> {
+    private:
+        std::vector<std::shared_ptr<sdf_t<D>>> sdfs;
+
+    public:
+        smooth_union_t(const std::vector<std::shared_ptr<sdf_t<D>>> & sdfs){
+            this->sdfs = sdfs;
+        }
+
+        double phi(const vec_t<double, D> & x) const override {
+            double result = 0;
+
+            for (auto sdf : sdfs){
+                result += std::exp2(-static_cast<double>(K) * sdf->phi(x));
+            }
+
+            return -std::log2(result) / K;
+        }
+    };
 }
 
 // union

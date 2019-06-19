@@ -40,20 +40,15 @@
     * only problem is most things need to be 4 byte aligned 
 * lerp normals
 * remove keyboard class from renderer ( only there for testing purposes)
-* fix holes at volumes where renderables intersect
-    * smooth min probably best bet
+* fix holes at volumes where sdfs intersect
 * remove `lambda_sdf_t` from all mutator / compositional SDFs
     * probably just delete the class
     * introduces problems with hanging references
     * difficult to override normal function which is recommended
-* possibly store planes in the space of the cube
-    * will introduce extra redundancy so more savings from `plane_map`
-    * may introduce problems with texturing down the line idk
 
 ### colouring
-1. determine best way to uv map surface
-2. texture surface
-3. reflective and refractive materials
+* determine best way to uv map surface
+* texture surface
 
 ### lighting
 * physically-based shading approach
