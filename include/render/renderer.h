@@ -13,7 +13,7 @@
 #include <GLFW/glfw3.h>
 
 class renderer_t {
-private:
+public:
     struct push_constant_t {
         u32vec2_t window_size;
         f32vec2_t dummy;         // alignment
@@ -22,7 +22,10 @@ private:
         float dummy2;            // alignment
 
         f32vec3_t camera_right;
-    } push_constants;
+    };
+
+private:
+    push_constant_t push_constants;
 
     VkPhysicalDevice physical_device;
     VkDevice device;

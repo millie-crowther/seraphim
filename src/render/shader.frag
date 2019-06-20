@@ -62,7 +62,7 @@ const uint null_node = 0;
 //
 // types sent from CPU
 //
-struct splat_t {
+struct brick_t {
     vec2 n;
     float d;
     uint uv;
@@ -118,7 +118,7 @@ const uint structure_size = 25000;
 const uint geometry_size  = 25000;
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
-    splat_t geometry[geometry_size];
+    brick_t geometry[geometry_size];
 } octree;
 
 //
@@ -185,8 +185,8 @@ intersection_t raycast(ray_t r){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
             if (index <= geometry_size){
-                splat_t splat = octree.geometry[index];
-                intersection_t i = plane_intersection(r, splat.n, splat.d);
+                brick_t brick = octree.geometry[index];
+                intersection_t i = plane_intersection(r, brick.n, brick.d);
                 if (i.hit && node_contains(node, i.x)){
                     return i;
                 }

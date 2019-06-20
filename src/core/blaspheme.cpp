@@ -10,6 +10,7 @@
 #include <cstring>
 #include "maths/maths.h"
 #include <memory>
+#include "render/renderer.h"
 
 #include "logic/scheduler.h"
 
@@ -89,6 +90,15 @@ blaspheme_t::blaspheme_t(bool is_debug){
     vkGetPhysicalDeviceProperties(physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
 
+    std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
+    
+    uint32_t push_const_size = properties.limits.maxPushConstantsSize;
+    std::cout << "\tMaximum push constants size: " << push_const_size << std::endl;
+    if (sizeof(renderer_t::push_constant_t) > push_const_size){
+        // TODO: put this check when selecting physical device
+        throw std::runtime_error("Error: Push constants too large.");
+    }
+    
     if (!create_logical_device()){
 	    throw std::runtime_error("Error: Couldn't create logical device.");
     }

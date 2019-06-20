@@ -215,6 +215,8 @@ public:
     }
 };
 
+typedef vec_t<uint16_t, 2> u16vec2_t;
+
 typedef vec_t<uint32_t, 2> u32vec2_t;
 
 typedef vec_t<float, 2> f32vec2_t;
