@@ -15,4 +15,12 @@ else
     git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 fi
 
+if cd stb; then 
+    git pull
+    cd ..
+else
+    git clone https://github.com/nothings/stb
+fi
+
+
 cd ..

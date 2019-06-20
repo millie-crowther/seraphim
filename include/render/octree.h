@@ -33,8 +33,22 @@ private:
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_geometry_size  = 10000;
 
+    struct splat_t {
+        f32vec2_t n;
+        float d;
+        uint32_t uv;
+
+        splat_t(){}
+
+        splat_t(f32vec2_t n, float d, uint32_t uv){
+            this->n  = n;
+            this->d  = d;
+            this->uv = uv;
+        }
+    };  
+
     std::vector<uint32_t> structure;
-    std::vector<f32vec4_t> geometry;
+    std::vector<splat_t> geometry;
 
     // TODO: this might be a waste of memory. perhaps the above and below
     //       data structures can be merged into one?

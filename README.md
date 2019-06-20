@@ -14,3 +14,4 @@ lightweight game engine based around signed distance fields. implemented in vulk
 * vulkan
 * glfw
 * vulkan memory allocator 
+* stb

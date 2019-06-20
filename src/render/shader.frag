@@ -60,14 +60,21 @@ const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 
 //
-// types
+// types sent from CPU
 //
 struct splat_t {
-    uint n; 
+    vec2 n;
     float d;
-    vec2 uv;
+    uint uv;
 };
 
+struct material_t {
+    uint rgba;
+};
+
+//
+// types used in shader
+//
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -111,7 +118,7 @@ const uint structure_size = 25000;
 const uint geometry_size  = 25000;
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
-    vec4 geometry[geometry_size];
+    splat_t geometry[geometry_size];
 } octree;
 
 //
@@ -152,12 +159,12 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-intersection_t plane_intersection(ray_t r, vec3 p){
-    vec3 n = vec3(p.xy, sqrt(1 - dot(p.xy, p.xy)));
+intersection_t plane_intersection(ray_t r, vec2 n2, float d){
+    vec3 n = vec3(n2, sqrt(1 - dot(n2, n2)));
 
     // TODO: can probably make this a two liner with some fancy flying
     float dn = dot(r.d, n);
-    float lambda = (p.z - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
+    float lambda = (d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
     return intersection_t(lambda >= 0, r.x + lambda * r.d, n);
 }
 
@@ -178,8 +185,8 @@ intersection_t raycast(ray_t r){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
             if (index <= geometry_size){
-                vec4 plane = octree.geometry[index];
-                intersection_t i = plane_intersection(r, plane.xyz);
+                splat_t splat = octree.geometry[index];
+                intersection_t i = plane_intersection(r, splat.n, splat.d);
                 if (i.hit && node_contains(node, i.x)){
                     return i;
                 }

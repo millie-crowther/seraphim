@@ -14,17 +14,14 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    universal_aabb = vec4_t(
-        -render_distance,
-        -render_distance,
-        -render_distance,
-        render_distance * 2
-    );
+    universal_aabb = vec4_t(-render_distance);
+    universal_aabb[3] = render_distance * 2;
+
     structure.push_back(null_node); 
 
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
-    geometry.push_back(f32vec4_t()); 
+    geometry.emplace_back();
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -83,15 +80,7 @@ octree_t::octree_t(
 uint32_t
 octree_t::get_plane_index(const vec3_t & p){
     f32vec3_t plane = p.cast<float>();
-
-    auto plane_map_it = plane_map.find(plane);
-    if (plane_map_it != plane_map.end()){
-        return plane_map_it->second;
-    }
-
-    plane_map[plane] = geometry.size();
-
-    geometry.push_back(f32vec4_t(plane[0], plane[1], plane[2], 0.0f));
+    geometry.emplace_back(f32vec2_t(plane[0], plane[1]), plane[2], 0);
     return geometry.size() - 1;
 }
 

@@ -1,13 +1,14 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-#include "image.h"
+#include "render/image.h"
 #include <string>
+#include <memory>
 
 class texture_t {
 private:
     // private fields
-    image_t * image;
+    std::unique_ptr<image_t> image;
     int width;
     int height;
     VkSampler sampler;
@@ -15,7 +16,7 @@ private:
 
 public:
     // constructors and destructors
-    texture_t(std::string filename, VkCommandPool pool, VkQueue queue);
+    texture_t(VmaAllocator allocator, std::string filename, VkCommandPool pool, VkQueue queue);
     ~texture_t();
 
     // getters

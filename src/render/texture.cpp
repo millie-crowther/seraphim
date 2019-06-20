@@ -2,9 +2,9 @@
 
 #include "stb_image.h"
 #include <stdexcept>
-#include "core/engine.h"
+#include "core/blaspheme.h"
 
-texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue){
+texture_t::texture_t(VmaAllocator allocator, std::string filename, VkCommandPool pool, VkQueue queue){
     int channels;
     
     // load data
@@ -14,19 +14,21 @@ texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue){
         throw std::runtime_error("Error: Failed to load texture \"" + filename + "\".");
     }
 
-    VkDeviceSize size = width * height * 4;
-    image = new image_t(
-        width, height, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+    u32vec2_t size = u32vec2_t(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+    
+    image = std::make_unique<image_t>(
+        allocator, size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_IMAGE_ASPECT_COLOR_BIT
+        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_COLOR_BIT
     );
 
+    VkDeviceSize buffer_size = size[0] * size[1] * 4;
     buffer_t texture_data(
-        size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        allocator, buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    texture_data.copy(pool, queue, pixels, size); // pool, queue
+    texture_data.copy(pool, queue, pixels, buffer_size, 0); 
 
     stbi_image_free(pixels);
 
@@ -51,16 +53,14 @@ texture_t::texture_t(std::string filename, VkCommandPool pool, VkQueue queue){
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(engine_t::get_device(), &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(blaspheme_t::get_device(), &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
 
 }
 
 texture_t::~texture_t(){
-    vkDestroySampler(engine_t::get_device(), sampler, nullptr);
-
-    delete image;
+    vkDestroySampler(blaspheme_t::get_device(), sampler, nullptr);
 }
 
 VkImageView

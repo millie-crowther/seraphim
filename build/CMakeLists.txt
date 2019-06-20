@@ -14,6 +14,7 @@ add_subdirectory("glfw")
 
 set(INCLUDE_DIR
     ../include
+    ../build/stb
     VulkanMemoryAllocator/src
 )
 
@@ -31,6 +32,7 @@ set(SOURCES
     ../src/render/image.cpp
     ../src/render/camera.cpp
     ../src/render/octree.cpp
+    ../src/render/texture.cpp
     
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp
