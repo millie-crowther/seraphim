@@ -26,7 +26,7 @@ public:
     brick_t(
         const vec3_t & x, 
         std::weak_ptr<texture_manager_t> texture_manager, 
-        std::weak_ptr<sdf3_t> sdf, 
+        const sdf3_t & sdf, 
         data_t * data
     );
     ~brick_t();

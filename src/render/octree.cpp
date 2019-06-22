@@ -21,7 +21,7 @@ octree_t::octree_t(
 
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
-    geometry.emplace_back();
+    gpu_bricks.emplace_back();
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -41,7 +41,7 @@ octree_t::octree_t(
 
     // copy to buffer
     buffer->copy(pool, queue, structure.data(), sizeof(uint32_t) * structure.size(), 0);
-    buffer->copy(pool, queue, geometry.data(),  sizeof(f32vec4_t) * geometry.size(), sizeof(uint32_t) * max_structure_size);
+    buffer->copy(pool, queue, gpu_bricks.data(),  sizeof(f32vec4_t) * gpu_bricks.size(), sizeof(uint32_t) * max_structure_size);
 
     // int redundant_nodes = 0;
     // for (int i = 1; i < structure.size(); i += 8){
@@ -49,7 +49,7 @@ octree_t::octree_t(
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "geometry size: " << geometry.size() << std::endl;
+    std::cout << "gpu_bricks size: " << gpu_bricks.size() << std::endl;
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};
@@ -77,11 +77,11 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(blaspheme_t::get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
-uint32_t
-octree_t::get_plane_index(const vec3_t & p){
-    f32vec3_t plane = p.cast<float>();
-    geometry.emplace_back(f32vec2_t(plane[0], plane[1]), plane[2], 0);
-    return geometry.size() - 1;
+uint32_t 
+octree_t::create_brick(const vec3_t & x, const sdf3_t & sdf){
+    gpu_bricks.emplace_back();
+    bricks.emplace_back(x, texture_manager, sdf, &gpu_bricks[gpu_bricks.size() - 1]);
+    return gpu_bricks.size() - 1;
 }
 
 // TODO: this function is almost a hundred lines long!! refactor!!!
@@ -130,24 +130,16 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
         }
     }
 
-    compose::union_t<3> u(new_sdfs);
 
     if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
-    }  
+    }      
     
-    vec3_t n = u.normal(c);
-    double p = u.phi(c);
-    if (n[2] < 0){
-        n = -n;
-        p = -p;
-    }
-
-    vec3_t plane(n[0], n[1], (c * n) - p);
+    compose::union_t<3> u(new_sdfs);
 
     if (is_leaf){
-        structure[i] = is_leaf_flag | get_plane_index(plane);
+        structure[i] = is_leaf_flag | create_brick(c, u);
         return;
     } 
 
@@ -155,7 +147,7 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
     mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
 
     if (j.frobenius_norm() < constant::epsilon){
-        structure[i] = is_leaf_flag | get_plane_index(plane);
+        structure[i] = is_leaf_flag | create_brick(c, u);
         return;
     }
 

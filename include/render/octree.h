@@ -40,15 +40,12 @@ private:
         brick data
     */
     // GPU-side
-    std::vector<brick_t::data_t> geometry;
+    std::vector<brick_t::data_t> gpu_bricks;
 
     // CPU-side
     std::vector<brick_t> bricks;
 
-
-    // TODO: this might be a waste of memory. perhaps the above and below
-    //       data structures can be merged into one?
-    std::map<f32vec3_t, uint32_t> plane_map;
+    std::shared_ptr<texture_manager_t> texture_manager;
 
     std::unique_ptr<buffer_t> buffer;
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
@@ -60,7 +57,7 @@ private:
         const std::vector<std::shared_ptr<sdf3_t>> & sdfs
     );
 
-    uint32_t get_plane_index(const vec3_t & p);
+    uint32_t create_brick(const vec3_t & x, const sdf3_t & sdf);
 
 public:
     // TODO: sort this out

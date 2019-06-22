@@ -5,12 +5,12 @@ brick_t::brick_t(){}
 brick_t::brick_t(
     const vec3_t & x, 
     std::weak_ptr<texture_manager_t> texture_manager_ptr, 
-    std::weak_ptr<sdf3_t> sdf_ptr, 
+    const sdf3_t & sdf, 
     data_t * data
 ){
-    if (auto sdf = sdf_ptr.lock()){
-        vec3_t n = sdf->normal(x);
-        double p = sdf->phi(x);
+    // if (auto sdf = sdf_ptr.lock()){
+        vec3_t n = sdf.normal(x);
+        double p = sdf.phi(x);
 
         if (n[2] < 0){
             n = -n;
@@ -27,7 +27,7 @@ brick_t::brick_t(
             //     this->uv = uv;
             // }
         }
-    }
+    // }
 }
 
 brick_t::~brick_t(){
