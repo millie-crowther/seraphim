@@ -1,5 +1,7 @@
 #include "render/brick.h"
 
+brick_t::brick_t(){}
+
 brick_t::brick_t(
     const vec3_t & x, 
     std::weak_ptr<texture_manager_t> texture_manager_ptr, 
