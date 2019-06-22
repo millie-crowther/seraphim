@@ -33,6 +33,7 @@ set(SOURCES
     ../src/render/camera.cpp
     ../src/render/octree.cpp
     ../src/render/texture_manager.cpp
+    ../src/render/brick.cpp
     
     ../src/maths/maths.cpp
     ../src/maths/quat.cpp

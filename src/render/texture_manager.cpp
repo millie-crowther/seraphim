@@ -2,7 +2,7 @@
 
 texture_manager_t::texture_manager_t(VmaAllocator allocator, VkDevice device, VkCommandPool pool, VkQueue queue, uint16_t size){
     this->size = size;
-    unclaimed_splats = static_cast<uint32_t>(size) * static_cast<uint32_t>(size);
+    unclaimed_bricks = static_cast<uint32_t>(size) * static_cast<uint32_t>(size);
     
     u32vec2_t image_size(size, size);
 
