@@ -1,13 +1,14 @@
 #include "render/texture_manager.h"
 
-texture_manager_t::texture_manager_t(VmaAllocator allocator, VkDevice device, VkCommandPool pool, VkQueue queue, uint16_t size){
+texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t size){
     this->size = size;
+    device = allocator.device;
     unclaimed_bricks = static_cast<uint32_t>(size) * static_cast<uint32_t>(size);
     
     u32vec2_t image_size(size, size);
 
     image = std::make_unique<image_t>(
-        allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+        allocator.vma_allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_COLOR_BIT
     );
@@ -44,23 +45,27 @@ texture_manager_t::~texture_manager_t(){
 
 u16vec2_t 
 texture_manager_t::request(){
-    u16vec2_t result;
+    // u16vec2_t result;
 
 
-    if (unclaimed_bricks > 0){
-        // TODO
+    // if (unclaimed_bricks > 0){
+    //     // TODO
 
-        unclaimed_bricks--;
+    //     unclaimed_bricks--;
 
-    } else if (!bricks.empty()){
-        result = bricks.front();
-        bricks.pop();
+    // } else if (!bricks.empty()){
+    //     result = bricks.front();
+    //     bricks.pop();
  
-    } else {
-        // TODO
-    }
+    // } else {
+    //     // TODO
+    // }
 
-    return result;
+    // return result;
+
+    std::cout << "request " << std::endl;
+
+    return u16vec2_t(0);
 }
 
 void 

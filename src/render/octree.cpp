@@ -14,7 +14,6 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
     structure.push_back(null_node); 
@@ -107,7 +106,7 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 
     // containment check precise
     double d = (sdf->normal(c) * p).chebyshev_norm();
-    if (p < 0 && d >= aabb[3] / 2){
+    if (p < 0 && d > aabb[3] / 2){
         return std::make_tuple(false, true);
     }
 

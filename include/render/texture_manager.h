@@ -5,6 +5,7 @@
 #include <queue>
 
 #include "render/image.h"
+#include "core/allocator.h"
 
 class texture_manager_t {
 private:
@@ -23,7 +24,7 @@ private:
 
 public:
     // constructors and destructors
-    texture_manager_t(VmaAllocator allocator, VkDevice device, VkCommandPool pool, VkQueue queue, uint16_t size);
+    texture_manager_t(const allocator_t & allocator, uint16_t size);
     ~texture_manager_t();
 
     // mutators

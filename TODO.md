@@ -33,12 +33,6 @@
 * delete bricks which havent been used in a while
     * record when a brick is used
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
-* reduce plane size from `f32vec4_t` to `f32vec3_t` (one element of normals redundant)
-    * compression has been implemented, still takes up same space because of alignment
-    * need to investigate how much of a problem vec4 alignment will be 
-    * perhaps reduce further e.g. `float` -> `int16_t`
-    * only problem is most things need to be 4 byte aligned 
-* lerp normals
 * remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where sdfs intersect
 * remove `lambda_sdf_t` from all mutator / compositional SDFs
@@ -46,9 +40,9 @@
     * introduces problems with hanging references
     * difficult to override normal function which is recommended
 
-### colouring
-* determine best way to uv map surface
+### texturing
 * texture surface
+* sort out a system for allocation of patches on texture
 
 ### lighting
 * physically-based shading approach
