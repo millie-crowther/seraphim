@@ -59,6 +59,8 @@ private:
 
     uint32_t create_brick(const vec3_t & x, const sdf3_t & sdf);
 
+    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+
 public:
     // TODO: sort this out
     octree_t(

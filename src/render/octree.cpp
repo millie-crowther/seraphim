@@ -14,13 +14,10 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    universal_aabb = vec4_t(-render_distance);
-    universal_aabb[3] = render_distance * 2;
-
-    structure.push_back(null_node); 
 
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
+    structure.push_back(null_node); 
     gpu_bricks.emplace_back();
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
@@ -30,6 +27,8 @@ octree_t::octree_t(
         }
     }
 
+    universal_aabb = vec4_t(-render_distance);
+    universal_aabb[3] = render_distance * 2;
     paint(0, universal_aabb, strong_sdfs);
 
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
@@ -84,59 +83,68 @@ octree_t::create_brick(const vec3_t & x, const sdf3_t & sdf){
     return gpu_bricks.size() - 1;
 }
 
-// TODO: this function is almost a hundred lines long!! refactor!!!
+
+std::tuple<bool, bool> 
+octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
+    double upper_radius = vec3_t(aabb[3] / 2).norm();
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
+    double p = sdf->phi(c);
+
+    // containment check upper bound
+    if (p <= -upper_radius){
+        return std::make_tuple(false, true);
+    }
+
+    // intersection check lower bound
+    if (std::abs(p) <= aabb[3] / 2){
+        return std::make_tuple(true, false);
+    }
+
+    // intersection check upper bound
+    if (p >= upper_radius){
+        return std::make_tuple(false, false);
+    }
+
+    // containment check precise
+    double d = (sdf->normal(c) * p).chebyshev_norm();
+    if (p < 0 && d >= aabb[3] / 2){
+        return std::make_tuple(false, true);
+    }
+
+    // intersection check precise
+    if (d <= aabb[3] / 2){
+        return std::make_tuple(true, false);
+    }
+
+    return std::make_tuple(false, false);
+}
+
 void 
 octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     bool is_leaf = aabb[3] <= 0.125;
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
-    vec3_t c(aabb[0], aabb[1], aabb[2]);
-    c += vec3_t(aabb[3] / 2.0f);
-
-    double upper_radius = vec3_t(aabb[3] / 2).norm();
-
     for (auto sdf : sdfs){
-        double p = sdf->phi(c);
+        auto intersection = intersects_contains(aabb, sdf);
 
-        // containment check upper bound
-        if (p <= -upper_radius){
+        if (std::get<1>(intersection)){
+            // contains
             structure[i] = is_leaf_flag;
             return;
-        }
-
-        // intersection check lower bound
-        if (std::abs(p) <= aabb[3] / 2){
+        } else if (std::get<0>(intersection)){
             new_sdfs.push_back(sdf);
-            continue;
-        }
-
-        // intersection check upper bound
-        if (p >= upper_radius){
-            continue;
-        }
-
-        // containment check precise
-        double c = (sdf->normal(c) * p).chebyshev_norm();
-        if (p < 0 && c >= aabb[3] / 2){
-            structure[i] = is_leaf_flag;
-            return;
-        }
-
-        // intersection check precise
-        if (c <= aabb[3] / 2){
-            new_sdfs.push_back(sdf);
-            continue;
         }
     }
-
 
     if (new_sdfs.empty()){
         structure[i] = is_leaf_flag;
         return;
     }      
-    
+
     compose::union_t<3> u(new_sdfs);
+
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
 
     if (is_leaf){
         structure[i] = is_leaf_flag | create_brick(c, u);
