@@ -7,7 +7,7 @@
 #include "core/vk_utils.h"
 
 buffer_t::buffer_t(
-    VmaAllocator allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
+    const allocator_t & allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
 ){
     this->allocator = allocator;
 
@@ -20,17 +20,17 @@ buffer_t::buffer_t(
     alloc_create_info.usage = vma_usage;
 
     VmaAllocationInfo alloc_info = {};
-    vmaCreateBuffer(allocator, &buffer_info, &alloc_create_info, &buffer, &allocation, &alloc_info);
+    vmaCreateBuffer(allocator.vma_allocator, &buffer_info, &alloc_create_info, &buffer, &allocation, &alloc_info);
    
     memory = alloc_info.deviceMemory;
     
-    vkBindBufferMemory(blaspheme_t::get_device(), buffer, memory, 0); 
+    vkBindBufferMemory(allocator.device, buffer, memory, 0); 
 
     is_host_visible = vma_usage != VMA_MEMORY_USAGE_GPU_ONLY;
 }
 
 buffer_t::~buffer_t(){
-    vmaDestroyBuffer(allocator, buffer, allocation);
+    vmaDestroyBuffer(allocator.vma_allocator, buffer, allocation);
 }
 
 VkBuffer
@@ -40,25 +40,25 @@ buffer_t::get_buffer(){
 
 void
 buffer_t::copy_buffer(
-    VkCommandPool command_pool, VkQueue queue, VkBuffer dest, uint64_t size, uint64_t offset
+    VkBuffer dest, uint64_t size, uint64_t offset
 ){
     if (size == 0){
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), command_pool, queue);
+    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = offset;
         copy_region.size = size;
         
         vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
-    vk_utils::post_commands(blaspheme_t::get_device(), command_pool, queue, cmd);
+    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
 }
 
 void
 buffer_t::copy(
-    VkCommandPool command_pool, VkQueue queue, void * data, uint64_t size, uint64_t offset
+    void * data, uint64_t size, uint64_t offset
 ){
     if (size == 0){
         return;
@@ -66,9 +66,9 @@ buffer_t::copy(
 
     if (is_host_visible){
 	    void * mem_map;
-        vkMapMemory(blaspheme_t::get_device(), memory, offset, size, 0, &mem_map);
+        vkMapMemory(allocator.device, memory, offset, size, 0, &mem_map);
 	        std::memcpy(mem_map, data, size);
-	    vkUnmapMemory(blaspheme_t::get_device(), memory);
+	    vkUnmapMemory(allocator.device, memory);
 	 
     } else {
         buffer_t staging_buffer(
@@ -77,20 +77,20 @@ buffer_t::copy(
             VMA_MEMORY_USAGE_CPU_ONLY
         );
 
-        staging_buffer.copy(command_pool, queue, data, size, 0);
-        staging_buffer.copy_buffer(command_pool, queue, buffer, size, offset); 
+        staging_buffer.copy(data, size, 0);
+        staging_buffer.copy_buffer(buffer, size, offset); 
     }
 }
 
 void
 buffer_t::copy_to_image(
-    VkCommandPool pool, VkQueue queue, VkImage image, uint32_t width, uint32_t height
+    VkImage image, uint32_t width, uint32_t height
 ){
     if (width <= 0 || height <= 0){
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), pool, queue);
+    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -109,5 +109,5 @@ buffer_t::copy_to_image(
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region
         );
-    vk_utils::post_commands(blaspheme_t::get_device(), pool, queue, cmd);
+    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
 }

@@ -10,14 +10,20 @@
 constexpr uint32_t octree_t::null_node;
 
 octree_t::octree_t(
-    VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
+    const allocator_t & allocator, double render_distance, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
+    texture_manager = std::make_shared<texture_manager_t>(allocator, 2048);
+
+    structure.reserve(max_structure_size);
+    brickset.reserve(max_brickset_size);
+    device_brickset.reserve(max_brickset_size);
+    
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
-    structure.push_back(null_node); 
-    gpu_bricks.emplace_back();
+    structure.emplace_back(null_node); 
+    device_brickset.emplace_back();
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -30,7 +36,7 @@ octree_t::octree_t(
     universal_aabb[3] = render_distance * 2;
     paint(0, universal_aabb, strong_sdfs);
 
-    uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size;
+    uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_brickset_size;
     buffer = std::make_unique<buffer_t>(
         allocator, size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -38,8 +44,8 @@ octree_t::octree_t(
     );
 
     // copy to buffer
-    buffer->copy(pool, queue, structure.data(), sizeof(uint32_t) * structure.size(), 0);
-    buffer->copy(pool, queue, gpu_bricks.data(),  sizeof(f32vec4_t) * gpu_bricks.size(), sizeof(uint32_t) * max_structure_size);
+    buffer->copy(structure.data(), sizeof(uint32_t) * structure.size(), 0);
+    buffer->copy(device_brickset.data(),  sizeof(f32vec4_t) * brickset.size(), sizeof(uint32_t) * max_structure_size);
 
     // int redundant_nodes = 0;
     // for (int i = 1; i < structure.size(); i += 8){
@@ -47,13 +53,13 @@ octree_t::octree_t(
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "gpu_bricks size: " << gpu_bricks.size() << std::endl;
+    std::cout << "device_brickset size: " << device_brickset.size() << std::endl;
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};
     desc_buffer_info.buffer = buffer->get_buffer();
     desc_buffer_info.offset = 0;
-    desc_buffer_info.range  = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_geometry_size; 
+    desc_buffer_info.range  = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_brickset_size; 
 
     VkWriteDescriptorSet write_desc_set = {};
     write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -72,14 +78,14 @@ octree_t::octree_t(
         write_desc_sets[i].dstSet = desc_sets[i];
     }
 
-    vkUpdateDescriptorSets(blaspheme_t::get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
 uint32_t 
 octree_t::create_brick(const vec3_t & x, const sdf3_t & sdf){
-    gpu_bricks.emplace_back();
-    bricks.emplace_back(x, texture_manager, sdf, &gpu_bricks[gpu_bricks.size() - 1]);
-    return gpu_bricks.size() - 1;
+    device_brickset.emplace_back();
+    brickset.emplace_back(x, texture_manager, sdf, &device_brickset[device_brickset.size() - 1]);
+    return device_brickset.size() - 1;
 }
 
 

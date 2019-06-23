@@ -6,7 +6,7 @@
 #include "core/vk_utils.h"
 
 image_t::image_t(
-    VmaAllocator allocator,
+    const allocator_t & allocator,
     u32vec2_t & size, VkFormat format, 
     VkImageTiling tiling, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
@@ -57,12 +57,12 @@ image_t::image_t(
 
 
     // // allocate memory 
-    VkResult result = vkCreateImage(blaspheme_t::get_device(), &image_info, nullptr, &image);
+    VkResult result = vkCreateImage(allocator.device, &image_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
     VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(blaspheme_t::get_device(), image, &mem_req);
+    vkGetImageMemoryRequirements(allocator.device, image, &mem_req);
 
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -70,12 +70,12 @@ image_t::image_t(
     auto properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(blaspheme_t::get_device(), &mem_alloc_info, nullptr, &memory);
+    result = vkAllocateMemory(allocator.device, &mem_alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    result = vkBindImageMemory(blaspheme_t::get_device(), image, memory, 0);
+    result = vkBindImageMemory(allocator.device, image, memory, 0);
 
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
@@ -86,9 +86,11 @@ image_t::image_t(
 }
 
 image_t::image_t(
+    const allocator_t & allocator,
     VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
 ){
     is_swapchain = true;
+    this->allocator = allocator;
     this->format = format;
     this->image = image;
 
@@ -113,18 +115,18 @@ image_t::create_image_view(VkImageAspectFlags aspect_flags){
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    VkResult result = vkCreateImageView(blaspheme_t::get_device(), &view_info, nullptr, &image_view);
+    VkResult result = vkCreateImageView(allocator.device, &view_info, nullptr, &image_view);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image view.");
     }
 }
 
 image_t::~image_t(){
-    vkDestroyImageView(blaspheme_t::get_device(), image_view, nullptr);
+    vkDestroyImageView(allocator.device, image_view, nullptr);
     
     if (!is_swapchain){
-        vkDestroyImage(blaspheme_t::get_device(), image, nullptr);
-        vkFreeMemory(blaspheme_t::get_device(), memory, nullptr);
+        vkDestroyImage(allocator.device, image, nullptr);
+        vkFreeMemory(allocator.device, memory, nullptr);
         // vmaDestroyImage(allocator, image, allocation);
     }
 }
@@ -132,7 +134,7 @@ image_t::~image_t(){
 int
 image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(blaspheme_t::get_physical_device(), &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(allocator.physical_device, &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -152,8 +154,8 @@ image_t::get_image(){
 }
 
 void
-image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageLayout new_layout){
-    auto cmd = vk_utils::pre_commands(blaspheme_t::get_device(), cmd_pool, queue);
+image_t::transition_image_layout(VkImageLayout new_layout){
+    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -217,7 +219,7 @@ image_t::transition_image_layout(VkCommandPool cmd_pool, VkQueue queue, VkImageL
         vkCmdPipelineBarrier(
             cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    vk_utils::post_commands(blaspheme_t::get_device(), cmd_pool, queue, cmd);
+    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
 
     layout = new_layout;
 }

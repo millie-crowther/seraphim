@@ -11,7 +11,7 @@ struct allocator_t {
     VkDevice device;
     VkPhysicalDevice physical_device;
     VkCommandPool pool;
-    VkQueue queue;
+    VkQueue queue; // graphics queue
 };
 
 #endif

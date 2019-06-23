@@ -5,14 +5,16 @@
 * make `image_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
     * problem may go away if you remove depth resources (see below)
-* remove `blaspheme_t::get_device()` and `blaspheme_t::get_physical_device()`
-    * they're hacky
-    * singleton pattern is gross
-    * not necessary anyway
-    * they're only still in buffer.cpp and image.cpp afaict
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
 * put a FPS counter in the title
+* improve design of `allocator_t` 
+    * does the job
+    * kind of hacky
+    * at least it isnt a singleton lol
+    * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
+    * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
+* maybe tidy internals of renderer class
 
 ## rendering
 

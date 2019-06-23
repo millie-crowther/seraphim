@@ -1,9 +1,10 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
+#include <array>
 #include <vector>
 #include <memory>
-#include <map>
+#include <set>
 
 #include "core/buffer.h"
 #include "sdf/sdf.h"
@@ -32,18 +33,20 @@ private:
     static constexpr uint32_t null_node = 0;
 
     static constexpr uint32_t max_structure_size = 25000;
-    static constexpr uint32_t max_geometry_size  = 10000;
+    static constexpr uint32_t max_brickset_size  = 10000;
+
+    // TODO: use some better data structures here. (e.g. arrays, set for host brickset)
 
     std::vector<uint32_t> structure;
     
     /*
         brick data
     */
-    // GPU-side
-    std::vector<brick_t::data_t> gpu_bricks;
+    // device-side
+    std::vector<brick_t::data_t> device_brickset;
 
-    // CPU-side
-    std::vector<brick_t> bricks;
+    // host-side
+    std::vector<brick_t> brickset;
 
     std::shared_ptr<texture_manager_t> texture_manager;
 
@@ -62,9 +65,8 @@ private:
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
 public:
-    // TODO: sort this out
     octree_t(
-        VmaAllocator allocator, VkCommandPool pool, VkQueue queue, double render_distance, 
+        const allocator_t & allocator, double render_distance, 
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets
     );

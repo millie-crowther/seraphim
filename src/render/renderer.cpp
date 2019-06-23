@@ -11,8 +11,7 @@ std::string
 renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
 
 renderer_t::renderer_t(
-    VmaAllocator allocator,
-    VkPhysicalDevice physical_device, VkDevice device,
+    const allocator_t & allocator,
     VkSurfaceKHR surface, uint32_t graphics_family, 
     uint32_t present_family, const u32vec2_t & window_size,
     keyboard_t * keyboard
@@ -25,8 +24,6 @@ renderer_t::renderer_t(
     this->surface = surface;
     this->graphics_family = graphics_family;
     this->present_family = present_family;
-    this->physical_device = physical_device;
-    this->device = device;
     this->allocator = allocator;
     this->keyboard = keyboard;
 
@@ -50,25 +47,27 @@ renderer_t::renderer_t(
 }
 
 renderer_t::~renderer_t(){
-    vkDestroyDescriptorSetLayout(device, descriptor_layout, nullptr);
+    vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
 
     uniform_buffers.clear();
 
     cleanup_swapchain();
 
     for (int i = 0; i < frames_in_flight; i++){
-        vkDestroySemaphore(device, image_available_semas[i], nullptr);
-        vkDestroySemaphore(device, render_finished_semas[i], nullptr);
-        vkDestroyFence(device, in_flight_fences[i], nullptr);
+        vkDestroySemaphore(allocator.device, image_available_semas[i], nullptr);
+        vkDestroySemaphore(allocator.device, render_finished_semas[i], nullptr);
+        vkDestroyFence(allocator.device, in_flight_fences[i], nullptr);
     }
 
-    vkDestroyCommandPool(device, command_pool, nullptr); 
+    vkDestroyCommandPool(allocator.device, command_pool, nullptr); 
 }
 
 bool
 renderer_t::init(){
-    vkGetDeviceQueue(device, graphics_family, 0, &graphics_queue);
-    vkGetDeviceQueue(device, present_family, 0, &present_queue);
+    vkGetDeviceQueue(allocator.device, graphics_family, 0, &graphics_queue);
+    vkGetDeviceQueue(allocator.device, present_family, 0, &present_queue);
+
+    allocator.queue = graphics_queue;
 
     if (!create_swapchain()){
         return false;
@@ -117,9 +116,9 @@ renderer_t::init(){
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    vertex_buffer->copy(command_pool, graphics_queue, (void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
+    vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    octree = std::make_shared<octree_t>(allocator, command_pool, graphics_queue, 16, renderable_sdfs, desc_sets);
+    octree = std::make_shared<octree_t>(allocator, 16, renderable_sdfs, desc_sets);
 
     if (!create_command_buffers()){
         return false;
@@ -136,7 +135,7 @@ renderer_t::create_swapchain(){
 
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        physical_device, surface, &capabilities
+        allocator.physical_device, surface, &capabilities
     );
     uint32_t image_count = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount != 0 && image_count > capabilities.maxImageCount){
@@ -170,22 +169,22 @@ renderer_t::create_swapchain(){
     create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     create_info.presentMode    = mode;
     create_info.clipped        = VK_TRUE;
-
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swapchain) != VK_SUCCESS){
+    if (vkCreateSwapchainKHR(allocator.device, &create_info, nullptr, &swapchain) != VK_SUCCESS){
 	    return false;
     }
 
     uint32_t count = 0;
-    vkGetSwapchainImagesKHR(device, swapchain, &count, nullptr);
+    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, nullptr);
 
     VkImage swapchain_imgs[count];
-    vkGetSwapchainImagesKHR(device, swapchain, &count, swapchain_imgs);
+    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, swapchain_imgs);
   
     swapchain_images.clear();
     for (auto & swapchain_image : swapchain_imgs){
         swapchain_images.push_back(std::make_unique<image_t>(
+            allocator,
             swapchain_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT
         ));
     }
@@ -199,7 +198,7 @@ VkExtent2D
 renderer_t::select_swap_extent(){
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        physical_device, surface, &capabilities
+        allocator.physical_device, surface, &capabilities
     );
 
     // check if we need to supply width and height
@@ -225,11 +224,11 @@ VkPresentModeKHR
 renderer_t::select_present_mode(){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        physical_device, surface, &count, nullptr
+        allocator.physical_device, surface, &count, nullptr
     );
     std::vector<VkPresentModeKHR> modes(count);
     vkGetPhysicalDeviceSurfacePresentModesKHR(
-        physical_device, surface, &count, modes.data()
+        allocator.physical_device, surface, &count, modes.data()
     );
 
     if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()){
@@ -247,11 +246,11 @@ VkSurfaceFormatKHR
 renderer_t::select_surface_format(){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(
-        physical_device, surface, &count, nullptr
+        allocator.physical_device, surface, &count, nullptr
     );
     std::vector<VkSurfaceFormatKHR> formats(count);
     vkGetPhysicalDeviceSurfaceFormatsKHR(
-        physical_device, surface, &count, formats.data()
+        allocator.physical_device, surface, &count, formats.data()
     );
     
     // check if all formats supported
@@ -275,7 +274,7 @@ renderer_t::select_surface_format(){
 
 void
 renderer_t::recreate_swapchain(){
-    vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(allocator.device);
   
     cleanup_swapchain();
     
@@ -293,20 +292,20 @@ renderer_t::recreate_swapchain(){
 void 
 renderer_t::cleanup_swapchain(){
     for (auto framebuffer : swapchain_framebuffers){
-	    vkDestroyFramebuffer(device, framebuffer, nullptr);
+	    vkDestroyFramebuffer(allocator.device, framebuffer, nullptr);
     }
 
     vkFreeCommandBuffers(
-        device, command_pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
+        allocator.device, allocator.pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
     );
 
-    vkDestroyPipeline(device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(device, render_pass, nullptr);
+    vkDestroyPipeline(allocator.device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(allocator.device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(allocator.device, render_pass, nullptr);
 
     swapchain_images.clear();
 
-    vkDestroySwapchainKHR(device, swapchain, nullptr);
+    vkDestroySwapchainKHR(allocator.device, swapchain, nullptr);
 }
 
 bool
@@ -349,7 +348,7 @@ renderer_t::create_render_pass(){
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
+    return vkCreateRenderPass(allocator.device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
 }
 
 bool 
@@ -483,7 +482,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
-	    device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
+	    allocator.device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
         std::cout << "Error: Failed to create pipeline layout." << std::endl;
 	    return false;
@@ -520,7 +519,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     VkResult result = vkCreateGraphicsPipelines(
-	    device, VK_NULL_HANDLE, 1, 
+	    allocator.device, VK_NULL_HANDLE, 1, 
         &pipeline_info, nullptr, &graphics_pipeline
     );
 
@@ -530,8 +529,8 @@ renderer_t::create_graphics_pipeline(){
 	    return false;
     }
 
-    vkDestroyShaderModule(device, vert_shader_module, nullptr);
-    vkDestroyShaderModule(device, frag_shader_module, nullptr);
+    vkDestroyShaderModule(allocator.device, vert_shader_module, nullptr);
+    vkDestroyShaderModule(allocator.device, frag_shader_module, nullptr);
 
     return true;
 }
@@ -555,7 +554,7 @@ renderer_t::create_framebuffers(){
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
-            device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
+            allocator.device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
         ){
             return false;
         }
@@ -575,7 +574,7 @@ renderer_t::create_command_buffers(){
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
-    if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS){
+    if (vkAllocateCommandBuffers(allocator.device, &alloc_info, command_buffers.data()) != VK_SUCCESS){
         return false;
     }
 
@@ -643,7 +642,7 @@ renderer_t::create_descriptor_pool(){
     pool_info.pPoolSizes    = pool_sizes.data();
     pool_info.maxSets       = n;
 
-    if (vkCreateDescriptorPool(device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
+    if (vkCreateDescriptorPool(allocator.device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
 	    return false;
     }
 
@@ -656,7 +655,7 @@ renderer_t::create_descriptor_pool(){
     alloc_info.pSetLayouts        = layouts.data();
 
     desc_sets.resize(n);
-    if (vkAllocateDescriptorSets(device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
+    if (vkAllocateDescriptorSets(allocator.device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
 	    return false;
     }
 
@@ -677,7 +676,7 @@ renderer_t::create_descriptor_set_layout(){
     layout_info.bindingCount = 1;
     layout_info.pBindings    = &octree_structure;
 
-    if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
+    if (vkCreateDescriptorSetLayout(allocator.device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         return false;
     }
  
@@ -692,9 +691,11 @@ renderer_t::create_command_pool(){
     command_pool_info.queueFamilyIndex = graphics_family;
     command_pool_info.flags = 0;
 
-    if (vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
+    if (vkCreateCommandPool(allocator.device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
     	return false;
     }
+
+    allocator.pool = command_pool;
 
     return true;
 }
@@ -714,18 +715,18 @@ renderer_t::create_sync(){
  
     for (int i = 0; i < frames_in_flight; i++){
         if (vkCreateSemaphore(
-            device, &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
+            allocator.device, &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
         if (vkCreateSemaphore(
-            device, &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
+            allocator.device, &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
-        if (vkCreateFence(device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
+        if (vkCreateFence(allocator.device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
             return false;
         }
     }
@@ -735,12 +736,12 @@ renderer_t::create_sync(){
 
 void
 renderer_t::update_push_constants() const {
-    auto command_buffer = vk_utils::pre_commands(device, command_pool, graphics_queue);
+    auto command_buffer = vk_utils::pre_commands(allocator.device, command_pool, graphics_queue);
         vkCmdPushConstants(
             command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
             0, sizeof(push_constants), &push_constants
         );
-    vk_utils::post_commands(device, command_pool, graphics_queue, command_buffer);
+    vk_utils::post_commands(allocator.device, command_pool, graphics_queue, command_buffer);
 }
 
 void
@@ -766,12 +767,12 @@ renderer_t::render(){
 
     update_push_constants();
 
-    vkWaitForFences(device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(device, 1, &in_flight_fences[current_frame]); 
+    vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]); 
 
     uint32_t image_index;
     vkAcquireNextImageKHR(
-        device, swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
+        allocator.device, swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
    
@@ -826,7 +827,7 @@ renderer_t::create_shader_module(std::string code, bool * success){
     create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
 
     VkShaderModule shader_module;
-    if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS){
+    if (vkCreateShaderModule(allocator.device, &create_info, nullptr, &shader_module) != VK_SUCCESS){
 	    *success = false;
     }
     return shader_module;

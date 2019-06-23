@@ -14,9 +14,6 @@
 
 #include "logic/scheduler.h"
 
-VkPhysicalDevice blaspheme_t::physical_device;
-VkDevice blaspheme_t::device;
-
 const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
@@ -81,13 +78,13 @@ blaspheme_t::blaspheme_t(bool is_debug){
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-    physical_device = select_device();
-    if (physical_device == VK_NULL_HANDLE){
+    allocator.physical_device = select_device();
+    if (allocator.physical_device == VK_NULL_HANDLE){
 	    throw std::runtime_error("Error: Couldn't find an appropriate GPU.");
     }
 
     VkPhysicalDeviceProperties properties = {};
-    vkGetPhysicalDeviceProperties(physical_device, &properties);
+    vkGetPhysicalDeviceProperties(allocator.physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
 
     std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
@@ -103,33 +100,34 @@ blaspheme_t::blaspheme_t(bool is_debug){
 	    throw std::runtime_error("Error: Couldn't create logical device.");
     }
 
+
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
-    allocator_info.physicalDevice = physical_device;
-    allocator_info.device = device;
+    allocator_info.physicalDevice = allocator.physical_device;
+    allocator_info.device = allocator.device;
     
-    vmaCreateAllocator(&allocator_info, &allocator);
+    vmaCreateAllocator(&allocator_info, &allocator.vma_allocator);
 
-    uint32_t graphics_family = get_graphics_queue_family(physical_device);
-    uint32_t present_family  = get_present_queue_family(physical_device);
+    uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
+    uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
     renderer = std::make_unique<renderer_t>(
-        allocator, physical_device, device, surface, graphics_family, present_family, window_size, &keyboard
+        allocator, surface, graphics_family, present_family, window_size, &keyboard
     );
 }
 
 blaspheme_t::~blaspheme_t(){
     // scheduler::halt();    
 
-    vkDeviceWaitIdle(device);
+    vkDeviceWaitIdle(allocator.device);
 
     // delete renderer early to release resources at appropriate time
-    renderer.reset(nullptr);
+    renderer = nullptr;
 
-    vmaDestroyAllocator(allocator);
+    vmaDestroyAllocator(allocator.vma_allocator);
 
     // destroy logical device
-    vkDestroyDevice(device, nullptr);
+    vkDestroyDevice(allocator.device, nullptr);
 
     // destroy debug callback
     if (is_debug){
@@ -165,8 +163,8 @@ blaspheme_t::keyboard_event(int key, int action, int mods){
 
 bool
 blaspheme_t::create_logical_device(){
-    uint32_t graphics = get_graphics_queue_family(physical_device);
-    uint32_t present = get_present_queue_family(physical_device);
+    uint32_t graphics = get_graphics_queue_family(allocator.physical_device);
+    uint32_t present = get_present_queue_family(allocator.physical_device);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = { graphics, present };
@@ -199,7 +197,7 @@ blaspheme_t::create_logical_device(){
 	    create_info.enabledLayerCount   = 0;
     } 
 
-    if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
+    if (vkCreateDevice(allocator.physical_device, &create_info, nullptr, &allocator.device) != VK_SUCCESS){
 	    return false;
     }
 
@@ -486,14 +484,4 @@ blaspheme_t::run(){
 	    glfwPollEvents();
         renderer->render();
     }
-}
-
-VkPhysicalDevice
-blaspheme_t::get_physical_device(){
-    return physical_device;
-}
-
-VkDevice
-blaspheme_t::get_device(){
-    return device;
 }

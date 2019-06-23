@@ -27,9 +27,7 @@ public:
 private:
     push_constant_t push_constants;
 
-    VkPhysicalDevice physical_device;
-    VkDevice device;
-    VmaAllocator allocator;
+    allocator_t allocator; // TODO : dont keep a copy
 
     // swapchain fields
     VkSwapchainKHR swapchain;
@@ -106,8 +104,7 @@ private:
 public:
     // constructors and destructors
     renderer_t(
-        VmaAllocator allocator,
-        VkPhysicalDevice physical_device, VkDevice device,
+        const allocator_t & allocator,
         VkSurfaceKHR surface, uint32_t graphics_family, 
         uint32_t present_family, const u32vec2_t & window_size,
         keyboard_t * keyboard

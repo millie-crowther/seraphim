@@ -1,6 +1,8 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
+#include "core/allocator.h"
+
 #include <vector>
 #include "vk_mem_alloc.h"
 #include "maths/vec.h"
@@ -17,7 +19,7 @@ private:
     VkFormat format;
     VkImageLayout layout;
     VmaAllocation allocation;
-    VmaAllocator allocator;
+    allocator_t allocator; // TODO: dont store a copy here
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
@@ -26,17 +28,18 @@ private:
 public:
     // constructors and destructors
     image_t(
-        VmaAllocator allocator,
+        const allocator_t & allocator,
         u32vec2_t & size, VkFormat format, 
         VkImageTiling tiling, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
     );
     image_t(
+        const allocator_t & allocator,
         VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
     );
     ~image_t();
 
-    void transition_image_layout(VkCommandPool pool, VkQueue queue, VkImageLayout new_layout);
+    void transition_image_layout(VkImageLayout new_layout);
 
     // getters
     VkImage get_image();

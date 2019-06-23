@@ -8,7 +8,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t siz
     u32vec2_t image_size(size, size);
 
     image = std::make_unique<image_t>(
-        allocator.vma_allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
+        allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_COLOR_BIT
     );
@@ -35,7 +35,6 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t siz
     if (vkCreateSampler(device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
-
 }
 
 texture_manager_t::~texture_manager_t(){
@@ -45,30 +44,30 @@ texture_manager_t::~texture_manager_t(){
 
 u16vec2_t 
 texture_manager_t::request(){
-    // u16vec2_t result;
+    // std::cout << "request " << std::endl;
+    
+    return u16vec2_t(1);
 
+    // u16vec2_t result;
 
     // if (unclaimed_bricks > 0){
     //     // TODO
 
     //     unclaimed_bricks--;
+    //     return result;
 
     // } else if (!bricks.empty()){
     //     result = bricks.front();
     //     bricks.pop();
- 
+    //     return result;
+
     // } else {
-    //     // TODO
+    //     throw std::runtime_error("No brick textures left!!");
     // }
-
-    // return result;
-
-    std::cout << "request " << std::endl;
-
-    return u16vec2_t(0);
 }
 
 void 
 texture_manager_t::clear(u16vec2_t brick){
+    // std::cout << "return: " << brick[0] << ", " << brick[1] << std::endl;
     bricks.push(brick);
 }

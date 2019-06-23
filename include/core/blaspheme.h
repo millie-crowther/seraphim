@@ -35,9 +35,9 @@ private:
     bool is_debug;
     VkDebugReportCallbackEXT callback;
 
-    VmaAllocator allocator;
-
     std::unique_ptr<renderer_t> renderer;
+
+    allocator_t allocator;
 
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -45,10 +45,6 @@ private:
 	keyboard_t keyboard;
  
     GLFWwindow * window;
-
-    // static fields
-    static VkPhysicalDevice physical_device;
-    static VkDevice device;
 
 public:
     blaspheme_t(bool is_debug);
@@ -58,10 +54,6 @@ public:
 	
     void window_resize(const u32vec2_t & size);
 	void keyboard_event(int key, int action, int mods);
-
-    // static getters
-    static VkDevice get_device();
-    static VkPhysicalDevice get_physical_device();
 };
 
 #endif
