@@ -14,7 +14,7 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    texture_manager = std::make_shared<texture_manager_t>(allocator, 256);
+    texture_manager = std::make_shared<texture_manager_t>(allocator, 256, desc_sets);
 
     structure.reserve(max_structure_size);
     
@@ -50,7 +50,7 @@ octree_t::octree_t(
     // }
 
     std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "device_brickset size: " << device_brickset.size() << std::endl;
+    std::cout << "brickset size: " << brickset.size() << std::endl;
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};

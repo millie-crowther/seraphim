@@ -51,13 +51,17 @@ void BRDF(...) {
 //
 // constants
 //
-float f = 1.0;
-float render_distance = 16;
-int max_steps = 64;
-float epsilon = 0.005;
-float shadow_softness = 64;
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
+const uint structure_size = 11000;
+const uint brickset_size  =  5000;
+
+// these ones could be push constants hypothetically
+const float f = 1.0;
+const float render_distance = 16;
+const int max_steps = 64;
+const float epsilon = 0.005;
+const float shadow_softness = 64;
 
 //
 // types sent from CPU
@@ -112,14 +116,14 @@ layout( push_constant ) uniform window_block {
 } push_constants;
 
 //
-// buffers
+// inputs from host
 //
-const uint structure_size = 25000;
-const uint geometry_size  = 25000;
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
-    brick_t geometry[geometry_size];
+    brick_t brickset[brickset_size];
 } octree;
+
+layout(binding = 2) uniform sampler2D texture_sampler;
 
 //
 // GLSL inputs
@@ -184,8 +188,8 @@ intersection_t raycast(ray_t r){
         if (octree.structure[node.i] != is_leaf_flag){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
-            if (index <= geometry_size){
-                brick_t brick = octree.geometry[index];
+            if (index <= brickset_size){
+                brick_t brick = octree.brickset[index];
                 intersection_t i = plane_intersection(r, brick.n, brick.d);
                 if (i.hit && node_contains(node, i.x)){
                     return i;
@@ -210,11 +214,8 @@ float shadow(vec3 l, vec3 p){
 }
 
 vec4 colour(vec3 p){
-    // if (p.y <= epsilon){
-	//     return vec4(0.4, 0.8, 0.6, 1.0);
-    // } else {
-        return vec4(0.9, 0.5, 0.6, 1.0);
-    // }
+    return texture(texture_sampler, vec2(0.5, 0.5));
+    // return vec4(0.9, 0.5, 0.6, 1.0);
 }
 
 vec4 light(vec3 p, vec3 n){

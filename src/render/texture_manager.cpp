@@ -1,8 +1,10 @@
 #include "render/texture_manager.h"
 
-texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t size){
+#include "core/vk_utils.h"
+
+texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t size, const std::vector<VkDescriptorSet> & desc_sets){
     this->size = size;
-    device = allocator.device;
+    this->allocator = allocator;
     claimed_bricks = 0;
     
     u32vec2_t image_size(size, size);
@@ -32,13 +34,49 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t siz
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
+
+    VkDescriptorImageInfo image_info = {};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image->get_image_view();
+    image_info.sampler = sampler;
+
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstBinding = 2;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pImageInfo = &image_info;
+
+    for (auto desc_set : desc_sets){
+        descriptor_write.dstSet = desc_set;
+        vkUpdateDescriptorSets(allocator.device, 1, &descriptor_write, 0, nullptr);
+    }
+
+    VkClearColorValue clear_colour;
+    clear_colour.float32[0] = 0.5f;
+    clear_colour.float32[1] = 1.0f;
+    clear_colour.float32[2] = 0.6f;
+    clear_colour.float32[3] = 1.0f;
+    
+    VkImageSubresourceRange range;
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = 0;
+    range.levelCount = 1;
+    range.baseArrayLayer = 0;
+    range.layerCount = 1;
+
+    auto cmd_buf = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
+        vkCmdClearColorImage(cmd_buf, image->get_image(), image->get_image_layout(), &clear_colour, 1, &range);
+    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd_buf);
+
 }
 
 texture_manager_t::~texture_manager_t(){
-    vkDestroySampler(device, sampler, nullptr);
+    vkDestroySampler(allocator.device, sampler, nullptr);
 }
 
 
@@ -46,7 +84,7 @@ u16vec2_t
 texture_manager_t::request(){
     if (claimed_bricks < size * size){
         claimed_bricks++;
-        return u16vec2_t(claimed_bricks % size, claimed_bricks / size);
+        return u16vec2_t(static_cast<uint16_t>(claimed_bricks % size), static_cast<uint16_t>(claimed_bricks / size));
 
     } else if (!bricks.empty()){
         u16vec2_t result = bricks.front();

@@ -20,11 +20,11 @@ private:
     std::queue<u16vec2_t> bricks;
 
     VkSampler sampler;
-    VkDevice device;
+    allocator_t allocator;
 
 public:
     // constructors and destructors
-    texture_manager_t(const allocator_t & allocator, uint16_t size);
+    texture_manager_t(const allocator_t & allocator, uint16_t size, const std::vector<VkDescriptorSet> & desc_sets);
     ~texture_manager_t();
 
     // mutators

@@ -525,7 +525,6 @@ renderer_t::create_graphics_pipeline(){
 
     if (result != VK_SUCCESS){
         std::cout << "Error: Failed to create graphics pipeline." << std::endl;
-        std::cout << result << " = " << VK_ERROR_INVALID_SHADER_NV << std::endl;
 	    return false;
     }
 
@@ -632,7 +631,6 @@ renderer_t::create_descriptor_pool(){
     pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pool_sizes[0].descriptorCount = n;
 
-    // TODO: remove?
     pool_sizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[1].descriptorCount = n;
 
@@ -664,17 +662,26 @@ renderer_t::create_descriptor_pool(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
-    VkDescriptorSetLayoutBinding octree_structure = {};
-    octree_structure.binding = 1;
-    octree_structure.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    octree_structure.descriptorCount = 1;
-    octree_structure.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    octree_structure.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding octree_layout = {};
+    octree_layout.binding = 1;
+    octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    octree_layout.descriptorCount = 1;
+    octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    octree_layout.pImmutableSamplers = nullptr;
+
+    VkDescriptorSetLayoutBinding sampler_layout = {};
+    sampler_layout.binding = 2;
+    sampler_layout.descriptorCount = 1;
+    sampler_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    sampler_layout.pImmutableSamplers = nullptr;
+    sampler_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { octree_layout, sampler_layout };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = 1;
-    layout_info.pBindings    = &octree_structure;
+    layout_info.bindingCount = layouts.size();
+    layout_info.pBindings    = layouts.data();
 
     if (vkCreateDescriptorSetLayout(allocator.device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         return false;

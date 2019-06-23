@@ -102,6 +102,11 @@ image_t::get_format(){
     return format;
 }
 
+VkImageLayout
+image_t::get_image_layout() const {
+    return layout;
+}
+
 void
 image_t::create_image_view(VkImageAspectFlags aspect_flags){
     VkImageViewCreateInfo view_info = {};

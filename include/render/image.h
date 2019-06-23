@@ -45,6 +45,7 @@ public:
     VkImage get_image();
     VkImageView get_image_view();
     VkFormat get_format();
+    VkImageLayout get_image_layout() const;
 
     // static methods
     static VkFormat find_supported_format(
