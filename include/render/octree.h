@@ -35,18 +35,16 @@ private:
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_brickset_size  = 10000;
 
-    // TODO: use some better data structures here. (e.g. arrays, set for host brickset)
-
-    std::vector<uint32_t> structure;
+    std::vector<uint32_t> structure; // TODO: should this be an array instead?
     
     /*
         brick data
     */
     // device-side
-    std::vector<brick_t::data_t> device_brickset;
+    std::array<brick_t::data_t, max_brickset_size> device_brickset;
 
     // host-side
-    std::vector<brick_t> brickset;
+    std::set<brick_t> brickset;
 
     std::shared_ptr<texture_manager_t> texture_manager;
 

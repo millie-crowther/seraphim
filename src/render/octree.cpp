@@ -14,16 +14,13 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
-    texture_manager = std::make_shared<texture_manager_t>(allocator, 2048);
+    texture_manager = std::make_shared<texture_manager_t>(allocator, 256);
 
     structure.reserve(max_structure_size);
-    brickset.reserve(max_brickset_size);
-    device_brickset.reserve(max_brickset_size);
     
     // TODO: remove this! its only here because the zero index is 
     //       regarded as an empty volume in the shader 
     structure.emplace_back(null_node); 
-    device_brickset.emplace_back();
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -83,9 +80,8 @@ octree_t::octree_t(
 
 uint32_t 
 octree_t::create_brick(const vec3_t & x, const sdf3_t & sdf){
-    device_brickset.emplace_back();
-    brickset.emplace_back(x, texture_manager, sdf, &device_brickset[device_brickset.size() - 1]);
-    return device_brickset.size() - 1;
+    brickset.emplace(x, texture_manager, sdf, &device_brickset[brickset.size()]);
+    return brickset.size() - 1;
 }
 
 

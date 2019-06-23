@@ -3,7 +3,7 @@
 texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t size){
     this->size = size;
     device = allocator.device;
-    unclaimed_bricks = static_cast<uint32_t>(size) * static_cast<uint32_t>(size);
+    claimed_bricks = 0;
     
     u32vec2_t image_size(size, size);
 
@@ -44,26 +44,18 @@ texture_manager_t::~texture_manager_t(){
 
 u16vec2_t 
 texture_manager_t::request(){
-    // std::cout << "request " << std::endl;
-    
-    return u16vec2_t(1);
+    if (claimed_bricks < size * size){
+        claimed_bricks++;
+        return u16vec2_t(claimed_bricks % size, claimed_bricks / size);
 
-    // u16vec2_t result;
+    } else if (!bricks.empty()){
+        u16vec2_t result = bricks.front();
+        bricks.pop();
+        return result;
 
-    // if (unclaimed_bricks > 0){
-    //     // TODO
-
-    //     unclaimed_bricks--;
-    //     return result;
-
-    // } else if (!bricks.empty()){
-    //     result = bricks.front();
-    //     bricks.pop();
-    //     return result;
-
-    // } else {
-    //     throw std::runtime_error("No brick textures left!!");
-    // }
+    } else {
+        throw std::runtime_error("No brick textures left!!");
+    }
 }
 
 void 

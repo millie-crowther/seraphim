@@ -22,7 +22,6 @@ public:
     };
 
     // constructors and destructors
-    brick_t(); // TODO: remove
     brick_t(
         const vec3_t & x, 
         std::weak_ptr<texture_manager_t> texture_manager, 
@@ -30,6 +29,9 @@ public:
         data_t * data
     );
     ~brick_t();
+
+    // overloaded operators
+    bool operator<(const brick_t & brick) const;
 
 private:
     // private fields

@@ -1,7 +1,5 @@
 #include "render/brick.h"
 
-brick_t::brick_t(){}
-
 brick_t::brick_t(
     const vec3_t & x, 
     std::weak_ptr<texture_manager_t> texture_manager_ptr, 
@@ -32,4 +30,9 @@ brick_t::~brick_t(){
     if (auto texture_manager = texture_manager_ptr.lock()){
         texture_manager->clear(uv);
     }
+}
+
+bool 
+brick_t::operator<(const brick_t & brick) const {
+    return uv < brick.uv;
 }

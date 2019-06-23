@@ -16,7 +16,7 @@ private:
     std::unique_ptr<image_t> image;
 
     uint16_t size;
-    uint32_t unclaimed_bricks;
+    uint32_t claimed_bricks;
     std::queue<u16vec2_t> bricks;
 
     VkSampler sampler;
