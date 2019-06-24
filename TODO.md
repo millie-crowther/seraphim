@@ -37,10 +37,6 @@
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
 * remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where sdfs intersect
-* remove `lambda_sdf_t` from all mutator / compositional SDFs
-    * probably just delete the class
-    * introduces problems with hanging references
-    * difficult to override normal function which is recommended
 
 ### texturing
 * texture surface

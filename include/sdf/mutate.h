@@ -1,8 +1,6 @@
 #ifndef MUTATE_H
 #define MUTATE_H
 
-#include "sdf/lambda_sdf.h"
-
 #include <memory>
 
 // inverse

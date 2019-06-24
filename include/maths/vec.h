@@ -188,18 +188,6 @@ public:
         return x < *this || *this < x;
     }
 
-    bool operator>(const vec_t<T, N> & x) const {
-        return x < *this;
-    }
-
-    bool operator<=(const vec_t<T, N> & x) const {
-        return *this < x || *this == x;
-    }
-
-    bool operator>=(const vec_t<T, N> & x) const {
-        return *this > x || *this == x;
-    }
-
     /*
         factories
     */

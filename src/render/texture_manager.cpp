@@ -57,17 +57,17 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t siz
     }
 
     VkClearColorValue clear_colour;
-    clear_colour.float32[0] = 0.5f;
-    clear_colour.float32[1] = 1.0f;
+    clear_colour.float32[0] = 0.7f;
+    clear_colour.float32[1] = 0.3f;
     clear_colour.float32[2] = 0.6f;
     clear_colour.float32[3] = 1.0f;
     
     VkImageSubresourceRange range;
-    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    range.baseMipLevel = 0;
-    range.levelCount = 1;
+    range.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel   = 0;
+    range.levelCount     = 1;
     range.baseArrayLayer = 0;
-    range.layerCount = 1;
+    range.layerCount     = 1;
 
     auto cmd_buf = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
         vkCmdClearColorImage(cmd_buf, image->get_image(), image->get_image_layout(), &clear_colour, 1, &range);
@@ -84,7 +84,10 @@ u16vec2_t
 texture_manager_t::request(){
     if (claimed_bricks < size * size){
         claimed_bricks++;
-        return u16vec2_t(static_cast<uint16_t>(claimed_bricks % size), static_cast<uint16_t>(claimed_bricks / size));
+        return u16vec2_t(
+            static_cast<uint16_t>(claimed_bricks % size), 
+            static_cast<uint16_t>(claimed_bricks / size)
+        );
 
     } else if (!bricks.empty()){
         u16vec2_t result = bricks.front();
