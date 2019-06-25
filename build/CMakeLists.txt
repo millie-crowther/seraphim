@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.7)
 set (CMAKE_CXX_STANDARD 17)
 project (blaspheme)
 
+SET(COMPILER_FLAGS "-pedantic -Wall")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}")
+
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package ( Threads REQUIRED )
 

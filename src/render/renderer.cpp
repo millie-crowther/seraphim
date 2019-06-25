@@ -178,8 +178,8 @@ renderer_t::create_swapchain(){
     uint32_t count = 0;
     vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, nullptr);
 
-    VkImage swapchain_imgs[count];
-    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, swapchain_imgs);
+    std::vector<VkImage> swapchain_imgs(count);
+    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, swapchain_imgs.data());
   
     swapchain_images.clear();
     for (auto & swapchain_image : swapchain_imgs){
@@ -538,7 +538,7 @@ bool
 renderer_t::create_framebuffers(){
     swapchain_framebuffers.resize(swapchain_images.size());
 
-    for (int i = 0; i < swapchain_framebuffers.size(); i++){
+    for (uint32_t i = 0; i < swapchain_framebuffers.size(); i++){
         std::vector<VkImageView> attachments = {
 	        swapchain_images[i]->get_image_view(),
 	    };
@@ -577,7 +577,7 @@ renderer_t::create_command_buffers(){
         return false;
     }
 
-    for (int i = 0; i < command_buffers.size(); i++){
+    for (uint32_t i = 0; i < command_buffers.size(); i++){
         VkCommandBufferBeginInfo begin_info = {};
    	    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	    begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;

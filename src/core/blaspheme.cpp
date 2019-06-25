@@ -251,7 +251,7 @@ blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
    
-    for (int i = 0; i < queue_family_count; i++){
+    for (uint32_t i = 0; i < queue_family_count; i++){
         if (q_families[i].queueCount > 0 && q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
             return i;
         }
@@ -268,7 +268,7 @@ blaspheme_t::get_present_queue_family(VkPhysicalDevice phys_device){
     std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
    
-    for (int i = 0; i < queue_family_count; i++){
+    for (uint32_t i = 0; i < queue_family_count; i++){
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(phys_device, i, surface, &present_support);
 
@@ -415,7 +415,7 @@ blaspheme_t::create_instance(){
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
     std::cout << "Enabled extensions: " << std::endl;
-    for (int i = 0; i < create_info.enabledExtensionCount; i++){
+    for (uint32_t i = 0; i < create_info.enabledExtensionCount; i++){
         std::cout << "\t" << create_info.ppEnabledExtensionNames[i] << std::endl;
     }
 
@@ -427,7 +427,7 @@ blaspheme_t::create_instance(){
     }
 
     std::cout << "Enabled validation layers: "  << std::endl;
-    for (int i = 0; i < create_info.enabledLayerCount; i++){
+    for (uint32_t i = 0; i < create_info.enabledLayerCount; i++){
         std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::endl;
     }
 

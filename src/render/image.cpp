@@ -16,6 +16,8 @@ image_t::image_t(
     this->format = format;
     this->allocator = allocator;
 
+    layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
     // create image
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -27,18 +29,17 @@ image_t::image_t(
     image_info.arrayLayers = 1;
     image_info.format = format;
     image_info.tiling = tiling;
-    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.initialLayout = layout;
     image_info.usage = usage;
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    VmaAllocationCreateInfo alloc_create_info = {};
-    alloc_create_info.usage = vma_usage; 
+    // VmaAllocationCreateInfo alloc_create_info = {};
+    // alloc_create_info.usage = vma_usage; 
 
-    VmaAllocation allocation;
-    VmaAllocationInfo alloc_info;
+    // VmaAllocation allocation;
+    // VmaAllocationInfo alloc_info;
 
     // TODO: Use VMA to do the allocation. not sure why below approach doesn't work.
     //       screen goes black if you try this way

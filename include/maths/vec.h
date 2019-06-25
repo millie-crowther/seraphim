@@ -201,11 +201,35 @@ public:
             return (f(x + axis) - f(x - axis)) / (2 * delta);
         });
     }
+
+    template<uint8_t A>
+    static typename std::enable_if<A < N, vec_t<T, N>>::type axis(){
+        vec_t<T, N> result;
+        result[A] = T(1);
+        return result;
+    }
+
+    static vec_t<T, N> right(){
+        return axis<0>();
+    }
+
+    static vec_t<T, N> up(){
+        return axis<1>();
+    }
+
+    static vec_t<T, N> forward(){
+        return axis<2>();
+    }
 };
+
+typedef vec_t<int32_t, 2> i32vec2_t;
+
+typedef vec_t<uint8_t, 2> u8vec2_t;
 
 typedef vec_t<uint16_t, 2> u16vec2_t;
 
 typedef vec_t<uint32_t, 2> u32vec2_t;
+typedef vec_t<uint32_t, 4> u32vec4_t;
 
 typedef vec_t<float, 2> f32vec2_t;
 typedef vec_t<float, 3> f32vec3_t;

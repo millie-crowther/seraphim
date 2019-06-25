@@ -29,8 +29,8 @@ public:
     ~buffer_t();
 
     // public methods
-    void copy(void * data, uint64_t size, uint64_t offset);
-    void copy_to_image(VkImage image, uint32_t width, uint32_t height);
+    void copy(const void * data, uint64_t size, uint64_t offset);
+    void copy_to_image(VkImage image, int x, int y, uint32_t width, uint32_t height);
 
     // getters
     VkBuffer get_buffer();

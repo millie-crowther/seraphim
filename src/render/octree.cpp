@@ -33,6 +33,8 @@ octree_t::octree_t(
     universal_aabb[3] = render_distance * 2;
     paint(0, universal_aabb, strong_sdfs);
 
+    texture_manager->update_image();
+
     uint32_t size = sizeof(uint32_t) * max_structure_size + sizeof(f32vec4_t) * max_brickset_size;
     buffer = std::make_unique<buffer_t>(
         allocator, size,
@@ -70,7 +72,7 @@ octree_t::octree_t(
     write_desc_set.pTexelBufferView = nullptr;
 
     std::vector<VkWriteDescriptorSet> write_desc_sets(desc_sets.size());
-    for (int i = 0; i < write_desc_sets.size(); i++){
+    for (uint32_t i = 0; i < write_desc_sets.size(); i++){
         write_desc_sets[i] = write_desc_set;
         write_desc_sets[i].dstSet = desc_sets[i];
     }
@@ -79,11 +81,10 @@ octree_t::octree_t(
 }
 
 uint32_t 
-octree_t::create_brick(const vec3_t & x, const sdf3_t & sdf){
-    brickset.emplace(x, texture_manager, sdf, &device_brickset[brickset.size()]);
+octree_t::create_brick(const vec4_t & aabb, const sdf3_t & sdf){
+    brickset.emplace(aabb, texture_manager, sdf, &device_brickset[brickset.size()]);
     return brickset.size() - 1;
 }
-
 
 std::tuple<bool, bool> 
 octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
@@ -145,18 +146,17 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
 
     compose::union_t<3> u(new_sdfs);
 
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
-
     if (is_leaf){
-        structure[i] = is_leaf_flag | create_brick(c, u);
+        structure[i] = is_leaf_flag | create_brick(aabb, u);
         return;
     } 
 
     auto f = [&](const vec3_t & x){ return u.normal(x); };
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
     mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
 
     if (j.frobenius_norm() < constant::epsilon){
-        structure[i] = is_leaf_flag | create_brick(c, u);
+        structure[i] = is_leaf_flag | create_brick(aabb, u);
         return;
     }
 

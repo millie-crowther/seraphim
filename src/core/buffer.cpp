@@ -58,7 +58,7 @@ buffer_t::copy_buffer(
 
 void
 buffer_t::copy(
-    void * data, uint64_t size, uint64_t offset
+    const void * data, uint64_t size, uint64_t offset
 ){
     if (size == 0){
         return;
@@ -84,7 +84,7 @@ buffer_t::copy(
 
 void
 buffer_t::copy_to_image(
-    VkImage image, uint32_t width, uint32_t height
+    VkImage image, int x, int y, uint32_t width, uint32_t height
 ){
     if (width <= 0 || height <= 0){
         return;
@@ -101,7 +101,7 @@ buffer_t::copy_to_image(
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        region.imageOffset = { 0, 0, 0 };
+        region.imageOffset = { x, y, 0 };
         region.imageExtent = { width, height, 1 };
 
         vkCmdCopyBufferToImage(
