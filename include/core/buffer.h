@@ -4,6 +4,7 @@
 #include "core/allocator.h"
 
 #include "vk_mem_alloc.h"
+#include "maths/vec.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -30,7 +31,7 @@ public:
 
     // public methods
     void copy(const void * data, uint64_t size, uint64_t offset);
-    void copy_to_image(VkImage image, int x, int y, uint32_t width, uint32_t height);
+    void copy_to_image(VkImage image, u32vec2_t offset, u32vec2_t extent);
 
     // getters
     VkBuffer get_buffer();

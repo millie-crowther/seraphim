@@ -37,9 +37,8 @@ public:
     ~texture_manager_t();
 
     // mutators
-    u16vec2_t request(const std::array<f32vec4_t, brick_size * brick_size> & image);
+    u16vec2_t request(const std::array<colour_t, brick_size * brick_size> & image);
     void clear(u16vec2_t brick);
-    void update_image();
 };
 
 #endif

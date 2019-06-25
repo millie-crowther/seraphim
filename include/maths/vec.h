@@ -225,10 +225,12 @@ public:
 typedef vec_t<int32_t, 2> i32vec2_t;
 
 typedef vec_t<uint8_t, 2> u8vec2_t;
+typedef vec_t<uint8_t, 4> u8vec4_t;
 
 typedef vec_t<uint16_t, 2> u16vec2_t;
 
 typedef vec_t<uint32_t, 2> u32vec2_t;
+typedef vec_t<uint32_t, 3> u32vec3_t;
 typedef vec_t<uint32_t, 4> u32vec4_t;
 
 typedef vec_t<float, 2> f32vec2_t;

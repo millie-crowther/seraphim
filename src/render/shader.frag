@@ -88,8 +88,9 @@ struct intersection_t {
     bool hit;
     vec3 x;
     vec3 n;
+    vec2 uv;
 };
-intersection_t null_intersection = intersection_t(false, vec3(0), vec3(0));
+intersection_t null_intersection = intersection_t(false, vec3(0), vec3(0), vec2(0));
 
 struct node_t {
     uint i;
@@ -169,7 +170,7 @@ intersection_t plane_intersection(ray_t r, vec2 n2, float d){
     // TODO: can probably make this a two liner with some fancy flying
     float dn = dot(r.d, n);
     float lambda = (d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, vec2(0));
 }
 
 intersection_t raycast(ray_t r){
@@ -192,6 +193,9 @@ intersection_t raycast(ray_t r){
                 brick_t brick = octree.brickset[index];
                 intersection_t i = plane_intersection(r, brick.n, brick.d);
                 if (i.hit && node_contains(node, i.x)){
+                    float u = float(brick.uv & 0xFFFF);
+                    float v = float(brick.uv >> 8);
+                    i.uv = vec2(u, v) + 1.0 / 512.0;
                     return i;
                 }
             }
@@ -213,8 +217,8 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(vec3 p){
-    return texture(texture_sampler, vec2(0.5, 0.5));
+vec4 colour(vec2 uv){
+    return texture(texture_sampler, uv);
     // return vec4(0.9, 0.5, 0.6, 1.0);
 }
 
@@ -282,10 +286,7 @@ void main(){
     intersection_t i = raycast(ray_t(camera_position, dir));
 
     if (i.hit){
-        out_colour = colour(i.x) * light(i.x, i.n);
+        out_colour = colour(i.uv) * light(i.x, i.n);
     }
 }
-
-
-
 

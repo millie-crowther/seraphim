@@ -20,7 +20,7 @@ brick_t::brick_t(
 
     painter_t<3> painter;
     const uint8_t s = texture_manager_t::brick_size;
-    std::array<f32vec4_t, s * s> image;
+    std::array<colour_t, s * s> image;
 
     // check if normal already aligned with up vector
     vec3_t u_axis = vec3_t::up();
