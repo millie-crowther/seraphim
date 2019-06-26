@@ -7,24 +7,23 @@
 class uuid_t {
 private:
     // static fields
-    static std::mt19937 engine;
-    static bool is_initialised;
+    static bool is_seeded;
+    static std::mt19937_64 engine;
 
-    // static methods
-    static void initialise();
+    // fields
+    uint64_t id[2];
 
-    // 128-bit number
-    uint32_t id[4];
+    // private static functions
+    static void seed();
 
 public:
+    // constructors
     uuid_t();
+    uuid_t(const uuid_t & uuid);
 
-    bool operator==(const uuid_t & psyche) const;
-
-    class comparator_t {
-    public:
-        bool operator()(const uuid_t & a, const uuid_t & b) const;
-    };
+    // overloaded operators
+    bool operator<(const uuid_t & uuid) const;
+    void operator=(const uuid_t & uuid);
 };
 
 #endif

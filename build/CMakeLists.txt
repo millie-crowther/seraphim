@@ -30,6 +30,7 @@ set(SOURCES
     ../src/core/blaspheme.cpp
     ../src/core/buffer.cpp
     ../src/core/vk_utils.cpp
+    ../src/core/uuid.cpp
     
     ../src/render/renderer.cpp
     ../src/render/image.cpp
@@ -45,6 +46,9 @@ set(SOURCES
 
     ../src/input/keyboard.cpp
     ../src/input/resources.cpp
+
+    ../src/logic/scheduler.cpp
+    ../src/logic/interval_revelator.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

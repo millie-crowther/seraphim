@@ -7,6 +7,7 @@
 #include <vector>
 #include "render/renderer.h"
 #include "input/keyboard.h"
+#include "logic/scheduler.h"
 
 class blaspheme_t {
 private:
@@ -30,12 +31,15 @@ private:
 
     // update functions
     bool should_quit();
+    void update_fps_counter(double delta);
 
     // debug fields
     bool is_debug;
     VkDebugReportCallbackEXT callback;
 
     std::unique_ptr<renderer_t> renderer;
+
+    scheduler_t scheduler;
 
     allocator_t allocator;
 

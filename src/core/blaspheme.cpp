@@ -114,6 +114,10 @@ blaspheme_t::blaspheme_t(bool is_debug){
     renderer = std::make_unique<renderer_t>(
         allocator, surface, graphics_family, present_family, window_size, &keyboard
     );
+
+    scheduler.frame_start.follow(std::bind(
+        &blaspheme_t::update_fps_counter, this, std::placeholders::_1
+    ));
 }
 
 blaspheme_t::~blaspheme_t(){
@@ -482,6 +486,13 @@ void
 blaspheme_t::run(){
     while (!should_quit()){
 	    glfwPollEvents();
+        scheduler.frame_start.tick();
         renderer->render();
     }
+}
+
+void
+blaspheme_t::update_fps_counter(double delta){
+    std::string title = "BLASPHEME | FPS: " + std::to_string(1.0 / delta);
+    glfwSetWindowTitle(window, title.c_str());
 }

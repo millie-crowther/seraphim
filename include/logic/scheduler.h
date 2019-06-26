@@ -3,13 +3,11 @@
 
 #include <functional>
 
-namespace scheduler {    
-    void halt();
+#include "logic/interval_revelator.h"
 
-    typedef std::function<void(void)> effector_t;
-
-    void submit(const effector_t & effector);
-    void submit_after(const effector_t & effector, double delay);
-}
+class scheduler_t {   
+public:
+    interval_revelator_t frame_start;
+};
 
 #endif

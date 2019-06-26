@@ -6,7 +6,6 @@
     * figure out why it blanks the screen
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
-* put a FPS counter in the title
 * improve design of `allocator_t` 
     * does the job
     * kind of hacky
@@ -14,6 +13,7 @@
     * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * maybe tidy internals of renderer class
+* FPS counter is weird. fix it.
 
 ## rendering
 
@@ -28,7 +28,6 @@
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
-* determine best way to animate octree
 * lower granularity of octree at distance from camera
     * increase granularity when you get closer (flag for LOD?)
 * delete bricks which havent been used in a while
@@ -60,6 +59,9 @@
 
 ### lighting
 * physically-based shading approach
+* maybe some sort of generic lighting primitive
+    * based on surface area, emissive properties of material etc.
+* bounce lighting??
 
 ## physics
 1. find good method for partitioning colliders to reach `O(n * log(n))` complexity

@@ -2,32 +2,34 @@
 #define EVENT_EMITTER_H
 
 #include <functional>
-#include <vector>
+#include <map>
 
-#include "logic/scheduler.h"
 #include "core/uuid.h"
 
 // TODO: read / write synchronisation on listeners vector
 
-template<class output_t>
+template<class T>
 class revelator_t {
 public:
-    typedef std::function<void(const output_t &)> follower_t;
-
-    uuid_t follow(const follower_t & follower){
-        followers.push_back(follower);
+    uuid_t follow(const std::function<void(const T &)> & follower){
+        uuid_t uuid;
+        followers[uuid] = follower;
+        return uuid;
     }
 
     void renounce(const uuid_t & apostate){
-        
+        auto a = followers.find(apostate);
+        if (a != followers.end()){
+            followers.erase(a);
+        }
     }
 
 protected:
     revelator_t(){}
 
-    void reveal(const output_t & output) const {
+    void announce(const T & t) const {
         for (auto & follower : followers){
-            scheduler::submit(std::bind(follower, output));
+            follower.second(t);
         }
     }
 
@@ -36,7 +38,7 @@ protected:
     }
 
 private:
-    std::vector<follower_t> followers;
+    std::map<uuid_t, std::function<void(const T &)>> followers;
 };
 
 #endif
