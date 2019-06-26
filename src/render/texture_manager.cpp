@@ -6,12 +6,12 @@
 
 constexpr uint8_t texture_manager_t::brick_size;
 
-texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t size, const std::vector<VkDescriptorSet> & desc_sets){
-    this->size = size;
+texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets){
+    this->grid_size = grid_size;
     this->allocator = allocator;
     claimed_bricks = 0;
     
-    u32vec2_t image_size(size * brick_size);
+    u32vec2_t image_size(grid_size * brick_size);
 
     image = std::make_unique<image_t>(
         allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
@@ -67,49 +67,21 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t siz
     );
 
     image->transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
-    std::vector<uint32_t> blank(2048 * 2048, 0xFFFF00FF);
-
-    // staging_buffer->copy(blank.data(), blank.size() * sizeof(uint32_t), 0);
-    // staging_buffer->copy_to_image(
-    //     image->get_image(), 
-    //     u32vec2_t(0),
-    //     u32vec2_t(2048)
-    // );
-
-    // TODO:
-    // image->transition_image_layout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-
-    // std::vector<uint32_t> blank(brick_size * brick_size, 0xFFFF00FF);
-    // staging_buffer->copy(blank.data(), blank.size() * sizeof(uint32_t), 0);
-
-    // for (uint32_t x = 0; x < 256; x++){
-    //     for (uint32_t y = 0; y < 256; y++){
-    //         u32vec2_t uv(x, y);
-    //         staging_buffer->copy_to_image(
-    //             image->get_image(), 
-    //             uv * brick_size,
-    //             u32vec2_t(brick_size)
-    //         );
-    //     }
-    // }
 }
 
 texture_manager_t::~texture_manager_t(){
     vkDestroySampler(allocator.device, sampler, nullptr);
 }
 
-
 u16vec2_t 
 texture_manager_t::request(const std::array<colour_t, brick_size * brick_size> & brick){
     u16vec2_t uv;
 
-    if (claimed_bricks < static_cast<uint32_t>(size * size)){
+    if (claimed_bricks < static_cast<uint32_t>(grid_size * grid_size)){
         claimed_bricks++;
         uv = u16vec2_t(
-            static_cast<uint16_t>(claimed_bricks % size), 
-            static_cast<uint16_t>(claimed_bricks / size)
+            static_cast<uint16_t>(claimed_bricks % grid_size), 
+            static_cast<uint16_t>(claimed_bricks / grid_size)
         );
 
     } else if (!bricks.empty()){
@@ -120,18 +92,8 @@ texture_manager_t::request(const std::array<colour_t, brick_size * brick_size> &
         throw std::runtime_error("No brick textures left!!");
     }
 
-    // staging_buffer->copy(brick.data(), brick.size() * sizeof(uint32_t), 0);
-    // staging_buffer->copy_to_image(
-    //     image->get_image(), 
-    //     uv.cast<uint32_t>(),
-    //     u32vec2_t(brick_size)
-    // );
+    staging_buffer->copy(brick.data(), brick.size() * sizeof(u8vec4_t), 0);
 
-    // std::cout << uv[0] << ", " << uv[1] << std::endl;
-
-    std::vector<uint32_t> blank(brick_size * brick_size, 0xFFFF00FF);
-
-    staging_buffer->copy(blank.data(), blank.size() * sizeof(uint32_t), 0);
     staging_buffer->copy_to_image(
         image->get_image(), 
         uv.cast<uint32_t>() * brick_size,

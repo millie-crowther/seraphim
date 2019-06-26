@@ -101,7 +101,11 @@ buffer_t::copy_to_image(
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
 
-        region.imageOffset = { offset[0], offset[1], 0 };
+        region.imageOffset = { 
+            static_cast<int32_t>(offset[0]), 
+            static_cast<int32_t>(offset[1]), 
+            0 
+        };
         region.imageExtent = { extent[0], extent[1], 1 };
 
         vkCmdCopyBufferToImage(

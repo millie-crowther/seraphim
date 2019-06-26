@@ -4,7 +4,6 @@
 
 * make `image_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
-    * problem may go away if you remove depth resources (see below)
 * check if `vkQueueWaitIdle` in vk_utils post commands is bad
     * remove if necessary
 * put a FPS counter in the title
@@ -37,10 +36,27 @@
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
 * remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where sdfs intersect
+* Jacobian culling approximation too greedy in some cases
+    * maybe monte carlo sampling?
+        * 99% of cases will terminate after second iteration so not as expensive as you might think
+        * when to stop, though?
+        * perhaps statisical analysis of problem will allow a clean solution
+        * e.g. when 99% probability of being planar is satisfied
+            * even 99% probability will still lead to hundreds of incorrect bricks
+            * but not incorrect in a highly visible way i guess
+    * fitting of quadratic curve to surface
+        * then check if curve is planar
+        * computationally, probably just the same as above
+        * but without early termination
 
-### texturing
-* texture surface
-* sort out a system for allocation of patches on texture
+### materials
+* fix problems with uv coordinates
+    * seems to be okay at the bottom right but nowhere else??
+* make patches actual sprites rather than solid blocks of colour
+* add textures for other material properties
+    * albedo
+    * temperature
+    * etc
 
 ### lighting
 * physically-based shading approach

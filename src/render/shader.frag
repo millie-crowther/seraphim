@@ -62,6 +62,7 @@ const float render_distance = 16;
 const int max_steps = 64;
 const float epsilon = 0.005;
 const float shadow_softness = 64;
+const float grid_size = 256;
 
 //
 // types sent from CPU
@@ -195,7 +196,9 @@ intersection_t raycast(ray_t r){
                 if (i.hit && node_contains(node, i.x)){
                     float u = float(brick.uv & 0xFFFF);
                     float v = float(brick.uv >> 8);
-                    i.uv = vec2(u, v) + 1.0 / 512.0;
+                    i.uv = vec2(u, v) / grid_size + 0.5 / grid_size;
+                    
+                    // out_colour = vec4(i.uv, 0, 1);
                     return i;
                 }
             }

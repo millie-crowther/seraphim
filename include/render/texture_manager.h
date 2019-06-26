@@ -18,7 +18,7 @@ private:
     // private fields
     std::unique_ptr<image_t> image;
 
-    uint16_t size;
+    uint16_t grid_size;
     uint32_t claimed_bricks;
     std::queue<u16vec2_t> bricks;
 
@@ -27,13 +27,12 @@ private:
     VkSampler sampler;
     allocator_t allocator;
 
-
 public:
     // constants
     static constexpr uint8_t brick_size = 8;
 
     // constructors and destructors
-    texture_manager_t(const allocator_t & allocator, uint16_t size, const std::vector<VkDescriptorSet> & desc_sets);
+    texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
     ~texture_manager_t();
 
     // mutators
