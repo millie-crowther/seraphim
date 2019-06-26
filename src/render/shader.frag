@@ -194,11 +194,10 @@ intersection_t raycast(ray_t r){
                 brick_t brick = octree.brickset[index];
                 intersection_t i = plane_intersection(r, brick.n, brick.d);
                 if (i.hit && node_contains(node, i.x)){
-                    float u = float(brick.uv & 0xFFFF);
-                    float v = float(brick.uv >> 8);
+                    float u = float(brick.uv & 65535);
+                    float v = float(brick.uv >> 16);
                     i.uv = vec2(u, v) / grid_size + 0.5 / grid_size;
                     
-                    // out_colour = vec4(i.uv, 0, 1);
                     return i;
                 }
             }
@@ -292,4 +291,6 @@ void main(){
         out_colour = colour(i.uv) * light(i.x, i.n);
     }
 }
+
+
 

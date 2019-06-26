@@ -6,7 +6,7 @@
 
 #include "core/uuid.h"
 
-// TODO: read / write synchronisation on listeners vector
+// TODO: read / write synchronisation on followers map
 
 template<class T>
 class revelator_t {
@@ -28,6 +28,7 @@ protected:
     revelator_t(){}
 
     void announce(const T & t) const {
+        // TODO: perhaps adopt more efficient strategy if map becomes very large
         for (auto & follower : followers){
             follower.second(t);
         }

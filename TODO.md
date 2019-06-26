@@ -73,5 +73,4 @@
     * Snow?
 
 ## logic
-1. test `scheduler_t` to make sure it even works
-2. make a coroutine system of some kind
+* make a coroutine system of some kind

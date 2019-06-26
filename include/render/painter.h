@@ -9,8 +9,8 @@ template<uint8_t D>
 class painter_t {
 public:
     colour_t colour(const vec_t<double, D> & x) const {
-        uint8_t g = std::max(std::min(x[1], 1.0), 0.0) * 255;
-        return colour_t(0x0A, g, 0x0A, 0xFF);
+        uint8_t r = std::max(std::min(x[1], 2.0), 0.0) * 127;
+        return colour_t(r, 0x20, 0xFF - r, 0xFF);
     }
 };
 

@@ -18,7 +18,7 @@ brick_t::brick_t(
         p = -p;
     }
 
-    colour_t colour = painter_t<3>().colour(x);
+    colour_t colour = painter_t<3>().colour(x - n * p);
     std::array<colour_t, texture_manager_t::brick_size * texture_manager_t::brick_size> image;
     image.fill(colour);
 
