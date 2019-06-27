@@ -13,14 +13,32 @@ brick_t::brick_t(
     vec3_t n = sdf.normal(x);
     double p = sdf.phi(x);
 
+    std::array<colour_t, texture_manager_t::brick_size * texture_manager_t::brick_size> image;
+
+    vec3_t v = std::abs(n[0]) <= 1 - constant::epsilon ? vec3_t::up() : vec3_t::right();
+    vec3_t u_axis = v % n;
+    vec3_t v_axis = n % u_axis;
+
+    for (uint32_t i = 0; i < image.size(); i++){
+        vec2_t uv(
+            i % texture_manager_t::brick_size,
+            i / texture_manager_t::brick_size
+        );
+        uv /= texture_manager_t::brick_size / aabb[3] / 2;
+
+        vec3_t dx = u_axis * uv[0] + v_axis * uv[1];
+
+        image[i] = painter_t<3>().colour(x - n * p + dx);
+    }
+
+
     if (n[2] < 0){
         n = -n;
         p = -p;
     }
 
-    colour_t colour = painter_t<3>().colour(x - n * p);
-    std::array<colour_t, texture_manager_t::brick_size * texture_manager_t::brick_size> image;
-    image.fill(colour);
+
+
 
     if (data != nullptr){
         data->n = f32vec2_t(static_cast<float>(n[0]), static_cast<float>(n[1]));

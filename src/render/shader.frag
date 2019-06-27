@@ -238,7 +238,8 @@ vec4 colour(intersection_t i){
     vec3 c = i.node.min + i.node.size / 2;
     vec3 dx = i.x - c; 
 
-    vec3 u_axis = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(i.n.y <= 1 - epsilon));
+    vec3 v = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(abs(i.n.y) <= 1 - epsilon));
+    vec3 u_axis = cross(v, i.n);
     vec3 v_axis = cross(i.n, u_axis);
 
     vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
@@ -313,5 +314,4 @@ void main(){
         out_colour = colour(i) * light(i.x, i.n);
     }
 }
-
 
