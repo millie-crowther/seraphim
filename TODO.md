@@ -49,9 +49,6 @@
         * but without early termination
 
 ### materials
-* fix problems with uv coordinates
-    * seems to be okay at the bottom right but nowhere else??
-* make patches actual sprites rather than solid blocks of colour
 * add textures for other material properties
     * albedo
     * temperature
