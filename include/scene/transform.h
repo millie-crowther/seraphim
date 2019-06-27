@@ -15,20 +15,16 @@ private:
     // physical location and orientation
     vec3_t position;
     quat_t rotation;
-    
-    // private constructor
-    transform_t(transform_t * master);
 
-public:
-    // constructors and destructors
+    // constructors
     transform_t();
-
-    std::shared_ptr<transform_t> create_servant();
     
-    vec3_t get_absolute_position() const;
+public:
+    // singleton root transform
+    static transform_t root_transform;
 
-    void set_position(const vec3_t & x);
-    void set_rotation(const quat_t & q);
+    // modifiers
+    std::weak_ptr<transform_t> create_servant();
 };
 
 #endif

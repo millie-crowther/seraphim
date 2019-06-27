@@ -5,13 +5,10 @@ lightweight game engine based around signed distance fields. implemented in vulk
 ## install
 `./install.sh`
 
-
 ## usage
-
 `./run.sh`
 
 ## dependencies
 * vulkan
 * glfw
 * vulkan memory allocator 
-* stb
