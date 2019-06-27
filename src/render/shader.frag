@@ -85,14 +85,6 @@ struct ray_t {
     vec3 d;
 };
 
-struct intersection_t {
-    bool hit;
-    vec3 x;
-    vec3 n;
-    uint i;
-};
-intersection_t null_intersection = intersection_t(false, vec3(0), vec3(0), 0);
-
 struct node_t {
     uint i;
     vec3 min;
@@ -100,6 +92,18 @@ struct node_t {
 };
 node_t invalid_node = node_t(0, vec3(0), -1);
 node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
+
+struct intersection_t {
+    bool hit;
+    vec3 x;
+    vec3 n;
+    uint brick;
+    node_t node;
+};
+intersection_t null_intersection = intersection_t(
+    false, vec3(0), vec3(0), 0, 
+    node_t(0, vec3(0), 0)
+);
 
 // 
 // outputs
@@ -168,11 +172,9 @@ node_t octree_lookup(vec3 x){
 intersection_t plane_intersection(ray_t r, uint i){
     brick_t b = octree.brickset[i];
     vec3 n = vec3(b.n, sqrt(1 - dot(b.n, b.n)));
-
-    // TODO: can probably make this a two liner with some fancy flying
     float dn = dot(r.d, n);
     float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node);
 }
 
 intersection_t raycast(ray_t r){
@@ -194,6 +196,7 @@ intersection_t raycast(ray_t r){
             if (index <= brickset_size){
                 intersection_t i = plane_intersection(r, index);
                 if (i.hit && node_contains(node, i.x)){
+                    i.node = node;
                     return i;
                 }
             }
@@ -215,12 +218,32 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(intersection_t i){
-    uint u = octree.brickset[i.i].uv & 65535;
-    uint v = octree.brickset[i.i].uv >> 16;
+vec2 uv(intersection_t i){
+    brick_t brick = octree.brickset[i.brick];
+
+    // find centre
+    uint u = brick.uv & 65535;
+    uint v = brick.uv >> 16;
     vec2 uv = vec2(u, v) / grid_size + 0.5 / grid_size;
 
-    return texture(texture_sampler, uv);
+    // find offset
+    vec2 d = vec2(0);
+
+    return uv + d;
+}
+
+vec4 colour(intersection_t i){
+    vec2 uv = uv(i);
+
+    vec3 c = i.node.min + i.node.size / 2;
+    vec3 dx = i.x - c; 
+
+    vec3 u_axis = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(i.n.y <= 1 - epsilon));
+    vec3 v_axis = cross(i.n, u_axis);
+
+    vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
+
+    return texture(texture_sampler, uv + du);
 }
 
 vec4 light(vec3 p, vec3 n){
@@ -290,6 +313,5 @@ void main(){
         out_colour = colour(i) * light(i.x, i.n);
     }
 }
-
 
 
