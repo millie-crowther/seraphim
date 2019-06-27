@@ -16,12 +16,9 @@ private:
     vec3_t position;
     quat_t rotation;
 
+public:
     // constructors
     transform_t();
-    
-public:
-    // singleton root transform
-    static transform_t root_transform;
 
     // modifiers
     std::weak_ptr<transform_t> create_servant();

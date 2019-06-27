@@ -10,23 +10,6 @@
 #include "sdf/sdf.h"
 #include "render/brick.h"
 
-/*
-
-LXXXXXXX XXXXXXXX XXXXXXXX XXXXXXXX
-01234567 01234567 01234567 01234567
-
-L = is leaf node
-if L:
-    X = pointer to brick data
-else: 
-    X = pointer to first child
-    if X = 0: 
-        there is no child; signal CPU to stream in data.
-
-+ a null node can be described by the literal 0
-
-*/
-
 class octree_t {
 private:
     static constexpr uint32_t is_leaf_flag = 1 << 31;
