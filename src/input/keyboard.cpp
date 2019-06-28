@@ -8,6 +8,7 @@ keyboard_t::key_event(int key, int action, int mods){
 }
 
 bool
-keyboard_t::is_key_pressed(int key){
-    return key_state.find(key) != key_state.end() && key_state[key];
+keyboard_t::is_key_pressed(int key) const {
+    key_state.find(key);
+    return key_state.find(key) != key_state.end() && key_state.at(key);
 }

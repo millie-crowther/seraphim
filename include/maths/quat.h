@@ -8,7 +8,7 @@
 class quat_t  {
 private:
     // fields
-    vec4_t q;
+    vec4_t qs;
 
 public:
     // public constructors
@@ -19,7 +19,10 @@ public:
     quat_t inverse() const;
 
     // operators
+    vec3_t operator*(const vec3_t & q) const;
     quat_t operator*(const quat_t & q) const;
+    
+    quat_t operator*=(const quat_t & q);
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);

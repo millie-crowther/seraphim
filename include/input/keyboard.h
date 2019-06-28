@@ -13,7 +13,7 @@ private:
 public:
     void key_event(int key, int action, int mods);
 
-    bool is_key_pressed(int key);
+    bool is_key_pressed(int key) const;
 };
 
 #endif 

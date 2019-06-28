@@ -111,11 +111,12 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
-    renderer = std::make_unique<renderer_t>(
-        allocator, surface, graphics_family, present_family, window_size, &keyboard
+    renderer = std::make_shared<renderer_t>(
+        allocator, surface, graphics_family, present_family, window_size
     );
 
-    scheduler.frame_start.follow(std::bind(
+    scheduler = std::make_shared<scheduler_t>();
+    scheduler->frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
     ));
 }
@@ -155,6 +156,12 @@ blaspheme_t::~blaspheme_t(){
 
 }
 
+
+const keyboard_t *
+blaspheme_t::get_keyboard() const {
+    return &keyboard;
+}
+
 void
 blaspheme_t::window_resize(const u32vec2_t & size){
     renderer->window_resize(size);
@@ -163,6 +170,18 @@ blaspheme_t::window_resize(const u32vec2_t & size){
 void 
 blaspheme_t::keyboard_event(int key, int action, int mods){
     keyboard.key_event(key, action, mods);
+}
+
+
+std::weak_ptr<renderer_t> 
+blaspheme_t::get_renderer() const {
+    return renderer;
+}
+
+
+std::weak_ptr<scheduler_t> 
+blaspheme_t::get_scheduler() const {
+    return scheduler;
 }
 
 bool
@@ -486,7 +505,7 @@ void
 blaspheme_t::run(){
     while (!should_quit()){
 	    glfwPollEvents();
-        scheduler.frame_start.tick();
+        scheduler->frame_start.tick();
         renderer->render();
     }
 }

@@ -33,7 +33,6 @@
 * delete bricks which havent been used in a while
     * record when a brick is used
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
-* remove keyboard class from renderer ( only there for testing purposes)
 * fix holes at volumes where sdfs intersect
 * Jacobian culling approximation too greedy in some cases
     * maybe monte carlo sampling?

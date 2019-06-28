@@ -90,9 +90,6 @@ private:
 
     bool init();
 
-    keyboard_t * keyboard;
-    float theta;
-
     static std::string vertex_shader_code;
     std::string fragment_shader_code;
 
@@ -101,21 +98,23 @@ private:
     std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
     std::shared_ptr<octree_t> octree;
 
+    std::weak_ptr<camera_t> main_camera;
+
 public:
     // constructors and destructors
     renderer_t(
         const allocator_t & allocator,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family, const u32vec2_t & window_size,
-        keyboard_t * keyboard
+        uint32_t present_family, const u32vec2_t & window_size
     );
     ~renderer_t();
 
 
     void window_resize(const u32vec2_t & size);
 
-    // main method
     void render();
+
+    void set_main_camera(std::weak_ptr<camera_t> camera);
 };
 
 #endif

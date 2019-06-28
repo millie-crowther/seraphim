@@ -13,19 +13,13 @@ renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shade
 renderer_t::renderer_t(
     const allocator_t & allocator,
     VkSurfaceKHR surface, uint32_t graphics_family, 
-    uint32_t present_family, const u32vec2_t & window_size,
-    keyboard_t * keyboard
+    uint32_t present_family, const u32vec2_t & window_size
 ){
-    theta = 3.14159f;
-    push_constants.camera_position = f32vec3_t(0.0f, 0.5f, 0.0f);
-    push_constants.camera_right = f32vec3_t(0.0f, 0.0f, -1.0f);
-
     current_frame = 0;
     this->surface = surface;
     this->graphics_family = graphics_family;
     this->present_family = present_family;
     this->allocator = allocator;
-    this->keyboard = keyboard;
 
     push_constants.window_size = window_size;
     
@@ -753,24 +747,10 @@ renderer_t::update_push_constants() const {
 
 void
 renderer_t::render(){
-    if (keyboard->is_key_pressed(GLFW_KEY_W)){
-        push_constants.camera_position += push_constants.camera_right % f32vec3_t(0.0f, 1.0f, 0.0f) * 0.01f;
+    if (auto camera = main_camera.lock()){
+        push_constants.camera_position = camera->get_position().cast<float>();
+        push_constants.camera_right = camera->get_right().cast<float>();
     }
-
-    if (keyboard->is_key_pressed(GLFW_KEY_S)){
-        push_constants.camera_position -= push_constants.camera_right % f32vec3_t(0.0f, 1.0f, 0.0f) * 0.01f;
-        // push_constants.camera_position[0] -= 0.01;
-    }
-
-    if (keyboard->is_key_pressed(GLFW_KEY_A)){
-        theta -= 0.01f;
-    }
-
-    if (keyboard->is_key_pressed(GLFW_KEY_D)){
-        theta += 0.01f;
-    }
-
-    push_constants.camera_right = f32vec3_t(std::sin(theta), 0.0f, std::cos(theta));
 
     update_push_constants();
 
@@ -844,4 +824,10 @@ void
 renderer_t::window_resize(const u32vec2_t & size){
     push_constants.window_size = size;
     recreate_swapchain();
+}
+
+
+void 
+renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
+    main_camera = camera;
 }

@@ -37,9 +37,9 @@ private:
     bool is_debug;
     VkDebugReportCallbackEXT callback;
 
-    std::unique_ptr<renderer_t> renderer;
+    std::shared_ptr<renderer_t> renderer;
 
-    scheduler_t scheduler;
+    std::shared_ptr<scheduler_t> scheduler;
 
     allocator_t allocator;
 
@@ -58,6 +58,10 @@ public:
 	
     void window_resize(const u32vec2_t & size);
 	void keyboard_event(int key, int action, int mods);
+
+    std::weak_ptr<renderer_t> get_renderer() const;
+    std::weak_ptr<scheduler_t> get_scheduler() const;
+    const keyboard_t * get_keyboard() const;
 };
 
 #endif

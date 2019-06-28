@@ -13,7 +13,13 @@ main(int argc, char ** argv) {
         }
     }
 
-    blaspheme_t(is_debug).run();
+    blaspheme_t engine(is_debug);
+    std::shared_ptr<camera_t> camera = std::make_shared<camera_t>(&engine);
+    if (auto renderer = engine.get_renderer().lock()){
+        renderer->set_main_camera(camera);
+    }
+    
+    engine.run();
     
     return 0;
 }
