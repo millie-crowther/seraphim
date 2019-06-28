@@ -22,6 +22,8 @@ public:
         float dummy2;            // alignment
 
         f32vec3_t camera_right;
+        float dummy3;
+        f32vec3_t camera_up;
     };
 
 private:

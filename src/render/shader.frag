@@ -72,6 +72,8 @@ layout( push_constant ) uniform window_block {
     vec3 camera_position;
     float dummy2;           // alignment
     vec3 camera_right;
+    float dummy3;
+    vec3 camera_up;
 } push_constants;
 
 //
@@ -230,7 +232,14 @@ vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
     vec4 d = kd * dot(l, n) * colour;
 
     //specular
-    vec3 v = normalize(x);
+    vec3 v = x - push_constants.camera_position;
+    vec3 right = push_constants.camera_right;
+    vec3 u = push_constants.camera_up;
+
+    // TODO: not sure about order of cross product here??
+    v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
+    v = normalize(v);
+
     vec3 r = reflect(l, n);
     vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
     return a + (d + s) * attenuation * shadow;
@@ -287,7 +296,7 @@ void main(){
     uv.x /= push_constants.window_size.y;
     uv.y *= -1;    
     
-    vec3 camera_up = vec3(0, 1, 0);
+    vec3 camera_up = push_constants.camera_up;
     vec3 camera_right = push_constants.camera_right;
     vec3 camera_position = push_constants.camera_position;
 
@@ -303,7 +312,7 @@ void main(){
     intersection_t i = raycast(ray_t(camera_position, dir));
 
     if (i.hit){
-        out_colour = colour(i) * light(vec3(1), i.x, i.n);
+        out_colour = colour(i) * light(vec3(1.2), i.x, i.n);
     }
 }
 

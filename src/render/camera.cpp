@@ -40,3 +40,8 @@ vec3_t
 camera_t::get_right() const {
     return transform.get_rotation() * vec3_t::right();
 }
+
+vec3_t
+camera_t::get_up() const {
+    return transform.get_rotation() * vec3_t::up();
+}

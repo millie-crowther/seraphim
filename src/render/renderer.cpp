@@ -750,6 +750,7 @@ renderer_t::render(){
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
+        push_constants.camera_up = camera->get_up().cast<float>();
     }
 
     update_push_constants();

@@ -70,3 +70,7 @@
 
 ## logic
 * make a coroutine system of some kind
+
+## UI
+* add mouse input
+* wrap up all the input classes in one struct
