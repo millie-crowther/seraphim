@@ -84,7 +84,8 @@ layout(binding = 1) buffer octree_buffer {
     brick_t brickset[brickset_size];
 } octree;
 
-layout(binding = 2) uniform sampler2D texture_sampler;
+layout(binding = 2) uniform sampler2D colour_sampler;
+layout(binding = 3) uniform sampler2D geometry_sampler;
 
 //
 // GLSL inputs
@@ -199,7 +200,7 @@ vec4 colour(intersection_t i){
 
     vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
 
-    return texture(texture_sampler, uv + du);
+    return texture(colour_sampler, uv + du);
 }
 
 vec4 phong_light(vec3 light_p, vec3 x, vec3 n){

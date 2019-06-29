@@ -13,11 +13,11 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     
     u32vec2_t image_size(grid_size * brick_size);
 
-    image = std::make_unique<image_t>(
-        allocator, image_size, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VMA_MEMORY_USAGE_GPU_ONLY, VK_IMAGE_ASPECT_COLOR_BIT
-    );
+    VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    
+
+    image = std::make_unique<image_t>(allocator, image_size, usage, vma_usage);
 
     // create sampler
     VkSamplerCreateInfo sampler_info = {};
@@ -27,8 +27,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.anisotropyEnable = VK_TRUE;
-    sampler_info.maxAnisotropy = 16;
+    sampler_info.anisotropyEnable = VK_FALSE;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;

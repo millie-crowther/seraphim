@@ -7,13 +7,12 @@
 
 image_t::image_t(
     const allocator_t & allocator,
-    u32vec2_t & size, VkFormat format, 
-    VkImageTiling tiling, VkImageUsageFlags usage, 
-    VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
+    u32vec2_t & size, VkImageUsageFlags usage, 
+    VmaMemoryUsage vma_usage
 ){
     is_swapchain = false;
     
-    this->format = format;
+    this->format = VK_FORMAT_R8G8B8A8_UNORM;
     this->allocator = allocator;
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -28,7 +27,7 @@ image_t::image_t(
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
     image_info.format = format;
-    image_info.tiling = tiling;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
     image_info.initialLayout = layout;
     image_info.usage = usage;
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -83,19 +82,19 @@ image_t::image_t(
     }
 
     // create image view
-    create_image_view(aspect_flags);
+    create_image_view();
 }
 
 image_t::image_t(
     const allocator_t & allocator,
-    VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
+    VkImage image, VkFormat format
 ){
     is_swapchain = true;
     this->allocator = allocator;
     this->format = format;
     this->image = image;
 
-    create_image_view(aspect_flags);
+    create_image_view();
 }
 
 VkFormat
@@ -109,13 +108,13 @@ image_t::get_image_layout() const {
 }
 
 void
-image_t::create_image_view(VkImageAspectFlags aspect_flags){
+image_t::create_image_view(){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.format = format;
-    view_info.subresourceRange.aspectMask = aspect_flags;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view_info.subresourceRange.baseMipLevel = 0;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.baseArrayLayer = 0;

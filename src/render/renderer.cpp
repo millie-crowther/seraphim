@@ -179,7 +179,7 @@ renderer_t::create_swapchain(){
     for (auto & swapchain_image : swapchain_imgs){
         swapchain_images.push_back(std::make_unique<image_t>(
             allocator,
-            swapchain_image, format.format, VK_IMAGE_ASPECT_COLOR_BIT
+            swapchain_image, format.format
         ));
     }
 

@@ -23,19 +23,18 @@ private:
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
-    void create_image_view(VkImageAspectFlags aspect_flags);
+    void create_image_view();
 
 public:
     // constructors and destructors
     image_t(
         const allocator_t & allocator,
-        u32vec2_t & size, VkFormat format, 
-        VkImageTiling tiling, VkImageUsageFlags usage, 
-        VmaMemoryUsage vma_usage, VkImageAspectFlags aspect_flags
+        u32vec2_t & size, VkImageUsageFlags usage, 
+        VmaMemoryUsage vma_usage
     );
     image_t(
         const allocator_t & allocator,
-        VkImage image, VkFormat format, VkImageAspectFlags aspect_flags
+        VkImage image, VkFormat format
     );
     ~image_t();
 
