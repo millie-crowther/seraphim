@@ -1,11 +1,11 @@
-#include "render/image.h"
+#include "render/texture.h"
 
 #include <stdexcept>
 
 #include "core/blaspheme.h"
 #include "core/vk_utils.h"
 
-image_t::image_t(
+texture_t::texture_t(
     const allocator_t & allocator,
     u32vec2_t & size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
@@ -81,20 +81,47 @@ image_t::image_t(
 
     // create image view
     image_view = create_image_view(allocator.device, image, format);
+
+    // create sampler
+    VkSamplerCreateInfo sampler_info = {};
+    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.anisotropyEnable = VK_FALSE;
+    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    sampler_info.unnormalizedCoordinates = VK_FALSE;
+    sampler_info.compareEnable = VK_FALSE;
+    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    sampler_info.mipLodBias = 0.0f;
+    sampler_info.minLod = 0.0f;
+    sampler_info.maxLod = 0.0f;
+    
+    if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to create texture sampler.");
+    } 
 }
 
 VkFormat
-image_t::get_format(){
+texture_t::get_format(){
     return format;
 }
 
+VkSampler 
+texture_t::get_sampler() const {
+    return sampler;
+}
+
 VkImageLayout
-image_t::get_image_layout() const {
+texture_t::get_image_layout() const {
     return layout;
 }
 
 VkImageView
-image_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
+texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
@@ -115,16 +142,17 @@ image_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     return image_view;
 }
 
-image_t::~image_t(){
+texture_t::~texture_t(){
     vkDestroyImageView(allocator.device, image_view, nullptr);
     
     vkDestroyImage(allocator.device, image, nullptr);
     vkFreeMemory(allocator.device, memory, nullptr);
     // vmaDestroyImage(allocator, image, allocation);
+    vkDestroySampler(allocator.device, sampler, nullptr);
 }
 
 int
-image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
+texture_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
     vkGetPhysicalDeviceMemoryProperties(allocator.physical_device, &memory_prop);
 
@@ -141,12 +169,12 @@ image_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties
 }
 
 VkImage
-image_t::get_image(){
+texture_t::get_image(){
     return image;
 }
 
 void
-image_t::transition_image_layout(VkImageLayout new_layout){
+texture_t::transition_image_layout(VkImageLayout new_layout){
     auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
         VkImageLayout old_layout = layout;      
         
@@ -217,12 +245,12 @@ image_t::transition_image_layout(VkImageLayout new_layout){
 }
 
 VkImageView
-image_t::get_image_view(){
+texture_t::get_image_view(){
     return image_view;
 }
 
 VkFormat
-image_t::find_supported_format(
+texture_t::find_supported_format(
     VkPhysicalDevice physical_device, const std::vector<VkFormat>& candidates, 
     VkImageTiling tiling, VkFormatFeatureFlags features
 ){
@@ -250,7 +278,7 @@ image_t::find_supported_format(
 }
 
 VkFormat
-image_t::find_depth_format(VkPhysicalDevice physical_device){
+texture_t::find_depth_format(VkPhysicalDevice physical_device){
     return find_supported_format(
         physical_device,
         { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },

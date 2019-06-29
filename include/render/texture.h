@@ -10,7 +10,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-class image_t {
+class texture_t {
 private:
     VkImage image;
     VkImageView image_view;
@@ -18,6 +18,7 @@ private:
     VkFormat format;
     VkImageLayout layout;
     VmaAllocation allocation;
+    VkSampler sampler;
     allocator_t allocator; // TODO: dont store a copy here
 
     // helper methods
@@ -25,12 +26,12 @@ private:
     
 public:
     // constructors and destructors
-    image_t(
+    texture_t(
         const allocator_t & allocator,
         u32vec2_t & size, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage
     );
-    ~image_t();
+    ~texture_t();
 
     void transition_image_layout(VkImageLayout new_layout);
 
@@ -39,6 +40,7 @@ public:
     VkImageView get_image_view();
     VkFormat get_format();
     VkImageLayout get_image_layout() const;
+    VkSampler get_sampler() const;
 
     // static methods
     static VkFormat find_supported_format(

@@ -33,7 +33,7 @@ set(SOURCES
     ../src/core/uuid.cpp
     
     ../src/render/renderer.cpp
-    ../src/render/image.cpp
+    ../src/render/texture.cpp
     ../src/render/camera.cpp
     ../src/render/octree.cpp
     ../src/render/texture_manager.cpp

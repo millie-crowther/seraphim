@@ -4,7 +4,7 @@
 #include <memory>
 #include <queue>
 
-#include "render/image.h"
+#include "render/texture.h"
 #include "core/allocator.h"
 #include "core/buffer.h"
 #include "render/painter.h"
@@ -16,8 +16,7 @@ class brick_t;
 class texture_manager_t {
 private:
     // private fields
-    std::unique_ptr<image_t> colour_image;
-    VkSampler colour_sampler;
+    std::unique_ptr<texture_t> colour_texture;
 
     uint16_t grid_size;
     uint32_t claimed_bricks;
@@ -33,7 +32,6 @@ public:
 
     // constructors and destructors
     texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
-    ~texture_manager_t();
 
     // mutators
     u16vec2_t request(const std::array<colour_t, brick_size * brick_size> & image);

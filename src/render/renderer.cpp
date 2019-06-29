@@ -2,6 +2,7 @@
 
 #include "sdf/primitive.h"
 #include "input/resources.h"
+#include "render/texture.h"
 #include "core/vk_utils.h"
 
 #include <chrono>
@@ -179,7 +180,7 @@ renderer_t::create_swapchain(){
     swapchain_image_format = format.format;
     for (auto & swapchain_image : swapchain_imgs){
         swapchain_image_views.push_back(
-            image_t::create_image_view(allocator.device, swapchain_image, format.format)
+            texture_t::create_image_view(allocator.device, swapchain_image, format.format)
         );
     }
 

@@ -5,7 +5,6 @@
 
 #include "camera.h"
 #include "core/buffer.h"
-#include "render/image.h"
 #include "render/octree.h"
 #include "input/keyboard.h"
 
@@ -63,8 +62,6 @@ private:
     VkQueue present_queue;
     uint32_t graphics_family;
     uint32_t present_family;
-
-    std::unique_ptr<image_t> depth_image;
 
     std::unique_ptr<buffer_t> vertex_buffer;
 
