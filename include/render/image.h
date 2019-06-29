@@ -12,7 +12,6 @@
 
 class image_t {
 private:
-    bool is_swapchain;
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory memory;
@@ -23,18 +22,13 @@ private:
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
-    void create_image_view();
-
+    
 public:
     // constructors and destructors
     image_t(
         const allocator_t & allocator,
         u32vec2_t & size, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage
-    );
-    image_t(
-        const allocator_t & allocator,
-        VkImage image, VkFormat format
     );
     ~image_t();
 
@@ -52,6 +46,7 @@ public:
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkFormat find_depth_format(VkPhysicalDevice physical_device);
+    static VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format);
 };
 
 #endif

@@ -34,7 +34,8 @@ private:
     // swapchain fields
     VkSwapchainKHR swapchain;
     std::vector<VkFramebuffer> swapchain_framebuffers;
-    std::vector<std::unique_ptr<image_t>> swapchain_images;
+    std::vector<VkImageView> swapchain_image_views;
+    VkFormat swapchain_image_format;
     VkExtent2D swapchain_extents;
 
     VkSurfaceKHR surface;

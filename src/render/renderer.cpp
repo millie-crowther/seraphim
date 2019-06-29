@@ -175,12 +175,12 @@ renderer_t::create_swapchain(){
     std::vector<VkImage> swapchain_imgs(count);
     vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, swapchain_imgs.data());
   
-    swapchain_images.clear();
+    swapchain_image_views.clear();
+    swapchain_image_format = format.format;
     for (auto & swapchain_image : swapchain_imgs){
-        swapchain_images.push_back(std::make_unique<image_t>(
-            allocator,
-            swapchain_image, format.format
-        ));
+        swapchain_image_views.push_back(
+            image_t::create_image_view(allocator.device, swapchain_image, format.format)
+        );
     }
 
     swapchain_extents = extents;
@@ -297,7 +297,10 @@ renderer_t::cleanup_swapchain(){
     vkDestroyPipelineLayout(allocator.device, pipeline_layout, nullptr);
     vkDestroyRenderPass(allocator.device, render_pass, nullptr);
 
-    swapchain_images.clear();
+    for (auto image_view : swapchain_image_views){
+        vkDestroyImageView(allocator.device, image_view, nullptr);
+    }
+    swapchain_image_views.clear();
 
     vkDestroySwapchainKHR(allocator.device, swapchain, nullptr);
 }
@@ -305,7 +308,7 @@ renderer_t::cleanup_swapchain(){
 bool
 renderer_t::create_render_pass(){
     VkAttachmentDescription colour_attachment = {};
-    colour_attachment.format = swapchain_images[0]->get_format();
+    colour_attachment.format = swapchain_image_format;
     colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -530,11 +533,11 @@ renderer_t::create_graphics_pipeline(){
 
 bool
 renderer_t::create_framebuffers(){
-    swapchain_framebuffers.resize(swapchain_images.size());
+    swapchain_framebuffers.resize(swapchain_image_views.size());
 
     for (uint32_t i = 0; i < swapchain_framebuffers.size(); i++){
         std::vector<VkImageView> attachments = {
-	        swapchain_images[i]->get_image_view(),
+	        swapchain_image_views[i],
 	    };
 
         VkFramebufferCreateInfo framebuffer_info = {};
@@ -620,7 +623,7 @@ renderer_t::create_command_buffers(){
 
 bool 
 renderer_t::create_descriptor_pool(){
-    uint32_t n = swapchain_images.size();
+    uint32_t n = swapchain_image_views.size();
     std::vector<VkDescriptorPoolSize> pool_sizes(2);
     pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pool_sizes[0].descriptorCount = n;

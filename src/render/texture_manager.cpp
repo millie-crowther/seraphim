@@ -17,7 +17,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
     
 
-    image = std::make_unique<image_t>(allocator, image_size, usage, vma_usage);
+    colour_image = std::make_unique<image_t>(allocator, image_size, usage, vma_usage);
 
     // create sampler
     VkSamplerCreateInfo sampler_info = {};
@@ -37,14 +37,14 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &colour_sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
 
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = image->get_image_view();
-    image_info.sampler = sampler;
+    image_info.imageView = colour_image->get_image_view();
+    image_info.sampler = colour_sampler;
 
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -65,11 +65,11 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
         VMA_MEMORY_USAGE_CPU_ONLY
     );
 
-    image->transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    colour_image->transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 }
 
 texture_manager_t::~texture_manager_t(){
-    vkDestroySampler(allocator.device, sampler, nullptr);
+    vkDestroySampler(allocator.device, colour_sampler, nullptr);
 }
 
 u16vec2_t 
@@ -94,7 +94,7 @@ texture_manager_t::request(const std::array<colour_t, brick_size * brick_size> &
     staging_buffer->copy(brick.data(), brick.size() * sizeof(u8vec4_t), 0);
 
     staging_buffer->copy_to_image(
-        image->get_image(), 
+        colour_image->get_image(), 
         uv.cast<uint32_t>() * brick_size,
         u32vec2_t(brick_size)
     );

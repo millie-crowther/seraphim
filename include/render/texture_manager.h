@@ -16,7 +16,8 @@ class brick_t;
 class texture_manager_t {
 private:
     // private fields
-    std::unique_ptr<image_t> image;
+    std::unique_ptr<image_t> colour_image;
+    VkSampler colour_sampler;
 
     uint16_t grid_size;
     uint32_t claimed_bricks;
@@ -24,7 +25,6 @@ private:
 
     std::unique_ptr<buffer_t> staging_buffer;
 
-    VkSampler sampler;
     allocator_t allocator;
 
 public:

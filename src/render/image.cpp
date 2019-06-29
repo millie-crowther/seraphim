@@ -9,10 +9,8 @@ image_t::image_t(
     const allocator_t & allocator,
     u32vec2_t & size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
-){
-    is_swapchain = false;
-    
-    this->format = VK_FORMAT_R8G8B8A8_UNORM;
+){    
+    format = VK_FORMAT_R8G8B8A8_UNORM;
     this->allocator = allocator;
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -82,19 +80,7 @@ image_t::image_t(
     }
 
     // create image view
-    create_image_view();
-}
-
-image_t::image_t(
-    const allocator_t & allocator,
-    VkImage image, VkFormat format
-){
-    is_swapchain = true;
-    this->allocator = allocator;
-    this->format = format;
-    this->image = image;
-
-    create_image_view();
+    image_view = create_image_view(allocator.device, image, format);
 }
 
 VkFormat
@@ -107,8 +93,8 @@ image_t::get_image_layout() const {
     return layout;
 }
 
-void
-image_t::create_image_view(){
+VkImageView
+image_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
@@ -120,20 +106,21 @@ image_t::create_image_view(){
     view_info.subresourceRange.baseArrayLayer = 0;
     view_info.subresourceRange.layerCount = 1;
 
-    VkResult result = vkCreateImageView(allocator.device, &view_info, nullptr, &image_view);
+    VkImageView image_view;
+    VkResult result = vkCreateImageView(device, &view_info, nullptr, &image_view);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image view.");
     }
+
+    return image_view;
 }
 
 image_t::~image_t(){
     vkDestroyImageView(allocator.device, image_view, nullptr);
     
-    if (!is_swapchain){
-        vkDestroyImage(allocator.device, image, nullptr);
-        vkFreeMemory(allocator.device, memory, nullptr);
-        // vmaDestroyImage(allocator, image, allocation);
-    }
+    vkDestroyImage(allocator.device, image, nullptr);
+    vkFreeMemory(allocator.device, memory, nullptr);
+    // vmaDestroyImage(allocator, image, allocation);
 }
 
 int
