@@ -17,26 +17,14 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
     
 
-    colour_texture = std::make_unique<texture_t>(allocator, image_size, usage, vma_usage);
+    colour_texture = std::make_unique<texture_t>(2, allocator, image_size, usage, vma_usage);
 
-
-    VkDescriptorImageInfo image_info = {};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = colour_texture->get_image_view();
-    image_info.sampler = colour_texture->get_sampler();
-
-    VkWriteDescriptorSet descriptor_write = {};
-    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_write.dstBinding = 2;
-    descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_write.descriptorCount = 1;
-    descriptor_write.pImageInfo = &image_info;
+    std::vector<VkWriteDescriptorSet> descriptor_write;
 
     for (auto desc_set : desc_sets){
-        descriptor_write.dstSet = desc_set;
-        vkUpdateDescriptorSets(allocator.device, 1, &descriptor_write, 0, nullptr);
+        descriptor_write.push_back(colour_texture->get_descriptor_write(desc_set));
     }
+    vkUpdateDescriptorSets(allocator.device, descriptor_write.size(), descriptor_write.data(), 0, nullptr);
 
     staging_buffer = std::make_unique<buffer_t>(
         allocator, brick_size * brick_size * sizeof(uint32_t),

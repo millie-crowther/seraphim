@@ -2,7 +2,6 @@
 #define MATHS_VECTOR_H
 
 #include <cmath>
-#include "maths.h"
 #include <array>
 #include <algorithm>
 #include "core/constant.h"
@@ -225,6 +224,7 @@ public:
 typedef vec_t<int32_t, 2> i32vec2_t;
 
 typedef vec_t<uint8_t, 2> u8vec2_t;
+typedef vec_t<uint8_t, 3> u8vec3_t;
 typedef vec_t<uint8_t, 4> u8vec4_t;
 
 typedef vec_t<uint16_t, 2> u16vec2_t;

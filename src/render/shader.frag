@@ -206,7 +206,7 @@ vec4 colour(intersection_t i){
 vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
-    vec4 colour = vec4(3);
+    vec4 colour = vec4(150);
     float kd = 0.5;
     float ks = 0.5;
     float shininess = 32;
@@ -321,7 +321,7 @@ void main(){
     intersection_t i = raycast(ray_t(camera_position, dir));
 
     if (i.hit){
-        out_colour = colour(i) * light(vec3(1.2), i.x, i.n);
+        out_colour = colour(i) * light(vec3(-5, 5, -5), i.x, i.n);
     }
 }
 

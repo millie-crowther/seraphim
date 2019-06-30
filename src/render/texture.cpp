@@ -6,30 +6,32 @@
 #include "core/vk_utils.h"
 
 texture_t::texture_t(
+    uint32_t binding,
     const allocator_t & allocator,
     u32vec2_t & size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
 ){    
+    this->binding = binding;
     format = VK_FORMAT_R8G8B8A8_UNORM;
     this->allocator = allocator;
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // create image
-    VkImageCreateInfo image_info = {};
-    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.extent.width = size[0];
-    image_info.extent.height = size[1];
-    image_info.extent.depth = 1;
-    image_info.mipLevels = 1;
-    image_info.arrayLayers = 1;
-    image_info.format = format;
-    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image_info.initialLayout = layout;
-    image_info.usage = usage;
-    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkImageCreateInfo image_create_info = {};
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.width = size[0];
+    image_create_info.extent.height = size[1];
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.format = format;
+    image_create_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_create_info.initialLayout = layout;
+    image_create_info.usage = usage;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 
     // VmaAllocationCreateInfo alloc_create_info = {};
@@ -43,7 +45,7 @@ texture_t::texture_t(
     //  
     //
     // VkResult result = vmaCreateImage(
-    //     allocator, &image_info, &alloc_create_info,
+    //     allocator, &image_create_info, &alloc_create_info,
     //     &image, &allocation, &alloc_info
     // );
 
@@ -55,7 +57,7 @@ texture_t::texture_t(
 
 
     // // allocate memory 
-    VkResult result = vkCreateImage(allocator.device, &image_info, nullptr, &image);
+    VkResult result = vkCreateImage(allocator.device, &image_create_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
@@ -103,6 +105,11 @@ texture_t::texture_t(
     if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
+
+    image_info = {};
+    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageView = image_view;
+    image_info.sampler = sampler;
 }
 
 VkFormat
@@ -285,4 +292,18 @@ texture_t::find_depth_format(VkPhysicalDevice physical_device){
         VK_IMAGE_TILING_OPTIMAL,
         VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
+}
+
+VkWriteDescriptorSet 
+texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
+    VkWriteDescriptorSet descriptor_write = {};
+    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptor_write.dstBinding = binding;
+    descriptor_write.dstArrayElement = 0;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.descriptorCount = 1;
+    descriptor_write.pImageInfo = &image_info;
+    descriptor_write.dstSet = desc_set;
+
+    return descriptor_write;
 }

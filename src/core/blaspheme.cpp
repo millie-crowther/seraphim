@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <fstream>
 #include <cstring>
-#include "maths/maths.h"
 #include <memory>
 #include "render/renderer.h"
 

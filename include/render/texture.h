@@ -19,6 +19,8 @@ private:
     VkImageLayout layout;
     VmaAllocation allocation;
     VkSampler sampler;
+    VkDescriptorImageInfo image_info;
+    uint32_t binding;
     allocator_t allocator; // TODO: dont store a copy here
 
     // helper methods
@@ -27,6 +29,7 @@ private:
 public:
     // constructors and destructors
     texture_t(
+        uint32_t binding,
         const allocator_t & allocator,
         u32vec2_t & size, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage
@@ -41,6 +44,7 @@ public:
     VkFormat get_format();
     VkImageLayout get_image_layout() const;
     VkSampler get_sampler() const;
+    VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     // static methods
     static VkFormat find_supported_format(

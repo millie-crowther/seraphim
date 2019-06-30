@@ -28,7 +28,11 @@ brick_t::brick_t(
 
         vec3_t dx = u_axis * uv[0] + v_axis * uv[1];
 
-        image[i] = painter_t<3>().colour(x - n * p + dx);
+        vec3_t a = x - n * p + dx;
+
+        image[i] = painter_t<3>().colour(a);
+        double pa = sdf.phi(a);
+        // if (std::abs(pa) > aabb[3] / 4) std::cout << pa << std::endl;
     }
 
 

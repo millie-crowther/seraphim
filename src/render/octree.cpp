@@ -123,18 +123,21 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 
 void 
 octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    bool is_leaf = aabb[3] <= 0.125;
+    bool is_leaf = aabb[3] <= 0.25;
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     for (auto sdf : sdfs){
         auto intersection = intersects_contains(aabb, sdf);
 
+        // contains
         if (std::get<1>(intersection)){
-            // contains
             structure[i] = is_leaf_flag;
             return;
-        } else if (std::get<0>(intersection)){
+        } 
+        
+        // intersects
+        if (std::get<0>(intersection)){
             new_sdfs.push_back(sdf);
         }
     }

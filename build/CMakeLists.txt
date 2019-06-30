@@ -39,7 +39,6 @@ set(SOURCES
     ../src/render/texture_manager.cpp
     ../src/render/brick.cpp
     
-    ../src/maths/maths.cpp
     ../src/maths/quat.cpp
     
     ../src/scene/transform.cpp
