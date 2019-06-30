@@ -125,11 +125,40 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
+vec3 normal(vec2 uv, vec3 i){
+    vec2 n2 = texture(geometry_sampler, uv).xy * 2 - 1;
+
+    vec3 n = vec3(n2, sqrt(max(0, 1 - dot(n2, n2))));
+
+    if (dot(i, n) > 0){
+        n.z = -n.z;
+    }
+    // n = -n;
+
+    return n;
+}
+
 intersection_t plane_intersection(ray_t r, uint i){
     brick_t b = octree.brickset[i];
+
+
+    // uint local_u = b.uv & 65535;
+    // uint local_v = b.uv >> 16;
+    // vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
+
+
     vec3 n = vec3(b.n, sqrt(1 - dot(b.n, b.n)));
+    // vec3 nt = normal(uv, r.d);
+
+
     float dn = dot(r.d, n);
     float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
+
+
+    // if (lambda >= 0){
+    //     out_colour = vec4(abs(n - nt), 1);
+    // }
+
     return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node);
 }
 
@@ -151,7 +180,9 @@ intersection_t raycast(ray_t r){
 
             if (index <= brickset_size){
                 intersection_t i = plane_intersection(r, index);
-                if (i.hit && node_contains(node, i.x)){
+                if (i.hit 
+                && node_contains(node, i.x)
+                ){
                     i.node = node;
                     return i;
                 }
@@ -197,19 +228,6 @@ vec2 uv(intersection_t i){
 
 vec4 colour(vec2 uv){
     return texture(colour_sampler, uv);
-}
-
-vec3 normal(vec2 uv, vec3 i){
-    vec2 n2 = texture(geometry_sampler, uv).xy * 2 - 1;
-
-    vec3 n = vec3(n2, sqrt(max(0, 1 - dot(n2, n2))));
-
-    if (dot(i, n) > 0){
-        n.z = -n.z;
-    }
-    // n = -n;
-
-    return n;
 }
 
 vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
