@@ -199,16 +199,25 @@ vec4 colour(vec2 uv){
     return texture(colour_sampler, uv);
 }
 
-vec3 normal(vec3 n, vec2 uv){
+vec3 normal(vec2 uv, vec3 i){
+    vec2 n2 = texture(geometry_sampler, uv).xy * 2 - 1;
+
+    vec3 n = vec3(n2, sqrt(max(0, 1 - dot(n2, n2))));
+
+    if (dot(i, n) > 0){
+        n.z = -n.z;
+    }
+    // n = -n;
+
     return n;
 }
 
-vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
+vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
-    vec4 colour = vec4(150);
+    vec4 colour = vec4(50);
     float kd = 0.5;
-    float ks = 0.5;
+    float ks = 0.76;
     float shininess = 32;
 
     // attenuation
@@ -223,12 +232,13 @@ vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
 
     //diffuse
     vec3 l = normalize(light_p - x);
+    vec3 n = normal(uv, l);
 
     // since normals are squished into two elements, may need to flip
     // to recover sign
-    if (dot(l, n) < 0){
-        n = -n;
-    }
+    // if (dot(l, n) < 0){
+    //     n = -n;
+    // }
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -281,17 +291,9 @@ vec3 BRDF(vec3 n, vec3 l, vec3 x, vec3 f0){
     return brdf;
 }
 
-vec4 light(vec3 p, vec3 x, vec3 n){
+vec4 light(vec3 p, vec3 x, vec2 uv){
     vec3 l = normalize(p - x);
-
-    // since normals are squished into two elements, may need to flip
-    // to recover sign
-    if (dot(l, n) < 0){
-        n = -n;
-    }
-
-    
-    return phong_light(p, x, n);
+    return phong_light(p, x, uv);
 }
 
 vec4 sky(){
@@ -315,11 +317,15 @@ void main(){
    
     out_colour = sky();
 
-    intersection_t i = raycast(ray_t(x0, d));
+    ray_t r = ray_t(x0, d);
+    intersection_t i = raycast(r);
 
     if (i.hit){
         vec2 uv = uv(i);
-        vec3 n = normal(i.n, uv);
-        out_colour = colour(uv) * light(vec3(-5, 5, -5), i.x, n);
+        out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
+
+
+
+

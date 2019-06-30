@@ -36,11 +36,11 @@ brick_t::brick_t(
         //       maybe adjust? but might be too expensive
         colour_patch.push_back(painter_t<3>().colour(a));
 
-        double pa = std::max(-aabb[3] / 4, std::min(sdf.phi(a), aabb[3] / 4));
-        pa /= aabb[3] / 2;
-        pa += 0.5;
-        pa *= 255;
-        geometry_patch.emplace_back(pa, 0, 0, 0);
+        vec3_t n = (sdf.normal(a) / 2 + 0.5) * 255;
+        if (n[0] < 0 || n[0] > 255 || n[2] < 0 || n[2] > 255 || n[1] <0 || n[1] > 255){
+            std::cout << n[0] << ", " << n[1] << ", " << n[2] << std::endl;
+        }
+        geometry_patch.emplace_back(n[0], n[1], 0, 0);
 
         // if (std::abs(pa) > aabb[3] / 4) std::cout << pa << std::endl;
     }
