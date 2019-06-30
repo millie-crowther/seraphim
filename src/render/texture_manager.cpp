@@ -9,7 +9,7 @@ constexpr uint8_t texture_manager_t::brick_size;
 texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets){
     this->grid_size = grid_size;
     this->allocator = allocator;
-    claimed_bricks = 0;
+    claimed_patches = 0;
     
     u32vec2_t image_size(grid_size * brick_size);
 
@@ -36,19 +36,19 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
 }
 
 u16vec2_t 
-texture_manager_t::request(const std::array<colour_t, brick_size * brick_size> & brick){
+texture_manager_t::request(const std::array<u8vec4_t, brick_size * brick_size> & brick){
     u16vec2_t uv;
 
-    if (claimed_bricks < static_cast<uint32_t>(grid_size * grid_size)){
-        claimed_bricks++;
+    if (claimed_patches < static_cast<uint32_t>(grid_size * grid_size)){
+        claimed_patches++;
         uv = u16vec2_t(
-            static_cast<uint16_t>(claimed_bricks % grid_size), 
-            static_cast<uint16_t>(claimed_bricks / grid_size)
+            static_cast<uint16_t>(claimed_patches % grid_size), 
+            static_cast<uint16_t>(claimed_patches / grid_size)
         );
 
-    } else if (!bricks.empty()){
-        uv = bricks.front();
-        bricks.pop();
+    } else if (!patches.empty()){
+        uv = patches.front();
+        patches.pop();
 
     } else {
         throw std::runtime_error("No brick textures left!!");
@@ -66,6 +66,6 @@ texture_manager_t::request(const std::array<colour_t, brick_size * brick_size> &
 }
 
 void 
-texture_manager_t::clear(u16vec2_t brick){
-    bricks.push(brick);
+texture_manager_t::clear(u16vec2_t patch){
+    patches.push(patch);
 }

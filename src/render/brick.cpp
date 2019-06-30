@@ -13,7 +13,7 @@ brick_t::brick_t(
     vec3_t n = sdf.normal(x);
     double p = sdf.phi(x);
 
-    std::array<colour_t, texture_manager_t::brick_size * texture_manager_t::brick_size> image;
+    std::array<u8vec4_t, texture_manager_t::brick_size * texture_manager_t::brick_size> image;
 
     vec3_t v = std::abs(n[0]) <= 1 - constant::epsilon ? vec3_t::up() : vec3_t::right();
     vec3_t u_axis = v % n;

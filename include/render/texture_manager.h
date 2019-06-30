@@ -19,8 +19,8 @@ private:
     std::unique_ptr<texture_t> colour_texture;
 
     uint16_t grid_size;
-    uint32_t claimed_bricks;
-    std::queue<u16vec2_t> bricks;
+    uint32_t claimed_patches;
+    std::queue<u16vec2_t> patches;
 
     std::unique_ptr<buffer_t> staging_buffer;
 
@@ -34,8 +34,8 @@ public:
     texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
 
     // mutators
-    u16vec2_t request(const std::array<colour_t, brick_size * brick_size> & image);
-    void clear(u16vec2_t brick);
+    u16vec2_t request(const std::array<u8vec4_t, brick_size * brick_size> & image);
+    void clear(u16vec2_t patch);
 };
 
 #endif
