@@ -178,21 +178,12 @@ vec2 uv(intersection_t i){
     brick_t brick = octree.brickset[i.brick];
 
     // find centre
-    uint u = brick.uv & 65535;
-    uint v = brick.uv >> 16;
-    vec2 uv = vec2(u, v) / grid_size + 0.5 / grid_size;
+    uint local_u = brick.uv & 65535;
+    uint local_v = brick.uv >> 16;
+    vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
 
     // find offset
-    vec2 d = vec2(0);
-
-    return uv + d;
-}
-
-vec4 colour(intersection_t i){
-    vec2 uv = uv(i);
-
-    vec3 c = i.node.min + i.node.size / 2;
-    vec3 dx = i.x - c; 
+    vec3 dx = i.x - i.node.min - i.node.size / 2; 
 
     vec3 v = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(abs(i.n.y) <= 1 - epsilon));
     vec3 u_axis = cross(v, i.n);
@@ -200,9 +191,16 @@ vec4 colour(intersection_t i){
 
     vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
 
-    // return texture(colour_sampler, uv + du);
-    float phi = length(texture(geometry_sampler, uv + du));
-    return vec4(vec3(phi), 1);
+    return uv + du;
+}
+
+
+vec4 colour(vec2 uv){
+    return texture(colour_sampler, uv);
+}
+
+vec3 normal(vec3 n, vec2 uv){
+    return n;
 }
 
 vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
@@ -301,28 +299,27 @@ vec4 sky(){
 }
 
 void main(){
-    vec2 uv = gl_FragCoord.xy / push_constants.window_size;
-    uv = uv * 2.0 - 1.0;
-    uv.x *= push_constants.window_size.x;
-    uv.x /= push_constants.window_size.y;
-    uv.y *= -1;    
+    vec2 camera_uv = gl_FragCoord.xy / push_constants.window_size;
+    camera_uv = camera_uv * 2.0 - 1.0;
+    camera_uv.x *= push_constants.window_size.x;
+    camera_uv.x /= push_constants.window_size.y;
+    camera_uv.y *= -1;    
     
-    vec3 camera_up = push_constants.camera_up;
-    vec3 camera_right = push_constants.camera_right;
-    vec3 camera_position = push_constants.camera_position;
+    vec3 up = push_constants.camera_up;
+    vec3 right = push_constants.camera_right;
+    vec3 x0 = push_constants.camera_position;
 
-    vec3 camera_forward = cross(camera_right, camera_up);
+    vec3 camera_forward = cross(right, up);
 
-    vec3 dir = camera_forward * f;
-    dir += camera_up * uv.y;
-    dir += camera_right * uv.x;
-    dir = normalize(dir);
+    vec3 d = normalize(camera_forward * f + right * camera_uv.x + up * camera_uv.y);
    
     out_colour = sky();
 
-    intersection_t i = raycast(ray_t(camera_position, dir));
+    intersection_t i = raycast(ray_t(x0, d));
 
     if (i.hit){
-        out_colour = colour(i) * light(vec3(-5, 5, -5), i.x, i.n);
+        vec2 uv = uv(i);
+        vec3 n = normal(i.n, uv);
+        out_colour = colour(uv) * light(vec3(-5, 5, -5), i.x, n);
     }
 }
