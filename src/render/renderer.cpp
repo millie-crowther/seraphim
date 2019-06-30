@@ -667,14 +667,19 @@ renderer_t::create_descriptor_set_layout(){
     octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutBinding sampler_layout = {};
-    sampler_layout.binding = 2;
-    sampler_layout.descriptorCount = 1;
-    sampler_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    sampler_layout.pImmutableSamplers = nullptr;
-    sampler_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    VkDescriptorSetLayoutBinding colour_sampler_layout = {};
+    colour_sampler_layout.binding = 2;
+    colour_sampler_layout.descriptorCount = 1;
+    colour_sampler_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    colour_sampler_layout.pImmutableSamplers = nullptr;
+    colour_sampler_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { octree_layout, sampler_layout };
+    auto geometry_sampler_layout = colour_sampler_layout;
+    geometry_sampler_layout.binding = 3;
+
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
+        octree_layout, colour_sampler_layout, geometry_sampler_layout 
+    };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

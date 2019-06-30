@@ -17,6 +17,7 @@ class texture_manager_t {
 private:
     // private fields
     std::unique_ptr<texture_t> colour_texture;
+    std::unique_ptr<texture_t> geometry_texture;
 
     uint16_t grid_size;
     uint32_t claimed_patches;
@@ -28,13 +29,16 @@ private:
 
 public:
     // constants
-    static constexpr uint8_t brick_size = 8;
+    static constexpr uint8_t patch_size = 8;
 
     // constructors and destructors
     texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
 
     // mutators
-    u16vec2_t request(const std::array<u8vec4_t, brick_size * brick_size> & image);
+    u16vec2_t request(
+        const std::vector<u8vec4_t> & colour_patch,
+        const std::vector<u8vec4_t> & geometry_patch
+    );
     void clear(u16vec2_t patch);
 };
 

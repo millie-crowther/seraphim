@@ -82,7 +82,7 @@ octree_t::octree_t(
 
 uint32_t 
 octree_t::create_brick(const vec4_t & aabb, const sdf3_t & sdf){
-    brickset.emplace(aabb, texture_manager, sdf, &device_brickset[brickset.size()]);
+    brickset.emplace(aabb, texture_manager, sdf, &device_brickset[brickset.size()], texture_manager_t::patch_size);
     return brickset.size() - 1;
 }
 

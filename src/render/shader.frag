@@ -200,7 +200,9 @@ vec4 colour(intersection_t i){
 
     vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
 
-    return texture(colour_sampler, uv + du);
+    // return texture(colour_sampler, uv + du);
+    float phi = length(texture(geometry_sampler, uv + du));
+    return vec4(vec3(phi), 1);
 }
 
 vec4 phong_light(vec3 light_p, vec3 x, vec3 n){
@@ -324,4 +326,3 @@ void main(){
         out_colour = colour(i) * light(vec3(-5, 5, -5), i.x, i.n);
     }
 }
-
