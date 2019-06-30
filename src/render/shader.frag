@@ -125,40 +125,23 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-vec3 normal(vec2 uv, vec3 i){
-    vec2 n2 = texture(geometry_sampler, uv).xy * 2 - 1;
-
-    vec3 n = vec3(n2, sqrt(max(0, 1 - dot(n2, n2))));
-
-    if (dot(i, n) > 0){
-        n.z = -n.z;
-    }
-    // n = -n;
-
-    return n;
+vec3 normal(vec2 uv){
+    return texture(geometry_sampler, uv).xyz * 2 - 1;
 }
 
 intersection_t plane_intersection(ray_t r, uint i){
     brick_t b = octree.brickset[i];
 
-
     // uint local_u = b.uv & 65535;
     // uint local_v = b.uv >> 16;
     // vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
 
-
     vec3 n = vec3(b.n, sqrt(1 - dot(b.n, b.n)));
-    // vec3 nt = normal(uv, r.d);
 
+    // vec3 n = normal(uv);
 
     float dn = dot(r.d, n);
     float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
-
-
-    // if (lambda >= 0){
-    //     out_colour = vec4(abs(n - nt), 1);
-    // }
-
     return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node);
 }
 
@@ -212,13 +195,14 @@ vec2 uv(intersection_t i){
     uint local_u = brick.uv & 65535;
     uint local_v = brick.uv >> 16;
     vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
+    vec3 n = normal(uv);
 
     // find offset
     vec3 dx = i.x - i.node.min - i.node.size / 2; 
 
-    vec3 v = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(abs(i.n.y) <= 1 - epsilon));
-    vec3 u_axis = cross(v, i.n);
-    vec3 v_axis = cross(i.n, u_axis);
+    vec3 v = mix(vec3(1, 0, 0), vec3(0, 1, 0), float(abs(n.y) <= 1 - epsilon));
+    vec3 u_axis = cross(v, n);
+    vec3 v_axis = cross(n, u_axis);
 
     vec2 du = vec2(dot(dx, u_axis), dot(dx, v_axis)) / grid_size / i.node.size / 2;
 
@@ -250,13 +234,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(uv, l);
-
-    // since normals are squished into two elements, may need to flip
-    // to recover sign
-    // if (dot(l, n) < 0){
-    //     n = -n;
-    // }
+    vec3 n = normal(uv);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -343,7 +321,5 @@ void main(){
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
-
-
 
 

@@ -34,6 +34,7 @@
     * record when a brick is used
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`
 * fix holes at volumes where sdfs intersect
+* fix general holes that appear all over the place
 * Jacobian culling approximation too greedy in some cases
     * maybe monte carlo sampling?
         * 99% of cases will terminate after second iteration so not as expensive as you might think
@@ -46,6 +47,9 @@
         * then check if curve is planar
         * computationally, probably just the same as above
         * but without early termination
+* make plane intersect check use normal map 
+    * instead of brick normal
+    * can get rid of brick normal field, halving its size
 
 ### materials
 * add textures for other material properties
@@ -58,6 +62,8 @@
 * maybe some sort of generic lighting primitive
     * based on surface area, emissive properties of material etc.
 * bounce lighting??
+* soft lighting
+* ambient occlusion
 
 ## physics
 1. find good method for partitioning colliders to reach `O(n * log(n))` complexity
