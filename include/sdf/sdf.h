@@ -15,7 +15,7 @@ public:
 
     virtual vec_t<double, D> normal(const vec_t<double, D> & x) const {
         auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
-        return vec_t<double, D>::nabla(f, x, constant::epsilon);
+        return vec_t<double, D>::nabla(f, x, hyper::epsilon);
     }
 };
 

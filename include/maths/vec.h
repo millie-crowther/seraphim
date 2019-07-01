@@ -4,7 +4,7 @@
 #include <cmath>
 #include <array>
 #include <algorithm>
-#include "core/constant.h"
+#include "core/hyper.h"
 #include <iostream>
 
 template<class T, uint8_t N>

@@ -1,9 +1,9 @@
 #include "maths/quat.h"
 
-quat_t::quat_t() : quat_t(1, 0, 0, 0){}
+quat_t::quat_t() : quat_t(1.0, 0.0, 0.0, 0.0){}
 
 quat_t::quat_t(double w, double x, double y, double z) : qs(w, x, y, z) {
-    if (qs.square_norm() > constant::epsilon){
+    if (qs.square_norm() > hyper::epsilon){
         qs /= qs.norm(); 
     } else {
         qs = vec4_t(1, 0, 0, 0);

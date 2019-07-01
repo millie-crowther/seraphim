@@ -1,7 +1,7 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#ifndef HYPER_H
+#define HYPER_H
 
-namespace constant {
+namespace hyper {
     // smallest distance in engine = 10um
     constexpr double epsilon = 0.00001;
 
@@ -12,7 +12,7 @@ namespace constant {
     constexpr double pi      = 3.14159265358979323846264;
 
     // render distance = 10km
-    constexpr double rho     = 10000;
+    constexpr double rho     = 16;
 }
 
 #endif

@@ -1,7 +1,7 @@
 #include "render/brick.h"
 
 #include "render/painter.h"
-#include "core/constant.h"
+#include "core/hyper.h"
 
 brick_t::brick_t(
     const vec4_t & aabb, 
@@ -17,7 +17,7 @@ brick_t::brick_t(
     std::vector<u8vec4_t> colour_patch;
     std::vector<u8vec4_t> geometry_patch;
 
-    vec3_t v = std::abs(n[0]) <= 1 - constant::epsilon ? vec3_t::up() : vec3_t::right();
+    vec3_t v = std::abs(n[0]) <= 1 - hyper::epsilon ? vec3_t::up() : vec3_t::right();
     vec3_t u_axis = v % n;
     vec3_t v_axis = n % u_axis;
 

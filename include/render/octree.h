@@ -47,7 +47,7 @@ private:
 
 public:
     octree_t(
-        const allocator_t & allocator, double render_distance, 
+        const allocator_t & allocator, 
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets
     );

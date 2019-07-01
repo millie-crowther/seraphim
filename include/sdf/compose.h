@@ -17,11 +17,11 @@ namespace compose {
         }
 
         double phi(const vec_t<double, D> & x) const override {
-            double p = constant::rho;
+            double p = hyper::rho;
 
             for (auto sdf : sdfs){
                 p = std::min(p, sdf->phi(x));
-                if (p <= -constant::rho){
+                if (p <= -hyper::rho){
                     return p;
                 }
             }

@@ -10,7 +10,7 @@
 constexpr uint32_t octree_t::null_node;
 
 octree_t::octree_t(
-    const allocator_t & allocator, double render_distance, 
+    const allocator_t & allocator, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets
 ){
@@ -29,8 +29,8 @@ octree_t::octree_t(
         }
     }
 
-    universal_aabb = vec4_t(-render_distance);
-    universal_aabb[3] = render_distance * 2;
+    universal_aabb = vec4_t(-hyper::rho);
+    universal_aabb[3] = hyper::rho * 2;
 
     texture_manager = std::make_shared<texture_manager_t>(allocator, 256, desc_sets);
     paint(0, universal_aabb, strong_sdfs);
@@ -123,7 +123,7 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 
 void 
 octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    bool is_leaf = aabb[3] <= 0.25;
+    bool is_leaf = aabb[3] <= 0.5;
 
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
@@ -154,14 +154,17 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
         return;
     } 
 
-    auto f = [&](const vec3_t & x){ return u.normal(x); };
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
-    mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
+    // check for local planar sdf
+    // if (new_sdfs.size() == 1){
+        auto f = [&](const vec3_t & x){ return u.normal(x); };
+        vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
+        mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
 
-    if (j.frobenius_norm() < constant::epsilon){
-        structure[i] = is_leaf_flag | create_brick(aabb, u);
-        return;
-    }
+        if (j.frobenius_norm() < hyper::epsilon){
+            structure[i] = is_leaf_flag | create_brick(aabb, u);
+            return;
+        }
+    // }
 
     structure[i] = structure.size();
     for (uint8_t octant = 0; octant < 8; octant++){

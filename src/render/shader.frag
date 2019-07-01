@@ -148,7 +148,9 @@ intersection_t plane_intersection(ray_t r, uint i){
 intersection_t raycast(ray_t r){
     node_t node = base_node;
 
-    for (int i = 0; i < max_steps && length(r.x - push_constants.camera_position) < render_distance; i++){
+    for (int i = 0;
+    //  i < max_steps && 
+     length(r.x - push_constants.camera_position) < render_distance; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
