@@ -15,7 +15,8 @@ class renderer_t {
 public:
     struct push_constant_t {
         u32vec2_t window_size;
-        f32vec2_t dummy;         // alignment
+        float render_distance;
+        float dummy;         // alignment
 
         f32vec3_t camera_position;
         float dummy2;            // alignment

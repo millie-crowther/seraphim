@@ -12,7 +12,7 @@ namespace hyper {
     constexpr double pi      = 3.14159265358979323846264;
 
     // render distance = 10km
-    constexpr double rho     = 16;
+    constexpr double rho     = 13;
 }
 
 #endif

@@ -16,6 +16,8 @@ renderer_t::renderer_t(
     VkSurfaceKHR surface, uint32_t graphics_family, 
     uint32_t present_family, const u32vec2_t & window_size
 ){
+    push_constants.render_distance = static_cast<float>(hyper::rho);
+
     current_frame = 0;
     this->surface = surface;
     this->graphics_family = graphics_family;

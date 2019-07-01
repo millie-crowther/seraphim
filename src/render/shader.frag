@@ -11,7 +11,6 @@ const uint brickset_size  =  5000;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
-const float render_distance = 16;
 const int max_steps = 64;
 const float epsilon = 0.005;
 const float shadow_softness = 64;
@@ -44,7 +43,6 @@ struct node_t {
     float size;
 };
 node_t invalid_node = node_t(0, vec3(0), -1);
-node_t base_node = node_t(0, vec3(-render_distance), render_distance * 2);
 
 struct intersection_t {
     bool hit;
@@ -68,7 +66,8 @@ layout(location = 0) out vec4 out_colour;
 //
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
-    vec2 dummy;             // alignment
+    float render_distance;
+    float dummy;             // alignment
     vec3 camera_position;
     float dummy2;           // alignment
     vec3 camera_right;
@@ -92,6 +91,10 @@ layout(binding = 3) uniform sampler2D geometry_sampler;
 //
 in vec4 gl_FragCoord;
 
+node_t base_node(){
+    return node_t(0, vec3(-push_constants.render_distance), push_constants.render_distance * 2);
+}
+
 bool node_contains(node_t node, vec3 x){
     return 
         x.x >= node.min.x - epsilon && 
@@ -107,11 +110,11 @@ bool node_contains(node_t node, vec3 x){
 }
 
 node_t octree_lookup(vec3 x){
-    if (!node_contains(base_node, x)){
+    if (!node_contains(base_node(), x)){
         return invalid_node;
     }
 
-    node_t node = base_node;
+    node_t node = base_node();
 
     for (int j = 0; j < 10 && ((octree.structure[node.i] & is_leaf_flag) == 0); j++){
         node.i = octree.structure[node.i];
@@ -142,15 +145,15 @@ intersection_t plane_intersection(ray_t r, uint i){
 
     float dn = dot(r.d, n);
     float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node());
 }
 
 intersection_t raycast(ray_t r){
-    node_t node = base_node;
+    node_t node = base_node();
 
     for (int i = 0;
     //  i < max_steps && 
-     length(r.x - push_constants.camera_position) < render_distance; i++){
+     length(r.x - push_constants.camera_position) < push_constants.render_distance; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
@@ -180,6 +183,11 @@ intersection_t raycast(ray_t r){
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
         r.x += r.d * lambda;
+
+        if (length(r.x) < 0.1){
+            out_colour = vec4(0, 1, 0, 1);
+            return null_intersection;
+        }
     }
 
     return null_intersection;
@@ -323,5 +331,4 @@ void main(){
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
-
 
