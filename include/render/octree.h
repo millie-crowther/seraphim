@@ -44,10 +44,6 @@ private:
     /*
         brick data
     */
-    // device-side
-    std::array<brick_t::data_t, max_brickset_size> device_brickset;
-
-    // host-side
     std::set<brick_t> brickset;
 
     std::shared_ptr<texture_manager_t> texture_manager;

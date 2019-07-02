@@ -16,13 +16,6 @@ const float epsilon = 0.005;
 const float shadow_softness = 64;
 
 //
-// types sent from CPU
-//
-struct brick_t {
-    uint uv;
-};
-
-//
 // types used in shader
 //
 struct ray_t {
@@ -77,7 +70,6 @@ layout( push_constant ) uniform window_block {
 //
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
-    brick_t brickset[brickset_size];
 } octree;
 
 layout(binding = 2) uniform sampler2D colour_sampler;
@@ -120,18 +112,15 @@ vec3 normal(vec2 uv){
 }
 
 vec2 uv(uint i){
-    brick_t brick = octree.brickset[i];
-    uint local_u = brick.uv & 65535;
-    uint local_v = brick.uv >> 16;
+    uint local_u = (i % 256) + 1;
+    uint local_v = i / 256;
     return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
 }
 
 intersection_t raycast(ray_t r){
     node_t node = base_node();
 
-    for (int i = 0;
-    //  i < max_steps && 
-     length(r.x - push_const.camera_position) < push_const.render_distance; i++){
+    for (int i = 0; i < max_steps; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves

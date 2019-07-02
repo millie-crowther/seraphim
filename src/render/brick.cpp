@@ -6,8 +6,7 @@
 brick_t::brick_t(
     const vec4_t & aabb, 
     std::weak_ptr<texture_manager_t> texture_manager_ptr, 
-    const sdf3_t & sdf, 
-    data_t * data
+    const sdf3_t & sdf
 ){
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
 
@@ -16,12 +15,9 @@ brick_t::brick_t(
     vec3_t n = (sdf.normal(c) / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], 0);
 
-    if (data != nullptr){
-        if (auto texture_manager = texture_manager_ptr.lock()){
-            u16vec2_t uv = texture_manager->request(colour, normal);
-            data->uv = uv;
-            this->uv = uv;
-        }
+    if (auto texture_manager = texture_manager_ptr.lock()){
+        u16vec2_t uv = texture_manager->request(colour, normal);
+        this->uv = uv;
     }
 }
 
