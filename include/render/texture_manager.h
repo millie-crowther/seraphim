@@ -19,7 +19,6 @@ private:
     std::unique_ptr<texture_t> colour_texture;
     std::unique_ptr<texture_t> geometry_texture;
 
-    uint16_t grid_size;
     uint32_t claimed_patches;
     std::queue<u16vec2_t> patches;
 

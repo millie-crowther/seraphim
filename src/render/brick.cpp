@@ -20,8 +20,6 @@ brick_t::brick_t(
     vec3_t u_axis = v % n;
     vec3_t v_axis = n % u_axis;
 
-    vec3_t nt;
-
     for (uint32_t i = 0; i < hyper::pi * hyper::pi; i++){
         vec2_t uv(
             static_cast<double>(i % hyper::pi),
@@ -33,21 +31,9 @@ brick_t::brick_t(
 
         vec3_t a = x - n * p + dx;
 
-        // TODO: technically, 'a' doesn't lie exactly on the surface
-        //       maybe adjust? but might be too expensive
         colour_patch.push_back(painter_t<3>().colour(a));
-
-
-        vec3_t n = sdf.normal(a);
-
-        if ((i % hyper::pi) == hyper::pi / 2 && (i / hyper::pi) == hyper::pi / 2){
-            nt = n;
-        }
-        n = (n / 2 + 0.5) * 255;
-
-        // double p = sdf.phi(a);// / vec3_t(aabb[3] / 2).norm();
-        // if (std::abs(p) > 0.5) std::cout << p << std::endl;
-        // p = (p / 2 + 0.5) * 255;
+        
+        vec3_t n = (sdf.normal(a) / 2 + 0.5) * 255;
 
         geometry_patch.emplace_back(n[0], n[1], n[2], 0);
     }

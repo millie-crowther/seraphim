@@ -42,11 +42,11 @@ texture_manager_t::request(
 ){
     u16vec2_t uv;
 
-    if (claimed_patches < static_cast<uint32_t>(grid_size * grid_size)){
+    if (claimed_patches < static_cast<uint32_t>(hyper::tau * hyper::tau)){
         claimed_patches++;
         uv = u16vec2_t(
-            static_cast<uint16_t>(claimed_patches % grid_size), 
-            static_cast<uint16_t>(claimed_patches / grid_size)
+            static_cast<uint16_t>(claimed_patches % hyper::tau), 
+            static_cast<uint16_t>(claimed_patches / hyper::tau)
         );
 
     } else if (!patches.empty()){
