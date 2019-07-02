@@ -10,6 +10,28 @@
 #include "sdf/sdf.h"
 #include "render/brick.h"
 #include "render/camera.h"
+/*
+
+interior nodes:
+
+node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
+
+    0 = leaf flag (not set)
+    P = pointer to first child
+
+leaf nodes:
+
+node = 1NXXXXUU UUUUUUUU UUVVVVVV VVVVVVVV
+    1 = leaf flag (set)
+    N = normal flag (indicates sign of Z component of normal)
+    X = unused (4 bits)
+    U = U texture coordinate of brick (12 bits)
+    V = V texture coordinate of brick (12 bits)
+    [U|V] = brick ID
+
+
+
+*/
 
 class octree_t {
 private:

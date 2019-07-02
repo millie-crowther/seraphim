@@ -18,6 +18,9 @@ namespace hyper {
 
     // largest distance
     constexpr double   rho     = 75;                // metres
+
+    // number of bricks
+    constexpr uint32_t tau     = 256;               
 }
 
 #endif

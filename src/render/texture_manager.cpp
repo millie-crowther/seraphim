@@ -38,8 +38,8 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
 
 u16vec2_t 
 texture_manager_t::request(
-        const std::vector<u8vec4_t> & colour_patch,
-        const std::vector<u8vec4_t> & geometry_patch
+    const std::vector<u8vec4_t> & colour_patch,
+    const std::vector<u8vec4_t> & geometry_patch
 ){
     u16vec2_t uv;
 

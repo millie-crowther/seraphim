@@ -24,8 +24,8 @@ brick_t::brick_t(
 
     for (uint32_t i = 0; i < hyper::pi * hyper::pi; i++){
         vec2_t uv(
-            i % hyper::pi,
-            i / hyper::pi
+            static_cast<double>(i % hyper::pi),
+            static_cast<double>(i / hyper::pi)
         );
         uv /= hyper::pi / aabb[3] / 2;
 
@@ -44,6 +44,10 @@ brick_t::brick_t(
             nt = n;
         }
         n = (n / 2 + 0.5) * 255;
+
+        // double p = sdf.phi(a);// / vec3_t(aabb[3] / 2).norm();
+        // if (std::abs(p) > 0.5) std::cout << p << std::endl;
+        // p = (p / 2 + 0.5) * 255;
 
         geometry_patch.emplace_back(n[0], n[1], n[2], 0);
     }

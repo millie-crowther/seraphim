@@ -13,6 +13,7 @@ texture_t::texture_t(
 ){    
     this->binding = binding;
     format = VK_FORMAT_R8G8B8A8_UNORM;
+    
     this->allocator = allocator;
 
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
