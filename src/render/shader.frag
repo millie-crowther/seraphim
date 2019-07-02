@@ -20,7 +20,6 @@ const float grid_size = 256;
 // types sent from CPU
 //
 struct brick_t {
-    vec2 n;
     float d;
     uint uv;
 };
@@ -135,13 +134,11 @@ vec3 normal(vec2 uv){
 intersection_t plane_intersection(ray_t r, uint i){
     brick_t b = octree.brickset[i];
 
-    // uint local_u = b.uv & 65535;
-    // uint local_v = b.uv >> 16;
-    // vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
+    uint local_u = b.uv & 65535;
+    uint local_v = b.uv >> 16;
+    vec2 uv = vec2(local_u, local_v) / grid_size + 0.5 / grid_size;
 
-    vec3 n = vec3(b.n, sqrt(1 - dot(b.n, b.n)));
-
-    // vec3 n = normal(uv);
+    vec3 n = normal(uv);
 
     float dn = dot(r.d, n);
     float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
@@ -254,7 +251,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     vec3 u = push_constants.camera_up;
 
     // TODO: not sure about order of cross product here??
-    v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
+    v = vec3(dot(v, right), dot(v, u), dot(v, cross(right, u))); 
     v = normalize(v);
 
     vec3 r = reflect(l, n);

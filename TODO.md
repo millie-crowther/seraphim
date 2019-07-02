@@ -47,13 +47,11 @@
         * then check if curve is planar
         * computationally, probably just the same as above
         * but without early termination
-* make plane intersect check use normal map 
-    * instead of brick normal
-    * can get rid of brick normal field, halving its size
 * put geometry in aabb-space
     * this is required for later octree fuckery
     * stuff like, recursivity, instantiation
     * only plane 'd' value needs to be aabb-space, normal is fine (unless rotating???!)
+* put plane displacement in texture
 
 ### materials
 * add textures for other material properties

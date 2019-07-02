@@ -20,6 +20,8 @@ brick_t::brick_t(
     vec3_t u_axis = v % n;
     vec3_t v_axis = n % u_axis;
 
+    vec3_t nt;
+
     for (uint32_t i = 0; i < hyper::pi * hyper::pi; i++){
         vec2_t uv(
             i % hyper::pi,
@@ -35,18 +37,19 @@ brick_t::brick_t(
         //       maybe adjust? but might be too expensive
         colour_patch.push_back(painter_t<3>().colour(a));
 
-        vec3_t n = (sdf.normal(a) / 2 + 0.5) * 255;
+
+        vec3_t n = sdf.normal(a);
+
+        if ((i % hyper::pi) == hyper::pi / 2 && (i / hyper::pi) == hyper::pi / 2){
+            nt = n;
+        }
+        n = (n / 2 + 0.5) * 255;
+
         geometry_patch.emplace_back(n[0], n[1], n[2], 0);
     }
 
-    if (n[2] < 0){
-        n = -n;
-        p = -p;
-    }
-
     if (data != nullptr){
-        data->n = f32vec2_t(static_cast<float>(n[0]), static_cast<float>(n[1]));
-        data->d = (x * n) - p;
+        data->d = (x * nt) - p;
 
         if (auto texture_manager = texture_manager_ptr.lock()){
             u16vec2_t uv = texture_manager->request(colour_patch, geometry_patch);

@@ -17,7 +17,7 @@ namespace hyper {
     constexpr double   sigma   = 16 * epsilon * pi; // metres      
 
     // largest distance
-    constexpr double   rho     = 13;                // metres
+    constexpr double   rho     = 75;                // metres
 }
 
 #endif
