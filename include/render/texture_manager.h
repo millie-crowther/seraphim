@@ -28,9 +28,6 @@ private:
     allocator_t allocator;
 
 public:
-    // constants
-    static constexpr uint8_t patch_size = 8;
-
     // constructors and destructors
     texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
 

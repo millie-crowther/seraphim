@@ -4,14 +4,12 @@
 
 #include "render/brick.h"
 
-constexpr uint8_t texture_manager_t::patch_size;
-
 texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets){
     this->grid_size = grid_size;
     this->allocator = allocator;
     claimed_patches = 0;
     
-    u32vec2_t image_size(grid_size * patch_size);
+    u32vec2_t image_size(grid_size * hyper::pi);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -29,7 +27,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t gri
     vkUpdateDescriptorSets(allocator.device, descriptor_write.size(), descriptor_write.data(), 0, nullptr);
 
     staging_buffer = std::make_unique<buffer_t>(
-        allocator, patch_size * patch_size * sizeof(u8vec4_t),
+        allocator, hyper::pi * hyper::pi * sizeof(u8vec4_t),
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY
     );
@@ -64,8 +62,8 @@ texture_manager_t::request(
 
     staging_buffer->copy_to_image(
         colour_texture->get_image(), 
-        uv.cast<uint32_t>() * patch_size,
-        u32vec2_t(patch_size)
+        uv.cast<uint32_t>() * hyper::pi,
+        u32vec2_t(hyper::pi)
     );
 
 
@@ -73,8 +71,8 @@ texture_manager_t::request(
 
     staging_buffer->copy_to_image(
         geometry_texture->get_image(), 
-        uv.cast<uint32_t>() * patch_size,
-        u32vec2_t(patch_size)
+        uv.cast<uint32_t>() * hyper::pi,
+        u32vec2_t(hyper::pi)
     );
 
     return uv;

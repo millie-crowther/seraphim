@@ -7,8 +7,7 @@ brick_t::brick_t(
     const vec4_t & aabb, 
     std::weak_ptr<texture_manager_t> texture_manager_ptr, 
     const sdf3_t & sdf, 
-    data_t * data,
-    uint32_t patch_size
+    data_t * data
 ){
     vec3_t x = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
     vec3_t n = sdf.normal(x);
@@ -21,12 +20,12 @@ brick_t::brick_t(
     vec3_t u_axis = v % n;
     vec3_t v_axis = n % u_axis;
 
-    for (uint32_t i = 0; i < patch_size * patch_size; i++){
+    for (uint32_t i = 0; i < hyper::pi * hyper::pi; i++){
         vec2_t uv(
-            i % patch_size,
-            i / patch_size
+            i % hyper::pi,
+            i / hyper::pi
         );
-        uv /= patch_size / aabb[3] / 2;
+        uv /= hyper::pi / aabb[3] / 2;
 
         vec3_t dx = u_axis * uv[0] + v_axis * uv[1];
 

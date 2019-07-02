@@ -18,8 +18,7 @@ public:
         const vec4_t & aabb, 
         std::weak_ptr<texture_manager_t> texture_manager, 
         const sdf3_t & sdf, 
-        data_t * data,
-        uint32_t patch_size
+        data_t * data
     );
     ~brick_t();
 

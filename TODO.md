@@ -28,8 +28,8 @@
 * implement octree streaming from cpu
     * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
-* lower granularity of octree at distance from camera
-    * increase granularity when you get closer (flag for LOD?)
+* increase granularity of coarse octree when you get close
+    * may require a LOD flag to be stored in gpu data?
 * delete bricks which havent been used in a while
     * record when a brick is used
 * make CPU-side buffers for octree a single `std::vector<uint8_t>`

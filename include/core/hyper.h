@@ -1,15 +1,23 @@
 #ifndef HYPER_H
 #define HYPER_H
 
+#include <stdint.h>
+
 namespace hyper {
-    // smallest distance in engine = 10um
-    constexpr double epsilon = 0.00001;
+    // smallest distance
+    constexpr double   epsilon = 0.001;             // metres
 
-    // shortest time period recognised by the engine = 8.3 ms = 120 Hz
-    constexpr double iota    = 0.00833333333333333333333;
+    // shortest time period 
+    constexpr double   iota    = 60;                // Hertz
 
-    // render distance = 10km
-    constexpr double rho     = 13;
+    // patch resolution
+    constexpr uint16_t pi      = 8;                 // pixels
+
+    // patch size
+    constexpr double   sigma   = 16 * epsilon * pi; // metres      
+
+    // largest distance
+    constexpr double   rho     = 13;                // metres
 }
 
 #endif

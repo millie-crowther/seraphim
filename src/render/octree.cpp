@@ -80,7 +80,7 @@ octree_t::octree_t(
 
 uint32_t 
 octree_t::create_brick(const vec4_t & aabb, const sdf3_t & sdf){
-    brickset.emplace(aabb, texture_manager, sdf, &device_brickset[brickset.size()], texture_manager_t::patch_size);
+    brickset.emplace(aabb, texture_manager, sdf, &device_brickset[brickset.size()]);
     return brickset.size() - 1;
 }
 
@@ -184,14 +184,12 @@ octree_t::is_leaf(
     const std::vector<std::shared_ptr<sdf3_t>> & sdfs,
     std::shared_ptr<camera_t> camera
 ){
-    if (aabb[3] <= 0.25){
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
+    double d = (c - camera->get_position()).norm();
+
+    if (aabb[3] <= hyper::sigma * d){
         return true;
     }
-
-    // vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
-    // if (aabb[3] * aabb[3] <= (c - camera->get_position()).square_norm()){
-    //     return true;
-    // }
 
     if (sdfs.size() == 1){
         auto f = [&](const vec3_t & x){ return sdfs[0]->normal(x); };
