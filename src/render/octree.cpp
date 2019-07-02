@@ -15,8 +15,6 @@ octree_t::octree_t(
     const std::vector<VkDescriptorSet> & desc_sets,
     std::weak_ptr<camera_t> camera
 ){
-    
-
     structure.reserve(max_structure_size);
     
     // TODO: remove this! its only here because the zero index is 
@@ -45,12 +43,6 @@ octree_t::octree_t(
     // copy to buffer
     buffer->copy(structure.data(), sizeof(uint32_t) * structure.size(), 0);
     buffer->copy(device_brickset.data(),  sizeof(f32vec4_t) * brickset.size(), sizeof(uint32_t) * max_structure_size);
-
-    // int redundant_nodes = 0;
-    // for (int i = 1; i < structure.size(); i += 8){
-
-    // }
-
 
     // write to descriptor sets
     VkDescriptorBufferInfo desc_buffer_info = {};
@@ -187,18 +179,8 @@ octree_t::is_leaf(
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
     double d = (c - camera->get_position()).norm();
 
-    if (aabb[3] <= hyper::sigma * d){
+    if (aabb[3] <= std::max(hyper::epsilon, hyper::sigma * d)){
         return true;
-    }
-
-    if (sdfs.size() == 1){
-        auto f = [&](const vec3_t & x){ return sdfs[0]->normal(x); };
-        vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
-        mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
-
-        if (j.frobenius_norm() < hyper::epsilon * hyper::epsilon){
-            return true;
-        }
     }
 
     return false;

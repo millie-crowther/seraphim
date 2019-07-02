@@ -8,7 +8,6 @@ class brick_t {
 public:
     // types
     struct data_t {
-        float d;
         u16vec2_t uv;
     };
 

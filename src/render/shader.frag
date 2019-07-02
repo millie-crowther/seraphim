@@ -20,7 +20,6 @@ const float grid_size = 256;
 // types sent from CPU
 //
 struct brick_t {
-    float d;
     uint uv;
 };
 
@@ -140,14 +139,10 @@ intersection_t plane_intersection(ray_t r, uint i, vec3 min, float size){
 
     vec3 n = normal(uv);
 
-    // float p = texture(geometry_sampler, uv).w * 2 - 1;
-    // p *= length(vec3(size / 2));
-
-    // vec3 c = min + size / 2;
-    // float d = dot(c, n) - p;
+    vec3 c = min + size / 2;
 
     float dn = dot(r.d, n);
-    float lambda = (b.d - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
+    float lambda = (dot(c, n) - dot(r.x, n)) / (dn + float(dn == 0) * epsilon);
 
 
     return intersection_t(lambda >= 0, r.x + lambda * r.d, n, i, base_node());
@@ -195,9 +190,7 @@ intersection_t raycast(ray_t r){
 
             if (index <= brickset_size){
                 intersection_t i = plane_intersection(r, index, node.min, node.size);
-                if (i.hit 
-                && node_contains(node, i.x)
-                ){
+                if (i.hit && length(i.x - node.min - node.size / 2 ) < length(vec3(node.size / 2))){
                     i.node = node;
                     return i;
                 }
@@ -245,7 +238,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    float shadow = shadow(light_p, x);
+    float shadow = 1;//shadow(light_p, x);
 
     //diffuse
     vec3 l = normalize(light_p - x);
@@ -336,3 +329,5 @@ void main(){
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
+
+

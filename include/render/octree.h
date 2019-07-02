@@ -21,13 +21,11 @@ node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
 
 leaf nodes:
 
-node = 1NXXXXUU UUUUUUUU UUVVVVVV VVVVVVVV
+node = 1NXXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
     1 = leaf flag (set)
     N = normal flag (indicates sign of Z component of normal)
     X = unused (4 bits)
-    U = U texture coordinate of brick (12 bits)
-    V = V texture coordinate of brick (12 bits)
-    [U|V] = brick ID
+    B = brick ID
 
 
 

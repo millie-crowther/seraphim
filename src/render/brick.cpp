@@ -53,8 +53,6 @@ brick_t::brick_t(
     }
 
     if (data != nullptr){
-        data->d = (x * nt) - p;
-
         if (auto texture_manager = texture_manager_ptr.lock()){
             u16vec2_t uv = texture_manager->request(colour_patch, geometry_patch);
             data->uv = uv;

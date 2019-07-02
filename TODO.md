@@ -47,11 +47,8 @@
         * then check if curve is planar
         * computationally, probably just the same as above
         * but without early termination
-* put geometry in aabb-space
-    * this is required for later octree fuckery
-    * stuff like, recursivity, instantiation
-    * only plane 'd' value needs to be aabb-space, normal is fine (unless rotating???!)
-* put plane displacement in texture
+* remove onion skinning
+* put uv in octree itself
 
 ### materials
 * add textures for other material properties

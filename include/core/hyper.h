@@ -14,10 +14,10 @@ namespace hyper {
     constexpr uint16_t pi      = 8;                 // pixels
 
     // patch size
-    constexpr double   sigma   = 16 * epsilon * pi; // metres      
+    constexpr double   sigma   = 20 * epsilon * pi; // metres      
 
     // largest distance
-    constexpr double   rho     = 75;                // metres
+    constexpr double   rho     = 8;                // metres
 
     // number of bricks
     constexpr uint32_t tau     = 256;               
