@@ -20,6 +20,7 @@ renderer_t::renderer_t(
     set_main_camera(test_camera);
     
     push_constants.render_distance = static_cast<float>(hyper::rho);
+    push_constants.grid_size = hyper::tau;
 
     current_frame = 0;
     this->surface = surface;

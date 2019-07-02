@@ -14,7 +14,6 @@ const float f = 1.0;
 const int max_steps = 64;
 const float epsilon = 0.005;
 const float shadow_softness = 64;
-const float grid_size = 256;
 
 //
 // types sent from CPU
@@ -61,12 +60,16 @@ layout(location = 0) out vec4 out_colour;
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
     float render_distance;
-    float dummy;             // alignment
+    uint grid_size;
+
     vec3 camera_position;
     float dummy2;           // alignment
+
     vec3 camera_right;
     float dummy3;
+
     vec3 camera_up;
+    float dummy4;
 } push_const;
 
 //
@@ -120,7 +123,7 @@ vec2 uv(uint i){
     brick_t brick = octree.brickset[i];
     uint local_u = brick.uv & 65535;
     uint local_v = brick.uv >> 16;
-    return (vec2(local_u, local_v) + 0.5) / grid_size;
+    return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
 }
 
 intersection_t raycast(ray_t r){
