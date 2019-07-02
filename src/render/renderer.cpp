@@ -14,8 +14,11 @@ renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shade
 renderer_t::renderer_t(
     const allocator_t & allocator,
     VkSurfaceKHR surface, uint32_t graphics_family, 
-    uint32_t present_family, const u32vec2_t & window_size
+    uint32_t present_family, const u32vec2_t & window_size,
+    std::shared_ptr<camera_t> test_camera
 ){
+    set_main_camera(test_camera);
+    
     push_constants.render_distance = static_cast<float>(hyper::rho);
 
     current_frame = 0;
@@ -31,7 +34,7 @@ renderer_t::renderer_t(
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   
 
-    sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(4.0, 1.0, 1.0), 2.0);
+    sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3);
     plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
 
     renderable_sdfs.push_back(sphere);
@@ -115,7 +118,7 @@ renderer_t::init(){
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    octree = std::make_shared<octree_t>(allocator, renderable_sdfs, desc_sets);
+    octree = std::make_shared<octree_t>(allocator, renderable_sdfs, desc_sets, main_camera);
 
     if (!create_command_buffers()){
         return false;

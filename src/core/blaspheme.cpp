@@ -110,14 +110,16 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
-    renderer = std::make_shared<renderer_t>(
-        allocator, surface, graphics_family, present_family, window_size
-    );
-
     scheduler = std::make_shared<scheduler_t>();
     scheduler->frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
     ));
+
+    test_camera = std::make_shared<camera_t>(this);
+
+    renderer = std::make_shared<renderer_t>(
+        allocator, surface, graphics_family, present_family, window_size, test_camera
+    );
 }
 
 blaspheme_t::~blaspheme_t(){

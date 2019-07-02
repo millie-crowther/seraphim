@@ -9,6 +9,7 @@
 #include "core/buffer.h"
 #include "sdf/sdf.h"
 #include "render/brick.h"
+#include "render/camera.h"
 
 class octree_t {
 private:
@@ -38,18 +39,26 @@ private:
     // TODO: remove this and replace with lazy streaming version
     void paint(
         uint32_t i, const vec4_t & aabb, 
-        const std::vector<std::shared_ptr<sdf3_t>> & sdfs
+        const std::vector<std::weak_ptr<sdf3_t>> & sdfs,
+        std::shared_ptr<camera_t> camera
     );
 
     uint32_t create_brick(const vec4_t & aabb, const sdf3_t & sdf);
 
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
+    bool is_leaf(
+        const vec4_t & aabb, 
+        const std::vector<std::shared_ptr<sdf3_t>> & sdfs,
+        std::shared_ptr<camera_t> camera 
+    );
+
 public:
     octree_t(
         const allocator_t & allocator, 
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-        const std::vector<VkDescriptorSet> & desc_sets
+        const std::vector<VkDescriptorSet> & desc_sets,
+        std::weak_ptr<camera_t> camera
     );
 };
 

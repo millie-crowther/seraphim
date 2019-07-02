@@ -12,7 +12,8 @@ constexpr uint32_t octree_t::null_node;
 octree_t::octree_t(
     const allocator_t & allocator, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-    const std::vector<VkDescriptorSet> & desc_sets
+    const std::vector<VkDescriptorSet> & desc_sets,
+    std::weak_ptr<camera_t> camera
 ){
     
 
@@ -22,18 +23,15 @@ octree_t::octree_t(
     //       regarded as an empty volume in the shader 
     structure.emplace_back(null_node); 
 
-    std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
-    for (auto sdf_ptr : sdfs){
-        if (auto sdf = sdf_ptr.lock()){
-            strong_sdfs.push_back(sdf);
-        }
-    }
-
     universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
     texture_manager = std::make_shared<texture_manager_t>(allocator, 256, desc_sets);
-    paint(0, universal_aabb, strong_sdfs);
+    
+    if (auto c = camera.lock()){
+        paint(0, universal_aabb, sdfs, c);
+    }
+
     std::cout << "octree size: " << structure.size() << std::endl;
     std::cout << "brickset size: " << brickset.size() << std::endl;
 
@@ -122,23 +120,27 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 }
 
 void 
-octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    bool is_leaf = aabb[3] <= 0.5;
-
+octree_t::paint(
+    uint32_t i, const vec4_t & aabb, 
+    const std::vector<std::weak_ptr<sdf3_t>> & sdfs,
+    std::shared_ptr<camera_t> camera
+){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
-    for (auto sdf : sdfs){
-        auto intersection = intersects_contains(aabb, sdf);
+    for (auto sdf_ptr : sdfs){
+        if (auto sdf = sdf_ptr.lock()){
+            auto intersection = intersects_contains(aabb, sdf);
 
-        // contains
-        if (std::get<1>(intersection)){
-            structure[i] = is_leaf_flag;
-            return;
-        } 
-        
-        // intersects
-        if (std::get<0>(intersection)){
-            new_sdfs.push_back(sdf);
+            // contains
+            if (std::get<1>(intersection)){
+                structure[i] = is_leaf_flag;
+                return;
+            } 
+            
+            // intersects
+            if (std::get<0>(intersection)){
+                new_sdfs.push_back(sdf);
+            }
         }
     }
 
@@ -147,28 +149,21 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
         return;
     }      
 
-    compose::union_t<3> u(new_sdfs);
-
-    if (is_leaf){
-        structure[i] = is_leaf_flag | create_brick(aabb, u);
+    if (is_leaf(aabb, new_sdfs, camera)){
+        uint32_t brick_i = create_brick(aabb, compose::union_t<3>(new_sdfs));
+        structure[i] = is_leaf_flag | brick_i;
         return;
     } 
-
-    // check for local planar sdf
-    // if (new_sdfs.size() == 1){
-        auto f = [&](const vec3_t & x){ return u.normal(x); };
-        vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
-        mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
-
-        if (j.frobenius_norm() < hyper::epsilon){
-            structure[i] = is_leaf_flag | create_brick(aabb, u);
-            return;
-        }
-    // }
 
     structure[i] = structure.size();
     for (uint8_t octant = 0; octant < 8; octant++){
         structure.push_back(null_node);
+    }
+
+    // TODO: this sucks
+    std::vector<std::weak_ptr<sdf3_t>> new_weak_sdfs;
+    for (auto sdf_ptr : new_sdfs){
+        new_weak_sdfs.push_back(sdf_ptr);
     }
 
     for (uint8_t octant = 0; octant < 8; octant++){
@@ -179,6 +174,34 @@ octree_t::paint(uint32_t i, const vec4_t & aabb, const std::vector<std::shared_p
         if (octant & 2) new_aabb[1] += new_aabb[3];
         if (octant & 4) new_aabb[2] += new_aabb[3];
 
-        paint(structure[i] + octant, new_aabb, new_sdfs);
+        paint(structure[i] + octant, new_aabb, new_weak_sdfs, camera);
     }
+}
+
+bool 
+octree_t::is_leaf(
+    const vec4_t & aabb, 
+    const std::vector<std::shared_ptr<sdf3_t>> & sdfs,
+    std::shared_ptr<camera_t> camera
+){
+    if (aabb[3] <= 0.25){
+        return true;
+    }
+
+    // vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
+    // if (aabb[3] * aabb[3] <= (c - camera->get_position()).square_norm()){
+    //     return true;
+    // }
+
+    if (sdfs.size() == 1){
+        auto f = [&](const vec3_t & x){ return sdfs[0]->normal(x); };
+        vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
+        mat3_t j = mat3_t::jacobian(f, c, aabb[3] / 4.0);
+
+        if (j.frobenius_norm() < hyper::epsilon * hyper::epsilon){
+            return true;
+        }
+    }
+
+    return false;
 }

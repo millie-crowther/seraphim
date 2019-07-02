@@ -106,7 +106,8 @@ public:
     renderer_t(
         const allocator_t & allocator,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family, const u32vec2_t & window_size
+        uint32_t present_family, const u32vec2_t & window_size,
+        std::shared_ptr<camera_t> test_camera
     );
     ~renderer_t();
 

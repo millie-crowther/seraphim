@@ -50,6 +50,8 @@ private:
  
     GLFWwindow * window;
 
+    std::shared_ptr<camera_t> test_camera;
+
 public:
     blaspheme_t(bool is_debug);
     ~blaspheme_t();
