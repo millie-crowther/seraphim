@@ -8,7 +8,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
     this->allocator = allocator;
     claimed_patches = 0;
     
-    u32vec2_t image_size(hyper::tau * hyper::pi);
+    u32vec2_t image_size(hyper::tau);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -26,7 +26,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
     vkUpdateDescriptorSets(allocator.device, descriptor_write.size(), descriptor_write.data(), 0, nullptr);
 
     staging_buffer = std::make_unique<buffer_t>(
-        allocator, hyper::pi * hyper::pi * sizeof(u8vec4_t),
+        allocator, sizeof(u8vec4_t),
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY
     );
@@ -36,10 +36,7 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
 }
 
 u16vec2_t 
-texture_manager_t::request(
-    const std::vector<u8vec4_t> & colour_patch,
-    const std::vector<u8vec4_t> & geometry_patch
-){
+texture_manager_t::request(u8vec4_t colour, u8vec4_t normal){
     u16vec2_t uv;
 
     if (claimed_patches < static_cast<uint32_t>(hyper::tau * hyper::tau)){
@@ -57,21 +54,18 @@ texture_manager_t::request(
         throw std::runtime_error("No brick textures left!!");
     }
 
-    staging_buffer->copy(colour_patch.data(), colour_patch.size() * sizeof(u8vec4_t), 0);
-
+    staging_buffer->copy(&colour, sizeof(u8vec4_t), 0);
     staging_buffer->copy_to_image(
         colour_texture->get_image(), 
-        uv.cast<uint32_t>() * hyper::pi,
-        u32vec2_t(hyper::pi)
+        uv.cast<uint32_t>(),
+        u32vec2_t(1)
     );
 
-
-    staging_buffer->copy(geometry_patch.data(), geometry_patch.size() * sizeof(u8vec4_t), 0);
-
+    staging_buffer->copy(&normal, sizeof(u8vec4_t), 0);
     staging_buffer->copy_to_image(
         geometry_texture->get_image(), 
-        uv.cast<uint32_t>() * hyper::pi,
-        u32vec2_t(hyper::pi)
+        uv.cast<uint32_t>(),
+        u32vec2_t(1)
     );
 
     return uv;

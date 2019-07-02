@@ -31,10 +31,7 @@ public:
     texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets);
 
     // mutators
-    u16vec2_t request(
-        const std::vector<u8vec4_t> & colour_patch,
-        const std::vector<u8vec4_t> & geometry_patch
-    );
+    u16vec2_t request(u8vec4_t colour, u8vec4_t normal);
     void clear(u16vec2_t patch);
 };
 

@@ -9,38 +9,16 @@ brick_t::brick_t(
     const sdf3_t & sdf, 
     data_t * data
 ){
-    vec3_t x = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
-    vec3_t n = sdf.normal(x);
-    double p = sdf.phi(x);
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
 
-    std::vector<u8vec4_t> colour_patch;
-    std::vector<u8vec4_t> geometry_patch;
-
-    vec3_t v = std::abs(n[0]) <= 1 - hyper::epsilon ? vec3_t::up() : vec3_t::right();
-    vec3_t u_axis = v % n;
-    vec3_t v_axis = n % u_axis;
-
-    for (uint32_t i = 0; i < hyper::pi * hyper::pi; i++){
-        vec2_t uv(
-            static_cast<double>(i % hyper::pi),
-            static_cast<double>(i / hyper::pi)
-        );
-        uv /= hyper::pi / aabb[3] / 2;
-
-        vec3_t dx = u_axis * uv[0] + v_axis * uv[1];
-
-        vec3_t a = x - n * p + dx;
-
-        colour_patch.push_back(painter_t<3>().colour(a));
-        
-        vec3_t n = (sdf.normal(a) / 2 + 0.5) * 255;
-
-        geometry_patch.emplace_back(n[0], n[1], n[2], 0);
-    }
+    u8vec4_t colour = painter_t<3>().colour(c);
+    
+    vec3_t n = (sdf.normal(c) / 2 + 0.5) * 255;
+    u8vec4_t normal(n[0], n[1], n[2], 0);
 
     if (data != nullptr){
         if (auto texture_manager = texture_manager_ptr.lock()){
-            u16vec2_t uv = texture_manager->request(colour_patch, geometry_patch);
+            u16vec2_t uv = texture_manager->request(colour, normal);
             data->uv = uv;
             this->uv = uv;
         }
