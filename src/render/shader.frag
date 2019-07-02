@@ -23,10 +23,6 @@ struct brick_t {
     uint uv;
 };
 
-struct material_t {
-    uint rgba;
-};
-
 //
 // types used in shader
 //
@@ -71,7 +67,7 @@ layout( push_constant ) uniform window_block {
     vec3 camera_right;
     float dummy3;
     vec3 camera_up;
-} push_constants;
+} push_const;
 
 //
 // inputs from host
@@ -90,25 +86,15 @@ layout(binding = 3) uniform sampler2D geometry_sampler;
 in vec4 gl_FragCoord;
 
 node_t base_node(){
-    return node_t(0, vec3(-push_constants.render_distance), push_constants.render_distance * 2);
-}
-
-bool node_contains(node_t node, vec3 x){
-    return 
-        x.x >= node.min.x - epsilon && 
-        x.y >= node.min.y - epsilon && 
-        x.z >= node.min.z - epsilon &&
-        x.x <= node.min.x + node.size + epsilon && 
-        x.y <= node.min.y + node.size + epsilon && 
-        x.z <= node.min.z + node.size + epsilon;
-
-        // TODO: WHY ARENT THESE THE SAME AAARGHGGH
-        // all(greaterThanEqual(x, base_node.min)) &&
-        // all(lessThan(x, base_node.min + base_node.size));
+    return node_t(0, vec3(-push_const.render_distance), push_const.render_distance * 2);
 }
 
 node_t octree_lookup(vec3 x){
-    if (!node_contains(base_node(), x)){
+    if (
+        abs(x).x > push_const.render_distance ||
+        abs(x).y > push_const.render_distance ||
+        abs(x).z > push_const.render_distance 
+    ){
         return invalid_node;
     }
 
@@ -142,7 +128,7 @@ intersection_t raycast(ray_t r){
 
     for (int i = 0;
     //  i < max_steps && 
-     length(r.x - push_constants.camera_position) < push_constants.render_distance; i++){
+     length(r.x - push_const.camera_position) < push_const.render_distance; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
@@ -213,9 +199,9 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     vec4 d = kd * dot(l, n) * colour;
 
     //specular
-    vec3 v = x - push_constants.camera_position;
-    vec3 right = push_constants.camera_right;
-    vec3 u = push_constants.camera_up;
+    vec3 v = x - push_const.camera_position;
+    vec3 right = push_const.camera_right;
+    vec3 u = push_const.camera_up;
 
     // TODO: not sure about order of cross product here??
     v = vec3(dot(v, right), dot(v, u), dot(v, cross(right, u))); 
@@ -236,15 +222,15 @@ vec4 sky(){
 }
 
 void main(){
-    vec2 camera_uv = gl_FragCoord.xy / push_constants.window_size;
+    vec2 camera_uv = gl_FragCoord.xy / push_const.window_size;
     camera_uv = camera_uv * 2.0 - 1.0;
-    camera_uv.x *= push_constants.window_size.x;
-    camera_uv.x /= push_constants.window_size.y;
+    camera_uv.x *= push_const.window_size.x;
+    camera_uv.x /= push_const.window_size.y;
     camera_uv.y *= -1;    
     
-    vec3 up = push_constants.camera_up;
-    vec3 right = push_constants.camera_right;
-    vec3 x0 = push_constants.camera_position;
+    vec3 up = push_const.camera_up;
+    vec3 right = push_const.camera_right;
+    vec3 x0 = push_const.camera_position;
 
     vec3 camera_forward = cross(right, up);
 

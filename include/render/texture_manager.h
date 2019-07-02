@@ -29,7 +29,7 @@ private:
 
 public:
     // constructors and destructors
-    texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets);
+    texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets);
 
     // mutators
     u16vec2_t request(

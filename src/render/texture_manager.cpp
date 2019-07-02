@@ -4,12 +4,11 @@
 
 #include "render/brick.h"
 
-texture_manager_t::texture_manager_t(const allocator_t & allocator, uint16_t grid_size, const std::vector<VkDescriptorSet> & desc_sets){
-    this->grid_size = grid_size;
+texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets){
     this->allocator = allocator;
     claimed_patches = 0;
     
-    u32vec2_t image_size(grid_size * hyper::pi);
+    u32vec2_t image_size(hyper::tau * hyper::pi);
 
     VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;

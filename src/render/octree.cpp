@@ -24,7 +24,7 @@ octree_t::octree_t(
     universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
-    texture_manager = std::make_shared<texture_manager_t>(allocator, 256, desc_sets);
+    texture_manager = std::make_shared<texture_manager_t>(allocator, desc_sets);
     
     if (auto c = camera.lock()){
         paint(0, universal_aabb, sdfs, c);
