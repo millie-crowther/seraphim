@@ -13,15 +13,13 @@ window_t::window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler){
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-
     window = glfwCreateWindow(size[0], size[1], "BLASPHEME", nullptr, nullptr);
 
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback); 
 
-    keyboard = std::make_shared<keyboard_t>(*this);
-    mouse = std::make_shared<mouse_t>(*this, scheduler);
-
+    keyboard = std::make_unique<keyboard_t>(*this);
+    mouse = std::make_unique<mouse_t>(*this, scheduler);
 }
 
 window_t::~window_t(){
@@ -50,12 +48,12 @@ window_t::set_title(const std::string & title){
     glfwSetWindowTitle(window, title.c_str());
 }
 
-std::weak_ptr<keyboard_t> 
+const keyboard_t &
 window_t::get_keyboard() const {
-    return keyboard;
+    return *keyboard;
 }
 
-std::weak_ptr<mouse_t> 
+const mouse_t &
 window_t::get_mouse() const {
-    return mouse;
+    return *mouse;
 }

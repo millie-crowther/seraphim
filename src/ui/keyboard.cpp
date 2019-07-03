@@ -7,13 +7,11 @@ key_callback(GLFWwindow * glfw_window, int key, int scancode, int action, int mo
     void * data = glfwGetWindowUserPointer(glfw_window);
     window_t * window = reinterpret_cast<window_t *>(data);
     
-    if (auto keyboard = window->get_keyboard().lock()){
-        if (action == GLFW_PRESS){
-            keyboard->on_key_press.announce(key);
-        } else if (action == GLFW_RELEASE){
-            keyboard->on_key_release.announce(key);
-        }   
-    }
+    if (action == GLFW_PRESS){
+        window->get_keyboard().on_key_press.announce(key);
+    } else if (action == GLFW_RELEASE){
+        window->get_keyboard().on_key_release.announce(key);
+    }   
 }
 
 keyboard_t::keyboard_t(const window_t & window){

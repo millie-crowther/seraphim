@@ -27,6 +27,7 @@
 ### camera
 * add camera_up field to push constants as well
 * add camera transform fields directly from a transform of the camera class
+* camera rotation with mouse
 
 ### geometry
 * implement octree streaming from cpu

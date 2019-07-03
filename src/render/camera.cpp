@@ -9,26 +9,29 @@ camera_t::camera_t(const blaspheme_t * blaspheme){
     if (auto scheduler = blaspheme->get_scheduler().lock()){
         frame_start_follower = scheduler->on_frame_start.follow([blaspheme, this](double delta){
             if (auto window = blaspheme->get_window().lock()){
-                if (auto keyboard = window->get_keyboard().lock()){
+                vec3_t forward = transform.get_rotation() * vec3_t::forward();
 
-                    vec3_t forward = transform.get_rotation() * vec3_t::forward();
-
-                    if (keyboard->is_key_pressed(GLFW_KEY_W)){
-                        transform.translate(forward * delta);
-                    }
-
-                    if (keyboard->is_key_pressed(GLFW_KEY_S)){
-                        transform.translate(-forward * delta );
-                    } 
-
-                    if (keyboard->is_key_pressed(GLFW_KEY_A)){
-                        transform.translate(-get_right() * delta );
-                    }
-
-                    if (keyboard->is_key_pressed(GLFW_KEY_D)){
-                        transform.translate(get_right() * delta );
-                    }
+                if (window->get_keyboard().is_key_pressed(GLFW_KEY_W)){
+                    transform.translate(forward * delta);
                 }
+
+                if (window->get_keyboard().is_key_pressed(GLFW_KEY_S)){
+                    transform.translate(-forward * delta );
+                } 
+
+                if (window->get_keyboard().is_key_pressed(GLFW_KEY_A)){
+                    transform.translate(-get_right() * delta );
+                }
+
+                if (window->get_keyboard().is_key_pressed(GLFW_KEY_D)){
+                    transform.translate(get_right() * delta );
+                }
+                
+                // std::cout << window->get_mouse().get_velocity()[0] << std::endl;
+                // transform.rotate(quat_t::angle_axis(
+                //     window->get_mouse().get_velocity()[0], 
+                //     vec3_t::up()
+                // ));
             }
         });
     }

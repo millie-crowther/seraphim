@@ -27,3 +27,8 @@ mouse_t::mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler_ptr){
         c = size.cast<double>() / 2;
     });
 }
+
+vec2_t
+mouse_t::get_velocity() const {
+    return v;
+}

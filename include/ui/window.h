@@ -15,8 +15,8 @@ private:
     // private fields
     u32vec2_t size;
     GLFWwindow * window;
-    std::shared_ptr<keyboard_t> keyboard;
-    std::shared_ptr<mouse_t> mouse;
+    std::unique_ptr<keyboard_t> keyboard;
+    std::unique_ptr<mouse_t> mouse;
 
 public:
     // constructors and destructors
@@ -33,8 +33,9 @@ public:
     GLFWwindow * get_window() const;
     u32vec2_t get_size() const;
     bool should_close() const;
-    std::weak_ptr<keyboard_t> get_keyboard() const;
-    std::weak_ptr<mouse_t> get_mouse() const;
+
+    const keyboard_t & get_keyboard() const;
+    const mouse_t & get_mouse() const;
 };
 
 #endif
