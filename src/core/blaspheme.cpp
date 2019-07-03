@@ -21,20 +21,6 @@ const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-static void 
-window_resize_callback(GLFWwindow * window, int width, int height){
-    void * data = glfwGetWindowUserPointer(window);
-    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
-    blaspheme->window_resize(u32vec2_t((uint32_t) width, (uint32_t) height));
-}
-
-static void 
-key_callback(GLFWwindow * window, int key, int scancode, int action, int mods){
-    void * data = glfwGetWindowUserPointer(window);
-    blaspheme_t * blaspheme = reinterpret_cast<blaspheme_t *>(data);
-    blaspheme->keyboard_event(key, action, mods);
-}
-
 blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
@@ -42,17 +28,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     // initialise GLFW
     glfwInit();
 
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-    u32vec2_t window_size(640u, 480u);
-
-    window = glfwCreateWindow(window_size[0], window_size[1], "BLASPHEME", nullptr, nullptr);
-
-    glfwSetWindowUserPointer(window, static_cast<void *>(this));
-
-    glfwSetWindowSizeCallback(window, window_resize_callback);   
-    glfwSetKeyCallback(window, key_callback);
+    window = std::make_unique<window_t>(u32vec2_t(640u, 480u));
 
     // initialise vulkan
     create_instance();
@@ -73,7 +49,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
 	    }
     }
 
-    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(instance, window->get_window(), nullptr, &surface) != VK_SUCCESS) {
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
@@ -112,14 +88,14 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
     scheduler = std::make_shared<scheduler_t>();
-    scheduler->frame_start.follow(std::bind(
+    scheduler->on_frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
     ));
 
     test_camera = std::make_shared<camera_t>(this);
 
     renderer = std::make_shared<renderer_t>(
-        allocator, surface, graphics_family, present_family, window_size, test_camera
+        allocator, surface, graphics_family, present_family, window, test_camera
     );
 }
 
@@ -153,27 +129,11 @@ blaspheme_t::~blaspheme_t(){
     vkDestroyInstance(instance, nullptr);
 
     // destory GLFW
-    glfwDestroyWindow(window);
+    window = nullptr;
+
     glfwTerminate();
 
 }
-
-
-const keyboard_t *
-blaspheme_t::get_keyboard() const {
-    return &keyboard;
-}
-
-void
-blaspheme_t::window_resize(const u32vec2_t & size){
-    renderer->window_resize(size);
-}
-
-void 
-blaspheme_t::keyboard_event(int key, int action, int mods){
-    keyboard.key_event(key, action, mods);
-}
-
 
 std::weak_ptr<renderer_t> 
 blaspheme_t::get_renderer() const {
@@ -500,14 +460,14 @@ blaspheme_t::setup_debug_callback(){
 
 bool
 blaspheme_t::should_quit(){
-    return glfwWindowShouldClose(window) || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
+    return window->should_close();// || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
 void
 blaspheme_t::run(){
     while (!should_quit()){
 	    glfwPollEvents();
-        scheduler->frame_start.tick();
+        scheduler->on_frame_start.tick();
         renderer->render();
     }
 }
@@ -515,5 +475,5 @@ blaspheme_t::run(){
 void
 blaspheme_t::update_fps_counter(double delta){
     std::string title = "BLASPHEME | FPS: " + std::to_string(1.0 / delta);
-    glfwSetWindowTitle(window, title.c_str());
+    window->set_title(title);
 }

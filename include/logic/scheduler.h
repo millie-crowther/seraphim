@@ -7,7 +7,7 @@
 
 class scheduler_t {   
 public:
-    interval_revelator_t frame_start;
+    interval_revelator_t on_frame_start;
 };
 
 #endif

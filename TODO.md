@@ -32,9 +32,6 @@
     * may require a LOD flag to be stored in gpu data?
 * delete bricks which havent been used in a while
     * record when a brick is used
-* make CPU-side buffers for octree a single `std::vector<uint8_t>`
-* fix holes at volumes where sdfs intersect
-* fix general holes that appear all over the place
 * Jacobian culling approximation too greedy in some cases
     * maybe monte carlo sampling?
         * 99% of cases will terminate after second iteration so not as expensive as you might think
@@ -48,7 +45,6 @@
         * computationally, probably just the same as above
         * but without early termination
 * remove onion skinning
-* put uv in octree itself
 
 ### materials
 * add textures for other material properties

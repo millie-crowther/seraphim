@@ -1,7 +1,7 @@
 #include "render/renderer.h"
 
 #include "sdf/primitive.h"
-#include "input/resources.h"
+#include "ui/resources.h"
 #include "render/texture.h"
 #include "core/vk_utils.h"
 
@@ -14,7 +14,7 @@ renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shade
 renderer_t::renderer_t(
     const allocator_t & allocator,
     VkSurfaceKHR surface, uint32_t graphics_family, 
-    uint32_t present_family, const u32vec2_t & window_size,
+    uint32_t present_family, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera
 ){
     set_main_camera(test_camera);
@@ -28,7 +28,11 @@ renderer_t::renderer_t(
     this->present_family = present_family;
     this->allocator = allocator;
 
-    push_constants.window_size = window_size;
+    push_constants.window_size = window->get_size();
+    window->on_resize.follow([&](u32vec2_t size){
+        push_constants.window_size = size;
+        recreate_swapchain();
+    });
     
     fragment_shader_code = resources::load_file("../src/render/shader.frag");
     if (fragment_shader_code.size() == 0){
@@ -835,13 +839,6 @@ renderer_t::create_shader_module(std::string code, bool * success){
     }
     return shader_module;
 }
-
-void
-renderer_t::window_resize(const u32vec2_t & size){
-    push_constants.window_size = size;
-    recreate_swapchain();
-}
-
 
 void 
 renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){

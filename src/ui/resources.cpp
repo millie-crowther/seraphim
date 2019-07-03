@@ -1,4 +1,4 @@
-#include "input/resources.h"
+#include "ui/resources.h"
 
 #include <fstream>
 #include <vector>

@@ -1,15 +1,14 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <memory>
-
-#include "camera.h"
-#include "core/buffer.h"
-#include "render/octree.h"
-#include "input/keyboard.h"
-
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <memory>
+
+#include "core/buffer.h"
+#include "ui/window.h"
+#include "render/octree.h"
+#include "render/camera.h"
 
 class renderer_t {
 public:
@@ -108,16 +107,12 @@ public:
     renderer_t(
         const allocator_t & allocator,
         VkSurfaceKHR surface, uint32_t graphics_family, 
-        uint32_t present_family, const u32vec2_t & window_size,
+        uint32_t present_family, std::shared_ptr<window_t> window,
         std::shared_ptr<camera_t> test_camera
     );
     ~renderer_t();
 
-
-    void window_resize(const u32vec2_t & size);
-
     void render();
-
     void set_main_camera(std::weak_ptr<camera_t> camera);
 };
 

@@ -43,8 +43,10 @@ set(SOURCES
     
     ../src/scene/transform.cpp
 
-    ../src/input/keyboard.cpp
-    ../src/input/resources.cpp
+    ../src/ui/keyboard.cpp
+    ../src/ui/resources.cpp
+    ../src/ui/window.cpp
+    ../src/ui/mouse.cpp
 
     ../src/logic/scheduler.cpp
     ../src/logic/interval_revelator.cpp

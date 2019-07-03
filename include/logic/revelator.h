@@ -24,9 +24,6 @@ public:
         }
     }
 
-protected:
-    revelator_t(){}
-
     void announce(const T & t) const {
         // TODO: perhaps adopt more efficient strategy if map becomes very large
         for (auto & follower : followers){

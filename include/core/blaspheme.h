@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "render/renderer.h"
-#include "input/keyboard.h"
+#include "ui/window.h"
 #include "logic/scheduler.h"
 
 class blaspheme_t {
@@ -46,10 +46,8 @@ private:
     VkInstance instance;
     VkSurfaceKHR surface;
 
-	keyboard_t keyboard;
+    std::shared_ptr<window_t> window;
  
-    GLFWwindow * window;
-
     std::shared_ptr<camera_t> test_camera;
 
 public:
@@ -63,7 +61,6 @@ public:
 
     std::weak_ptr<renderer_t> get_renderer() const;
     std::weak_ptr<scheduler_t> get_scheduler() const;
-    const keyboard_t * get_keyboard() const;
 };
 
 #endif
