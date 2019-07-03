@@ -69,12 +69,6 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 }
 
-uint32_t 
-octree_t::create_brick(const vec4_t & aabb, const sdf3_t & sdf){
-    brickset.emplace(aabb, texture_manager, sdf);
-    return brickset.size() - 1;
-}
-
 std::tuple<bool, bool> 
 octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
     double upper_radius = vec3_t(aabb[3] / 2).norm();
@@ -141,8 +135,13 @@ octree_t::paint(
     }      
 
     if (is_leaf(aabb, new_sdfs, camera)){
-        uint32_t brick_i = create_brick(aabb, compose::union_t<3>(new_sdfs));
-        structure[i] = is_leaf_flag | brick_i;
+        structure[i] = is_leaf_flag;
+
+        auto result = brickset.emplace(aabb, texture_manager, compose::union_t<3>(new_sdfs));
+        if (std::get<1>(result)){
+            // TODO: figure out best way to fix this off-by-one error
+            structure[i] |= std::get<0>(result)->get_id() - 1; 
+        }
         return;
     } 
 

@@ -59,8 +59,6 @@ private:
         std::shared_ptr<camera_t> camera
     );
 
-    uint32_t create_brick(const vec4_t & aabb, const sdf3_t & sdf);
-
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
     bool is_leaf(

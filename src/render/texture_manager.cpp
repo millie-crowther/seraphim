@@ -6,7 +6,7 @@
 
 texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets){
     this->allocator = allocator;
-    claimed_patches = 0;
+    claimed_patches = 1;
     
     u32vec2_t image_size(hyper::tau);
 
@@ -35,43 +35,40 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
     geometry_texture->transition_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 }
 
-u16vec2_t 
+uint32_t 
 texture_manager_t::request(u8vec4_t colour, u8vec4_t normal){
-    u16vec2_t uv;
+    uint32_t id;
 
-    if (claimed_patches < static_cast<uint32_t>(hyper::tau * hyper::tau)){
+    if (claimed_patches < hyper::tau * hyper::tau){
+        id = claimed_patches;
         claimed_patches++;
-        uv = u16vec2_t(
-            static_cast<uint16_t>(claimed_patches % hyper::tau), 
-            static_cast<uint16_t>(claimed_patches / hyper::tau)
-        );
 
     } else if (!patches.empty()){
-        uv = patches.front();
+        id = patches.front();
         patches.pop();
 
     } else {
         throw std::runtime_error("No brick textures left!!");
     }
 
+    u32vec2_t uv = u32vec2_t(id % hyper::tau, id / hyper::tau);
+
     staging_buffer->copy(&colour, sizeof(u8vec4_t), 0);
     staging_buffer->copy_to_image(
         colour_texture->get_image(), 
-        uv.cast<uint32_t>(),
-        u32vec2_t(1)
+        uv, u32vec2_t(1)
     );
 
     staging_buffer->copy(&normal, sizeof(u8vec4_t), 0);
     staging_buffer->copy_to_image(
         geometry_texture->get_image(), 
-        uv.cast<uint32_t>(),
-        u32vec2_t(1)
+        uv, u32vec2_t(1)
     );
 
-    return uv;
+    return id;
 }
 
 void 
-texture_manager_t::clear(u16vec2_t patch){
-    patches.push(patch);
+texture_manager_t::clear(uint32_t id){
+    patches.push(id);
 }

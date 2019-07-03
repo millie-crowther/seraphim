@@ -20,7 +20,7 @@ private:
     std::unique_ptr<texture_t> geometry_texture;
 
     uint32_t claimed_patches;
-    std::queue<u16vec2_t> patches;
+    std::queue<uint32_t> patches;
 
     std::unique_ptr<buffer_t> staging_buffer;
 
@@ -31,8 +31,8 @@ public:
     texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets);
 
     // mutators
-    u16vec2_t request(u8vec4_t colour, u8vec4_t normal);
-    void clear(u16vec2_t patch);
+    uint32_t request(u8vec4_t colour, u8vec4_t normal);
+    void clear(uint32_t id);
 };
 
 #endif
