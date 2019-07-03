@@ -22,13 +22,15 @@ const std::vector<const char *> device_extensions = {
 };
 
 blaspheme_t::blaspheme_t(bool is_debug){
+
     this->is_debug = is_debug;
 
     std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
     // initialise GLFW
     glfwInit();
 
-    window = std::make_shared<window_t>(u32vec2_t(640u, 480u));
+    scheduler = std::make_shared<scheduler_t>();
+    window = std::make_shared<window_t>(u32vec2_t(640u, 480u), scheduler);
 
     // initialise vulkan
     create_instance();
@@ -87,7 +89,6 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
-    scheduler = std::make_shared<scheduler_t>();
     scheduler->on_frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
     ));

@@ -6,12 +6,15 @@
 #include <map>
 
 #include "logic/revelator.h"
+#include "logic/scheduler.h"
+
+class window_t;
 
 class keyboard_t {
 public:
     typedef int keycode_t;
 
-    keyboard_t();
+    keyboard_t(const window_t & window);
     ~keyboard_t();
 
     revelator_t<keycode_t> on_key_press;

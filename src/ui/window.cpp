@@ -7,21 +7,7 @@ window_resize_callback(GLFWwindow * glfw_window, int width, int height){
     window->on_resize.announce(u32vec2_t((uint32_t) width, (uint32_t) height));
 }
 
-static void 
-key_callback(GLFWwindow * glfw_window, int key, int scancode, int action, int mods){
-    void * data = glfwGetWindowUserPointer(glfw_window);
-    window_t * window = reinterpret_cast<window_t *>(data);
-    
-    if (auto keyboard = window->get_keyboard().lock()){
-        if (action == GLFW_PRESS){
-            keyboard->on_key_press.announce(key);
-        } else if (action == GLFW_RELEASE){
-            keyboard->on_key_release.announce(key);
-        }   
-    }
-}
-
-window_t::window_t(u32vec2_t size){
+window_t::window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler){
     this->size = size;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -33,9 +19,9 @@ window_t::window_t(u32vec2_t size){
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback); 
 
-    keyboard = std::make_shared<keyboard_t>();
+    keyboard = std::make_shared<keyboard_t>(*this);
+    mouse = std::make_shared<mouse_t>(*this, scheduler);
 
-    glfwSetKeyCallback(window, key_callback);
 }
 
 window_t::~window_t(){
@@ -67,4 +53,9 @@ window_t::set_title(const std::string & title){
 std::weak_ptr<keyboard_t> 
 window_t::get_keyboard() const {
     return keyboard;
+}
+
+std::weak_ptr<mouse_t> 
+window_t::get_mouse() const {
+    return mouse;
 }

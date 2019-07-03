@@ -1,6 +1,22 @@
 #include "ui/keyboard.h"
 
-keyboard_t::keyboard_t(){
+#include "ui/window.h"
+
+static void 
+key_callback(GLFWwindow * glfw_window, int key, int scancode, int action, int mods){
+    void * data = glfwGetWindowUserPointer(glfw_window);
+    window_t * window = reinterpret_cast<window_t *>(data);
+    
+    if (auto keyboard = window->get_keyboard().lock()){
+        if (action == GLFW_PRESS){
+            keyboard->on_key_press.announce(key);
+        } else if (action == GLFW_RELEASE){
+            keyboard->on_key_release.announce(key);
+        }   
+    }
+}
+
+keyboard_t::keyboard_t(const window_t & window){
     key_press_uuid = on_key_press.follow([&](keycode_t key){
         key_state[key] = true;
     });
@@ -8,6 +24,8 @@ keyboard_t::keyboard_t(){
     key_release_uuid = on_key_release.follow([&](keycode_t key){
         key_state[key] = false;
     });
+
+    glfwSetKeyCallback(window.get_window(), key_callback);
 }
 
 keyboard_t::~keyboard_t(){

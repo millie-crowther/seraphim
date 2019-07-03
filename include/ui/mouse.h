@@ -3,16 +3,24 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <memory>
 
 #include "logic/scheduler.h"
 #include "maths/vec.h"
 
+// forward declaration of window
+class window_t;
+
 class mouse_t {
 private:
-    vec2_t velocity;
+    vec2_t v;
+    vec2_t c;
+    std::weak_ptr<scheduler_t> scheduler;
 
 public:
-    mouse_t(const scheduler_t & scheduler, u32vec2_t window_size);
+    mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler);
+
+    vec2_t get_velocity() const;
 };
 
 #endif
