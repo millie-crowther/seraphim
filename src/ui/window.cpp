@@ -11,12 +11,13 @@ static void
 key_callback(GLFWwindow * glfw_window, int key, int scancode, int action, int mods){
     void * data = glfwGetWindowUserPointer(glfw_window);
     window_t * window = reinterpret_cast<window_t *>(data);
-    std::shared_ptr<keyboard_t> keyboard = window->get_keyboard();
-
-    if (action == GLFW_PRESS){
-        keyboard->on_key_press.announce(key);
-    } else if (action == GLFW_RELEASE){
-        keyboard->on_key_release.announce(key);
+    
+    if (auto keyboard = window->get_keyboard().lock()){
+        if (action == GLFW_PRESS){
+            keyboard->on_key_press.announce(key);
+        } else if (action == GLFW_RELEASE){
+            keyboard->on_key_release.announce(key);
+        }   
     }
 }
 
@@ -63,7 +64,7 @@ window_t::set_title(const std::string & title){
     glfwSetWindowTitle(window, title.c_str());
 }
 
-std::shared_ptr<keyboard_t> 
+std::weak_ptr<keyboard_t> 
 window_t::get_keyboard() const {
     return keyboard;
 }

@@ -57,6 +57,7 @@ public:
 
     std::weak_ptr<renderer_t> get_renderer() const;
     std::weak_ptr<scheduler_t> get_scheduler() const;
+    std::weak_ptr<window_t> get_window() const;
 };
 
 #endif

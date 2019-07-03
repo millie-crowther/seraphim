@@ -9,6 +9,8 @@ protected:
     // protected constructor for abstract class
     sdf_t(){}
 
+    // TODO: may need a virtual destuctor here
+
 public:
     // virtual accessors 
     virtual double phi(const vec_t<double, D> & x) const = 0;

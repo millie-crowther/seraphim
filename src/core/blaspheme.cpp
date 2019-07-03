@@ -28,7 +28,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     // initialise GLFW
     glfwInit();
 
-    window = std::make_unique<window_t>(u32vec2_t(640u, 480u));
+    window = std::make_shared<window_t>(u32vec2_t(640u, 480u));
 
     // initialise vulkan
     create_instance();
@@ -468,4 +468,9 @@ void
 blaspheme_t::update_fps_counter(double delta){
     std::string title = "BLASPHEME | FPS: " + std::to_string(1.0 / delta);
     window->set_title(title);
+}
+
+std::weak_ptr<window_t> 
+blaspheme_t::get_window() const {
+    return window;
 }

@@ -32,7 +32,7 @@ public:
     GLFWwindow * get_window() const;
     u32vec2_t get_size() const;
     bool should_close() const;
-    std::shared_ptr<keyboard_t> get_keyboard() const;
+    std::weak_ptr<keyboard_t> get_keyboard() const;
 };
 
 #endif
