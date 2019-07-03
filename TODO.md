@@ -14,6 +14,10 @@
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * maybe tidy internals of renderer class
 * FPS counter is weird. fix it.
+* fix seg fault on exit
+    * definitely something to do with revelator<T>::follower_t destructor
+    * probably to do with when resultant shared_ptr is destroyed 
+    * destroyed too late? idk
 
 ## rendering
 

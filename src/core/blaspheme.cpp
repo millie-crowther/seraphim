@@ -89,7 +89,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
 
-    scheduler->on_frame_start.follow(std::bind(
+    frame_start_follower = scheduler->on_frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
     ));
 

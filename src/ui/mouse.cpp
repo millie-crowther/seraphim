@@ -14,7 +14,7 @@ mouse_t::mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler_ptr){
     glfwSetInputMode(window.get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     if (auto scheduler = scheduler_ptr.lock()){
-        scheduler->on_frame_start.follow([w, this](double delta){
+        frame_start_follower = scheduler->on_frame_start.follow([w, this](double delta){
             vec2_t cursor;
             glfwGetCursorPos(w, &cursor[0], &cursor[1]);
 
@@ -23,7 +23,7 @@ mouse_t::mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler_ptr){
         });
     }
 
-    window.on_resize.follow([&](u32vec2_t size){
+    window_resize_follower = window.on_resize.follow([&](u32vec2_t size){
         c = size.cast<double>() / 2;
     });
 }

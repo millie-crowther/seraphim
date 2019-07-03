@@ -17,6 +17,9 @@ private:
     vec2_t c;
     std::weak_ptr<scheduler_t> scheduler;
 
+    interval_revelator_t::follower_ptr_t frame_start_follower;
+    revelator_t<u32vec2_t>::follower_ptr_t window_resize_follower;
+
 public:
     mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler);
 

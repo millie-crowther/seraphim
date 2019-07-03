@@ -17,20 +17,15 @@ key_callback(GLFWwindow * glfw_window, int key, int scancode, int action, int mo
 }
 
 keyboard_t::keyboard_t(const window_t & window){
-    key_press_uuid = on_key_press.follow([&](keycode_t key){
+    key_press_follower = on_key_press.follow([&](keycode_t key){
         key_state[key] = true;
     });
 
-    key_release_uuid = on_key_release.follow([&](keycode_t key){
+    key_release_follower = on_key_release.follow([&](keycode_t key){
         key_state[key] = false;
     });
 
     glfwSetKeyCallback(window.get_window(), key_callback);
-}
-
-keyboard_t::~keyboard_t(){
-    on_key_press.renounce(key_press_uuid);
-    on_key_release.renounce(key_release_uuid);
 }
 
 bool

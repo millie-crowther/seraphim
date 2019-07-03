@@ -7,7 +7,7 @@ camera_t::camera_t(const blaspheme_t * blaspheme){
     transform.set_rotation(quat_t::angle_axis(3.14159 / 2, vec3_t::up()));
 
     if (auto scheduler = blaspheme->get_scheduler().lock()){
-        scheduler->on_frame_start.follow([blaspheme, this](double delta){
+        frame_start_follower = scheduler->on_frame_start.follow([blaspheme, this](double delta){
             if (auto window = blaspheme->get_window().lock()){
                 if (auto keyboard = window->get_keyboard().lock()){
 

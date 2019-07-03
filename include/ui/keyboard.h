@@ -15,7 +15,6 @@ public:
     typedef int keycode_t;
 
     keyboard_t(const window_t & window);
-    ~keyboard_t();
 
     revelator_t<keycode_t> on_key_press;
     revelator_t<keycode_t> on_key_release;
@@ -24,8 +23,9 @@ public:
 
 private:
     std::map<keycode_t, bool> key_state;
-    uuid_t key_press_uuid;
-    uuid_t key_release_uuid;
+
+    revelator_t<keycode_t>::follower_ptr_t key_press_follower;
+    revelator_t<keycode_t>::follower_ptr_t key_release_follower;
 };
 
 #endif 

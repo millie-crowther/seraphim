@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 
 #include "core/uuid.h"
 
@@ -11,17 +12,26 @@
 template<class T>
 class revelator_t {
 public:
-    uuid_t follow(const std::function<void(const T &)> & follower){
-        uuid_t uuid;
-        followers[uuid] = follower;
-        return uuid;
-    }
+    class follower_t : public uuid_t {
+    private:
+        revelator_t * revelator;
 
-    void renounce(const uuid_t & apostate){
-        auto a = followers.find(apostate);
-        if (a != followers.end()){
-            followers.erase(a);
+    public:
+        follower_t(revelator_t<T> * revelator){
+            this->revelator = revelator;
         }
+
+        ~follower_t(){
+            revelator->renounce(*this);
+        }
+    };
+
+    typedef std::shared_ptr<follower_t> follower_ptr_t;
+
+    follower_ptr_t follow(const std::function<void(const T &)> & follower){
+        std::shared_ptr<follower_t> f = std::make_shared<follower_t>(this);
+        followers[*f] = follower;
+        return f;
     }
 
     void announce(const T & t) const {
@@ -35,8 +45,15 @@ public:
         return !followers.empty();
     }
 
+    void renounce(const follower_t & apostate){
+        auto a = followers.find(apostate);
+        if (a != followers.end()){
+            followers.erase(a);
+        }
+    }
+
 private:
-    std::map<uuid_t, std::function<void(const T &)>> followers;
+    std::map<follower_t, std::function<void(const T &)>> followers;
 };
 
 #endif

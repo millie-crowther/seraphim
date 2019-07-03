@@ -38,6 +38,8 @@ private:
 
     std::shared_ptr<renderer_t> renderer;
 
+    interval_revelator_t::follower_ptr_t frame_start_follower;
+
     std::shared_ptr<scheduler_t> scheduler;
 
     allocator_t allocator;
