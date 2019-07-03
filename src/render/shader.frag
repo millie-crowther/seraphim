@@ -6,8 +6,7 @@
 //
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
-const uint structure_size = 11000;
-const uint brickset_size  =  5000;
+const uint structure_size = 20000;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
@@ -133,12 +132,10 @@ intersection_t raycast(ray_t r){
         if (octree.structure[node.i] != is_leaf_flag){
             uint index = octree.structure[node.i] & ~is_leaf_flag;
 
-            if (index <= brickset_size){
-                vec2 uv = uv(index);
-                return intersection_t(
-                    true, r.x, normal(uv), index, node
-                );
-            }
+            vec2 uv = uv(index);
+            return intersection_t(
+                true, r.x, normal(uv), index, node
+            );
         }
 	
         vec3 lambda_i = abs(

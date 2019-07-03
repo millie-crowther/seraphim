@@ -11,10 +11,10 @@ namespace hyper {
     constexpr double   iota    = 60;                // Hertz
 
     // patch size
-    constexpr double   sigma   = 160 * epsilon;     // metres      
+    constexpr double   sigma   = 120 * epsilon;     // metres      
 
     // largest distance
-    constexpr double   rho     = 8;                 // metres
+    constexpr double   rho     = 16;                 // metres
 
     // number of bricks
     constexpr uint32_t tau     = 256;               
