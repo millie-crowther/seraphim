@@ -10,11 +10,11 @@ namespace hyper {
     // shortest time period 
     constexpr double   iota    = 60;                // Hertz
 
-    // patch size
-    constexpr double   sigma   = 120 * epsilon;     // metres      
+    // node size
+    constexpr double   sigma   = 80 * epsilon;     // metres      
 
     // largest distance
-    constexpr double   rho     = 16;                 // metres
+    constexpr double   rho     = 20;                 // metres
 
     // number of bricks
     constexpr uint32_t tau     = 256;               

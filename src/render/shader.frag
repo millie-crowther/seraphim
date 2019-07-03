@@ -6,7 +6,7 @@
 //
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
-const uint structure_size = 20000;
+const uint structure_size = 100000;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
@@ -179,7 +179,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    float shadow = 1;//shadow(light_p, x);
+    float shadow = shadow(light_p, x);
 
     //diffuse
     vec3 l = normalize(light_p - x);
@@ -193,7 +193,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     vec3 u = push_const.camera_up;
 
     // TODO: not sure about order of cross product here??
-    v = vec3(dot(v, right), dot(v, u), dot(v, cross(right, u))); 
+    v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
     v = normalize(v);
 
     vec3 r = reflect(l, n);
