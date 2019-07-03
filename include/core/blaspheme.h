@@ -30,7 +30,6 @@ private:
     bool create_logical_device();
 
     // update functions
-    bool should_quit();
     void update_fps_counter(double delta);
 
     // debug fields
@@ -55,9 +54,6 @@ public:
     ~blaspheme_t();
 
     void run();
-	
-    void window_resize(const u32vec2_t & size);
-	void keyboard_event(int key, int action, int mods);
 
     std::weak_ptr<renderer_t> get_renderer() const;
     std::weak_ptr<scheduler_t> get_scheduler() const;

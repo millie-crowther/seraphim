@@ -100,8 +100,6 @@ blaspheme_t::blaspheme_t(bool is_debug){
 }
 
 blaspheme_t::~blaspheme_t(){
-    // scheduler::halt();    
-
     vkDeviceWaitIdle(allocator.device);
 
     // delete renderer early to release resources at appropriate time
@@ -132,7 +130,6 @@ blaspheme_t::~blaspheme_t(){
     window = nullptr;
 
     glfwTerminate();
-
 }
 
 std::weak_ptr<renderer_t> 
@@ -458,14 +455,9 @@ blaspheme_t::setup_debug_callback(){
     return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
 
-bool
-blaspheme_t::should_quit(){
-    return window->should_close();// || keyboard.is_key_pressed(GLFW_KEY_ESCAPE);
-}
-
 void
 blaspheme_t::run(){
-    while (!should_quit()){
+    while (!window->should_close()){
 	    glfwPollEvents();
         scheduler->on_frame_start.tick();
         renderer->render();

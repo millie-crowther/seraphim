@@ -3,17 +3,26 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
 #include <map>
 
-class keyboard_t {
-private:
-    std::map<int, bool> key_state;
+#include "logic/revelator.h"
 
+class keyboard_t {
 public:
-    void key_event(int key, int action, int mods);
+    typedef int keycode_t;
+
+    keyboard_t();
+    ~keyboard_t();
+
+    revelator_t<keycode_t> on_key_press;
+    revelator_t<keycode_t> on_key_release;
 
     bool is_key_pressed(int key) const;
+
+private:
+    std::map<keycode_t, bool> key_state;
+    uuid_t key_press_uuid;
+    uuid_t key_release_uuid;
 };
 
 #endif 
