@@ -34,36 +34,48 @@ octree_t::octree_t(
     std::cout << "brickset size: " << brickset.size() << std::endl;
 
     uint32_t size = sizeof(uint32_t) * max_structure_size;
-    buffer = std::make_unique<buffer_t>(
+    octree_buffer = std::make_unique<buffer_t>(
         allocator, size,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
+    uint32_t request_size = 4 * sizeof(uint32_t);
+    request_buffer = std::make_unique<buffer_t>(
+        allocator, request_size,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+        VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+        VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+
     // copy to buffer
-    buffer->copy(structure.data(), sizeof(uint32_t) * structure.size(), 0);
+    octree_buffer->copy(structure.data(), sizeof(uint32_t) * structure.size(), 0);
 
     // write to descriptor sets
-    VkDescriptorBufferInfo desc_buffer_info = {};
-    desc_buffer_info.buffer = buffer->get_buffer();
-    desc_buffer_info.offset = 0;
-    desc_buffer_info.range  = sizeof(uint32_t) * max_structure_size;
+    std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
+        octree_buffer->get_descriptor_info(),
+        request_buffer->get_descriptor_info()
+    };
 
     VkWriteDescriptorSet write_desc_set = {};
     write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     write_desc_set.pNext = nullptr;
-    write_desc_set.dstBinding = 1;
     write_desc_set.dstArrayElement = 0;
     write_desc_set.descriptorCount = 1;
     write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     write_desc_set.pImageInfo = nullptr;
-    write_desc_set.pBufferInfo = &desc_buffer_info;
     write_desc_set.pTexelBufferView = nullptr;
 
-    std::vector<VkWriteDescriptorSet> write_desc_sets(desc_sets.size());
-    for (uint32_t i = 0; i < write_desc_sets.size(); i++){
-        write_desc_sets[i] = write_desc_set;
-        write_desc_sets[i].dstSet = desc_sets[i];
+    std::vector<VkWriteDescriptorSet> write_desc_sets;
+    for (uint32_t i = 0; i < desc_sets.size(); i++){
+        write_desc_set.dstSet = desc_sets[i];
+
+        for (uint32_t j = 0; j < desc_buffer_infos.size(); j++){
+            write_desc_set.dstBinding = j + 1;
+            write_desc_set.pBufferInfo = &desc_buffer_infos[j];
+            write_desc_sets.push_back(write_desc_set);
+        }
     }
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);

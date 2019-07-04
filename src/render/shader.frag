@@ -71,6 +71,11 @@ layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
 } octree;
 
+layout(binding = 2) buffer request_buffer {
+    uint n;
+    uint requests[255];
+} requests;
+
 layout(binding = 3) uniform sampler2D colour_sampler;
 layout(binding = 4) uniform sampler2D geometry_sampler;
 

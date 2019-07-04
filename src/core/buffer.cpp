@@ -10,6 +10,7 @@ buffer_t::buffer_t(
     const allocator_t & allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
 ){
     this->allocator = allocator;
+    this->size = size;
 
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -114,4 +115,13 @@ buffer_t::copy_to_image(
             1, &region
         );
     vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
+}
+
+VkDescriptorBufferInfo 
+buffer_t::get_descriptor_info() const {
+    VkDescriptorBufferInfo desc_buffer_info = {};
+    desc_buffer_info.buffer = buffer;
+    desc_buffer_info.offset = 0;
+    desc_buffer_info.range  = size;
+    return desc_buffer_info;
 }

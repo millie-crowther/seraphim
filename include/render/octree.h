@@ -46,7 +46,9 @@ private:
 
     std::shared_ptr<texture_manager_t> texture_manager;
 
-    std::unique_ptr<buffer_t> buffer;
+    std::unique_ptr<buffer_t> octree_buffer;
+    std::unique_ptr<buffer_t> request_buffer;
+    
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     vec4_t universal_aabb;
 

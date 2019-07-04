@@ -18,6 +18,7 @@ private:
     VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
+    VkDeviceSize size;
 
     // helper methods
     void copy_buffer(
@@ -35,6 +36,7 @@ public:
 
     // getters
     VkBuffer get_buffer();
+    VkDescriptorBufferInfo get_descriptor_info() const;
 };
 
 #endif
