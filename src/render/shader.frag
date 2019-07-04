@@ -71,8 +71,8 @@ layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
 } octree;
 
-layout(binding = 2) uniform sampler2D colour_sampler;
-layout(binding = 3) uniform sampler2D geometry_sampler;
+layout(binding = 3) uniform sampler2D colour_sampler;
+layout(binding = 4) uniform sampler2D geometry_sampler;
 
 //
 // GLSL inputs

@@ -14,8 +14,8 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
     VmaMemoryUsage vma_usage = VMA_MEMORY_USAGE_GPU_ONLY;
     
 
-    colour_texture = std::make_unique<texture_t>(2, allocator, image_size, usage, vma_usage);
-    geometry_texture = std::make_unique<texture_t>(3, allocator, image_size, usage, vma_usage);
+    colour_texture = std::make_unique<texture_t>(3, allocator, image_size, usage, vma_usage);
+    geometry_texture = std::make_unique<texture_t>(4, allocator, image_size, usage, vma_usage);
 
     std::vector<VkWriteDescriptorSet> descriptor_write;
 
