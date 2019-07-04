@@ -677,8 +677,8 @@ renderer_t::create_descriptor_set_layout(){
     octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
-    // auto request_layout = octree_layout;
-    // request_layout = 2;
+    auto request_layout = octree_layout;
+    request_layout.binding = 2;
 
     auto colour_sampler_layout = octree_layout;
     colour_sampler_layout.binding = 3;
@@ -688,7 +688,7 @@ renderer_t::create_descriptor_set_layout(){
     geometry_sampler_layout.binding = 4;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout, colour_sampler_layout, geometry_sampler_layout 
+        octree_layout, request_layout, colour_sampler_layout, geometry_sampler_layout 
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
