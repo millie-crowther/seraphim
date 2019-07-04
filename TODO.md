@@ -13,6 +13,7 @@
     * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * maybe tidy internals of renderer class
+    * make a dedicated swapchain class?
 * FPS counter is weird. fix it.
 * fix seg fault on exit
     * definitely something to do with revelator<T>::follower_t destructor
@@ -25,18 +26,21 @@
 * make rays that originate outside octree intersect properly
 
 ### camera
-* add camera_up field to push constants as well
-* add camera transform fields directly from a transform of the camera class
 * camera rotation with mouse
 
 ### geometry
 * implement octree streaming from cpu
-    * create gpu-cpu buffer
     * add a CPU phase after rendering to handle requests
 * increase granularity of coarse octree when you get close
     * may require a LOD flag to be stored in gpu data?
 * delete bricks which havent been used in a while
-    * record when a brick is used
+    * put bricks in a queue
+    * pop from end when you need a new one
+    * simple and cheap LRU approximant
+* find a way to prune octree
+    * e.g. a node has eight children, all of whom are null
+    * merge children and create one null parent 
+    * need to keep track of parent relationship??
 * Jacobian culling approximation too greedy in some cases
     * maybe monte carlo sampling?
         * 99% of cases will terminate after second iteration so not as expensive as you might think
@@ -49,7 +53,7 @@
         * then check if curve is planar
         * computationally, probably just the same as above
         * but without early termination
-* remove onion skinning
+* reduce onion skinning
 
 ### materials
 * add textures for other material properties

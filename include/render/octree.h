@@ -39,16 +39,14 @@ private:
 
     std::vector<uint32_t> structure; // TODO: should this be an array instead?
     
-    /*
-        brick data
-    */
-    std::set<brick_t> brickset;
+    // TODO: make this a queue for easy LRU elimination 
+    std::set<brick_t> brickset; 
 
     std::shared_ptr<texture_manager_t> texture_manager;
 
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
-    
+
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     vec4_t universal_aabb;
 
