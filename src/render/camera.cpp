@@ -29,7 +29,7 @@ camera_t::camera_t(const blaspheme_t * blaspheme){
                 
                 // std::cout << delta * window->get_mouse().get_velocity()[0] / 10000 << std::endl;
                 transform.rotate(quat_t::angle_axis(
-                    delta * window->get_mouse().get_velocity()[0] / 10000, 
+                    delta * window->get_mouse().get_velocity()[0] / 2000, 
                     vec3_t::up()
                 ));
             }
