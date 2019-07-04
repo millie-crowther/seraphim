@@ -66,6 +66,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
 
     std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
     std::cout << "\tMaximum 3D image dimension: " << properties.limits.maxImageDimension3D << std::endl;
+    std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
     
     uint32_t push_const_size = properties.limits.maxPushConstantsSize;
     std::cout << "\tMaximum push constants size: " << push_const_size << std::endl;

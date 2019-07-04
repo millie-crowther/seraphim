@@ -27,9 +27,9 @@ camera_t::camera_t(const blaspheme_t * blaspheme){
                     transform.translate(get_right() * delta );
                 }
                 
-                // std::cout << window->get_mouse().get_velocity()[0] << std::endl;
+                // std::cout << delta * window->get_mouse().get_velocity()[0] / 10000 << std::endl;
                 // transform.rotate(quat_t::angle_axis(
-                //     window->get_mouse().get_velocity()[0], 
+                //     delta * window->get_mouse().get_velocity()[0] / 10000, 
                 //     vec3_t::up()
                 // ));
             }

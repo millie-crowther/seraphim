@@ -130,11 +130,11 @@ intersection_t raycast(ray_t r){
         }
     
         if (octree.structure[node.i] != is_leaf_flag){
-            uint index = octree.structure[node.i] & ~is_leaf_flag;
+            uint id = octree.structure[node.i] & 0xFFFFFF;
 
-            vec2 uv = uv(index);
+            vec2 uv = uv(id);
             return intersection_t(
-                true, r.x, normal(uv), index, node
+                true, r.x, normal(uv), id, node
             );
         }
 	

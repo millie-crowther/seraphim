@@ -11,8 +11,7 @@ quat_t::quat_t(double w, double x, double y, double z) : qs(w, x, y, z) {
 }
 
 quat_t
-quat_t::angle_axis(double angle, const vec3_t & axis){
-    vec3_t a = axis.normalise();
+quat_t::angle_axis(double angle, const vec3_t & a){
     double s = std::sin(angle / 2);
     return quat_t(std::cos(angle / 2), a[0] * s, a[1] * s, a[2] * s);
 }
@@ -25,10 +24,10 @@ quat_t::inverse() const {
 quat_t
 quat_t::operator*(const quat_t & q) const {
     return quat_t(
-        qs[0] * q.qs[1] + qs[1] * q.qs[0] + qs[2] * q.qs[3] - qs[3] * q.qs[2],
         qs[0] * q.qs[2] - qs[1] * q.qs[3] + qs[2] * q.qs[0] + qs[3] * q.qs[1],
         qs[0] * q.qs[3] + qs[1] * q.qs[2] - qs[2] * q.qs[1] + qs[3] * q.qs[0],
-        qs[0] * q.qs[0] - qs[1] * q.qs[1] - qs[2] * q.qs[2] - qs[3] * q.qs[3]
+        qs[0] * q.qs[0] - qs[1] * q.qs[1] - qs[2] * q.qs[2] - qs[3] * q.qs[3],
+        qs[0] * q.qs[1] + qs[1] * q.qs[0] + qs[2] * q.qs[3] - qs[3] * q.qs[2]
     );
 }
 

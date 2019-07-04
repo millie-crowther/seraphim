@@ -1,39 +1,38 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
-#include <array>
-#include <vector>
 #include <memory>
 #include <set>
+#include <vector>
 
 #include "core/buffer.h"
-#include "sdf/sdf.h"
 #include "render/brick.h"
 #include "render/camera.h"
+#include "sdf/sdf.h"
+
 /*
-
-interior nodes:
-
-node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
-
+interior node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
     0 = leaf flag (not set)
     P = pointer to first child
+    if P = 0:
+        this is a null node
 
-leaf nodes:
-
-node = 1NXXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
+leaf node = 1NDXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
     1 = leaf flag (set)
-    N = normal flag (indicates sign of Z component of normal)
-    X = unused (4 bits)
+    N = normal flag 
+    D = detail flag
+    X = unused
     B = brick ID
-
-
 
 */
 
 class octree_t {
 private:
-    static constexpr uint32_t is_leaf_flag = 1 << 31;
+    static constexpr uint32_t is_leaf_flag   = 1 << 31;
+    static constexpr uint32_t normal_flag    = 1 << 30;
+    static constexpr uint32_t detail_flag    = 1 << 29;
+    static constexpr uint32_t brick_ptr_mask = 0xFFFFFF;
+
     static constexpr uint32_t null_node = 0;
 
     static constexpr uint32_t max_structure_size = 100000;
