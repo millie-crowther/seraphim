@@ -7,6 +7,7 @@
 const uint is_leaf_flag = 1 << 31;
 const uint null_node = 0;
 const uint structure_size = 100000;
+const uint requests_size = 255;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
@@ -73,7 +74,7 @@ layout(binding = 1) buffer octree_buffer {
 
 layout(binding = 2) buffer request_buffer {
     uint n;
-    uint requests[255];
+    uint requests[requests_size];
 } requests;
 
 layout(binding = 3) uniform sampler2D colour_sampler;
@@ -83,6 +84,14 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 // GLSL inputs
 //
 in vec4 gl_FragCoord;
+
+void request_buffer_push(uint request){
+    uint n = requests.n;
+    if (n < requests_size){
+        requests.requests[n] = request;
+        requests.n = n + 1;
+    }
+}
 
 node_t base_node(){
     return node_t(0, vec3(-push_const.render_distance), push_const.render_distance * 2);
