@@ -20,9 +20,9 @@ public:
 
     // operators
     vec3_t operator*(const vec3_t & q) const;
-    quat_t operator*(const quat_t & q) const;
+    quat_t operator*(const quat_t & r) const;
     
-    quat_t operator*=(const quat_t & q);
+    quat_t operator*=(const quat_t & r);
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);

@@ -22,39 +22,39 @@ quat_t::inverse() const {
 }
 
 quat_t
-quat_t::operator*(const quat_t & q) const {
+quat_t::operator*(const quat_t & r) const {
     return quat_t(
-        qs[0] * q.qs[2] - qs[1] * q.qs[3] + qs[2] * q.qs[0] + qs[3] * q.qs[1],
-        qs[0] * q.qs[3] + qs[1] * q.qs[2] - qs[2] * q.qs[1] + qs[3] * q.qs[0],
-        qs[0] * q.qs[0] - qs[1] * q.qs[1] - qs[2] * q.qs[2] - qs[3] * q.qs[3],
-        qs[0] * q.qs[1] + qs[1] * q.qs[0] + qs[2] * q.qs[3] - qs[3] * q.qs[2]
+        r.qs[0] * qs[0] - r.qs[1] * qs[1] - r.qs[2] * qs[2] - r.qs[3] * qs[3],
+        r.qs[0] * qs[1] + r.qs[1] * qs[0] - r.qs[2] * qs[3] + r.qs[3] * qs[2],
+        r.qs[0] * qs[2] + r.qs[1] * qs[3] + r.qs[2] * qs[0] - r.qs[3] * qs[1],
+        r.qs[0] * qs[3] - r.qs[1] * qs[2] + r.qs[2] * qs[1] + r.qs[3] * qs[0]
     );
 }
 
 
 quat_t 
-quat_t::operator*=(const quat_t & q){
-    qs = (q * *this).qs;
+quat_t::operator*=(const quat_t & r){
+    qs = (r * *this).qs;
 }
 
 vec3_t 
 quat_t::operator*(const vec3_t & x) const {
-    double wx2 = 2 * qs[0] * qs[1];
-    double wy2 = 2 * qs[0] * qs[2];
-    double wz2 = 2 * qs[0] * qs[3];
+    double wx = qs[0] * qs[1];
+    double wy = qs[0] * qs[2];
+    double wz = qs[0] * qs[3];
     
-    double xx2 = 2 * qs[1] * qs[1];
-    double xy2 = 2 * qs[1] * qs[2];
-    double xz2 = 2 * qs[1] * qs[3];
+    double xx = qs[1] * qs[1];
+    double xy = qs[1] * qs[2];
+    double xz = qs[1] * qs[3];
 
-    double yy2 = 2 * qs[2] * qs[2];
-    double yz2 = 2 * qs[2] * qs[3];
+    double yy = qs[2] * qs[2];
+    double yz = qs[2] * qs[3];
 
-    double zz2 = 2 * qs[3] * qs[3];
+    double zz = qs[3] * qs[3];
 
     return vec3_t(
-        (1 - yy2 - zz2) * x[0] + (xy2 - wz2) * x[1] + (xz2 + wy2) * x[2],
-        (xy2 + wz2) * x[0] + (1 - xx2 - zz2) * x[1] + (yz2 + wx2) * x[2],
-        (xz2 - wy2) * x[0] + (yz2 - wx2) * x[1] + (1 - xx2 - yy2) * x[2]
-    );
+        (0.5 - yy - zz) * x[0] + (xy - wz) * x[1] + (xz + wy) * x[2],
+        (xy + wz) * x[0] + (0.5 - xx - zz) * x[1] + (yz + wx) * x[2],
+        (xz - wy) * x[0] + (yz - wx) * x[1] + (0.5 - xx - yy) * x[2]
+    ) * 2;
 }
