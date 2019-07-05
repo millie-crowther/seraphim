@@ -285,16 +285,6 @@ texture_t::find_supported_format(
     throw std::runtime_error("Error: Failed to find supported image format.");
 }
 
-VkFormat
-texture_t::find_depth_format(VkPhysicalDevice physical_device){
-    return find_supported_format(
-        physical_device,
-        { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
-    );
-}
-
 VkWriteDescriptorSet 
 texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     VkWriteDescriptorSet descriptor_write = {};

@@ -51,7 +51,6 @@ public:
         VkPhysicalDevice physical_device, const std::vector<VkFormat> & candidates, 
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
-    static VkFormat find_depth_format(VkPhysicalDevice physical_device);
     static VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format);
 };
 

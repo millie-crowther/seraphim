@@ -67,7 +67,7 @@ layout( push_constant ) uniform window_block {
 } push_const;
 
 //
-// inputs from host
+// buffers
 //
 layout(binding = 1) buffer octree_buffer {
     uint structure[structure_size];
@@ -77,6 +77,9 @@ layout(binding = 2) buffer request_buffer {
     vec4 requests[32];
 } requests;
 
+//
+// textures
+//
 layout(binding = 3) uniform sampler2D colour_sampler;
 layout(binding = 4) uniform sampler2D geometry_sampler;
 
@@ -85,9 +88,10 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 //
 in vec4 gl_FragCoord;
 
-void request_buffer_push(vec4 request){
+void request_buffer_push(vec4 aabb){
     uint i = 0;
-    requests.requests[i] = request;
+
+    requests.requests[i] = aabb;
 }
 
 node_t base_node(){
@@ -124,11 +128,6 @@ node_t octree_lookup(vec3 x){
         }
     }
 
-    vec4 aabb = vec4(node.min, node.size);
-    if (should_request(node.i, aabb)){
-    //     request_buffer_push(aabb);
-    }
-
     return node;
 }
 
@@ -156,6 +155,11 @@ intersection_t raycast(ray_t r){
         }
     
         if (octree.structure[node.i] != is_leaf_flag){
+            vec4 aabb = vec4(node.min, node.size);
+            if (should_request(node.i, aabb)){
+                request_buffer_push(aabb);
+            }
+
             uint id = octree.structure[node.i] & 0xFFFFFF;
 
             vec2 uv = uv(id);

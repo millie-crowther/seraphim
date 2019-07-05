@@ -43,7 +43,7 @@ octree_t::octree_t(
     uint32_t request_size = sizeof(f32vec3_t) * max_requests_size;
     request_buffer = std::make_unique<buffer_t>(
         allocator, request_size,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
     // copy to buffer
