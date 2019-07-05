@@ -13,7 +13,7 @@ const uint structure_size = 100000;
 const float f = 1.0;
 const int max_steps = 64;
 const float epsilon = 0.001;
-const float sigma = 80 * epsilon;
+const float sigma = 80 * epsilon; // TODO: pass through from CPU
 const float shadow_softness = 64;
 
 //
@@ -101,7 +101,7 @@ node_t base_node(){
 bool should_request(uint i, vec4 aabb){
     // TODO: get rid of sqrt here
     float d = length(aabb.xyz + aabb.w / 2 - push_const.camera_position);
-    return octree.structure[i] == null_node || aabb.w > max(epsilon, sigma * d);
+    return aabb.w > max(epsilon, sigma * d);
 }
 
 node_t octree_lookup(vec3 x){

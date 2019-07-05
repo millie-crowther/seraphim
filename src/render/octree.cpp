@@ -192,3 +192,23 @@ octree_t::is_leaf(
 
     return false;
 }
+
+uint32_t 
+octree_t::lookup(const vec3_t & x, uint32_t & i, vec4_t & aabb) const {
+    if ((i & is_leaf_flag) > 0){
+        return i;
+    }
+
+    i = structure[i];
+
+    aabb[3] /= 2;
+
+    for (uint8_t a = 0; a < 3; a++){
+        if (x[a] > aabb[a] + aabb[3]){
+            aabb[a] += aabb[3];
+            i += 1 << a;
+        }
+    }
+
+    return lookup(x, i, aabb);    
+}

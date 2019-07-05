@@ -51,6 +51,8 @@ private:
     std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
     vec4_t universal_aabb;
 
+    uint32_t lookup(const vec3_t & x, uint32_t & i, vec4_t & aabb) const;
+
     // TODO: remove this and replace with lazy streaming version
     void paint(
         uint32_t i, const vec4_t & aabb, 
