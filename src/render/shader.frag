@@ -5,14 +5,15 @@
 // constants
 //
 const uint is_leaf_flag = 1 << 31;
+const uint detail_flag  = 1 << 29;
 const uint null_node = 0;
 const uint structure_size = 100000;
-const uint requests_size = 255;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
 const int max_steps = 64;
-const float epsilon = 0.005;
+const float epsilon = 0.001;
+const float sigma = 80 * epsilon;
 const float shadow_softness = 64;
 
 //
@@ -73,8 +74,7 @@ layout(binding = 1) buffer octree_buffer {
 } octree;
 
 layout(binding = 2) buffer request_buffer {
-    uint n;
-    uint requests[requests_size];
+    vec4 requests[32];
 } requests;
 
 layout(binding = 3) uniform sampler2D colour_sampler;
@@ -85,16 +85,19 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 //
 in vec4 gl_FragCoord;
 
-void request_buffer_push(uint request){
-    uint n = requests.n;
-    if (n < requests_size){
-        requests.requests[n] = request;
-        requests.n = n + 1;
-    }
+void request_buffer_push(vec4 request){
+    uint i = 0;
+    requests.requests[i] = request;
 }
 
 node_t base_node(){
     return node_t(0, vec3(-push_const.render_distance), push_const.render_distance * 2);
+}
+
+bool should_request(uint i, vec4 aabb){
+    // TODO: get rid of sqrt here
+    float d = length(aabb.xyz + aabb.w / 2 - push_const.camera_position);
+    return octree.structure[i] == null_node || aabb.w > max(epsilon, sigma * d);
 }
 
 node_t octree_lookup(vec3 x){
@@ -108,13 +111,22 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    for (int j = 0; j < 10 && ((octree.structure[node.i] & is_leaf_flag) == 0); j++){
+    while ((octree.structure[node.i] & is_leaf_flag) == 0){
         node.i = octree.structure[node.i];
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
         node.i += int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
         node.min += vec3(octant) * node.size;
+
+        if (node.i == null_node){
+            break;
+        }
+    }
+
+    vec4 aabb = vec4(node.min, node.size);
+    if (should_request(node.i, aabb)){
+    //     request_buffer_push(aabb);
     }
 
     return node;

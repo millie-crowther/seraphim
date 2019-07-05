@@ -33,24 +33,21 @@ octree_t::octree_t(
     std::cout << "octree size: " << structure.size() << std::endl;
     std::cout << "brickset size: " << brickset.size() << std::endl;
 
-    uint32_t size = sizeof(uint32_t) * max_structure_size;
+    // create buffers
+    uint32_t octree_size = sizeof(uint32_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
-        allocator, size,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+        allocator, octree_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    uint32_t request_size = 4 * sizeof(uint32_t);
+    uint32_t request_size = sizeof(f32vec3_t) * max_requests_size;
     request_buffer = std::make_unique<buffer_t>(
         allocator, request_size,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
-        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
-        VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-        VMA_MEMORY_USAGE_GPU_TO_CPU
+        VMA_MEMORY_USAGE_GPU_ONLY
     );
 
     // copy to buffer
-    octree_buffer->copy(structure.data(), sizeof(uint32_t) * structure.size(), 0);
+    octree_buffer->copy(structure.data(), octree_size, 0);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {

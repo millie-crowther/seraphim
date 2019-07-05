@@ -27,7 +27,6 @@ texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::v
 
     staging_buffer = std::make_unique<buffer_t>(
         allocator, sizeof(u8vec4_t),
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
         VMA_MEMORY_USAGE_CPU_ONLY
     );
 

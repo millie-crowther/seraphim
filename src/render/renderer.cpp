@@ -118,7 +118,6 @@ renderer_t::init(){
 
     vertex_buffer = std::make_unique<buffer_t>(
         allocator, sizeof(f32vec2_t) * 6,
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);

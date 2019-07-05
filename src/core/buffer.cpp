@@ -7,7 +7,7 @@
 #include "core/vk_utils.h"
 
 buffer_t::buffer_t(
-    const allocator_t & allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage
+    const allocator_t & allocator, uint64_t size, VmaMemoryUsage vma_usage
 ){
     this->allocator = allocator;
     this->size = size;
@@ -15,7 +15,6 @@ buffer_t::buffer_t(
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_info.size = size;
-    buffer_info.usage = usage;
 
     VmaAllocationCreateInfo alloc_create_info = {};
     alloc_create_info.usage = vma_usage;
@@ -74,7 +73,6 @@ buffer_t::copy(
     } else {
         buffer_t staging_buffer(
             allocator, size,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VMA_MEMORY_USAGE_CPU_ONLY
         );
 
@@ -124,4 +122,13 @@ buffer_t::get_descriptor_info() const {
     desc_buffer_info.offset = 0;
     desc_buffer_info.range  = size;
     return desc_buffer_info;
+}
+void 
+buffer_t::read(void * data, uint64_t size) {
+    if (is_host_visible){
+        void * mem_map;
+        vkMapMemory(allocator.device, memory, 0, size, 0, &mem_map);
+            std::memcpy(data, mem_map, size);
+        vkUnmapMemory(allocator.device, memory);
+    } 
 }

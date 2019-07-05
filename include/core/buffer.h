@@ -27,12 +27,13 @@ private:
 
 public:
     // constructors and destructors
-    buffer_t(const allocator_t & allocator, uint64_t size, VkBufferUsageFlags usage, VmaMemoryUsage vma_usage);
+    buffer_t(const allocator_t & allocator, uint64_t size, VmaMemoryUsage vma_usage);
     ~buffer_t();
 
     // public methods
     void copy(const void * data, uint64_t size, uint64_t offset);
     void copy_to_image(VkImage image, u32vec2_t offset, u32vec2_t extent);
+    void read(void * data, uint64_t size);
 
     // getters
     VkBuffer get_buffer();
