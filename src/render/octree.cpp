@@ -194,8 +194,8 @@ octree_t::is_leaf(
 }
 
 uint32_t 
-octree_t::lookup(const vec3_t & x, uint32_t & i, vec4_t & aabb) const {
-    if ((i & is_leaf_flag) > 0){
+octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
+    if ((i & is_leaf_flag) != 0){
         return i;
     }
 
@@ -211,4 +211,11 @@ octree_t::lookup(const vec3_t & x, uint32_t & i, vec4_t & aabb) const {
     }
 
     return lookup(x, i, aabb);    
+}
+
+void 
+octree_t::subdivide(const vec3_t & x){
+    vec4_t aabb = universal_aabb;
+
+    uint32_t i = lookup(x, 0, aabb);
 }
