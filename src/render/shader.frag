@@ -19,6 +19,11 @@ const float shadow_softness = 64;
 //
 // types used in shader
 //
+struct request_t {
+    vec3 x;
+    uint i;
+};
+
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -74,7 +79,7 @@ layout(binding = 1) buffer octree_buffer {
 } octree;
 
 layout(binding = 2) buffer request_buffer {
-    vec4 requests[32];
+    request_t requests[32];
 } requests;
 
 //
@@ -88,10 +93,10 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 //
 in vec4 gl_FragCoord;
 
-void request_buffer_push(vec4 aabb){
+void request_buffer_push(vec3 x){
     uint i = 0;
 
-    requests.requests[i] = aabb;
+    requests.requests[i] = request_t(x, 1);
 }
 
 node_t base_node(){
@@ -157,7 +162,7 @@ intersection_t raycast(ray_t r){
         if (octree.structure[node.i] != is_leaf_flag){
             vec4 aabb = vec4(node.min, node.size);
             if (should_request(node.i, aabb)){
-                request_buffer_push(aabb);
+                request_buffer_push(aabb.xyz + aabb.w / 2);
             }
 
             uint id = octree.structure[node.i] & 0xFFFFFF;

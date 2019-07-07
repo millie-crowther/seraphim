@@ -28,6 +28,15 @@ leaf node = 1NDXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
 
 class octree_t {
 private:
+    struct request_t {
+        f32vec3_t x;
+        uint32_t i; 
+
+        request_t(){
+            i = 0;
+        }
+    };
+
     // constants
     static constexpr uint32_t is_leaf_flag   = 1 << 31;
     static constexpr uint32_t normal_flag    = 1 << 30;
@@ -52,6 +61,7 @@ private:
     vec4_t universal_aabb;
 
     uint32_t lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const;
+    uint32_t handle_request(uint32_t i, const vec4_t & aabb);
     void subdivide(const vec3_t & x);
 
     // TODO: remove this and replace with lazy streaming version
@@ -69,6 +79,7 @@ private:
         std::shared_ptr<camera_t> camera 
     );
 
+
 public:
     octree_t(
         const allocator_t & allocator, 
@@ -76,6 +87,8 @@ public:
         const std::vector<VkDescriptorSet> & desc_sets,
         std::weak_ptr<camera_t> camera
     );
+
+    void handle_requests();
 };
 
 

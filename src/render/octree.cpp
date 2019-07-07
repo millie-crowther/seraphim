@@ -26,13 +26,6 @@ octree_t::octree_t(
 
     texture_manager = std::make_shared<texture_manager_t>(allocator, desc_sets);
     
-    if (auto c = camera.lock()){
-        paint(0, universal_aabb, sdfs, c);
-    }
-
-    std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "brickset size: " << brickset.size() << std::endl;
-
     // create buffers
     uint32_t octree_size = sizeof(uint32_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
@@ -40,14 +33,11 @@ octree_t::octree_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    uint32_t request_size = sizeof(f32vec3_t) * max_requests_size;
+    uint32_t request_size = sizeof(request_t) * max_requests_size;
     request_buffer = std::make_unique<buffer_t>(
         allocator, request_size,
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
-
-    // copy to buffer
-    octree_buffer->copy(structure.data(), octree_size, 0);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
@@ -76,6 +66,17 @@ octree_t::octree_t(
     }
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+
+    if (auto c = camera.lock()){
+        paint(0, universal_aabb, sdfs, c);
+    }
+
+    std::cout << "octree size: " << structure.size() << std::endl;
+    std::cout << "brickset size: " << brickset.size() << std::endl;
+    // copy to buffer
+    octree_buffer->copy(structure.data(), octree_size, 0);
+
+
 }
 
 std::tuple<bool, bool> 
@@ -215,7 +216,34 @@ octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
 
 void 
 octree_t::subdivide(const vec3_t & x){
-    vec4_t aabb = universal_aabb;
+    // vec4_t aabb = universal_aabb;
 
-    uint32_t i = lookup(x, 0, aabb);
+    // uint32_t i = lookup(x, 0, aabb);
+}
+
+void
+octree_t::handle_requests(){
+    request_t data[32];
+    request_buffer->read(&data, sizeof(request_t) * 32);
+
+    for (uint32_t i = 0; i < 32; i++){
+        if (data[i].i > 0){
+            // vec4_t aabb = universal_aabb;
+            // uint32_t node = lookup(data[i].x, 0, aabb);
+            // uint32_t children = handle_request(node, aabb);
+            // TODO: now need to update
+            //       1) structure[node]
+            //       2) structure[children..children+8]
+            //       on gpu 
+        }
+    }
+
+
+    request_t clear_requests[32];
+    request_buffer->copy(&clear_requests, sizeof(request_t) * 32, 0);
+}
+
+uint32_t 
+octree_t::handle_request(uint32_t i, const vec4_t & aabb){
+    return 0;
 }

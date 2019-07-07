@@ -98,7 +98,7 @@ private:
     std::shared_ptr<sdf3_t> sphere;
     std::shared_ptr<sdf3_t> plane;
     std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
-    std::shared_ptr<octree_t> octree;
+    std::unique_ptr<octree_t> octree;
 
     std::weak_ptr<camera_t> main_camera;
 
