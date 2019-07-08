@@ -33,23 +33,13 @@
     * put bricks in a queue
     * pop from end when you need a new one
     * simple and cheap LRU approximant
-* find a way to prune octree
-    * e.g. a node has eight children, all of whom are null
-    * merge children and create one null parent 
+* find a way to prune octree interior nodes
+    * e.g. a node has eight children, all of whom are far enough away
+    * merge children and create one parent 
     * need to keep track of parent relationship??
-* Jacobian culling approximation too greedy in some cases
-    * maybe monte carlo sampling?
-        * 99% of cases will terminate after second iteration so not as expensive as you might think
-        * when to stop, though?
-        * perhaps statisical analysis of problem will allow a clean solution
-        * e.g. when 99% probability of being planar is satisfied
-            * even 99% probability will still lead to hundreds of incorrect bricks
-            * but not incorrect in a highly visible way i guess
-    * fitting of quadratic curve to surface
-        * then check if curve is planar
-        * computationally, probably just the same as above
-        * but without early termination
-* reduce onion skinning
+* create better approximation to surface than cubes maybe
+    * maybe go back to some sort of planes
+    * can be approximated using normal
 
 ### materials
 * add textures for other material properties

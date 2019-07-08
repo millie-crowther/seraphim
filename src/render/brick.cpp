@@ -10,9 +10,11 @@ brick_t::brick_t(
 ){
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
 
-    u8vec4_t colour = painter_t<3>().colour(c);
     
-    vec3_t n = (sdf.normal(c) / 2 + 0.5) * 255;
+    vec3_t n = sdf.normal(c);
+    u8vec4_t colour = painter_t<3>().colour(c - n * sdf.phi(c));
+    
+    n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], 0);
 
     if (auto texture_manager = texture_manager_ptr.lock()){

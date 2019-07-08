@@ -176,12 +176,12 @@ octree_t::handle_request(const f32vec3_t & x){
 
 void
 octree_t::handle_requests(){
-    request_t data[32];
-    request_buffer->read(&data, sizeof(request_t) * 32);
+    request_t data[max_requests_size];
+    request_buffer->read(&data, sizeof(request_t) * max_requests_size);
 
     bool changed = false;
 
-    for (uint32_t i = 0; i < 32; i++){
+    for (uint32_t i = 0; i < max_requests_size; i++){
         if (data[i].i != 0){
             changed = true;
             handle_request(data[i].x);
@@ -189,11 +189,11 @@ octree_t::handle_requests(){
     }    
     
     if (changed){
-        std::cout << "octree size: " << structure.size() << std::endl;
-        std::cout << "brickset size: " << brickset.size() << std::endl;
+        // std::cout << "octree size: " << structure.size() << std::endl;
+        // std::cout << "brickset size: " << brickset.size() << std::endl;
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 
-    static request_t clear_requests[32];
-    request_buffer->copy(&clear_requests, sizeof(request_t) * 32, 0);
+    static request_t clear_requests[max_requests_size];
+    request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0);
 }

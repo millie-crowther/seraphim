@@ -5,16 +5,16 @@
 // constants
 //
 const uint is_leaf_flag = 1 << 31;
-const uint detail_flag  = 1 << 29;
 const uint null_node = 0;
 const uint structure_size = 100000;
+const uint requests_size = 64;
 const uint brick_ptr_mask = 0xFFFFFF;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
-const int max_steps = 64;
+const int max_steps = 128;
 const float epsilon = 0.001;
-const float sigma = 80 * epsilon; // TODO: pass through from CPU
+const float sigma = 80 * epsilon; 
 const float shadow_softness = 64;
 
 //
@@ -80,7 +80,7 @@ layout(binding = 1) buffer octree_buffer {
 } octree;
 
 layout(binding = 2) buffer request_buffer {
-    request_t requests[32];
+    request_t requests[requests_size];
 } requests;
 
 //
@@ -95,7 +95,7 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 in vec4 gl_FragCoord;
 
 void request_buffer_push(vec3 x){
-    uint i = uint(dot(x, x)) & 0x1F;
+    uint i = uint(dot(x, x)) & (requests_size - 1);
     requests.requests[i] = request_t(x, 1);
 }
 
@@ -152,8 +152,8 @@ intersection_t raycast(ray_t r){
         //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
-        if (node.size < 0 || node.i >= structure_size){
-            break;
+        if (node.size < 0 || node.i >= structure_size || octree.structure[node.i] == null_node){
+            return null_intersection;
         }
     
         if ((octree.structure[node.i] & brick_ptr_mask) > 0){
@@ -177,7 +177,7 @@ intersection_t raycast(ray_t r){
         r.x += r.d * lambda;
 
         if (length(r.x) < 0.1){
-            out_colour = vec4(0, 1, 0, 1);
+            out_colour = vec4(1, 0, 1, 1);
             return null_intersection;
         }
     }
@@ -266,4 +266,3 @@ void main(){
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
-

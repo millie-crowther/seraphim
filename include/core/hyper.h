@@ -10,9 +10,6 @@ namespace hyper {
     // shortest time period 
     constexpr double   iota    = 60;                // Hertz
 
-    // node size
-    constexpr double   sigma   = 80 * epsilon;     // metres      
-
     // largest distance
     constexpr double   rho     = 20;                 // metres
 
