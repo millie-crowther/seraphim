@@ -17,10 +17,9 @@ interior node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
     if P = 0:
         this is a null node
 
-leaf node = 1NDXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
+leaf node     = 1NXXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
     1 = leaf flag (set)
     N = normal flag 
-    D = detail flag
     X = unused
     B = brick ID
 
@@ -28,19 +27,15 @@ leaf node = 1NDXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
 
 class octree_t {
 private:
+    // types
     struct request_t {
         f32vec3_t x;
-        uint32_t i; 
-
-        request_t(){
-            i = 0;
-        }
+        uint32_t i;
     };
 
     // constants
     static constexpr uint32_t is_leaf_flag   = 1 << 31;
     static constexpr uint32_t normal_flag    = 1 << 30;
-    static constexpr uint32_t detail_flag    = 1 << 29;
     static constexpr uint32_t brick_ptr_mask = 0xFFFFFF;
     static constexpr uint32_t null_node = 0;
     static constexpr uint32_t max_structure_size = 100000;
@@ -48,48 +43,27 @@ private:
 
     // fields
     std::vector<uint32_t> structure; // TODO: should this be an array instead?
-    
-    // TODO: make this a queue for easy LRU elimination 
-    std::set<brick_t> brickset; 
-
+    std::set<brick_t> brickset;  // TODO: make this a queue for easy LRU elimination 
     std::shared_ptr<texture_manager_t> texture_manager;
-
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
-
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     vec4_t universal_aabb;
 
+    // private functions
     uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
-    uint32_t handle_request(uint32_t i, const vec4_t & aabb);
-
-    // TODO: remove this and replace with lazy streaming version
-    void paint(
-        uint32_t i, const vec4_t & aabb, 
-        const std::vector<std::weak_ptr<sdf3_t>> & sdfs,
-        std::shared_ptr<camera_t> camera
-    );
-
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-
-    bool is_leaf(
-        const vec4_t & aabb, 
-        const std::vector<std::shared_ptr<sdf3_t>> & sdfs,
-        std::shared_ptr<camera_t> camera 
-    );
-
     uint32_t create_node(const vec4_t & aabb);
-    bool is_empty(const vec4_t & aabb) const;
+    void handle_request(const f32vec3_t & x);
 
 public:
     octree_t(
         const allocator_t & allocator, 
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-        const std::vector<VkDescriptorSet> & desc_sets,
-        std::weak_ptr<camera_t> camera
+        const std::vector<VkDescriptorSet> & desc_sets
     );
 
-    void handle_requests(std::shared_ptr<camera_t> camera);
+    void handle_requests();
 };
 
 

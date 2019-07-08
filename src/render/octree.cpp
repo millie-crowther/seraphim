@@ -12,15 +12,10 @@ constexpr uint32_t octree_t::null_node;
 octree_t::octree_t(
     const allocator_t & allocator, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-    const std::vector<VkDescriptorSet> & desc_sets,
-    std::weak_ptr<camera_t> camera
+    const std::vector<VkDescriptorSet> & desc_sets
 ){
     this->sdfs = sdfs;
     structure.reserve(max_structure_size);
-    
-    // TODO: remove this! its only here because the zero index is 
-    //       regarded as an empty volume in the shader 
-    structure.emplace_back(null_node); 
 
     universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
@@ -68,18 +63,8 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    // if (auto c = camera.lock()){
-    //     paint(0, universal_aabb, sdfs, c);
-    // }
     structure = { create_node(universal_aabb) };
-    std::cout << "root node: " << structure[0] << std::endl;
-
-    std::cout << "octree size: " << structure.size() << std::endl;
-    std::cout << "brickset size: " << brickset.size() << std::endl;
-    // copy to buffer
-    octree_buffer->copy(structure.data(), octree_size, 0);
-
-
+    octree_buffer->copy(structure.data(), sizeof(uint32_t), 0);
 }
 
 std::tuple<bool, bool> 
@@ -117,86 +102,6 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
     return std::make_tuple(false, false);
 }
 
-void 
-octree_t::paint(
-    uint32_t i, const vec4_t & aabb, 
-    const std::vector<std::weak_ptr<sdf3_t>> & sdfs,
-    std::shared_ptr<camera_t> camera
-){
-    std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
-
-    for (auto sdf_ptr : sdfs){
-        if (auto sdf = sdf_ptr.lock()){
-            auto intersection = intersects_contains(aabb, sdf);
-
-            // contains
-            if (std::get<1>(intersection)){
-                structure[i] = is_leaf_flag;
-                return;
-            } 
-            
-            // intersects
-            if (std::get<0>(intersection)){
-                new_sdfs.push_back(sdf);
-            }
-        }
-    }
-
-    if (new_sdfs.empty()){
-        structure[i] = is_leaf_flag;
-        return;
-    }      
-
-    if (is_leaf(aabb, new_sdfs, camera)){
-        structure[i] = is_leaf_flag;
-
-        auto result = brickset.emplace(aabb, texture_manager, compose::union_t<3>(new_sdfs));
-        if (std::get<1>(result)){
-            // TODO: figure out best way to fix this off-by-one error
-            structure[i] |= std::get<0>(result)->get_id() - 1; 
-        }
-        return;
-    } 
-
-    structure[i] = structure.size();
-    for (uint8_t octant = 0; octant < 8; octant++){
-        structure.push_back(null_node);
-    }
-
-    // TODO: this sucks
-    std::vector<std::weak_ptr<sdf3_t>> new_weak_sdfs;
-    for (auto sdf_ptr : new_sdfs){
-        new_weak_sdfs.push_back(sdf_ptr);
-    }
-
-    for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t new_aabb = aabb;
-        new_aabb[3] /= 2;
-
-        if (octant & 1) new_aabb[0] += new_aabb[3];
-        if (octant & 2) new_aabb[1] += new_aabb[3];
-        if (octant & 4) new_aabb[2] += new_aabb[3];
-
-        paint(structure[i] + octant, new_aabb, new_weak_sdfs, camera);
-    }
-}
-
-bool 
-octree_t::is_leaf(
-    const vec4_t & aabb, 
-    const std::vector<std::shared_ptr<sdf3_t>> & sdfs,
-    std::shared_ptr<camera_t> camera
-){
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
-    double d = (c - camera->get_position()).norm();
-
-    if (aabb[3] <= std::max(hyper::epsilon, hyper::sigma * d)){
-        return true;
-    }
-
-    return false;
-}
-
 uint32_t 
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     if ((structure[i] & is_leaf_flag) != 0){
@@ -217,28 +122,6 @@ octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     return lookup(x, i, aabb);    
 }
 
-bool 
-octree_t::is_empty(const vec4_t & aabb) const {
-    bool is_empty = true;
-
-    for (auto sdf_ptr : sdfs){
-        if (auto sdf = sdf_ptr.lock()){
-            auto intersection = intersects_contains(aabb, sdf);
-
-            // contains
-            if (std::get<1>(intersection)){
-                return true;
-            } 
-            
-            // intersects
-            if (std::get<0>(intersection)){
-                is_empty = false;
-            }
-        }
-    }
-
-    return is_empty;
-}
 
 uint32_t 
 octree_t::create_node(const vec4_t & aabb){
@@ -271,8 +154,28 @@ octree_t::create_node(const vec4_t & aabb){
         return null_node;
     }
 }
+
+void 
+octree_t::handle_request(const f32vec3_t & x){
+    vec4_t aabb = universal_aabb;
+    uint32_t node_index = lookup(x, 0, aabb);
+    
+    if ((structure[node_index] & brick_ptr_mask) > 0){
+        structure[node_index] = structure.size();
+
+        for (uint8_t octant = 0; octant < 8; octant++){
+            vec4_t new_aabb = aabb;
+            new_aabb[3] /= 2;
+            if (octant & 1) new_aabb[0] += new_aabb[3];
+            if (octant & 2) new_aabb[1] += new_aabb[3];
+            if (octant & 4) new_aabb[2] += new_aabb[3];
+            structure.push_back(create_node(new_aabb));
+        }
+    }
+}
+
 void
-octree_t::handle_requests(std::shared_ptr<camera_t> camera){
+octree_t::handle_requests(){
     request_t data[32];
     request_buffer->read(&data, sizeof(request_t) * 32);
 
@@ -281,21 +184,7 @@ octree_t::handle_requests(std::shared_ptr<camera_t> camera){
     for (uint32_t i = 0; i < 32; i++){
         if (data[i].i != 0){
             changed = true;
-            vec4_t aabb = universal_aabb;
-            uint32_t node_index = lookup(data[i].x, 0, aabb);
-            
-            if ((structure[node_index] & brick_ptr_mask) > 0){
-                structure[node_index] = structure.size();
-
-                for (uint8_t octant = 0; octant < 8; octant++){
-                    vec4_t new_aabb = aabb;
-                    new_aabb[3] /= 2;
-                    if (octant & 1) new_aabb[0] += new_aabb[3];
-                    if (octant & 2) new_aabb[1] += new_aabb[3];
-                    if (octant & 4) new_aabb[2] += new_aabb[3];
-                    structure.push_back(create_node(new_aabb));
-                }
-            }
+            handle_request(data[i].x);
         }
     }    
     
@@ -305,12 +194,6 @@ octree_t::handle_requests(std::shared_ptr<camera_t> camera){
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 
-
-    request_t clear_requests[32];
+    static request_t clear_requests[32];
     request_buffer->copy(&clear_requests, sizeof(request_t) * 32, 0);
-}
-
-uint32_t 
-octree_t::handle_request(uint32_t i, const vec4_t & aabb){
-    return 0;
 }

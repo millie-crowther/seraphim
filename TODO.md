@@ -29,8 +29,6 @@
 * camera rotation with mouse
 
 ### geometry
-* implement octree streaming from cpu
-    * add a CPU phase after rendering to handle requests
 * delete bricks which havent been used in a while
     * put bricks in a queue
     * pop from end when you need a new one

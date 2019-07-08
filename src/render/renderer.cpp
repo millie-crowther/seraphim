@@ -122,7 +122,7 @@ renderer_t::init(){
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, main_camera);
+    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets);
 
     if (!create_command_buffers()){
         return false;
@@ -765,8 +765,9 @@ renderer_t::update_push_constants() const {
 
 void
 renderer_t::render(){
+    octree->handle_requests();
+
     if (auto camera = main_camera.lock()){
-        octree->handle_requests(camera);
 
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();

@@ -96,7 +96,6 @@ in vec4 gl_FragCoord;
 
 void request_buffer_push(vec3 x){
     uint i = uint(dot(x, x)) & 0x1F;
-
     requests.requests[i] = request_t(x, 1);
 }
 
@@ -137,6 +136,7 @@ vec3 normal(vec2 uv){
 }
 
 vec2 uv(uint i){
+    i--;
     uint local_u = (i % 256) + 1;
     uint local_v = i / 256;
     return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
