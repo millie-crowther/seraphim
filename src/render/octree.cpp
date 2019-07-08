@@ -68,9 +68,11 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    if (auto c = camera.lock()){
-        paint(0, universal_aabb, sdfs, c);
-    }
+    // if (auto c = camera.lock()){
+    //     paint(0, universal_aabb, sdfs, c);
+    // }
+    structure = { create_node(universal_aabb) };
+    std::cout << "root node: " << structure[0] << std::endl;
 
     std::cout << "octree size: " << structure.size() << std::endl;
     std::cout << "brickset size: " << brickset.size() << std::endl;
@@ -196,7 +198,7 @@ octree_t::is_leaf(
 }
 
 uint32_t 
-octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
+octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     if ((structure[i] & is_leaf_flag) != 0){
         return i;
     }
@@ -215,6 +217,60 @@ octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
     return lookup(x, i, aabb);    
 }
 
+bool 
+octree_t::is_empty(const vec4_t & aabb) const {
+    bool is_empty = true;
+
+    for (auto sdf_ptr : sdfs){
+        if (auto sdf = sdf_ptr.lock()){
+            auto intersection = intersects_contains(aabb, sdf);
+
+            // contains
+            if (std::get<1>(intersection)){
+                return true;
+            } 
+            
+            // intersects
+            if (std::get<0>(intersection)){
+                is_empty = false;
+            }
+        }
+    }
+
+    return is_empty;
+}
+
+uint32_t 
+octree_t::create_node(const vec4_t & aabb){
+    std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
+
+    for (auto sdf_ptr : sdfs){
+        if (auto sdf = sdf_ptr.lock()){
+            auto intersection = intersects_contains(aabb, sdf);
+            // contains
+            if (std::get<1>(intersection)){
+                return is_leaf_flag;
+            }
+
+            // intersects
+            if (std::get<0>(intersection)){
+                new_sdfs.push_back(sdf);
+            }
+        }
+    }
+
+    if (new_sdfs.empty()){
+        return is_leaf_flag;
+    }
+
+    auto result = brickset.emplace(aabb, texture_manager, compose::union_t<3>(new_sdfs));
+    if (std::get<1>(result)){
+        // TODO: figure out best way to fix this off-by-one error
+        return is_leaf_flag | std::get<0>(result)->get_id(); 
+    } else {
+        return null_node;
+    }
+}
 void
 octree_t::handle_requests(std::shared_ptr<camera_t> camera){
     request_t data[32];
@@ -223,25 +279,22 @@ octree_t::handle_requests(std::shared_ptr<camera_t> camera){
     bool changed = false;
 
     for (uint32_t i = 0; i < 32; i++){
-        if (data[i].i > 0){
+        if (data[i].i != 0){
             changed = true;
             vec4_t aabb = universal_aabb;
-            uint32_t node = lookup(data[i].x.cast<double>(), 0, aabb);
+            uint32_t node_index = lookup(data[i].x, 0, aabb);
             
-            structure[node] = structure.size();
-            for (uint8_t octant = 0; octant < 8; octant++){
-                structure.push_back(null_node);
-            } 
+            if ((structure[node_index] & brick_ptr_mask) > 0){
+                structure[node_index] = structure.size();
 
-            for (uint8_t octant = 0; octant < 8; octant++){
-                vec4_t new_aabb = aabb;
-                new_aabb[3] /= 2;
-
-                if (octant & 1) new_aabb[0] += new_aabb[3];
-                if (octant & 2) new_aabb[1] += new_aabb[3];
-                if (octant & 4) new_aabb[2] += new_aabb[3];
-
-                paint(structure[node] + octant, new_aabb, sdfs, camera);
+                for (uint8_t octant = 0; octant < 8; octant++){
+                    vec4_t new_aabb = aabb;
+                    new_aabb[3] /= 2;
+                    if (octant & 1) new_aabb[0] += new_aabb[3];
+                    if (octant & 2) new_aabb[1] += new_aabb[3];
+                    if (octant & 4) new_aabb[2] += new_aabb[3];
+                    structure.push_back(create_node(new_aabb));
+                }
             }
         }
     }    

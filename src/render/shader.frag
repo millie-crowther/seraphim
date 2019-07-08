@@ -8,6 +8,7 @@ const uint is_leaf_flag = 1 << 31;
 const uint detail_flag  = 1 << 29;
 const uint null_node = 0;
 const uint structure_size = 100000;
+const uint brick_ptr_mask = 0xFFFFFF;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
@@ -94,7 +95,7 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 in vec4 gl_FragCoord;
 
 void request_buffer_push(vec3 x){
-    uint i = uint(x.x) & 0x1F;
+    uint i = uint(dot(x, x)) & 0x1F;
 
     requests.requests[i] = request_t(x, 1);
 }
@@ -105,9 +106,7 @@ node_t base_node(){
 
 bool should_request(uint i, vec4 aabb){
     // TODO: get rid of sqrt here
-    return 
-        octree.structure[i] == null_node || 
-        aabb.w > max(epsilon, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
+    return aabb.w > max(epsilon, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
 }
 
 node_t octree_lookup(vec3 x){
@@ -128,10 +127,6 @@ node_t octree_lookup(vec3 x){
         bvec3 octant = greaterThan(x, node.min + node.size);
         node.i += int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
         node.min += vec3(octant) * node.size;
-
-        if (node.i == null_node){
-            break;
-        }
     }
 
     return node;
@@ -150,23 +145,23 @@ vec2 uv(uint i){
 intersection_t raycast(ray_t r){
     node_t node = base_node();
 
+
     for (int i = 0; i < max_steps; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
-        if (node.size < 0 || node.i >= structure_size || node.i == 0){
+        if (node.size < 0 || node.i >= structure_size){
             break;
         }
     
-        if (octree.structure[node.i] != is_leaf_flag){
-            vec4 aabb = vec4(node.min, node.size);
-            if (should_request(node.i, aabb)){
-                request_buffer_push(aabb.xyz + aabb.w / 2);
+        if ((octree.structure[node.i] & brick_ptr_mask) > 0){
+            if (should_request(node.i, vec4(node.min, node.size))){
+                request_buffer_push(node.min + node.size / 2);
             }
 
-            uint id = octree.structure[node.i] & 0xFFFFFF;
+            uint id = octree.structure[node.i] & brick_ptr_mask;
 
             vec2 uv = uv(id);
             return intersection_t(

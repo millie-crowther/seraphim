@@ -60,7 +60,7 @@ private:
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     vec4_t universal_aabb;
 
-    uint32_t lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const;
+    uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
     uint32_t handle_request(uint32_t i, const vec4_t & aabb);
 
     // TODO: remove this and replace with lazy streaming version
@@ -78,6 +78,8 @@ private:
         std::shared_ptr<camera_t> camera 
     );
 
+    uint32_t create_node(const vec4_t & aabb);
+    bool is_empty(const vec4_t & aabb) const;
 
 public:
     octree_t(
