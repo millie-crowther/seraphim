@@ -2,12 +2,12 @@
 #define OCTREE_H
 
 #include <memory>
-#include <set>
+#include <map>
 #include <vector>
 
 #include "core/buffer.h"
-#include "render/brick.h"
 #include "render/camera.h"
+#include "render/texture_manager.h"
 #include "sdf/sdf.h"
 
 /*
@@ -36,14 +36,13 @@ private:
     // constants
     static constexpr uint32_t is_leaf_flag   = 1 << 31;
     static constexpr uint32_t normal_flag    = 1 << 30;
-    static constexpr uint32_t brick_ptr_mask = 0xFFFFFF;
+    static constexpr uint32_t brick_id_mask = 0xFFFFFF;
     static constexpr uint32_t null_node = 0;
     static constexpr uint32_t max_structure_size = 100000;
     static constexpr uint32_t max_requests_size = 64;
 
     // fields
     std::vector<uint32_t> structure; // TODO: should this be an array instead?
-    std::set<brick_t> brickset;  // TODO: make this a queue for easy LRU elimination 
     std::shared_ptr<texture_manager_t> texture_manager;
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
@@ -53,7 +52,7 @@ private:
     // private functions
     uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-    uint32_t create_node(const vec4_t & aabb);
+    uint32_t create_node(const vec4_t & aabb, uint32_t index);
     void handle_request(const f32vec3_t & x);
 
 public:

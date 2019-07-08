@@ -2,8 +2,6 @@
 
 #include "core/vk_utils.h"
 
-#include "render/brick.h"
-
 texture_manager_t::texture_manager_t(const allocator_t & allocator, const std::vector<VkDescriptorSet> & desc_sets){
     this->allocator = allocator;
     claimed_patches = 1;

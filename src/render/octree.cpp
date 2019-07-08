@@ -63,7 +63,7 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    structure = { create_node(universal_aabb) };
+    structure = { create_node(universal_aabb, 0) };
     octree_buffer->copy(structure.data(), sizeof(uint32_t), 0);
 }
 
@@ -124,7 +124,7 @@ octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
 
 
 uint32_t 
-octree_t::create_node(const vec4_t & aabb){
+octree_t::create_node(const vec4_t & aabb, uint32_t index){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     for (auto sdf_ptr : sdfs){
@@ -146,13 +146,17 @@ octree_t::create_node(const vec4_t & aabb){
         return is_leaf_flag;
     }
 
-    auto result = brickset.emplace(aabb, texture_manager, compose::union_t<3>(new_sdfs));
-    if (std::get<1>(result)){
-        // TODO: figure out best way to fix this off-by-one error
-        return is_leaf_flag | std::get<0>(result)->get_id(); 
-    } else {
-        return null_node;
-    }
+    compose::union_t<3> sdf(new_sdfs);
+
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
+    vec3_t n = sdf.normal(c);
+    u8vec4_t colour = painter_t<3>().colour(c - n * sdf.phi(c));
+    
+    n = (n / 2 + 0.5) * 255;
+    u8vec4_t normal(n[0], n[1], n[2], 0);
+    uint32_t id = texture_manager->request(colour, normal);
+    
+    return is_leaf_flag | id; 
 }
 
 void 
@@ -160,7 +164,10 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    if ((structure[node_index] & brick_ptr_mask) > 0){
+    uint32_t brick_id = (structure[node_index] & brick_id_mask);
+    if (brick_id > 0){
+        texture_manager->clear(brick_id);
+
         structure[node_index] = structure.size();
 
         for (uint8_t octant = 0; octant < 8; octant++){
@@ -169,7 +176,7 @@ octree_t::handle_request(const f32vec3_t & x){
             if (octant & 1) new_aabb[0] += new_aabb[3];
             if (octant & 2) new_aabb[1] += new_aabb[3];
             if (octant & 4) new_aabb[2] += new_aabb[3];
-            structure.push_back(create_node(new_aabb));
+            structure.push_back(create_node(new_aabb, node_index));
         }
     }
 }

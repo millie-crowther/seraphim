@@ -19,14 +19,16 @@
     * definitely something to do with revelator<T>::follower_t destructor
     * probably to do with when resultant shared_ptr is destroyed 
     * destroyed too late? idk
+* improve revelator design
+    * prone to null references atm
+    * can improve
 
 ## rendering
 
 ### general
 * make rays that originate outside octree intersect properly
-
-### camera
-* camera rotation with mouse
+* camera pitch rotation with mouse
+* beam optimisation in a compute shader
 
 ### geometry
 * delete bricks which havent been used in a while
@@ -37,6 +39,7 @@
     * e.g. a node has eight children, all of whom are far enough away
     * merge children and create one parent 
     * need to keep track of parent relationship??
+    * can put in same compute shader as beam optimisation 
 * create better approximation to surface than cubes maybe
     * maybe go back to some sort of planes
     * can be approximated using normal
