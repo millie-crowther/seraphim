@@ -34,12 +34,11 @@ private:
     };
 
     // constants
-    static constexpr uint32_t is_leaf_flag   = 1 << 31;
-    static constexpr uint32_t normal_flag    = 1 << 30;
-    static constexpr uint32_t brick_id_mask = 0xFFFFFF;
-    static constexpr uint32_t null_node = 0;
+    static constexpr uint32_t is_leaf_flag       = 1 << 31;
+    static constexpr uint32_t normal_flag        = 1 << 30;
+    static constexpr uint32_t brick_id_mask      = 0xFFFFFF;
     static constexpr uint32_t max_structure_size = 100000;
-    static constexpr uint32_t max_requests_size = 64;
+    static constexpr uint32_t max_requests_size  = 64;
 
     // fields
     std::vector<uint32_t> structure; // TODO: should this be an array instead?

@@ -32,9 +32,6 @@
 
 ### geometry
 * delete bricks which havent been used in a while
-    * put bricks in a queue
-    * pop from end when you need a new one
-    * simple and cheap LRU approximant
 * find a way to prune octree interior nodes
     * e.g. a node has eight children, all of whom are far enough away
     * merge children and create one parent 
@@ -43,6 +40,7 @@
 * create better approximation to surface than cubes maybe
     * maybe go back to some sort of planes
     * can be approximated using normal
+* remove parameter of normal map and use flag instead    
 
 ### materials
 * add textures for other material properties

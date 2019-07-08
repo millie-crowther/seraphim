@@ -7,8 +7,6 @@
 #include "sdf/mutate.h"
 #include "maths/mat.h"
 
-constexpr uint32_t octree_t::null_node;
-
 octree_t::octree_t(
     const allocator_t & allocator, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
@@ -151,7 +149,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
     vec3_t n = sdf.normal(c);
     u8vec4_t colour = painter_t<3>().colour(c - n * sdf.phi(c));
-    
+
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], 0);
     uint32_t id = texture_manager->request(colour, normal);
@@ -197,7 +195,6 @@ octree_t::handle_requests(){
     
     if (changed){
         // std::cout << "octree size: " << structure.size() << std::endl;
-        // std::cout << "brickset size: " << brickset.size() << std::endl;
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 

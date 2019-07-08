@@ -5,7 +5,6 @@
 // constants
 //
 const uint is_leaf_flag = 1 << 31;
-const uint null_node = 0;
 const uint structure_size = 100000;
 const uint requests_size = 64;
 const uint brick_ptr_mask = 0xFFFFFF;
