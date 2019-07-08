@@ -15,6 +15,7 @@ octree_t::octree_t(
     const std::vector<VkDescriptorSet> & desc_sets,
     std::weak_ptr<camera_t> camera
 ){
+    this->sdfs = sdfs;
     structure.reserve(max_structure_size);
     
     // TODO: remove this! its only here because the zero index is 
@@ -196,7 +197,7 @@ octree_t::is_leaf(
 
 uint32_t 
 octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
-    if ((i & is_leaf_flag) != 0){
+    if ((structure[i] & is_leaf_flag) != 0){
         return i;
     }
 
@@ -214,28 +215,41 @@ octree_t::lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const {
     return lookup(x, i, aabb);    
 }
 
-void 
-octree_t::subdivide(const vec3_t & x){
-    // vec4_t aabb = universal_aabb;
-
-    // uint32_t i = lookup(x, 0, aabb);
-}
-
 void
-octree_t::handle_requests(){
+octree_t::handle_requests(std::shared_ptr<camera_t> camera){
     request_t data[32];
     request_buffer->read(&data, sizeof(request_t) * 32);
 
+    bool changed = false;
+
     for (uint32_t i = 0; i < 32; i++){
         if (data[i].i > 0){
-            // vec4_t aabb = universal_aabb;
-            // uint32_t node = lookup(data[i].x, 0, aabb);
-            // uint32_t children = handle_request(node, aabb);
-            // TODO: now need to update
-            //       1) structure[node]
-            //       2) structure[children..children+8]
-            //       on gpu 
+            changed = true;
+            vec4_t aabb = universal_aabb;
+            uint32_t node = lookup(data[i].x.cast<double>(), 0, aabb);
+            
+            structure[node] = structure.size();
+            for (uint8_t octant = 0; octant < 8; octant++){
+                structure.push_back(null_node);
+            } 
+
+            for (uint8_t octant = 0; octant < 8; octant++){
+                vec4_t new_aabb = aabb;
+                new_aabb[3] /= 2;
+
+                if (octant & 1) new_aabb[0] += new_aabb[3];
+                if (octant & 2) new_aabb[1] += new_aabb[3];
+                if (octant & 4) new_aabb[2] += new_aabb[3];
+
+                paint(structure[node] + octant, new_aabb, sdfs, camera);
+            }
         }
+    }    
+    
+    if (changed){
+        std::cout << "octree size: " << structure.size() << std::endl;
+        std::cout << "brickset size: " << brickset.size() << std::endl;
+        octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 
 

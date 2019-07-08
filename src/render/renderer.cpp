@@ -765,9 +765,9 @@ renderer_t::update_push_constants() const {
 
 void
 renderer_t::render(){
-    octree->handle_requests();
-
     if (auto camera = main_camera.lock()){
+        octree->handle_requests(camera);
+
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
         push_constants.camera_up = camera->get_up().cast<float>();

@@ -94,7 +94,7 @@ layout(binding = 4) uniform sampler2D geometry_sampler;
 in vec4 gl_FragCoord;
 
 void request_buffer_push(vec3 x){
-    uint i = 0;
+    uint i = uint(x.x) & 0x1F;
 
     requests.requests[i] = request_t(x, 1);
 }
@@ -105,8 +105,9 @@ node_t base_node(){
 
 bool should_request(uint i, vec4 aabb){
     // TODO: get rid of sqrt here
-    float d = length(aabb.xyz + aabb.w / 2 - push_const.camera_position);
-    return aabb.w > max(epsilon, sigma * d);
+    return 
+        octree.structure[i] == null_node || 
+        aabb.w > max(epsilon, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
 }
 
 node_t octree_lookup(vec3 x){

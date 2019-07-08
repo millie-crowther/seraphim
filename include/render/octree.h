@@ -57,12 +57,11 @@ private:
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
 
-    std::vector<std::weak_ptr<sdf3_t>> universal_sdfs;
+    std::vector<std::weak_ptr<sdf3_t>> sdfs;
     vec4_t universal_aabb;
 
     uint32_t lookup(const vec3_t & x, uint32_t i, vec4_t & aabb) const;
     uint32_t handle_request(uint32_t i, const vec4_t & aabb);
-    void subdivide(const vec3_t & x);
 
     // TODO: remove this and replace with lazy streaming version
     void paint(
@@ -88,7 +87,7 @@ public:
         std::weak_ptr<camera_t> camera
     );
 
-    void handle_requests();
+    void handle_requests(std::shared_ptr<camera_t> camera);
 };
 
 

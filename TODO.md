@@ -31,8 +31,6 @@
 ### geometry
 * implement octree streaming from cpu
     * add a CPU phase after rendering to handle requests
-* increase granularity of coarse octree when you get close
-    * may require a LOD flag to be stored in gpu data?
 * delete bricks which havent been used in a while
     * put bricks in a queue
     * pop from end when you need a new one
