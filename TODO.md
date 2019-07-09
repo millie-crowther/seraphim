@@ -35,7 +35,6 @@
 * find a way to prune octree interior nodes
     * e.g. a node has eight children, all of whom are far enough away
     * merge children and create one parent 
-    * need to keep track of parent relationship??
     * can put in same compute shader as beam optimisation 
 * create better approximation to surface than cubes maybe
     * maybe go back to some sort of planes

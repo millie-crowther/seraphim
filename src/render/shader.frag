@@ -151,7 +151,7 @@ intersection_t raycast(ray_t r){
         //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
-        if (node.size < 0 || node.i >= structure_size || octree.structure[node.i] == null_node){
+        if (node.size < 0 || node.i >= structure_size){
             return null_intersection;
         }
     
