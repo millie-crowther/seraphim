@@ -8,9 +8,6 @@
 #include <chrono>
 #include <stdexcept>
 
-std::string
-renderer_t::vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
-
 renderer_t::renderer_t(
     const allocator_t & allocator,
     VkSurfaceKHR surface, uint32_t graphics_family, 
@@ -51,6 +48,23 @@ renderer_t::renderer_t(
 
 }
 
+void
+renderer_t::cleanup_swapchain(){
+    for (auto framebuffer : swapchain_framebuffers){
+	    vkDestroyFramebuffer(allocator.device, framebuffer, nullptr);
+    }
+
+    vkFreeCommandBuffers(
+        allocator.device, allocator.pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
+    );
+
+    vkDestroyPipeline(allocator.device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(allocator.device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(allocator.device, render_pass, nullptr);
+
+    swapchain.reset(nullptr);
+}
+
 renderer_t::~renderer_t(){
     vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
 
@@ -74,9 +88,10 @@ renderer_t::init(){
 
     allocator.queue = graphics_queue;
 
-    if (!create_swapchain()){
-        return false;
-    }
+    swapchain = std::make_unique<swapchain_t>(
+        allocator, push_constants.window_size, surface,
+        graphics_family, present_family
+    );
 
     if (!create_render_pass()){
         return false;
@@ -131,159 +146,16 @@ renderer_t::init(){
     return true;
 }
 
-bool
-renderer_t::create_swapchain(){
-    VkSurfaceFormatKHR format = select_surface_format();
-    VkPresentModeKHR mode = select_present_mode();
-    VkExtent2D extents = select_swap_extent();
-
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        allocator.physical_device, surface, &capabilities
-    );
-    uint32_t image_count = capabilities.minImageCount + 1;
-    if (capabilities.maxImageCount != 0 && image_count > capabilities.maxImageCount){
-	    image_count = capabilities.maxImageCount;
-    }
-
-    VkSwapchainCreateInfoKHR create_info = {};
-    create_info.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface          = surface;
-    create_info.minImageCount    = image_count;
-    create_info.imageFormat      = format.format;
-    create_info.imageColorSpace  = format.colorSpace;
-    create_info.imageExtent      = extents;
-    create_info.imageArrayLayers = 1;
-    // if you dont wanna draw to image directly VK_IMAGE_USAGE_TRANSFER_DST_BIT
-    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;     
-
-    uint32_t families[2] = { graphics_family, present_family };
-
-    if (families[0] != families[1]){
-        create_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
-        create_info.queueFamilyIndexCount = 2;
-	    create_info.pQueueFamilyIndices   = families;
-    } else {
-	    create_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
-        create_info.queueFamilyIndexCount = 0;
-	    create_info.pQueueFamilyIndices   = nullptr;
-    }
-
-    create_info.preTransform   = capabilities.currentTransform;
-    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.presentMode    = mode;
-    create_info.clipped        = VK_TRUE;
-    create_info.oldSwapchain = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(allocator.device, &create_info, nullptr, &swapchain) != VK_SUCCESS){
-	    return false;
-    }
-
-    uint32_t count = 0;
-    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, nullptr);
-
-    std::vector<VkImage> swapchain_imgs(count);
-    vkGetSwapchainImagesKHR(allocator.device, swapchain, &count, swapchain_imgs.data());
-  
-    swapchain_image_views.clear();
-    swapchain_image_format = format.format;
-    for (auto & swapchain_image : swapchain_imgs){
-        swapchain_image_views.push_back(
-            texture_t::create_image_view(allocator.device, swapchain_image, format.format)
-        );
-    }
-
-    swapchain_extents = extents;
-
-    return true;
-}
-
-VkExtent2D
-renderer_t::select_swap_extent(){
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-        allocator.physical_device, surface, &capabilities
-    );
-
-    // check if we need to supply width and height
-    if (capabilities.currentExtent.width == ~((uint32_t) 0)){
-        VkExtent2D extents;
-        
-        extents.width = std::max(
-            capabilities.minImageExtent.width, 
-            std::min(push_constants.window_size[0], capabilities.maxImageExtent.width)
-        );
-        extents.height = std::max(
-            capabilities.minImageExtent.height, 
-            std::min(push_constants.window_size[1], capabilities.maxImageExtent.height)
-        );
-            
-        return extents;
-    } else {
-        return capabilities.currentExtent;
-    }
-}
-
-VkPresentModeKHR
-renderer_t::select_present_mode(){
-    uint32_t count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
-        allocator.physical_device, surface, &count, nullptr
-    );
-    std::vector<VkPresentModeKHR> modes(count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(
-        allocator.physical_device, surface, &count, modes.data()
-    );
-
-    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) != modes.end()){
-	    return VK_PRESENT_MODE_MAILBOX_KHR;
-    }
-
-    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) != modes.end()){
-	    return VK_PRESENT_MODE_IMMEDIATE_KHR;
-    }
-
-    return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-VkSurfaceFormatKHR
-renderer_t::select_surface_format(){
-    uint32_t count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(
-        allocator.physical_device, surface, &count, nullptr
-    );
-    std::vector<VkSurfaceFormatKHR> formats(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(
-        allocator.physical_device, surface, &count, formats.data()
-    );
-    
-    // check if all formats supported
-    if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED){
-	    return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
-    }
-
-    // check for preferred
-    for (auto available_format : formats){
-        if (
-            available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-            available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR
-        ){
-            return available_format;
-        }
-    }
-
-    // default
-    return formats[0];
-}
-
 void
 renderer_t::recreate_swapchain(){
     vkDeviceWaitIdle(allocator.device);
   
-    cleanup_swapchain();
+    cleanup_swapchain();    
+    swapchain = std::make_unique<swapchain_t>(
+        allocator, push_constants.window_size, surface,
+        graphics_family, present_family
+    );
     
-    create_swapchain();
-
     create_render_pass();
     create_graphics_pipeline();
     create_framebuffers();
@@ -293,32 +165,10 @@ renderer_t::recreate_swapchain(){
     }
 }
 
-void 
-renderer_t::cleanup_swapchain(){
-    for (auto framebuffer : swapchain_framebuffers){
-	    vkDestroyFramebuffer(allocator.device, framebuffer, nullptr);
-    }
-
-    vkFreeCommandBuffers(
-        allocator.device, allocator.pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
-    );
-
-    vkDestroyPipeline(allocator.device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(allocator.device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(allocator.device, render_pass, nullptr);
-
-    for (auto image_view : swapchain_image_views){
-        vkDestroyImageView(allocator.device, image_view, nullptr);
-    }
-    swapchain_image_views.clear();
-
-    vkDestroySwapchainKHR(allocator.device, swapchain, nullptr);
-}
-
 bool
 renderer_t::create_render_pass(){
     VkAttachmentDescription colour_attachment = {};
-    colour_attachment.format = swapchain_image_format;
+    colour_attachment.format = swapchain->get_image_format();
     colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -360,6 +210,8 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
+    static std::string vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
+
     bool success = true;
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code.c_str(), &success);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
@@ -410,17 +262,19 @@ renderer_t::create_graphics_pipeline(){
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
+    VkExtent2D extents = swapchain->get_extents();
+
     VkViewport viewport = {};
     viewport.x          = 0;
     viewport.y          = 0;
-    viewport.width      = (float) swapchain_extents.width;
-    viewport.height     = (float) swapchain_extents.height;
+    viewport.width      = (float) extents.width;
+    viewport.height     = (float) extents.height;
     viewport.minDepth   = 0;
     viewport.maxDepth   = 1;
 
     VkRect2D scissor = {};
     scissor.offset   = { 0, 0 };
-    scissor.extent   = swapchain_extents;
+    scissor.extent   = extents;
 
     VkPipelineViewportStateCreateInfo viewport_state = {};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -543,11 +397,13 @@ renderer_t::create_graphics_pipeline(){
 
 bool
 renderer_t::create_framebuffers(){
-    swapchain_framebuffers.resize(swapchain_image_views.size());
+    VkExtent2D extents = swapchain->get_extents();
 
-    for (uint32_t i = 0; i < swapchain_framebuffers.size(); i++){
+    swapchain_framebuffers.resize(swapchain->get_size());
+
+    for (uint32_t i = 0; i < swapchain->get_size(); i++){
         std::vector<VkImageView> attachments = {
-	        swapchain_image_views[i],
+	        swapchain->get_image_view(i)
 	    };
 
         VkFramebufferCreateInfo framebuffer_info = {};
@@ -555,8 +411,8 @@ renderer_t::create_framebuffers(){
         framebuffer_info.renderPass = render_pass;
         framebuffer_info.attachmentCount = attachments.size();
         framebuffer_info.pAttachments = attachments.data();
-        framebuffer_info.width = swapchain_extents.width;
-        framebuffer_info.height = swapchain_extents.height;
+        framebuffer_info.width = extents.width;
+        framebuffer_info.height = extents.height;
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
@@ -598,7 +454,7 @@ renderer_t::create_command_buffers(){
         render_pass_info.renderPass = render_pass;
         render_pass_info.framebuffer = swapchain_framebuffers[i];
         render_pass_info.renderArea.offset = { 0, 0 };
-        render_pass_info.renderArea.extent = swapchain_extents;
+        render_pass_info.renderArea.extent = swapchain->get_extents();
 
         std::array<VkClearValue, 2> clear_values = {};
         clear_values[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -633,7 +489,7 @@ renderer_t::create_command_buffers(){
 
 bool 
 renderer_t::create_descriptor_pool(){
-    uint32_t n = swapchain_image_views.size();
+    uint32_t n = swapchain->get_size();
     std::vector<VkDescriptorPoolSize> pool_sizes(2);
     pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pool_sizes[0].descriptorCount = n;
@@ -779,9 +635,11 @@ renderer_t::render(){
     vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]); 
 
+    VkSwapchainKHR swapchain_handle = swapchain->get_handle();
+
     uint32_t image_index;
     vkAcquireNextImageKHR(
-        allocator.device, swapchain, ~((uint64_t) 0), image_available_semas[current_frame], 
+        allocator.device, swapchain_handle, ~((uint64_t) 0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
    
@@ -812,7 +670,7 @@ renderer_t::render(){
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores    = &render_finished_semas[current_frame];
     present_info.swapchainCount     = 1;
-    present_info.pSwapchains        = &swapchain;
+    present_info.pSwapchains        = &swapchain_handle;
     present_info.pImageIndices      = &image_index;
     present_info.pResults           = nullptr;
     

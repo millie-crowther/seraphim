@@ -9,6 +9,7 @@
 #include "ui/window.h"
 #include "render/octree.h"
 #include "render/camera.h"
+#include "render/swapchain.h"
 
 class renderer_t {
 public:
@@ -33,11 +34,7 @@ private:
     allocator_t allocator; // TODO : dont keep a copy
 
     // swapchain fields
-    VkSwapchainKHR swapchain;
     std::vector<VkFramebuffer> swapchain_framebuffers;
-    std::vector<VkImageView> swapchain_image_views;
-    VkFormat swapchain_image_format;
-    VkExtent2D swapchain_extents;
 
     VkSurfaceKHR surface;
     VkRenderPass render_pass;
@@ -71,10 +68,8 @@ private:
 
     void update_push_constants() const;
 
-    bool create_swapchain();
     bool create_render_pass();
     bool create_graphics_pipeline();    
-    // bool create_depth_resources();
     bool create_framebuffers();
     bool create_command_buffers();
     bool create_descriptor_set_layout();
@@ -82,23 +77,19 @@ private:
     bool create_descriptor_pool();
     bool create_sync();
 
-    VkSurfaceFormatKHR select_surface_format(); 
-    VkPresentModeKHR select_present_mode();
-    VkExtent2D select_swap_extent();
-
+    void cleanup_swapchain();
     void recreate_swapchain();
 
-    void cleanup_swapchain();
 
     bool init();
 
-    static std::string vertex_shader_code;
     std::string fragment_shader_code;
 
     std::shared_ptr<sdf3_t> sphere;
     std::shared_ptr<sdf3_t> plane;
     std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
     std::unique_ptr<octree_t> octree;
+    std::unique_ptr<swapchain_t> swapchain;
 
     std::weak_ptr<camera_t> main_camera;
 

@@ -12,8 +12,6 @@
     * at least it isnt a singleton lol
     * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
-* maybe tidy internals of renderer class
-    * make a dedicated swapchain class?
 * FPS counter is weird. fix it.
 * fix seg fault on exit
     * definitely something to do with revelator<T>::follower_t destructor
