@@ -22,7 +22,6 @@ const std::vector<const char *> device_extensions = {
 };
 
 blaspheme_t::blaspheme_t(bool is_debug){
-
     this->is_debug = is_debug;
 
     std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
@@ -64,10 +63,17 @@ blaspheme_t::blaspheme_t(bool is_debug){
     vkGetPhysicalDeviceProperties(allocator.physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
 
+    std::cout << "\tMaximum 1D image dimension: " << properties.limits.maxImageDimension1D << std::endl;
     std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
     std::cout << "\tMaximum 3D image dimension: " << properties.limits.maxImageDimension3D << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
-    
+
+    auto work_group_size = properties.limits.maxComputeWorkGroupSize;
+    auto work_group_count = properties.limits.maxComputeWorkGroupCount;
+    std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
+    std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
+
+
     uint32_t push_const_size = properties.limits.maxPushConstantsSize;
     std::cout << "\tMaximum push constants size: " << push_const_size << std::endl;
     if (sizeof(renderer_t::push_constant_t) > push_const_size){
@@ -105,7 +111,7 @@ blaspheme_t::~blaspheme_t(){
     vkDeviceWaitIdle(allocator.device);
 
     // delete renderer early to release resources at appropriate time
-    renderer = nullptr;
+    renderer.reset();
 
     vmaDestroyAllocator(allocator.vma_allocator);
 
@@ -128,8 +134,7 @@ blaspheme_t::~blaspheme_t(){
     // destroy instance
     vkDestroyInstance(instance, nullptr);
 
-    // destory GLFW
-    window = nullptr;
+    window.reset();
 
     glfwTerminate();
 }
@@ -236,7 +241,11 @@ blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
    
     for (uint32_t i = 0; i < queue_family_count; i++){
-        if (q_families[i].queueCount > 0 && q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT){
+        if (
+            q_families[i].queueCount > 0 && 
+            q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT &&
+            q_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT 
+        ){
             return i;
         }
     }

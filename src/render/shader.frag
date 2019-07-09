@@ -74,7 +74,7 @@ layout( push_constant ) uniform window_block {
 //
 // buffers
 //
-layout(binding = 1) buffer octree_buffer {
+layout(binding = 1) readonly buffer octree_buffer {
     uint structure[structure_size];
 } octree;
 

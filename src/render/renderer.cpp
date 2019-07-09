@@ -32,7 +32,9 @@ renderer_t::renderer_t(
     });
     
     fragment_shader_code = resources::load_file("../src/render/shader.frag");
-    if (fragment_shader_code.size() == 0){
+    compute_shader_code = resources::load_file("../src/render/shader.comp");
+    
+    if (fragment_shader_code.size() == 0 || compute_shader_code.size() == 0){
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   
 
@@ -45,12 +47,11 @@ renderer_t::renderer_t(
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
     }
-
 }
 
 void
 renderer_t::cleanup_swapchain(){
-    for (auto framebuffer : swapchain_framebuffers){
+    for (auto framebuffer : framebuffers){
 	    vkDestroyFramebuffer(allocator.device, framebuffer, nullptr);
     }
 
@@ -67,8 +68,6 @@ renderer_t::cleanup_swapchain(){
 
 renderer_t::~renderer_t(){
     vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
-
-    uniform_buffers.clear();
 
     cleanup_swapchain();
 
@@ -226,7 +225,6 @@ renderer_t::create_graphics_pipeline(){
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vert_create_info.module = vert_shader_module;
     vert_create_info.pName = "main";
-
 
     VkPipelineShaderStageCreateInfo frag_create_info = {}; 
     frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -399,7 +397,7 @@ bool
 renderer_t::create_framebuffers(){
     VkExtent2D extents = swapchain->get_extents();
 
-    swapchain_framebuffers.resize(swapchain->get_size());
+    framebuffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){
         std::vector<VkImageView> attachments = {
@@ -416,7 +414,7 @@ renderer_t::create_framebuffers(){
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
-            allocator.device, &framebuffer_info, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS
+            allocator.device, &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
         ){
             return false;
         }
@@ -428,7 +426,7 @@ renderer_t::create_framebuffers(){
 bool
 renderer_t::create_command_buffers(){
     // create command buffers
-    command_buffers.resize(swapchain_framebuffers.size());
+    command_buffers.resize(framebuffers.size());
     
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -452,7 +450,7 @@ renderer_t::create_command_buffers(){
         VkRenderPassBeginInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_info.renderPass = render_pass;
-        render_pass_info.framebuffer = swapchain_framebuffers[i];
+        render_pass_info.framebuffer = framebuffers[i];
         render_pass_info.renderArea.offset = { 0, 0 };
         render_pass_info.renderArea.extent = swapchain->get_extents();
 
