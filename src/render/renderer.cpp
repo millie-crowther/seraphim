@@ -32,9 +32,8 @@ renderer_t::renderer_t(
     });
     
     fragment_shader_code = resources::load_file("../src/render/shader.frag");
-    compute_shader_code = resources::load_file("../src/render/shader.comp");
     
-    if (fragment_shader_code.size() == 0 || compute_shader_code.size() == 0){
+    if (fragment_shader_code.size() == 0){
         throw std::runtime_error("Error: Failed to load fragment shader.");
     }   
 
@@ -80,6 +79,77 @@ renderer_t::~renderer_t(){
     vkDestroyCommandPool(allocator.device, command_pool, nullptr); 
 }
 
+  
+bool 
+renderer_t::create_compute_pipeline(){
+    VkDescriptorSetLayoutBinding octree_layout = {};
+    octree_layout.binding = 1;
+    octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    octree_layout.descriptorCount = 1;
+    octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    octree_layout.pImmutableSamplers = nullptr;
+
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
+        octree_layout
+    };
+
+    VkDescriptorSetLayoutCreateInfo layout_info = {};
+    layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_info.bindingCount = layouts.size();
+    layout_info.pBindings    = layouts.data();
+
+    if (vkCreateDescriptorSetLayout(allocator.device, &layout_info, nullptr, &compute_descriptor_layout) != VK_SUCCESS){
+        return false;
+    }
+
+    VkPushConstantRange push_const_range = {};
+    push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    push_const_range.size = sizeof(push_constant_t);
+    push_const_range.offset = 0;
+
+    VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_info.setLayoutCount = 1;
+    pipeline_layout_info.pSetLayouts = &compute_descriptor_layout;
+    pipeline_layout_info.pushConstantRangeCount = 1;
+    pipeline_layout_info.pPushConstantRanges = &push_const_range;
+
+    if (vkCreatePipelineLayout(
+	    allocator.device, &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
+    ){
+        std::cout << "Error: Failed to create pipeline layout." << std::endl;
+	    return false;
+    }
+
+    std::string compute_shader_code = resources::load_file("../src/render/shader.comp");
+    if (compute_shader_code.size() == 0){
+        return false;
+    }
+
+    bool success = true;
+    VkShaderModule module = create_shader_module(compute_shader_code.c_str(), &success);
+    if (success == false){
+        return false;
+    }
+
+    VkComputePipelineCreateInfo pipeline_create_info = {};
+    pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipeline_create_info.stage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    pipeline_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    pipeline_create_info.stage.module = module;
+    pipeline_create_info.stage.pName = "main";
+    pipeline_create_info.layout = compute_pipeline_layout;
+    
+    // TODO: investigate pipeline caching. can replace VK_NULL_HANDLE with pipeline caching
+    if (vkCreateComputePipelines(allocator.device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
+        std::cout << "didnt create compute pipelines correcltyy" << std::endl;
+        return false;
+    }
+
+    vkDestroyShaderModule(allocator.device, module, nullptr);
+    return true;
+}
+
 bool
 renderer_t::init(){
     vkGetDeviceQueue(allocator.device, graphics_family, 0, &graphics_queue);
@@ -101,6 +171,10 @@ renderer_t::init(){
     }
     
     if (!create_graphics_pipeline()){
+        return false;
+    }
+
+    if (!create_compute_pipeline()){
         return false;
     }
 
@@ -329,7 +403,7 @@ renderer_t::create_graphics_pipeline(){
     const VkPipelineColorBlendStateCreateInfo colour_blend_const = colour_blend_info;
 
     VkPushConstantRange push_const_range = {};
-    push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
     push_const_range.size = sizeof(push_constant_t);
     push_const_range.offset = 0;
 
@@ -518,6 +592,34 @@ renderer_t::create_descriptor_pool(){
 	    return false;
     }
 
+    // allocate descriptor sets for compute shader
+    std::vector<VkDescriptorPoolSize> compute_pool_sizes(1);
+    compute_pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    compute_pool_sizes[0].descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo compute_pool_info = {};
+    compute_pool_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    compute_pool_info.poolSizeCount = compute_pool_sizes.size();
+    compute_pool_info.pPoolSizes    = compute_pool_sizes.data();
+    compute_pool_info.maxSets       = 1;
+
+    if (vkCreateDescriptorPool(allocator.device, &compute_pool_info, nullptr, &compute_descriptor_pool) != VK_SUCCESS){
+	    return false;
+    }
+
+    VkDescriptorSetAllocateInfo compute_alloc_info = {};
+    compute_alloc_info.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    compute_alloc_info.descriptorPool     = compute_descriptor_pool;
+    compute_alloc_info.pSetLayouts        = &compute_descriptor_layout;
+    compute_alloc_info.descriptorSetCount = 1;
+   
+    VkResult result = vkAllocateDescriptorSets(allocator.device, &compute_alloc_info, &compute_descriptor_set); 
+    if (result != VK_SUCCESS){
+        std::cout << "result: " << result << " == " << VK_ERROR_OUT_OF_DEVICE_MEMORY << std::endl;
+	    std::cout << "failed to allocate dscriptor sets" << std::endl;
+        return false;
+    }
+
     return true;
 }
 
@@ -527,7 +629,7 @@ renderer_t::create_descriptor_set_layout(){
     octree_layout.binding = 1;
     octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     octree_layout.descriptorCount = 1;
-    octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+    octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
     auto request_layout = octree_layout;

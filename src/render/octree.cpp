@@ -198,6 +198,6 @@ octree_t::handle_requests(){
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 
-    static request_t clear_requests[max_requests_size];
+    static request_t clear_requests[max_requests_size] = { { f32vec3_t(), 0 }};
     request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0);
 }

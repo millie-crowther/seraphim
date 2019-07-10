@@ -1,6 +1,12 @@
 #version 450
 
+const uint structure_size = 100000;
+
 layout (local_size_x = 16, local_size_y = 16) in;
+
+layout(binding = 1) readonly buffer octree_buffer {
+    uint structure[structure_size];
+} octree;
 
 void main(){
 			

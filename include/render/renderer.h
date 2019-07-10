@@ -38,11 +38,19 @@ private:
     std::vector<VkFramebuffer> framebuffers;
     VkSurfaceKHR surface;
     VkRenderPass render_pass;
+
     VkPipeline graphics_pipeline;
-    VkDescriptorPool desc_pool;
-    std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorSetLayout descriptor_layout;
     VkPipelineLayout pipeline_layout;
+    std::vector<VkDescriptorSet> desc_sets;
+    VkDescriptorPool desc_pool;
+
+    VkPipeline compute_pipeline;
+    VkDescriptorSetLayout compute_descriptor_layout;
+    VkPipelineLayout compute_pipeline_layout;
+    VkDescriptorSet compute_descriptor_set;
+    VkDescriptorPool compute_descriptor_pool;
+
     int current_frame;
     std::vector<VkSemaphore> image_available_semas;
     std::vector<VkSemaphore> render_finished_semas;
@@ -55,7 +63,6 @@ private:
     uint32_t present_family;
     std::unique_ptr<buffer_t> vertex_buffer;
     std::string fragment_shader_code;
-    std::string compute_shader_code;
     std::shared_ptr<sdf3_t> sphere;
     std::shared_ptr<sdf3_t> plane;
     std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
@@ -68,6 +75,7 @@ private:
     VkShaderModule create_shader_module(std::string code, bool * success);
     bool create_render_pass();
     bool create_graphics_pipeline();    
+    bool create_compute_pipeline();
     bool create_framebuffers();
     bool create_command_buffers();
     bool create_descriptor_set_layout();
