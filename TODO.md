@@ -13,13 +13,13 @@
     * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * FPS counter is weird.
-* fix seg fault on exit
-    * definitely something to do with revelator<T>::follower_t destructor
-    * probably to do with when resultant shared_ptr is destroyed 
-    * destroyed too late? idk
 * improve revelator design
     * prone to null references atm
     * can improve
+    * fix seg fault on exit
+        * definitely something to do with revelator<T>::follower_t destructor
+        * probably to do with when resultant shared_ptr is destroyed 
+        * destroyed too late? idk
 * maybe put the pipelines in their own class
 
 ## rendering
@@ -28,6 +28,8 @@
 * make rays that originate outside octree intersect properly
 * camera pitch rotation with mouse
 * beam optimisation in a compute shader
+    * put a semaphore between compute shader and fragment shader
+* figure out the fucking synchronisation on this thing
 
 ### geometry
 * delete bricks which havent been used in a while
@@ -35,9 +37,6 @@
     * e.g. a node has eight children, all of whom are far enough away
     * merge children and create one parent 
     * can put in same compute shader as beam optimisation 
-* create better approximation to surface than cubes maybe
-    * maybe go back to some sort of planes
-    * can be approximated using normal
 * remove parameter of normal map and use flag instead 
 * switch to a 64-bit node type
     * means interior nodes can have bricks as well

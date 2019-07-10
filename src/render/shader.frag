@@ -7,13 +7,13 @@
 const uint is_leaf_flag = 1 << 31;
 const uint structure_size = 100000;
 const uint requests_size = 64;
-const uint brick_ptr_mask = 0xFFFFFF;
+const uint brick_id_mask = 0xFFFFFF;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
 const int max_steps = 128;
 const float epsilon = 0.001;
-const float sigma = 80 * epsilon; 
+const float sigma = 128 * epsilon; 
 const float shadow_softness = 64;
 
 //
@@ -40,11 +40,10 @@ struct intersection_t {
     bool hit;
     vec3 x;
     vec3 n;
-    uint brick;
     node_t node;
 };
 intersection_t null_intersection = intersection_t(
-    false, vec3(0), vec3(0), 0, 
+    false, vec3(0), vec3(0), 
     node_t(0, vec3(0), 0)
 );
 
@@ -135,10 +134,24 @@ vec3 normal(vec2 uv){
 }
 
 vec2 uv(uint i){
-    i--;
-    uint local_u = (i % 256) + 1;
+    uint local_u = i % 256;
     uint local_v = i / 256;
     return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
+}
+
+intersection_t plane_intersection(ray_t r, node_t node){
+    vec3 n = normal(uv(octree.structure[node.i] & brick_id_mask));
+    float d = dot(node.min + node.size / 2, n);
+    float xn = dot(r.x, n);
+
+    if (xn < d){
+        return intersection_t(true, r.x, n, node);
+    }
+
+    float dn = dot(r.d, n);
+    float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
+
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node);
 }
 
 intersection_t raycast(ray_t r){
@@ -155,17 +168,20 @@ intersection_t raycast(ray_t r){
             return null_intersection;
         }
     
-        if ((octree.structure[node.i] & brick_ptr_mask) > 0){
+        if ((octree.structure[node.i] & brick_id_mask) > 0){
             if (should_request(node.i, vec4(node.min, node.size))){
                 request_buffer_push(node.min + node.size / 2);
             }
 
-            uint id = octree.structure[node.i] & brick_ptr_mask;
-
-            vec2 uv = uv(id);
-            return intersection_t(
-                true, r.x, normal(uv), id, node
-            );
+            intersection_t i = plane_intersection(r, node);
+            if (
+                i.hit &&
+                i.x.x >= node.min.x && i.x.y >= node.min.y && i.x.z >= node.min.z &&
+                i.x.x <= node.min.x + node.size && i.x.y <= node.min.y + node.size &&
+                i.x.z <= node.min.z + node.size    
+            ){
+                return i;
+            }
         }
 	
         vec3 lambda_i = abs(
@@ -261,7 +277,7 @@ void main(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        vec2 uv = uv(i.brick);
+        vec2 uv = uv(octree.structure[i.node.i] & brick_id_mask);
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }

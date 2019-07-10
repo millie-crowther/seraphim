@@ -194,7 +194,7 @@ octree_t::handle_requests(){
     }    
     
     if (changed){
-        // std::cout << "octree size: " << structure.size() << std::endl;
+        std::cout << "octree size: " << structure.size() << std::endl;
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 
