@@ -67,8 +67,12 @@ renderer_t::cleanup_swapchain(){
 
 renderer_t::~renderer_t(){
     vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
+    vkDestroyDescriptorSetLayout(allocator.device, compute_descriptor_layout, nullptr);
 
     cleanup_swapchain();
+
+    vkDestroyPipeline(allocator.device, compute_pipeline, nullptr);
+    vkDestroyPipelineLayout(allocator.device, compute_pipeline_layout, nullptr);
 
     for (int i = 0; i < frames_in_flight; i++){
         vkDestroySemaphore(allocator.device, image_available_semas[i], nullptr);
@@ -536,6 +540,16 @@ renderer_t::create_command_buffers(){
         render_pass_info.pClearValues = clear_values.data();
 
         vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+            // Bind the compute pipeline.
+            vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
+            // Bind descriptor set.
+            vkCmdBindDescriptorSets(
+                command_buffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout, 0, 1,
+                &compute_descriptor_set, 0, nullptr
+            );
+            // Dispatch compute job.
+            vkCmdDispatch(command_buffers[i], 10, 1, 1);
+
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
             );

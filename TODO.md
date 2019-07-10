@@ -20,6 +20,7 @@
 * improve revelator design
     * prone to null references atm
     * can improve
+* maybe put the pipelines in their own class
 
 ## rendering
 
@@ -37,7 +38,10 @@
 * create better approximation to surface than cubes maybe
     * maybe go back to some sort of planes
     * can be approximated using normal
-* remove parameter of normal map and use flag instead    
+* remove parameter of normal map and use flag instead 
+* switch to a 64-bit node type
+    * means interior nodes can have bricks as well
+    * makes culling a lot easier
 
 ### materials
 * add textures for other material properties
