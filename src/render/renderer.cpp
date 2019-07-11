@@ -548,10 +548,10 @@ renderer_t::create_command_buffers(){
             // Dispatch compute job.
             vkCmdDispatch(command_buffers[i], 10, 1, 1);
 
-            // vkCmdPipelineBarrier(
-            //     command_buffers[i], VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
-            //     VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 0, nullptr
-            // );
+            vkCmdPipelineBarrier(
+                command_buffers[i], VK_SHADER_STAGE_COMPUTE_BIT, VK_SHADER_STAGE_FRAGMENT_BIT,
+                VK_DEPENDENCY_BY_REGION_BIT, 0, nullptr, 0, nullptr, 0, nullptr
+            );
 
             vkCmdBindPipeline(
                 command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline

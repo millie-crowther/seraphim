@@ -6,6 +6,7 @@
 #include "sdf/compose.h"
 #include "sdf/mutate.h"
 #include "maths/mat.h"
+#include "core/constant.h"
 
 octree_t::octree_t(
     const allocator_t & allocator, 
@@ -145,13 +146,20 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     compose::union_t<3> sdf(new_sdfs);
-
+    
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
+
+    double p = sdf.phi(c);
+    p /= constant::sqrt3 * aabb[3];
+    p += 0.5;
+    p *= 255;
+    p = std::max(0.0, std::min(p, 255.0)); 
+
     vec3_t n = sdf.normal(c);
     u8vec4_t colour = painter_t<3>().colour(c - n * sdf.phi(c));
 
     n = (n / 2 + 0.5) * 255;
-    u8vec4_t normal(n[0], n[1], n[2], 0);
+    u8vec4_t normal(n[0], n[1], n[2], p);
     uint32_t id = texture_manager->request(colour, normal);
     
     return is_leaf_flag | id; 
@@ -194,7 +202,7 @@ octree_t::handle_requests(){
     }    
     
     if (changed){
-        std::cout << "octree size: " << structure.size() << std::endl;
+        // std::cout << "octree size: " << structure.size() << std::endl;
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
     }
 

@@ -8,12 +8,13 @@ const uint is_leaf_flag = 1 << 31;
 const uint structure_size = 100000;
 const uint requests_size = 64;
 const uint brick_id_mask = 0xFFFFFF;
+const float sqrt3 = 1.73205080757;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
 const int max_steps = 128;
-const float epsilon = 0.001;
-const float sigma = 128 * epsilon; 
+const float epsilon = 0.00390625;             // 2^-8 metres
+const float sigma = 64; 
 const float shadow_softness = 64;
 
 //
@@ -103,7 +104,7 @@ node_t base_node(){
 
 bool should_request(uint i, vec4 aabb){
     // TODO: get rid of sqrt here
-    return aabb.w > max(epsilon, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
+    return aabb.w >  epsilon * max(1, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
 }
 
 node_t octree_lookup(vec3 x){
@@ -140,8 +141,16 @@ vec2 uv(uint i){
 }
 
 intersection_t plane_intersection(ray_t r, node_t node){
-    vec3 n = normal(uv(octree.structure[node.i] & brick_id_mask));
-    float d = dot(node.min + node.size / 2, n);
+    vec2 uv = uv(octree.structure[node.i] & brick_id_mask);
+    vec3 n = normal(uv);
+
+    float phi = texture(geometry_sampler, uv).w - 0.5;
+
+    phi *= sqrt3 * node.size;
+
+    vec3 c = node.min + node.size / 2;
+    float d = dot(c, n) - phi;
+
     float xn = dot(r.x, n);
 
     if (xn < d){
@@ -172,6 +181,9 @@ intersection_t raycast(ray_t r){
             if (should_request(node.i, vec4(node.min, node.size))){
                 request_buffer_push(node.min + node.size / 2);
             }
+
+            // vec3 n = normal(uv(octree.structure[node.i] & brick_id_mask));
+            // return intersection_t(true, r.x, n, node);
 
             intersection_t i = plane_intersection(r, node);
             if (

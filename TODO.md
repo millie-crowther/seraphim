@@ -30,6 +30,7 @@
 * beam optimisation in a compute shader
     * put a semaphore between compute shader and fragment shader
 * figure out the fucking synchronisation on this thing
+* implement octree sibling trick
 
 ### geometry
 * delete bricks which havent been used in a while

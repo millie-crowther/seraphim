@@ -5,13 +5,13 @@
 
 namespace hyper {
     // smallest distance
-    constexpr double   epsilon = 0.001;             // metres
+    constexpr double   epsilon = 0.0078125;             // 2^-7 metres
 
     // shortest time period 
     constexpr double   iota    = 60;                // Hertz
 
     // largest distance
-    constexpr double   rho     = 20;                 // metres
+    constexpr double   rho     = 256;                 // metres
 
     // number of bricks
     constexpr uint32_t tau     = 256;               
