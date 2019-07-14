@@ -13,6 +13,7 @@
     * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
     * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * FPS counter is weird.
+    * choice of clock?
 * improve revelator design
     * prone to null references atm
     * can improve
@@ -27,17 +28,18 @@
 ### general
 * make rays that originate outside octree intersect properly
 * camera pitch rotation with mouse
-* beam optimisation in a compute shader
-    * put a semaphore between compute shader and fragment shader
+* compute shader
+    * beam optimisation
+    * octree pruning
+        * prune nodes that haven't been seen in a while
+        * prune nodes with too high level of detail 
+            * maybe this one is best in fragment shader actually
+    * possibly also animation
+        * parallelised construction of second octree based on transforms
 * figure out the fucking synchronisation on this thing
+    * sync between compute and fragment shaders
+    * sync with buffer writes (screen blanking sometimes)
 * implement octree sibling trick
-
-### geometry
-* delete bricks which havent been used in a while
-* find a way to prune octree interior nodes
-    * e.g. a node has eight children, all of whom are far enough away
-    * merge children and create one parent 
-    * can put in same compute shader as beam optimisation 
 * remove parameter of normal map and use flag instead 
 * switch to a 64-bit node type
     * means interior nodes can have bricks as well

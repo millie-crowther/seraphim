@@ -204,6 +204,16 @@ octree_t::handle_requests(){
     if (changed){
         // std::cout << "octree size: " << structure.size() << std::endl;
         octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
+
+        // uint32_t leaf_nodes = 0;
+
+        // for (auto node : structure){
+        //     if (node & is_leaf_flag){
+        //         leaf_nodes++;
+        //     }
+        // }
+
+        // std::cout << "Leaf node propertion: " << static_cast<double>(leaf_nodes) / static_cast<double>(structure.size()) * 100.0 << "%" << std::endl;
     }
 
     static request_t clear_requests[max_requests_size] = { { f32vec3_t(), 0 }};

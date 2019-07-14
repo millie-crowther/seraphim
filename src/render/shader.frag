@@ -13,8 +13,8 @@ const float sqrt3 = 1.73205080757;
 // these ones could be push constants hypothetically
 const float f = 1.0;
 const int max_steps = 128;
-const float epsilon = 0.00390625;             // 2^-8 metres
-const float sigma = 64; 
+const float epsilon = 1.0 / 256.0;
+const float sigma = 64; // TODO: relate this to camera FOV
 const float shadow_softness = 64;
 
 //
@@ -293,3 +293,4 @@ void main(){
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }
+
