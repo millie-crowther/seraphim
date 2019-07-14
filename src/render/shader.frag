@@ -5,7 +5,7 @@
 // constants
 //
 const uint is_leaf_flag = 1 << 31;
-const uint structure_size = 100000;
+const uint structure_size = 25000;
 const uint requests_size = 64;
 const uint brick_id_mask = 0xFFFFFF;
 const float sqrt3 = 1.73205080757;
@@ -18,11 +18,18 @@ const float sigma = 64; // TODO: relate this to camera FOV
 const float shadow_softness = 64;
 
 //
-// types used in shader
+// types 
 //
 struct request_t {
     vec3 x;
     uint i;
+};
+
+struct octree_node_t {
+    uint a;
+    uint b;
+    uint c;
+    uint d;
 };
 
 struct ray_t {
@@ -75,7 +82,7 @@ layout( push_constant ) uniform window_block {
 // buffers
 //
 layout(binding = 1) readonly buffer octree_buffer {
-    uint structure[structure_size];
+    octree_node_t structure[structure_size];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
@@ -118,8 +125,8 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    while ((octree.structure[node.i] & is_leaf_flag) == 0){
-        node.i = octree.structure[node.i];
+    while ((octree.structure[node.i].a & is_leaf_flag) == 0){
+        node.i = octree.structure[node.i].a;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
@@ -141,7 +148,7 @@ vec2 uv(uint i){
 }
 
 intersection_t plane_intersection(ray_t r, node_t node){
-    vec2 uv = uv(octree.structure[node.i] & brick_id_mask);
+    vec2 uv = uv(octree.structure[node.i].a & brick_id_mask);
     vec3 n = normal(uv);
 
     float phi = texture(geometry_sampler, uv).w - 0.5;
@@ -177,7 +184,7 @@ intersection_t raycast(ray_t r){
             return null_intersection;
         }
     
-        if ((octree.structure[node.i] & brick_id_mask) > 0){
+        if ((octree.structure[node.i].a & brick_id_mask) > 0){
             if (should_request(node.i, vec4(node.min, node.size))){
                 request_buffer_push(node.min + node.size / 2);
             }
@@ -289,7 +296,7 @@ void main(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        vec2 uv = uv(octree.structure[i.node.i] & brick_id_mask);
+        vec2 uv = uv(octree.structure[i.node.i].a & brick_id_mask);
         out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
     }
 }

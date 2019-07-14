@@ -33,15 +33,22 @@ private:
         uint32_t i;
     };
 
+    struct node_t {
+        uint32_t a;
+        uint32_t b;
+        uint32_t c;
+        uint32_t d;
+    };
+
     // constants
     static constexpr uint32_t is_leaf_flag       = 1 << 31;
     static constexpr uint32_t normal_flag        = 1 << 30;
     static constexpr uint32_t brick_id_mask      = 0xFFFFFF;
-    static constexpr uint32_t max_structure_size = 100000;
+    static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
 
     // fields
-    std::vector<uint32_t> structure; // TODO: should this be an array instead?
+    std::vector<node_t> structure; // TODO: should this be an array instead?
     std::shared_ptr<texture_manager_t> texture_manager;
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
@@ -51,7 +58,7 @@ private:
     // private functions
     uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-    uint32_t create_node(const vec4_t & aabb, uint32_t index);
+    node_t create_node(const vec4_t & aabb, uint32_t index);
     void handle_request(const f32vec3_t & x);
 
 public:

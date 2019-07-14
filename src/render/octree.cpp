@@ -22,7 +22,7 @@ octree_t::octree_t(
     texture_manager = std::make_shared<texture_manager_t>(allocator, desc_sets);
     
     // create buffers
-    uint32_t octree_size = sizeof(uint32_t) * max_structure_size;
+    uint32_t octree_size = sizeof(node_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
         allocator, octree_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -63,7 +63,7 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
     structure = { create_node(universal_aabb, 0) };
-    octree_buffer->copy(structure.data(), sizeof(uint32_t), 0);
+    octree_buffer->copy(structure.data(), sizeof(node_t), 0);
 }
 
 std::tuple<bool, bool> 
@@ -103,11 +103,14 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 
 uint32_t 
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
-    if ((structure[i] & is_leaf_flag) != 0){
+    // std::cout << "i: " << i << std::endl;
+    // std::cout << "c: " << structure[i].c << std::endl;
+    if ((structure[i].a & is_leaf_flag) != 0){
         return i;
     }
 
-    i = structure[i];
+
+    i = structure[i].c;
 
     aabb[3] /= 2;
 
@@ -122,16 +125,19 @@ octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
 }
 
 
-uint32_t 
+octree_t::node_t 
 octree_t::create_node(const vec4_t & aabb, uint32_t index){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
+
+    node_t node;
+    node.a = is_leaf_flag;
 
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
             auto intersection = intersects_contains(aabb, sdf);
             // contains
             if (std::get<1>(intersection)){
-                return is_leaf_flag;
+                return node;
             }
 
             // intersects
@@ -142,7 +148,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     if (new_sdfs.empty()){
-        return is_leaf_flag;
+        return node;
     }
 
     compose::union_t<3> sdf(new_sdfs);
@@ -162,7 +168,10 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     u8vec4_t normal(n[0], n[1], n[2], p);
     uint32_t id = texture_manager->request(colour, normal);
     
-    return is_leaf_flag | id; 
+    node.a = is_leaf_flag | id;
+    node.b = *reinterpret_cast<uint32_t *>(&normal);
+    node.c = *reinterpret_cast<uint32_t *>(&colour);
+    return node;
 }
 
 void 
@@ -170,11 +179,12 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    uint32_t brick_id = (structure[node_index] & brick_id_mask);
+    uint32_t brick_id = (structure[node_index].a & brick_id_mask);
     if (brick_id > 0){
         texture_manager->clear(brick_id);
 
-        structure[node_index] = structure.size();
+        structure[node_index].a = structure.size();
+        structure[node_index].c = structure.size();
 
         for (uint8_t octant = 0; octant < 8; octant++){
             vec4_t new_aabb = aabb;
@@ -201,10 +211,9 @@ octree_t::handle_requests(){
         }
     }    
     
-    if (changed){
-        // std::cout << "octree size: " << structure.size() << std::endl;
-        octree_buffer->copy(structure.data(), sizeof(uint32_t) * max_structure_size, 0);
 
+    if (changed){
+        octree_buffer->copy(structure.data(), sizeof(node_t) * max_structure_size, 0);
         // uint32_t leaf_nodes = 0;
 
         // for (auto node : structure){
