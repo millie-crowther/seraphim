@@ -41,26 +41,49 @@ layout( push_constant ) uniform window_block {
     float dummy4;
 } push_const;
 
-bool should_cull_check(uint i){
+vec3 get_node_centre(uint i){
+    // TODO
+    return vec3(0);
+}
+
+bool should_cull(uint i){
     // cull check occurs on 1/31 of the cells every frame.
     const uint cull_check_mask = 0x1F;
-    return 
-        (
-            (octree.structure[i].a & is_leaf_flag) |
-            ((i + push_const.current_frame) & cull_check_mask)
-        ) == 0;
+     
+    if ((
+        (octree.structure[i].a & is_leaf_flag) != 0 ||
+        ((i + push_const.current_frame) & cull_check_mask) != 0
+    ){
+        return false;
+    }
+
+    // TODO: check if all children are leaf nodes
+
+    return true;
+}
+
+void cull(uint i){
+    // TODO
 }
 
 bool should_split(uint i){
     return ((a & is_leaf_flag) != 0) && ((a & is_empty_flag) == 0) && ((a & node_seen_flag) != 0);
 }
 
+void split(uint i){
+    // TODO
+}
+
 void main(){
     uint i = gl_GlobalInvocationID.x;
 
     if (i < structure_size){
-        if (should_cull_check(i)){
-            // TODO: perform cull check
+        // TODO: create an array of free nodes 
+
+        if (should_cull(i)){
+            cull(i);
+        } else if (should_split(i)){
+            split(i);
         }
     }
 
