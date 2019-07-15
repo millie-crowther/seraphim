@@ -49,10 +49,11 @@ struct intersection_t {
     vec3 x;
     vec3 n;
     node_t node;
+    uint i;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    node_t(0, vec3(0), 0)
+    node_t(0, vec3(0), 0), 0
 );
 
 // 
@@ -88,12 +89,6 @@ layout(binding = 1) readonly buffer octree_buffer {
 layout(binding = 2) buffer request_buffer {
     request_t requests[requests_size];
 } requests;
-
-//
-// textures
-//
-layout(binding = 3) uniform sampler2D colour_sampler;
-layout(binding = 4) uniform sampler2D geometry_sampler;
 
 //
 // GLSL inputs
@@ -137,8 +132,13 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-vec3 normal(vec2 uv){
-    return normalize(texture(geometry_sampler, uv).xyz - 0.5);
+vec3 normal(vec2 uv, uint i){
+    uint data = octree.structure[i].b;
+    vec3 x = vec3(
+        data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF
+    ) / 255.0 - 0.5;
+    x *= 2;
+    return x;
 }
 
 vec2 uv(uint i){
@@ -147,11 +147,11 @@ vec2 uv(uint i){
     return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
 }
 
-intersection_t plane_intersection(ray_t r, node_t node){
+intersection_t plane_intersection(ray_t r, node_t node, uint i){
     vec2 uv = uv(octree.structure[node.i].a & brick_id_mask);
-    vec3 n = normal(uv);
+    vec3 n = normal(uv, i);
 
-    float phi = texture(geometry_sampler, uv).w - 0.5;
+    float phi = float(octree.structure[i].b >> 24) / 255.0 - 0.5;
 
     phi *= sqrt3 * node.size;
 
@@ -161,13 +161,13 @@ intersection_t plane_intersection(ray_t r, node_t node){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, n, node);
+        return intersection_t(true, r.x, n, node, i);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, i);
 }
 
 intersection_t raycast(ray_t r){
@@ -192,7 +192,7 @@ intersection_t raycast(ray_t r){
             // vec3 n = normal(uv(octree.structure[node.i] & brick_id_mask));
             // return intersection_t(true, r.x, n, node);
 
-            intersection_t i = plane_intersection(r, node);
+            intersection_t i = plane_intersection(r, node, node.i);
             if (
                 i.hit &&
                 i.x.x >= node.min.x && i.x.y >= node.min.y && i.x.z >= node.min.z &&
@@ -224,11 +224,14 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(vec2 uv){
-    return texture(colour_sampler, uv);
+vec4 colour(vec2 uv, uint i){
+    uint data = octree.structure[i].c;
+    return vec4(
+        data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF, data >> 24
+    ) / 255.0;
 }
 
-vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
+vec4 phong_light(vec3 light_p, vec3 x, vec2 uv, uint i){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec4 colour = vec4(50);
@@ -248,7 +251,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(uv);
+    vec3 n = normal(uv, i);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -266,9 +269,9 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv){
     return a + (d + s) * attenuation * shadow;
 }
 
-vec4 light(vec3 p, vec3 x, vec2 uv){
+vec4 light(vec3 p, vec3 x, vec2 uv, uint i){
     vec3 l = normalize(p - x);
-    return phong_light(p, x, uv);
+    return phong_light(p, x, uv, i);
 }
 
 vec4 sky(){
@@ -297,7 +300,7 @@ void main(){
 
     if (i.hit){
         vec2 uv = uv(octree.structure[i.node.i].a & brick_id_mask);
-        out_colour = colour(uv) * light(vec3(-3, 3, -3), i.x, uv);
+        out_colour = colour(uv, i.i) * light(vec3(-3, 3, -3), i.x, uv, i.i);
     }
 }
 
