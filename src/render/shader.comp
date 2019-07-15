@@ -1,13 +1,40 @@
 #version 450
 
-const uint structure_size = 100000;
+#extension GL_ARB_separate_shader_objects : enable
 
-layout (local_size_x = 16, local_size_y = 16) in;
+const uint structure_size = 25000;
 
-layout(binding = 1) readonly buffer octree_buffer {
-    uint structure[structure_size];
+struct octree_node_t {
+    uint a;
+    uint b;
+    uint c;
+    uint d;
+};
+
+layout (local_size_x = 16) in;
+
+layout(binding = 1) buffer octree_buffer {
+    octree_node_t structure[structure_size];
 } octree;
 
+//
+// push constants
+//
+layout( push_constant ) uniform window_block {
+    uvec2 window_size;
+    float render_distance;
+    uint dummy;
+
+    vec3 camera_position;
+    float dummy2;         
+
+    vec3 camera_right;
+    float dummy3;
+
+    vec3 camera_up;
+    float dummy4;
+} push_const;
+
 void main(){
-			
+
 }

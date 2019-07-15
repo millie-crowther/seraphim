@@ -181,6 +181,7 @@ octree_t::handle_request(const f32vec3_t & x){
     
     structure[node_index].a = structure.size();
     structure[node_index].c = structure.size();
+    // TODO: set parent index here
 
     for (uint8_t octant = 0; octant < 8; octant++){
         vec4_t new_aabb = aabb;

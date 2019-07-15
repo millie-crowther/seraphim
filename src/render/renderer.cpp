@@ -32,10 +32,6 @@ renderer_t::renderer_t(
     });
     
     fragment_shader_code = resources::load_file("../src/render/shader.frag");
-    
-    if (fragment_shader_code.size() == 0){
-        throw std::runtime_error("Error: Failed to load fragment shader.");
-    }   
 
     sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3);
     plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
@@ -126,12 +122,9 @@ renderer_t::create_compute_pipeline(){
     }
 
     std::string compute_shader_code = resources::load_file("../src/render/shader.comp");
-    if (compute_shader_code.size() == 0){
-        return false;
-    }
 
     bool success = true;
-    VkShaderModule module = create_shader_module(compute_shader_code.c_str(), &success);
+    VkShaderModule module = create_shader_module(compute_shader_code, &success);
     if (success == false){
         return false;
     }
@@ -146,11 +139,11 @@ renderer_t::create_compute_pipeline(){
     
     // TODO: investigate pipeline caching. can replace VK_NULL_HANDLE with pipeline caching
     if (vkCreateComputePipelines(allocator.device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
-        std::cout << "didnt create compute pipelines correcltyy" << std::endl;
         return false;
     }
 
     vkDestroyShaderModule(allocator.device, module, nullptr);
+
     return true;
 }
 
@@ -290,8 +283,8 @@ renderer_t::create_graphics_pipeline(){
     static std::string vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
 
     bool success = true;
-    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code.c_str(), &success);
-    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code.c_str(), &success);
+    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
+    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code, &success);
 
     if (!success){
         std::cout << "Error: Failed to create one of the shader modules" << std::endl;
@@ -467,6 +460,8 @@ renderer_t::create_graphics_pipeline(){
 
     vkDestroyShaderModule(allocator.device, vert_shader_module, nullptr);
     vkDestroyShaderModule(allocator.device, frag_shader_module, nullptr);
+
+    std::cout << "created graphics pipeline " << std::endl;
 
     return true;
 }

@@ -2,21 +2,28 @@
 
 #include <fstream>
 #include <vector>
+#include <sstream>
+#include <iostream>
 
 std::string
 resources::load_file(std::string filename){
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+    std::ifstream file(filename);
+    std::stringstream buffer;
+    buffer << file.rdbuf();
 
-    if (!file.is_open()){
-	    return "";
-    }
+    return  buffer.str();
 
-    size_t filesize = file.tellg();    
-    std::vector<char> buffer(filesize);
+    // std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
-    file.seekg(0);
-    file.read(buffer.data(), filesize);
-    file.close();
+    // if (!file.is_open()){
+	//     return "";
+    // }
 
-    return std::string(buffer.data());
+    // size_t filesize = file.tellg();    
+    // std::vector<char> buffer(filesize);
+
+    // file.seekg(0);
+    // file.read(buffer.data(), filesize);
+    // file.close();
+    // return std::string(buffer.data());
 }

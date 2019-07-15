@@ -68,10 +68,10 @@ layout(location = 0) out vec4 out_colour;
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
     float render_distance;
-    uint grid_size;
+    uint dummy;
 
     vec3 camera_position;
-    float dummy2;           // alignment
+    float dummy2;        
 
     vec3 camera_right;
     float dummy3;
