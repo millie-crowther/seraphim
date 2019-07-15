@@ -137,6 +137,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
             auto intersection = intersects_contains(aabb, sdf);
             // contains
             if (std::get<1>(intersection)){
+                node.a |= is_empty_flag;
                 return node;
             }
 
@@ -148,6 +149,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     if (new_sdfs.empty()){
+        node.a |= is_empty_flag;
         return node;
     }
 
@@ -179,7 +181,7 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    uint32_t brick_id = (structure[node_index].a & brick_id_mask);
+    uint32_t brick_id = (structure[node_index].a & 0xFFFFFF);//brick_id_mask);
     if (brick_id > 0){
         texture_manager->clear(brick_id);
 

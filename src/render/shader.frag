@@ -5,6 +5,7 @@
 // constants
 //
 const uint is_leaf_flag = 1 << 31;
+const uint is_empty_flag = 1 << 30;
 const uint structure_size = 25000;
 const uint requests_size = 64;
 const uint brick_id_mask = 0xFFFFFF;
@@ -121,7 +122,7 @@ node_t octree_lookup(vec3 x){
     node_t node = base_node();
 
     while ((octree.structure[node.i].a & is_leaf_flag) == 0){
-        node.i = octree.structure[node.i].a;
+        node.i = octree.structure[node.i].c;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
@@ -132,24 +133,15 @@ node_t octree_lookup(vec3 x){
     return node;
 }
 
-vec3 normal(vec2 uv, uint i){
+vec3 normal(uint i){
     uint data = octree.structure[i].b;
-    vec3 x = vec3(
+    return vec3(
         data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF
-    ) / 255.0 - 0.5;
-    x *= 2;
-    return x;
-}
-
-vec2 uv(uint i){
-    uint local_u = i % 256;
-    uint local_v = i / 256;
-    return (vec2(local_u, local_v) + 0.5) / push_const.grid_size;
+    ) / 127.5 - 1;
 }
 
 intersection_t plane_intersection(ray_t r, node_t node, uint i){
-    vec2 uv = uv(octree.structure[node.i].a & brick_id_mask);
-    vec3 n = normal(uv, i);
+    vec3 n = normal(i);
 
     float phi = float(octree.structure[i].b >> 24) / 255.0 - 0.5;
 
@@ -184,12 +176,12 @@ intersection_t raycast(ray_t r){
             return null_intersection;
         }
     
-        if ((octree.structure[node.i].a & brick_id_mask) > 0){
+        if ((octree.structure[node.i].a & is_empty_flag) == 0){
             if (should_request(node.i, vec4(node.min, node.size))){
                 request_buffer_push(node.min + node.size / 2);
             }
 
-            // vec3 n = normal(uv(octree.structure[node.i] & brick_id_mask));
+            // vec3 n = normal(node.i);
             // return intersection_t(true, r.x, n, node);
 
             intersection_t i = plane_intersection(r, node, node.i);
@@ -224,14 +216,14 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(vec2 uv, uint i){
+vec4 colour(uint i){
     uint data = octree.structure[i].c;
     return vec4(
         data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF, data >> 24
     ) / 255.0;
 }
 
-vec4 phong_light(vec3 light_p, vec3 x, vec2 uv, uint i){
+vec4 phong_light(vec3 light_p, vec3 x, uint i){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec4 colour = vec4(50);
@@ -251,7 +243,7 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv, uint i){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(uv, i);
+    vec3 n = normal(i);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -269,9 +261,9 @@ vec4 phong_light(vec3 light_p, vec3 x, vec2 uv, uint i){
     return a + (d + s) * attenuation * shadow;
 }
 
-vec4 light(vec3 p, vec3 x, vec2 uv, uint i){
+vec4 light(vec3 p, vec3 x, uint i){
     vec3 l = normalize(p - x);
-    return phong_light(p, x, uv, i);
+    return phong_light(p, x, i);
 }
 
 vec4 sky(){
@@ -299,8 +291,9 @@ void main(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        vec2 uv = uv(octree.structure[i.node.i].a & brick_id_mask);
-        out_colour = colour(uv, i.i) * light(vec3(-3, 3, -3), i.x, uv, i.i);
+        out_colour = colour(i.i) * light(vec3(-3, 3, -3), i.x, i.i);
     }
 }
+
+
 
