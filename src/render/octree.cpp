@@ -7,6 +7,7 @@
 #include "sdf/mutate.h"
 #include "maths/mat.h"
 #include "core/constant.h"
+#include "render/painter.h"
 
 octree_t::octree_t(
     const allocator_t & allocator, 
@@ -19,7 +20,6 @@ octree_t::octree_t(
     universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
-    texture_manager = std::make_shared<texture_manager_t>(allocator, desc_sets);
     
     // create buffers
     uint32_t octree_size = sizeof(node_t) * max_structure_size;
@@ -168,9 +168,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
 
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
-    uint32_t id = texture_manager->request(colour, normal);
     
-    node.a = is_leaf_flag | id;
     node.b = *reinterpret_cast<uint32_t *>(&normal);
     node.c = *reinterpret_cast<uint32_t *>(&colour);
     return node;
@@ -181,21 +179,16 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    uint32_t brick_id = (structure[node_index].a & 0xFFFFFF);//brick_id_mask);
-    if (brick_id > 0){
-        texture_manager->clear(brick_id);
+    structure[node_index].a = structure.size();
+    structure[node_index].c = structure.size();
 
-        structure[node_index].a = structure.size();
-        structure[node_index].c = structure.size();
-
-        for (uint8_t octant = 0; octant < 8; octant++){
-            vec4_t new_aabb = aabb;
-            new_aabb[3] /= 2;
-            if (octant & 1) new_aabb[0] += new_aabb[3];
-            if (octant & 2) new_aabb[1] += new_aabb[3];
-            if (octant & 4) new_aabb[2] += new_aabb[3];
-            structure.push_back(create_node(new_aabb, node_index));
-        }
+    for (uint8_t octant = 0; octant < 8; octant++){
+        vec4_t new_aabb = aabb;
+        new_aabb[3] /= 2;
+        if (octant & 1) new_aabb[0] += new_aabb[3];
+        if (octant & 2) new_aabb[1] += new_aabb[3];
+        if (octant & 4) new_aabb[2] += new_aabb[3];
+        structure.push_back(create_node(new_aabb, node_index));
     }
 }
 

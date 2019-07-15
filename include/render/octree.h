@@ -7,7 +7,6 @@
 
 #include "core/buffer.h"
 #include "render/camera.h"
-#include "render/texture_manager.h"
 #include "sdf/sdf.h"
 
 /*
@@ -48,7 +47,6 @@ private:
 
     // fields
     std::vector<node_t> structure; // TODO: should this be an array instead?
-    std::shared_ptr<texture_manager_t> texture_manager;
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
