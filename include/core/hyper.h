@@ -11,10 +11,7 @@ namespace hyper {
     constexpr double   iota    = 60;                // Hertz
 
     // largest distance
-    constexpr double   rho     = 256;                 // metres
-
-    // number of bricks
-    constexpr uint32_t tau     = 256;               
+    constexpr double   rho     = 256;                 // metres     
 }
 
 #endif

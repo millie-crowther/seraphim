@@ -16,7 +16,7 @@ public:
     struct push_constant_t {
         u32vec2_t window_size;
         float render_distance;
-        uint32_t grid_size;
+        uint32_t current_frame;
 
         f32vec3_t camera_position;
         float dummy2;            // alignment

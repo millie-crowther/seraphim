@@ -6,6 +6,8 @@
 //
 const uint is_leaf_flag = 1 << 31;
 const uint is_empty_flag = 1 << 30;
+const uint node_seen_flag = 1 << 29;
+
 const uint structure_size = 25000;
 const uint requests_size = 64;
 const uint brick_id_mask = 0xFFFFFF;
@@ -68,7 +70,7 @@ layout(location = 0) out vec4 out_colour;
 layout( push_constant ) uniform window_block {
     uvec2 window_size;
     float render_distance;
-    uint dummy;
+    uint current_frame;
 
     vec3 camera_position;
     float dummy2;        
@@ -90,11 +92,6 @@ layout(binding = 1) readonly buffer octree_buffer {
 layout(binding = 2) buffer request_buffer {
     request_t requests[requests_size];
 } requests;
-
-//
-// GLSL inputs
-//
-in vec4 gl_FragCoord;
 
 void request_buffer_push(vec3 x){
     uint i = uint(dot(x, x)) & (requests_size - 1);

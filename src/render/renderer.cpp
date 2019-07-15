@@ -14,10 +14,11 @@ renderer_t::renderer_t(
     uint32_t present_family, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera
 ){
+    push_constants.current_frame = 0;
+
     set_main_camera(test_camera);
     
     push_constants.render_distance = static_cast<float>(hyper::rho);
-    push_constants.grid_size = hyper::tau;
 
     current_frame = 0;
     this->surface = surface;
@@ -461,8 +462,6 @@ renderer_t::create_graphics_pipeline(){
     vkDestroyShaderModule(allocator.device, vert_shader_module, nullptr);
     vkDestroyShaderModule(allocator.device, frag_shader_module, nullptr);
 
-    std::cout << "created graphics pipeline " << std::endl;
-
     return true;
 }
 
@@ -574,12 +573,9 @@ renderer_t::create_command_buffers(){
 bool 
 renderer_t::create_descriptor_pool(){
     uint32_t n = swapchain->get_size();
-    std::vector<VkDescriptorPoolSize> pool_sizes(2);
+    std::vector<VkDescriptorPoolSize> pool_sizes(1);
     pool_sizes[0].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
     pool_sizes[0].descriptorCount = n;
-
-    pool_sizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = n;
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -647,16 +643,7 @@ renderer_t::create_descriptor_set_layout(){
     auto request_layout = octree_layout;
     request_layout.binding = 2;
 
-    auto colour_sampler_layout = octree_layout;
-    colour_sampler_layout.binding = 3;
-    colour_sampler_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-
-    auto geometry_sampler_layout = colour_sampler_layout;
-    geometry_sampler_layout.binding = 4;
-
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout, request_layout, colour_sampler_layout, geometry_sampler_layout 
-    };
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { octree_layout, request_layout };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -733,10 +720,11 @@ renderer_t::update_push_constants() const {
 
 void
 renderer_t::render(){
+    push_constants.current_frame++;
+
     octree->handle_requests();
 
     if (auto camera = main_camera.lock()){
-
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
         push_constants.camera_up = camera->get_up().cast<float>();
