@@ -62,6 +62,9 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
+
+
+
     structure = { create_node(universal_aabb, 0) };
     octree_buffer->copy(structure.data(), sizeof(node_t), 0);
 }

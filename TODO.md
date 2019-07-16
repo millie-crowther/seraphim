@@ -22,18 +22,18 @@
         * probably to do with when resultant shared_ptr is destroyed 
         * destroyed too late? idk
 * maybe put the pipelines in their own class
+* camera pitch rotation with mouse
+* vector class interior removal of branching using templates
 
 ## rendering
 
 ### general
 * make rays that originate outside octree intersect properly
-* camera pitch rotation with mouse
 * compute shader
     * beam optimisation
     * octree pruning
         * prune nodes that haven't been seen in a while
         * prune nodes with too high level of detail 
-            * maybe this one is best in fragment shader actually
     * possibly also animation
         * parallelised construction of second octree based on transforms
 * figure out the fucking synchronisation on this thing
@@ -41,9 +41,7 @@
     * sync with buffer writes (screen blanking sometimes)
 * implement octree sibling trick
 * remove parameter of normal map and use flag instead 
-* switch to a 64-bit node type
-    * means interior nodes can have bricks as well
-    * makes culling a lot easier
+* switch surface representation to quadratic patch
 
 ### materials
 * add textures for other material properties

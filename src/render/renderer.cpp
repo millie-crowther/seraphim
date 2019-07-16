@@ -762,6 +762,7 @@ renderer_t::render(){
         //recreate_swapchain();
         return;
     } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR){
+        std::cout << res << ", " << VK_ERROR_DEVICE_LOST << std::endl; 
         throw std::runtime_error("Error: Failed to submit to draw command buffer.");
     }
 
