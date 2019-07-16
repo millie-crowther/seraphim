@@ -144,7 +144,7 @@ renderer_t::create_compute_pipeline(){
         return false;
     }
 
-    vkDestroyShaderModule(allocator.device, module, nullptr);
+    vkDestroyShaderModule(allocator.device, module, nullptr);    
 
     return true;
 }
@@ -209,7 +209,9 @@ renderer_t::init(){
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
 
-    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets);
+    auto all_desc_sets = desc_sets;
+    all_desc_sets.push_back(compute_descriptor_set);
+    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, all_desc_sets);
 
     if (!create_command_buffers()){
         return false;

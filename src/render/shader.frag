@@ -24,9 +24,7 @@ const float shadow_softness = 64;
 //
 struct request_t {
     vec4 aabb;
-
-    vec3 dummy;
-    uint i;
+    vec4 _;
 };
 
 struct octree_node_t {

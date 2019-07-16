@@ -55,6 +55,10 @@ layout( push_constant ) uniform window_block {
     float dummy4;
 } push_const;
 
+bool is_empty_slot(uint i, uint header){
+    return ((i - 1) & 7) == 0 && (header & unused_flag) != 0;
+}
+
 void main(){
     uint i = gl_GlobalInvocationID.x;
 
@@ -64,12 +68,11 @@ void main(){
 
     // store unused nodes in array for later allocation
     uint header = octree.structure[i].header;
-    uint index = (i + push_const.current_frame) % max_requests;
-    // atomicMax(unused_nodes[index], mix(0, i, (header & unused_flag) != 0));
+    uint i2 = mix(0, i, is_empty_slot(i, header));
+    atomicCompSwap(requests.requests[i % max_requests].i, 0, i2);
+    requests.requests[i % max_requests].aabb = vec4(0);
 
     // cull check
-
-    // split check
 
     // TODO: beam opt here
 }
