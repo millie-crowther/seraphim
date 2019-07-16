@@ -90,9 +90,10 @@ renderer_t::create_compute_pipeline(){
     octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout
-    };
+    auto request_layout = octree_layout;
+    request_layout.binding = 2;
+
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { octree_layout, request_layout };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

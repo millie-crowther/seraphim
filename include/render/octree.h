@@ -27,8 +27,12 @@ leaf node     = 1NXXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
 class octree_t {
 private:
     // types
+
     struct request_t {
         f32vec3_t x;
+        float size;
+        
+        u32vec3_t dummy;
         uint32_t i;
     };
 
@@ -40,9 +44,9 @@ private:
     };
 
     // constants
-    static constexpr uint32_t is_leaf_flag       = 1 << 31;
+    static constexpr uint32_t invalid_flag       = 1 << 31;
     static constexpr uint32_t is_empty_flag      = 1 << 30;
-    static constexpr uint32_t invalid_flag       = 1 << 29;
+    static constexpr uint32_t is_leaf_flag       = 1 << 29;
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
 

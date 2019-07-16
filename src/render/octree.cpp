@@ -63,10 +63,13 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
 
+    std::array<node_t, max_structure_size> empty_octree;
+    empty_octree.fill({ invalid_flag, 0, 0, 0 });
+    empty_octree[0] = create_node(universal_aabb, 0);
 
+    structure = { empty_octree[0] };
 
-    structure = { create_node(universal_aabb, 0) };
-    octree_buffer->copy(structure.data(), sizeof(node_t), 0);
+    octree_buffer->copy(empty_octree.data(), sizeof(node_t) * max_structure_size, 0);
 }
 
 std::tuple<bool, bool> 
@@ -204,9 +207,9 @@ octree_t::handle_requests(){
     bool changed = false;
 
     for (uint32_t i = 0; i < max_requests_size; i++){
-        if (data[i].i != 0){
+        if (data[i].size > 0){
             changed = true;
-            handle_request(data[i].x);
+            handle_request(data[i].x + data[i].size / 2);
         }
     }    
     
@@ -224,6 +227,6 @@ octree_t::handle_requests(){
         // std::cout << "Leaf node propertion: " << static_cast<double>(leaf_nodes) / static_cast<double>(structure.size()) * 100.0 << "%" << std::endl;
     }
 
-    static request_t clear_requests[max_requests_size] = { { f32vec3_t(), 0 }};
+    static request_t clear_requests[max_requests_size] = {{ f32vec3_t(), 0, u32vec3_t(), 0 }};
     request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0);
 }

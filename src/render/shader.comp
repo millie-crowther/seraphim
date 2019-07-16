@@ -5,14 +5,22 @@
 //
 // constants
 //
-const uint is_leaf_flag = 1 << 31;
+const uint is_leaf_flag = 1 << 29;
 const uint is_empty_flag = 1 << 30;
-const uint invalid_flag = 1 << 29;
+const uint unused_flag = 1 << 31;
 
 const uint structure_size = 25000;
+const uint max_requests = 64;
 
-struct octree_node_t {
-    uint a;
+struct request_t {
+    vec4 aabb;
+    
+    uvec3 dummy;
+    uint i;
+};
+
+struct node_t {
+    uint header;
     uint b;
     uint c;
     uint d;
@@ -21,8 +29,13 @@ struct octree_node_t {
 layout (local_size_x = 16) in;
 
 layout(binding = 1) buffer octree_buffer {
-    octree_node_t structure[structure_size];
+    node_t structure[structure_size];
 } octree;
+
+layout(binding = 2) buffer request_buffer {
+    request_t requests[max_requests];
+} requests;
+
 
 //
 // push constants
@@ -42,52 +55,21 @@ layout( push_constant ) uniform window_block {
     float dummy4;
 } push_const;
 
-vec3 get_node_centre(uint i){
-    // TODO
-    return vec3(0);
-}
+void main(){
+    uint i = gl_GlobalInvocationID.x;
 
-bool should_cull(uint i){
-    // cull check occurs on 1/31 of the cells every frame.
-    const uint cull_check_mask = 0x1F;
-     
-    if (
-        (octree.structure[i].a & is_leaf_flag) != 0 ||
-        ((i + push_const.current_frame) & cull_check_mask) != 0
-    ){
-        return false;
+    if (i >= structure_size){
+        return;
     }
 
-    // TODO: check if all children are leaf nodes
+    // store unused nodes in array for later allocation
+    uint header = octree.structure[i].header;
+    uint index = (i + push_const.current_frame) % max_requests;
+    // atomicMax(unused_nodes[index], mix(0, i, (header & unused_flag) != 0));
 
-    return true;
-}
+    // cull check
 
-void cull(uint i){
-    // TODO
-}
-
-bool should_split(uint i){
-    uint a = octree.structure[i].a;
-    return ((a & is_leaf_flag) != 0) && ((a & is_empty_flag) == 0) && ((a & node_seen_flag) != 0);
-}
-
-void split(uint i){
-    // TODO
-}
-
-void main(){
-    // uint i = gl_GlobalInvocationID.x;
-
-    // if (i < structure_size){
-    //     // TODO: create an array of free nodes 
-
-    //     if (should_cull(i)){
-    //         cull(i);
-    //     } else if (should_split(i)){
-    //         split(i);
-    //     }
-    // }
+    // split check
 
     // TODO: beam opt here
 }

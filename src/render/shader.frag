@@ -4,9 +4,8 @@
 //
 // constants
 //
-const uint is_leaf_flag = 1 << 31;
+const uint is_leaf_flag = 1 << 29;
 const uint is_empty_flag = 1 << 30;
-const uint node_seen_flag = 1 << 29;
 
 const uint structure_size = 25000;
 const uint requests_size = 64;
@@ -24,7 +23,9 @@ const float shadow_softness = 64;
 // types 
 //
 struct request_t {
-    vec3 x;
+    vec4 aabb;
+
+    vec3 dummy;
     uint i;
 };
 
@@ -93,9 +94,9 @@ layout(binding = 2) buffer request_buffer {
     request_t requests[requests_size];
 } requests;
 
-void request_buffer_push(vec3 x){
-    uint i = uint(dot(x, x)) & (requests_size - 1);
-    requests.requests[i] = request_t(x, 1);
+void request_buffer_push(vec4 aabb){
+    uint i = uint(dot(aabb, aabb)) % requests_size;
+    requests.requests[i].aabb = aabb;// = request_t(x, 0.0, vec3(0), 1);
 }
 
 node_t base_node(){
@@ -175,7 +176,7 @@ intersection_t raycast(ray_t r){
     
         if ((octree.structure[node.i].a & is_empty_flag) == 0){
             if (should_request(node.i, vec4(node.min, node.size))){
-                request_buffer_push(node.min + node.size / 2);
+                request_buffer_push(vec4(node.min, node.size / 2));
             }
 
             // vec3 n = normal(node.i);
