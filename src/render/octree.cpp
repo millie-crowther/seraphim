@@ -20,11 +20,10 @@ octree_t::octree_t(
     universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
-    
-    // create buffers
+    // extra node at end is to allow shader to avoid branching
     uint32_t octree_size = sizeof(node_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
-        allocator, octree_size,
+        allocator, octree_size + sizeof(node_t),
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 

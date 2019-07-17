@@ -15,8 +15,10 @@ const uint max_requests = 64;
 struct request_t {
     vec4 aabb;
     
-    uvec3 dummy;
-    uint i;
+    uint dummy1;
+    uint dummy2;
+    uint parent;
+    uint child;
 };
 
 struct node_t {
@@ -28,14 +30,19 @@ struct node_t {
 
 layout (local_size_x = 16) in;
 
+// extra node at end is to allow shader to avoid branching
+// TODO: there will be a very large amount of threads accessing the 
+//       single element at the end. investigate if that has a negative 
+//       performance impact. number of threads accessing last index is 
+//       almost as large as `structure_size`, basically the same.
+//       also, this is just a bit hacky. see if theres a better way to do it.
 layout(binding = 1) buffer octree_buffer {
-    node_t structure[structure_size];
+    node_t structure[structure_size + 1];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
     request_t requests[max_requests];
 } requests;
-
 
 //
 // push constants
@@ -66,13 +73,17 @@ void main(){
         return;
     }
 
+    uint request = i % max_requests;
+    // link up parents of newly requested nodes to their children
+    // uint parent = atomicExchange(requests.requests[request].parent, structure_size);
+    // octree.structure[parent].c = requests.requests[request].child;
+
     // store unused nodes in array for later allocation
     uint header = octree.structure[i].header;
     uint i2 = mix(0, i, is_empty_slot(i, header));
-    atomicCompSwap(requests.requests[i % max_requests].i, 0, i2);
-    requests.requests[i % max_requests].aabb = vec4(0);
+    atomicCompSwap(requests.requests[request].child, 0, i2);
 
-    // cull check
+    // TODO: cull check
 
     // TODO: beam opt here
 }

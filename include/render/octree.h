@@ -32,7 +32,7 @@ private:
         f32vec3_t x;
         float size;
         
-        u32vec3_t dummy;
+        u32vec3_t _;
         uint32_t i;
     };
 
