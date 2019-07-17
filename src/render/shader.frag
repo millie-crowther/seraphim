@@ -24,7 +24,10 @@ const float shadow_softness = 64;
 //
 struct request_t {
     vec4 aabb;
-    vec4 _;
+    
+    uvec2 _1;
+    uint parent;
+    uint _2;
 };
 
 struct octree_node_t {
@@ -92,9 +95,12 @@ layout(binding = 2) buffer request_buffer {
     request_t requests[requests_size];
 } requests;
 
-void request_buffer_push(vec4 aabb){
+void request_buffer_push(uint parent, vec4 aabb){
     uint i = uint(dot(aabb, aabb)) % requests_size;
-    requests.requests[i].aabb = aabb;// = request_t(x, 0.0, vec3(0), 1);
+
+    // TODO: there's a race condition here
+    requests.requests[i].aabb = aabb;
+    requests.requests[i].parent = parent;
 }
 
 node_t base_node(){
@@ -174,7 +180,7 @@ intersection_t raycast(ray_t r){
     
         if ((octree.structure[node.i].a & is_empty_flag) == 0){
             if (should_request(node.i, vec4(node.min, node.size))){
-                request_buffer_push(vec4(node.min, node.size / 2));
+                request_buffer_push(node.i, vec4(node.min, node.size / 2));
             }
 
             // vec3 n = normal(node.i);
