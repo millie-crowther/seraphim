@@ -15,8 +15,7 @@ const uint max_requests = 64;
 struct request_t {
     vec4 aabb;
     
-    uint dummy1;
-    uint dummy2;
+    uvec2 _;
     uint parent;
     uint child;
 };
@@ -66,6 +65,10 @@ bool is_empty_slot(uint i, uint header){
     return ((i - 1) & 7) == 0 && (header & unused_flag) != 0;
 }
 
+vec3 reverse_lookup(uint i){
+    return vec3(0);
+}
+
 void main(){
     uint i = gl_GlobalInvocationID.x;
 
@@ -74,9 +77,12 @@ void main(){
     }
 
     uint request = i % max_requests;
+
     // link up parents of newly requested nodes to their children
     // uint parent = atomicExchange(requests.requests[request].parent, structure_size);
     // octree.structure[parent].c = requests.requests[request].child;
+    // uint mask = mix(0, ~0, parent == structure_size);
+    // atomicAnd(requests.requests[request].child, mask);
 
     // store unused nodes in array for later allocation
     uint header = octree.structure[i].header;

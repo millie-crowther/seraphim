@@ -101,6 +101,9 @@ void request_buffer_push(uint parent, vec4 aabb){
     // TODO: there's a race condition here
     requests.requests[i].aabb = aabb;
     requests.requests[i].parent = parent;
+
+    // uint old_parent = atomicCompSwap(requests.requests[i].parent, 0, parent);
+    // requests.requests[i].aabb = mix(requests.requests[i].aabb, aabb, float(old_parent == 0));
 }
 
 node_t base_node(){
@@ -113,11 +116,11 @@ bool should_request(uint i, vec4 aabb){
 }
 
 node_t octree_lookup(vec3 x){
-    if (
-        abs(x).x > push_const.render_distance ||
-        abs(x).y > push_const.render_distance ||
-        abs(x).z > push_const.render_distance 
-    ){
+    vec3 a = abs(x);
+    bool invalid = max(a.x, max(a.y, a.z)) > push_const.render_distance;
+
+    // TODO: remove branch
+    if (invalid){ 
         return invalid_node;
     }
 

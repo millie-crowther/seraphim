@@ -24,6 +24,13 @@
 * maybe put the pipelines in their own class
 * camera pitch rotation with mouse
 * vector class interior removal of branching using templates
+* investigate putting the whole thing in a single compute shader
+    * possible performance impact (graphics pipeline exists for a reason i guess)
+    * makes design much simpler
+    * complexity of having both compute and frag shader eliminated
+    * cleverer things possible with more control
+    * e.g. one 64x64 work group for a patch of screen, 2D array of work groups to cover scene
+        * iterative beam optimisation
 
 ## rendering
 
