@@ -83,12 +83,12 @@ void main(){
     // uint request = i % max_requests;
 
     // link up parents of newly requested nodes to their children
-    uint parent = atomicExchange(requests.requests[request].parent, structure_size);
-    if (parent < structure_size){
-        octree.structure[parent].c = requests.requests[request].child;
-        requests.requests[request].child = 0;
-        octree.structure[parent].header = node_type_stem; // TODO: may need to be node_type_branch
-    }
+    // uint parent = atomicExchange(requests.requests[request].parent, structure_size);
+    // if (parent < structure_size){
+    //     octree.structure[parent].c = requests.requests[request].child;
+    //     requests.requests[request].child = 0;
+    //     octree.structure[parent].header = node_type_stem; // TODO: may need to be node_type_branch
+    // }
 
     // branchless version
     // octree.structure[parent].c = requests.requests[request].child;

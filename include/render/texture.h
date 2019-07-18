@@ -36,7 +36,7 @@ public:
     );
     ~texture_t();
 
-    void transition_image_layout(VkImageLayout new_layout);
+    void transition_image_layout(VkImageLayout new_layout, VkCommandPool pool, VkQueue queue);
 
     // getters
     VkImage get_image();

@@ -40,25 +40,25 @@ buffer_t::get_buffer(){
 
 void
 buffer_t::copy_buffer(
-    VkBuffer dest, uint64_t size, uint64_t offset
+    VkBuffer dest, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
 ){
     if (size == 0){
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
+    auto cmd = vk_utils::pre_commands(allocator.device, pool, queue);
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = offset;
         copy_region.size = size;
         
         vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
-    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
+    vk_utils::post_commands(allocator.device, pool, queue, cmd);
 }
 
 void
 buffer_t::copy(
-    const void * data, uint64_t size, uint64_t offset
+    const void * data, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
 ){
     if (size == 0){
         return;
@@ -76,20 +76,20 @@ buffer_t::copy(
             VMA_MEMORY_USAGE_CPU_ONLY
         );
 
-        staging_buffer.copy(data, size, 0);
-        staging_buffer.copy_buffer(buffer, size, offset); 
+        staging_buffer.copy(data, size, 0, pool, queue);
+        staging_buffer.copy_buffer(buffer, size, offset, pool, queue); 
     }
 }
 
 void
 buffer_t::copy_to_image(
-    VkImage image, u32vec2_t offset, u32vec2_t extent
+    VkImage image, u32vec2_t offset, u32vec2_t extent, VkCommandPool pool, VkQueue queue
 ){
     if (extent[0] == 0 || extent[1] == 0){
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
+    auto cmd = vk_utils::pre_commands(allocator.device, pool, queue);
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -112,7 +112,7 @@ buffer_t::copy_to_image(
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region
         );
-    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
+    vk_utils::post_commands(allocator.device, pool, queue, cmd);
 }
 
 VkDescriptorBufferInfo 

@@ -22,7 +22,7 @@ private:
 
     // helper methods
     void copy_buffer(
-	    VkBuffer dest, uint64_t size, uint64_t offset
+	    VkBuffer dest, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
     );
 
 public:
@@ -31,8 +31,8 @@ public:
     ~buffer_t();
 
     // public methods
-    void copy(const void * data, uint64_t size, uint64_t offset);
-    void copy_to_image(VkImage image, u32vec2_t offset, u32vec2_t extent);
+    void copy(const void * data, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue);
+    void copy_to_image(VkImage image, u32vec2_t offset, u32vec2_t extent, VkCommandPool pool, VkQueue queue);
     void read(void * data, uint64_t size);
 
     // getters

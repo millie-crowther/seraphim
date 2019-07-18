@@ -52,7 +52,7 @@ renderer_t::cleanup_swapchain(){
     }
 
     vkFreeCommandBuffers(
-        allocator.device, allocator.pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
+        allocator.device, command_pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
     );
 
     vkDestroyPipeline(allocator.device, graphics_pipeline, nullptr);
@@ -154,8 +154,6 @@ renderer_t::init(){
     vkGetDeviceQueue(allocator.device, graphics_family, 0, &graphics_queue);
     vkGetDeviceQueue(allocator.device, present_family, 0, &present_queue);
 
-    allocator.queue = graphics_queue;
-
     swapchain = std::make_unique<swapchain_t>(
         allocator, push_constants.window_size, surface,
         graphics_family, present_family
@@ -207,11 +205,13 @@ renderer_t::init(){
         allocator, sizeof(f32vec2_t) * 6,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
-    vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0);
+    vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0, command_pool, graphics_queue); 
 
     auto all_desc_sets = desc_sets;
     all_desc_sets.push_back(compute_descriptor_set);
-    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, all_desc_sets);
+
+    // TODO: may need to pass in compute queue here
+    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, all_desc_sets, command_pool, graphics_queue);
 
     if (!create_command_buffers()){
         return false;
@@ -671,8 +671,6 @@ renderer_t::create_command_pool(){
     if (vkCreateCommandPool(allocator.device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
     	return false;
     }
-
-    allocator.pool = command_pool;
 
     return true;
 }

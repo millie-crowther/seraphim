@@ -10,8 +10,6 @@ struct allocator_t {
     VmaAllocator vma_allocator;
     VkDevice device;
     VkPhysicalDevice physical_device;
-    VkCommandPool pool;
-    VkQueue queue; // graphics queue
 };
 
 #endif

@@ -68,11 +68,14 @@ private:
     node_t create_node(const vec4_t & aabb, uint32_t index);
     void handle_request(const f32vec3_t & x);
 
+    VkCommandPool pool;
+    VkQueue queue;
+
 public:
     octree_t(
         const allocator_t & allocator, 
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-        const std::vector<VkDescriptorSet> & desc_sets
+        const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
     );
 
     void handle_requests();

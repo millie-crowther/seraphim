@@ -182,8 +182,8 @@ texture_t::get_image(){
 }
 
 void
-texture_t::transition_image_layout(VkImageLayout new_layout){
-    auto cmd = vk_utils::pre_commands(allocator.device, allocator.pool, allocator.queue);
+texture_t::transition_image_layout(VkImageLayout new_layout, VkCommandPool pool, VkQueue queue){
+    auto cmd = vk_utils::pre_commands(allocator.device, pool, queue);
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -247,7 +247,7 @@ texture_t::transition_image_layout(VkImageLayout new_layout){
         vkCmdPipelineBarrier(
             cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    vk_utils::post_commands(allocator.device, allocator.pool, allocator.queue, cmd);
+    vk_utils::post_commands(allocator.device, pool, queue, cmd);
 
     layout = new_layout;
 }

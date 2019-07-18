@@ -12,8 +12,10 @@
 octree_t::octree_t(
     const allocator_t & allocator, 
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-    const std::vector<VkDescriptorSet> & desc_sets
+    const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
 ){
+    this->pool = pool;
+    this->queue = queue;
     this->sdfs = sdfs;
     structure.reserve(max_structure_size);
 
@@ -71,7 +73,7 @@ octree_t::octree_t(
 
     structure = { empty_octree[0] };
 
-    octree_buffer->copy(empty_octree.data(), sizeof(node_t) * max_structure_size, 0);
+    octree_buffer->copy(empty_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
 }
 
 std::tuple<bool, bool> 
@@ -216,7 +218,7 @@ octree_t::handle_requests(){
     
 
     if (changed){
-        octree_buffer->copy(structure.data(), sizeof(node_t) * max_structure_size, 0);
+        octree_buffer->copy(structure.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
         // uint32_t leaf_nodes = 0;
 
         // for (auto node : structure){
@@ -229,5 +231,5 @@ octree_t::handle_requests(){
     }
 
     static request_t clear_requests[max_requests_size] = {{ f32vec3_t(), 0, u32vec3_t(), 0 }};
-    request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0);
+    request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0, pool, queue);
 }
