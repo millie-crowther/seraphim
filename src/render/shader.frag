@@ -4,8 +4,8 @@
 //
 // constants
 //
-const uint is_leaf_flag = 1 << 29;
-const uint is_empty_flag = 1 << 30;
+const uint is_empty_flag = 1 << 6;
+const uint is_leaf_flag = 1 << 5;
 
 const uint structure_size = 25000;
 const uint requests_size = 64;

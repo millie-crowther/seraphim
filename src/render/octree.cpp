@@ -110,7 +110,7 @@ uint32_t
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     // std::cout << "i: " << i << std::endl;
     // std::cout << "c: " << structure[i].c << std::endl;
-    if ((structure[i].a & is_leaf_flag) != 0){
+    if ((structure[i].a & node_type_leaf) != 0){
         return i;
     }
 
@@ -135,14 +135,14 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     node_t node;
-    node.a = is_leaf_flag;
+    node.a = node_type_leaf;
 
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
             auto intersection = intersects_contains(aabb, sdf);
             // contains
             if (std::get<1>(intersection)){
-                node.a |= is_empty_flag;
+                node.a |= node_type_empty;
                 return node;
             }
 
@@ -154,7 +154,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     if (new_sdfs.empty()){
-        node.a |= is_empty_flag;
+        node.a |= node_type_empty;
         return node;
     }
 
@@ -184,7 +184,7 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    structure[node_index].a = structure.size();
+    structure[node_index].a = 0;
     structure[node_index].c = structure.size();
     // TODO: set parent index here
 
