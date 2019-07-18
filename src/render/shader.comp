@@ -5,9 +5,11 @@
 //
 // constants
 //
-const uint is_leaf_flag = 1 << 29;
-const uint is_empty_flag = 1 << 30;
-const uint unused_flag = 1 << 31;
+const uint node_type_unused = 1 << 7;
+const uint node_type_empty  = 1 << 6;
+const uint node_type_leaf   = 1 << 5;
+const uint node_type_branch = 1 << 4;
+const uint node_type_stem   = 1 << 3;
 
 const uint structure_size = 25000;
 const uint max_requests = 64;
@@ -70,24 +72,25 @@ vec3 reverse_lookup(uint i){
 }
 
 void main(){
-    uint i = gl_GlobalInvocationID.x;
+    // uint i = gl_GlobalInvocationID.x;
 
-    if (i >= structure_size){
-        return;
-    }
+    // if (i >= structure_size){
+    //     return;
+    // }
 
-    uint request = i % max_requests;
+    // uint request = i % max_requests;
 
     // link up parents of newly requested nodes to their children
     // uint parent = atomicExchange(requests.requests[request].parent, structure_size);
     // octree.structure[parent].c = requests.requests[request].child;
+    // octree.structure[parent].header = node_type_stem;
     // uint mask = mix(0, ~0, parent == structure_size);
     // atomicAnd(requests.requests[request].child, mask);
 
     // store unused nodes in array for later allocation
-    uint header = octree.structure[i].header;
-    uint i2 = mix(0, i, is_empty_slot(i, header));
-    atomicCompSwap(requests.requests[request].child, 0, i2);
+    // uint header = octree.structure[i].header;
+    // uint i2 = mix(0, i, is_empty_slot(i, header));
+    // atomicCompSwap(requests.requests[request].child, 0, i2);
 
     // TODO: cull check
 

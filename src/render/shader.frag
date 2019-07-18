@@ -127,8 +127,8 @@ node_t octree_lookup(vec3 x){
     node_t node = base_node();
 
     while (
-        octree.structure[node.i].a != node_type_empty &&
-        octree.structure[node.i].a != node_type_leaf
+        (octree.structure[node.i].a & 0xFF) != node_type_empty &&
+        (octree.structure[node.i].a & 0xFF) != node_type_leaf
     ){
         node.i = octree.structure[node.i].c;
         node.size /= 2;
@@ -184,7 +184,7 @@ intersection_t raycast(ray_t r){
             return null_intersection;
         }
     
-        if (octree.structure[node.i].a != node_type_empty){
+        if ((octree.structure[node.i].a & 0xFF) != node_type_empty){
             if (should_request(node.i, vec4(node.min, node.size))){
                 request_buffer_push(node.i, vec4(node.min, node.size / 2));
             }

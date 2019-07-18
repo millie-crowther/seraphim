@@ -37,16 +37,20 @@ private:
     };
 
     struct node_t {
-        uint32_t a;
+        uint8_t type;
+        uint8_t _[3];
+
         uint32_t b;
         uint32_t c;
         uint32_t d;
     };
 
     // constants
-    static constexpr uint32_t invalid_flag       = 1 << 7;
-    static constexpr uint32_t node_type_empty      = 1 << 6;
-    static constexpr uint32_t node_type_leaf       = 1 << 5;
+    static constexpr uint8_t node_type_unused = 1 << 7;
+    static constexpr uint8_t node_type_empty  = 1 << 6;
+    static constexpr uint8_t node_type_leaf   = 1 << 5;
+    static constexpr uint8_t node_type_branch = 1 << 4;
+    static constexpr uint8_t node_type_stem   = 1 << 3;
     
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;

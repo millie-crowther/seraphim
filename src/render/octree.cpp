@@ -63,7 +63,10 @@ octree_t::octree_t(
 
 
     std::array<node_t, max_structure_size> empty_octree;
-    empty_octree.fill({ invalid_flag, 0, 0, 0 });
+    node_t unused_node;
+    unused_node.type = node_type_unused;
+
+    empty_octree.fill(unused_node);
     empty_octree[0] = create_node(universal_aabb, 0);
 
     structure = { empty_octree[0] };
@@ -110,7 +113,7 @@ uint32_t
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     // std::cout << "i: " << i << std::endl;
     // std::cout << "c: " << structure[i].c << std::endl;
-    if (structure[i].a == node_type_leaf || structure[i].a == node_type_empty){
+    if (structure[i].type == node_type_leaf || structure[i].type == node_type_empty){
         return i;
     }
 
@@ -141,7 +144,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
             auto intersection = intersects_contains(aabb, sdf);
             // contains
             if (std::get<1>(intersection)){
-                node.a = node_type_empty;
+                node.type = node_type_empty;
                 return node;
             }
 
@@ -153,7 +156,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     if (new_sdfs.empty()){
-        node.a = node_type_empty;
+        node.type = node_type_empty;
         return node;
     }
 
@@ -173,7 +176,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
     
-    node.a = node_type_leaf;
+    node.type = node_type_leaf;
     node.b = *reinterpret_cast<uint32_t *>(&normal);
     node.c = *reinterpret_cast<uint32_t *>(&colour);
     return node;
@@ -184,9 +187,8 @@ octree_t::handle_request(const f32vec3_t & x){
     vec4_t aabb = universal_aabb;
     uint32_t node_index = lookup(x, 0, aabb);
     
-    structure[node_index].a = 0;
+    structure[node_index].type = node_type_branch;
     structure[node_index].c = structure.size();
-    // TODO: set parent index here
 
     for (uint8_t octant = 0; octant < 8; octant++){
         vec4_t new_aabb = aabb;
