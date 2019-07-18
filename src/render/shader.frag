@@ -103,7 +103,10 @@ void request_buffer_push(uint parent, vec4 aabb){
     requests.requests[i].parent = parent;
 
     // uint old_parent = atomicCompSwap(requests.requests[i].parent, 0, parent);
-    // requests.requests[i].aabb = mix(requests.requests[i].aabb, aabb, float(old_parent == 0));
+    // // TODO: remove branch
+    // if (old_parent == 0){
+    //     requests.requests[i].aabb = aabb; 
+    // }
 }
 
 node_t base_node(){
