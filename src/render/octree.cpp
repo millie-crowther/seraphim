@@ -110,7 +110,7 @@ uint32_t
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
     // std::cout << "i: " << i << std::endl;
     // std::cout << "c: " << structure[i].c << std::endl;
-    if ((structure[i].a & node_type_leaf) != 0){
+    if (structure[i].a == node_type_leaf || structure[i].a == node_type_empty){
         return i;
     }
 
@@ -135,14 +135,13 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     node_t node;
-    node.a = node_type_leaf;
 
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
             auto intersection = intersects_contains(aabb, sdf);
             // contains
             if (std::get<1>(intersection)){
-                node.a |= node_type_empty;
+                node.a = node_type_empty;
                 return node;
             }
 
@@ -154,7 +153,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     }
 
     if (new_sdfs.empty()){
-        node.a |= node_type_empty;
+        node.a = node_type_empty;
         return node;
     }
 
@@ -174,6 +173,7 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
     
+    node.a = node_type_leaf;
     node.b = *reinterpret_cast<uint32_t *>(&normal);
     node.c = *reinterpret_cast<uint32_t *>(&colour);
     return node;

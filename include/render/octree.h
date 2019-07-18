@@ -47,6 +47,7 @@ private:
     static constexpr uint32_t invalid_flag       = 1 << 7;
     static constexpr uint32_t node_type_empty      = 1 << 6;
     static constexpr uint32_t node_type_leaf       = 1 << 5;
+    
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
 
