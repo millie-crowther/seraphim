@@ -95,6 +95,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
 
     uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
+    uint32_t compute_family  = get_compute_queue_family(allocator.physical_device);
 
     frame_start_follower = scheduler->on_frame_start.follow(std::bind(
         &blaspheme_t::update_fps_counter, this, std::placeholders::_1
@@ -103,7 +104,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
     test_camera = std::make_shared<camera_t>(this);
 
     renderer = std::make_shared<renderer_t>(
-        allocator, surface, graphics_family, present_family, window, test_camera
+        allocator, surface, graphics_family, present_family, compute_family, window, test_camera
     );
 }
 
@@ -154,9 +155,10 @@ bool
 blaspheme_t::create_logical_device(){
     uint32_t graphics = get_graphics_queue_family(allocator.physical_device);
     uint32_t present = get_present_queue_family(allocator.physical_device);
+    uint32_t compute_family = get_present_queue_family(allocator.physical_device);
 
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = { graphics, present };
+    std::set<uint32_t> unique_queue_families = { graphics, present, compute_family };
     
     float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create_info = {};
@@ -232,6 +234,26 @@ blaspheme_t::get_required_extensions(){
     return req_ext;
 }
 
+int 
+blaspheme_t::get_compute_queue_family(VkPhysicalDevice phys_device){
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
+   
+    for (uint32_t i = 0; i < queue_family_count; i++){
+        if (
+            q_families[i].queueCount > 0 && 
+            q_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT 
+        ){
+            return i;
+        }
+    }
+
+    return -1;  
+}
+
 int
 blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     uint32_t queue_family_count = 0;
@@ -243,8 +265,7 @@ blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
     for (uint32_t i = 0; i < queue_family_count; i++){
         if (
             q_families[i].queueCount > 0 && 
-            q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT &&
-            q_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT 
+            q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT
         ){
             return i;
         }

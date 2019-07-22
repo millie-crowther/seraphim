@@ -24,8 +24,10 @@ private:
     bool is_suitable_device(VkPhysicalDevice phys_device);
     bool device_has_extension(VkPhysicalDevice phys_device, const char * extension);
     bool has_adequate_swapchain(VkPhysicalDevice phys_device);
+
     int get_graphics_queue_family(VkPhysicalDevice phys_device);
     int get_present_queue_family(VkPhysicalDevice phys_device);
+    int get_compute_queue_family(VkPhysicalDevice phys_device);
     
     bool create_logical_device();
 

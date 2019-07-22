@@ -308,3 +308,6 @@ void main(){
 
 
 
+// void main(){
+// 	out_colour = vec4(1, 0, 0, 1);
+// }

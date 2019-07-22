@@ -10,6 +10,7 @@
 #include "render/octree.h"
 #include "render/camera.h"
 #include "render/swapchain.h"
+#include "render/texture.h"
 
 class renderer_t {
 public:
@@ -40,27 +41,33 @@ private:
     VkRenderPass render_pass;
 
     VkPipeline graphics_pipeline;
-    VkDescriptorSetLayout descriptor_layout;
     VkPipelineLayout pipeline_layout;
-    std::vector<VkDescriptorSet> desc_sets;
-    VkDescriptorPool desc_pool;
+    VkCommandPool command_pool;
+    std::vector<VkCommandBuffer> command_buffers;
 
     VkPipeline compute_pipeline;
-    VkDescriptorSetLayout compute_descriptor_layout;
     VkPipelineLayout compute_pipeline_layout;
-    VkDescriptorSet compute_descriptor_set;
-    VkDescriptorPool compute_descriptor_pool;
+    std::vector<VkCommandBuffer> compute_command_buffers;
+    VkCommandPool compute_command_pool;
 
     int current_frame;
     std::vector<VkSemaphore> image_available_semas;
+    std::vector<VkSemaphore> compute_done_semas;
     std::vector<VkSemaphore> render_finished_semas;
     std::vector<VkFence> in_flight_fences;
-    VkCommandPool command_pool;
-    std::vector<VkCommandBuffer> command_buffers;
+
+    VkDescriptorSetLayout descriptor_layout;
+    std::vector<VkDescriptorSet> desc_sets;
+    VkDescriptorPool desc_pool;
+
     VkQueue graphics_queue;
     VkQueue present_queue;
+    VkQueue compute_queue;
+
     uint32_t graphics_family;
     uint32_t present_family;
+    uint32_t compute_family;
+
     std::unique_ptr<buffer_t> vertex_buffer;
     std::string fragment_shader_code;
     std::shared_ptr<sdf3_t> sphere;
@@ -69,6 +76,7 @@ private:
     std::unique_ptr<octree_t> octree;
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
+    std::unique_ptr<texture_t> render_texture;
 
     // private functions
     void update_push_constants() const;
@@ -86,11 +94,17 @@ private:
     void recreate_swapchain();
     bool init();
 
+    void create_compute_command_buffers();
+
+    uint32_t acquire_image() const;
+    void present(uint32_t image_index) const;
+    void submit_to_queue(VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage);
+
 public:
     // constructors and destructors
     renderer_t(
         const allocator_t & allocator,
-        VkSurfaceKHR surface, uint32_t graphics_family, 
+        VkSurfaceKHR surface, uint32_t graphics_family, uint32_t compute_family,
         uint32_t present_family, std::shared_ptr<window_t> window,
         std::shared_ptr<camera_t> test_camera
     );
