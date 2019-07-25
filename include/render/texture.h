@@ -47,8 +47,8 @@ public:
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     // static methods
-    static VkFormat find_supported_format(
-        VkPhysicalDevice physical_device, const std::vector<VkFormat> & candidates, 
+    void check_format_supported(
+        VkPhysicalDevice physical_device, VkFormat format, 
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
     static VkImageView create_image_view(VkDevice device, VkImage image, VkFormat format);

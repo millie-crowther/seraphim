@@ -31,6 +31,7 @@
     * cleverer things possible with more control
     * e.g. one 64x64 work group for a patch of screen, 2D array of work groups to cover scene
         * iterative beam optimisation
+* destruction of descriptor pools needs to be re added!!!!
 
 ## rendering
 

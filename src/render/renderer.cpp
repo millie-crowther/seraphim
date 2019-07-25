@@ -212,16 +212,17 @@ renderer_t::init(){
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0, command_pool, graphics_queue); 
 
     // TODO: may need to pass in compute queue here
-    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, command_pool, graphics_queue);
+    // octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, command_pool, graphics_queue);
 
+    u32vec2_t image_size(150);
     render_texture = std::make_unique<texture_t>(
-        10, allocator, push_constants.window_size, VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+        10, allocator, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
-    for (auto descruiptor_set : desc_sets){
+    for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(
-            render_texture->get_descriptor_write(descruiptor_set)
+            render_texture->get_descriptor_write(descriptor_set)
         );
     }
     vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -523,10 +524,10 @@ renderer_t::create_compute_command_buffers(){
         compute_command_buffers[i] = create_command_buffer(allocator.device, compute_command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
         [&](VkCommandBuffer command_buffer){
             vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
-            // vkCmdBindDescriptorSets(
-            //     command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
-            //     0, 1, &desc_sets[i], 0, nullptr
-            // );
+            vkCmdBindDescriptorSets(
+                command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
+                0, 1, &desc_sets[i], 0, nullptr
+            );
             vkCmdDispatch(command_buffer, 100, 100, 1);
         });
     }
@@ -577,7 +578,7 @@ bool
 renderer_t::create_descriptor_pool(){
     std::vector<VkDescriptorPoolSize> pool_sizes = {
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size() },
-        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->get_size() },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain->get_size() },
     };
 
     VkDescriptorPoolCreateInfo pool_info = {};
@@ -608,23 +609,26 @@ renderer_t::create_descriptor_pool(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
-    VkDescriptorSetLayoutBinding octree_layout = {};
-    octree_layout.binding = 1;
-    octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    octree_layout.descriptorCount = 1;
-    octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
-    octree_layout.pImmutableSamplers = nullptr;
+    // VkDescriptorSetLayoutBinding octree_layout = {};
+    // octree_layout.binding = 1;
+    // octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    // octree_layout.descriptorCount = 1;
+    // octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    // octree_layout.pImmutableSamplers = nullptr;
 
-    auto request_layout = octree_layout;
-    request_layout.binding = 2;
+    // auto request_layout = octree_layout;
+    // request_layout.binding = 2;
 
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
-    image_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     image_layout.descriptorCount = 1;
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { octree_layout, request_layout, image_layout };
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
+        // octree_layout, request_layout, 
+        image_layout 
+    };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -755,17 +759,17 @@ renderer_t::submit_to_queue(
 
 void
 renderer_t::render(){
-    push_constants.current_frame++;
+    // push_constants.current_frame++;
 
-    octree->handle_requests();
+    // octree->handle_requests();
 
-    if (auto camera = main_camera.lock()){
-        push_constants.camera_position = camera->get_position().cast<float>();
-        push_constants.camera_right = camera->get_right().cast<float>();
-        push_constants.camera_up = camera->get_up().cast<float>();
-    }
+    // if (auto camera = main_camera.lock()){
+    //     push_constants.camera_position = camera->get_position().cast<float>();
+    //     push_constants.camera_right = camera->get_right().cast<float>();
+    //     push_constants.camera_up = camera->get_up().cast<float>();
+    // }
 
-    update_push_constants();
+    // update_push_constants();
 
     vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]); 

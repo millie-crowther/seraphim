@@ -34,6 +34,14 @@ texture_t::texture_t(
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
+    // VK_FORMAT_R8G8B8A8_UNORM
+
+    check_format_supported(
+        allocator.physical_device,
+        format,
+        image_create_info.tiling, 
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT 
+    );
 
     // VmaAllocationCreateInfo alloc_create_info = {};
     // alloc_create_info.usage = vma_usage; 
@@ -108,7 +116,7 @@ texture_t::texture_t(
     } 
 
     image_info = {};
-    image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_info.imageView = image_view;
     image_info.sampler = sampler;
 }
@@ -257,32 +265,28 @@ texture_t::get_image_view(){
     return image_view;
 }
 
-VkFormat
-texture_t::find_supported_format(
-    VkPhysicalDevice physical_device, const std::vector<VkFormat>& candidates, 
+void
+texture_t::check_format_supported(
+    VkPhysicalDevice physical_device, VkFormat candidate, 
     VkImageTiling tiling, VkFormatFeatureFlags features
 ){
     VkFormatProperties properties;
 
-    for (auto format : candidates){
-        vkGetPhysicalDeviceFormatProperties(physical_device, format, &properties);
+    vkGetPhysicalDeviceFormatProperties(physical_device, candidate, &properties);
 
-        if (
-            tiling == VK_IMAGE_TILING_LINEAR &&
-            (properties.linearTilingFeatures & features) == features
-        ){
-            return format;
-        }
-
-        if (
-            tiling == VK_IMAGE_TILING_OPTIMAL &&
-            (properties.optimalTilingFeatures & features) == features
-        ){
-            return format;
-        }
+    if (
+        tiling == VK_IMAGE_TILING_LINEAR &&
+        (properties.linearTilingFeatures & features) != features
+    ){
+        throw std::runtime_error("Error: Unsupported image format.");
     }
 
-    throw std::runtime_error("Error: Failed to find supported image format.");
+    if (
+        tiling == VK_IMAGE_TILING_OPTIMAL &&
+        (properties.optimalTilingFeatures & features) != features
+    ){
+        throw std::runtime_error("Error: Unsupported image format.");
+    }  
 }
 
 VkWriteDescriptorSet 
@@ -291,7 +295,7 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_info;
     descriptor_write.dstSet = desc_set;

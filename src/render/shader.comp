@@ -2,6 +2,8 @@
 
 layout (local_size_x = 1, local_size_y = 1) in;
 
-void main(){
+layout (binding = 10) uniform writeonly image2D render_texture;
 
+void main(){
+    imageStore(render_texture, ivec2(gl_WorkGroupID.xy), vec4(0, 1, 0, 1));
 }
