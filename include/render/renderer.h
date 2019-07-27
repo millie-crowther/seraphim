@@ -52,6 +52,7 @@ private:
 
     int current_frame;
     std::vector<VkSemaphore> image_available_semas;
+    std::vector<VkSemaphore> constants_pushed_semas;
     std::vector<VkSemaphore> compute_done_semas;
     std::vector<VkSemaphore> render_finished_semas;
     std::vector<VkFence> in_flight_fences;
@@ -79,7 +80,6 @@ private:
     std::unique_ptr<texture_t> render_texture;
 
     // private functions
-    void update_push_constants() const;
     VkShaderModule create_shader_module(std::string code, bool * success);
     bool create_render_pass();
     bool create_graphics_pipeline();    
@@ -99,6 +99,8 @@ private:
     uint32_t acquire_image() const;
     void present(uint32_t image_index) const;
     void submit_to_queue(VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage);
+
+    void update_push_const(VkCommandPool pool, VkQueue queue, VkDevice device, VkPipelineLayout layout);
 
 public:
     // constructors and destructors

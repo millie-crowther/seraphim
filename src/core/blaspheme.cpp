@@ -75,7 +75,7 @@ blaspheme_t::blaspheme_t(bool is_debug){
 
 
     uint32_t push_const_size = properties.limits.maxPushConstantsSize;
-    std::cout << "\tMaximum push constants size: " << push_const_size << std::endl;
+    std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;
     if (sizeof(renderer_t::push_constant_t) > push_const_size){
         // TODO: put this check when selecting physical device
         throw std::runtime_error("Error: Push constants too large.");
@@ -97,9 +97,9 @@ blaspheme_t::blaspheme_t(bool is_debug){
     uint32_t present_family  = get_present_queue_family(allocator.physical_device);
     uint32_t compute_family  = get_compute_queue_family(allocator.physical_device);
 
-    frame_start_follower = scheduler->on_frame_start.follow(std::bind(
-        &blaspheme_t::update_fps_counter, this, std::placeholders::_1
-    ));
+    // frame_start_follower = scheduler->on_frame_start.follow(std::bind(
+    //     &blaspheme_t::update_fps_counter, this, std::placeholders::_1
+    // ));
 
     test_camera = std::make_shared<camera_t>(this);
 

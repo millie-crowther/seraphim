@@ -29,10 +29,10 @@ renderer_t::renderer_t(
     this->allocator = allocator;
 
     push_constants.window_size = window->get_size();
-    window->on_resize.follow([&](u32vec2_t size){
-        push_constants.window_size = size;
-        recreate_swapchain();
-    });
+    // window->on_resize.follow([&](u32vec2_t size){
+    //     push_constants.window_size = size;
+    //     recreate_swapchain();
+    // });
     
     fragment_shader_code = resources::load_file("../src/render/shader.frag");
 
@@ -66,7 +66,6 @@ renderer_t::cleanup_swapchain(){
 
 renderer_t::~renderer_t(){
     vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
-    // vkDestroyDescriptorSetLayout(allocator.device, compute_descriptor_layout, nullptr);
 
     cleanup_swapchain();
 
@@ -86,29 +85,8 @@ renderer_t::~renderer_t(){
   
 bool 
 renderer_t::create_compute_pipeline(){
-    // VkDescriptorSetLayoutBinding octree_layout = {};
-    // octree_layout.binding = 1;
-    // octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    // octree_layout.descriptorCount = 1;
-    // octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
-    // octree_layout.pImmutableSamplers = nullptr;
-
-    // auto request_layout = octree_layout;
-    // request_layout.binding = 2;
-
-    // std::vector<VkDescriptorSetLayoutBinding> layouts = {};// octree_layout, request_layout };
-
-    // VkDescriptorSetLayoutCreateInfo layout_info = {};
-    // layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    // layout_info.bindingCount = layouts.size();
-    // layout_info.pBindings    = layouts.data();
-
-    // if (vkCreateDescriptorSetLayout(allocator.device, &layout_info, nullptr, &compute_descriptor_layout) != VK_SUCCESS){
-    //     return false;
-    // }
-
     VkPushConstantRange push_const_range = {};
-    push_const_range.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+    push_const_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     push_const_range.size = sizeof(push_constant_t);
     push_const_range.offset = 0;
 
@@ -116,7 +94,7 @@ renderer_t::create_compute_pipeline(){
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_info.setLayoutCount = 1;
     pipeline_layout_info.pSetLayouts = &descriptor_layout;
-    pipeline_layout_info.pushConstantRangeCount = 0;//1;
+    pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
@@ -211,8 +189,8 @@ renderer_t::init(){
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0, command_pool, graphics_queue); 
 
-    // TODO: may need to pass in compute queue here
-    // octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, command_pool, graphics_queue);
+    // TODO: maybe create a transfer queue for transfer operations??
+    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
     u32vec2_t image_size(150);
     render_texture = std::make_unique<texture_t>(
@@ -254,6 +232,7 @@ renderer_t::recreate_swapchain(){
         throw std::runtime_error("Error: failed to re-create command buffers on swapchain invalidation.");
     }
 
+    // TODO: is this required?
     // create_compute_command_buffers();
 }
 
@@ -518,17 +497,28 @@ renderer_t::create_framebuffers(){
 
 void 
 renderer_t::create_compute_command_buffers(){
+    if (compute_command_buffers.size() > 0){
+        vkFreeCommandBuffers(allocator.device, compute_command_pool, 1, compute_command_buffers.data());
+        compute_command_buffers.clear();
+    }
+
     compute_command_buffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < command_buffers.size(); i++){
         compute_command_buffers[i] = create_command_buffer(allocator.device, compute_command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
         [&](VkCommandBuffer command_buffer){
+
+            vkCmdPushConstants(
+                command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
+                0, sizeof(push_constant_t), &push_constants
+            );
+
             vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
             vkCmdBindDescriptorSets(
                 command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
                 0, 1, &desc_sets[i], 0, nullptr
             );
-            vkCmdDispatch(command_buffer, 100, 100, 1);
+            vkCmdDispatch(command_buffer, 250, 250, 1);
         });
     }
 }
@@ -578,7 +568,7 @@ bool
 renderer_t::create_descriptor_pool(){
     std::vector<VkDescriptorPoolSize> pool_sizes = {
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size() },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain->get_size() },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  swapchain->get_size() }
     };
 
     VkDescriptorPoolCreateInfo pool_info = {};
@@ -609,15 +599,15 @@ renderer_t::create_descriptor_pool(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
-    // VkDescriptorSetLayoutBinding octree_layout = {};
-    // octree_layout.binding = 1;
-    // octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    // octree_layout.descriptorCount = 1;
-    // octree_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
-    // octree_layout.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding octree_layout = {};
+    octree_layout.binding = 1;
+    octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    octree_layout.descriptorCount = 1;
+    octree_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    octree_layout.pImmutableSamplers = nullptr;
 
-    // auto request_layout = octree_layout;
-    // request_layout.binding = 2;
+    auto request_layout = octree_layout;
+    request_layout.binding = 2;
 
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
@@ -626,7 +616,7 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        // octree_layout, request_layout, 
+        octree_layout, request_layout, 
         image_layout 
     };
 
@@ -666,6 +656,7 @@ renderer_t::create_command_pool(){
 bool
 renderer_t::create_sync(){
     image_available_semas.resize(frames_in_flight);
+    constants_pushed_semas.resize(frames_in_flight);
     compute_done_semas.resize(frames_in_flight);
     render_finished_semas.resize(frames_in_flight);
     in_flight_fences.resize(frames_in_flight);
@@ -680,6 +671,12 @@ renderer_t::create_sync(){
     for (int i = 0; i < frames_in_flight; i++){
         if (vkCreateSemaphore(
             allocator.device, &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
+        ){
+            return false;
+        }
+
+        if (vkCreateSemaphore(
+            allocator.device, &create_info, nullptr, &constants_pushed_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
@@ -702,16 +699,6 @@ renderer_t::create_sync(){
     }
 
     return true;
-}
-
-void
-renderer_t::update_push_constants() const {
-    auto command_buffer = vk_utils::pre_commands(allocator.device, command_pool, graphics_queue);
-        vkCmdPushConstants(
-            command_buffer, pipeline_layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-            0, sizeof(push_constants), &push_constants
-        );
-    vk_utils::post_commands(allocator.device, command_pool, graphics_queue, command_buffer);
 }
 
 uint32_t 
@@ -744,43 +731,115 @@ renderer_t::submit_to_queue(
     VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage
 ){
     VkSubmitInfo submit_info = {};
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &wait_sema;
     submit_info.pWaitDstStageMask = &stage;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffer;
     
-    submit_info.signalSemaphoreCount = 1;
+    submit_info.waitSemaphoreCount = wait_sema == VK_NULL_HANDLE ? 0 : 1;
+    submit_info.pWaitSemaphores = &wait_sema;
+    submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
     submit_info.pSignalSemaphores = &signal_sema;
 
     vkQueueSubmit(queue, 1, &submit_info, fence);
 }
 
 
+void 
+renderer_t::update_push_const(
+    VkCommandPool pool, VkQueue queue, VkDevice device, VkPipelineLayout layout
+){
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandPool = pool;
+    alloc_info.commandBufferCount = 1;
+
+    VkCommandBuffer push_constants_command;
+    VkResult result = vkAllocateCommandBuffers(device, &alloc_info, &push_constants_command);
+    if (result != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to allocate command buffer.");
+    }
+
+    VkCommandBufferBeginInfo begin_info;
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    begin_info.pNext = nullptr;
+    begin_info.pInheritanceInfo = nullptr;
+
+    u32vec2_t s(1);
+    result = vkBeginCommandBuffer(push_constants_command, &begin_info);
+    if (result != VK_SUCCESS){
+        throw "fuck";
+    }
+        vkCmdPushConstants(
+            push_constants_command, layout, VK_SHADER_STAGE_COMPUTE_BIT,
+            0, sizeof(u32vec2_t), &s
+        );
+    result = vkEndCommandBuffer(push_constants_command);
+    if (result != VK_SUCCESS){
+        throw "fuck";
+    }
+
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &push_constants_command;
+    submit_info.pNext = nullptr;
+
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = &image_available_semas[current_frame];
+
+    VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+    submit_info.pWaitDstStageMask = &stage_mask;
+
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = &constants_pushed_semas[current_frame];
+        
+    result = vkQueueSubmit(queue, 1, &submit_info, in_flight_fences[current_frame]);
+    if (result != VK_SUCCESS){
+        throw "fuck";
+    }
+    vkFreeCommandBuffers(device, pool, 1, &push_constants_command);
+
+}
+
 void
 renderer_t::render(){
-    // push_constants.current_frame++;
+    push_constants.current_frame++;
 
     // octree->handle_requests();
 
-    // if (auto camera = main_camera.lock()){
-    //     push_constants.camera_position = camera->get_position().cast<float>();
-    //     push_constants.camera_right = camera->get_right().cast<float>();
-    //     push_constants.camera_up = camera->get_up().cast<float>();
-    // }
+    if (auto camera = main_camera.lock()){
+        push_constants.camera_position = camera->get_position().cast<float>();
+        push_constants.camera_right = camera->get_right().cast<float>();
+        push_constants.camera_up = camera->get_up().cast<float>();
+    }
 
-    // update_push_constants();
+    // update_push_const(compute_command_pool, compute_queue, allocator.device, compute_pipeline_layout);
 
-    vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]); 
-
-
+    auto r = push_constants.camera_right;
+    // std::cout << r[0] << ", " << r[1] << ", " << r[2] << std::endl;
+    // create_compute_command_buffers();
+   
     uint32_t image_index = acquire_image();
 
-    
+    auto compute_command_buffer = create_command_buffer(allocator.device, compute_command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+    [&](VkCommandBuffer command_buffer){
+        vkCmdPushConstants(
+            command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
+            0, sizeof(push_constant_t), &push_constants
+        );
+
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
+        vkCmdBindDescriptorSets(
+            command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
+            0, 1, &desc_sets[image_index], 0, nullptr
+        );
+        vkCmdDispatch(command_buffer, 250, 250, 1);
+    });
 
     submit_to_queue(
-        compute_queue, compute_command_buffers[image_index], image_available_semas[current_frame], 
+        compute_queue, compute_command_buffer, image_available_semas[current_frame], 
         compute_done_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     );
 
@@ -789,16 +848,11 @@ renderer_t::render(){
         render_finished_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     );
 
-    // if (res == VK_ERROR_OUT_OF_DATE_KHR){
-    //     //recreate_swapchain();
-    //     return;
-    // } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR){
-    //     throw std::runtime_error("Error: Failed to submit to draw command buffer.");
-    // }
-
     present(image_index);
 
-    current_frame = (current_frame + 1) % frames_in_flight;    
+    current_frame = (current_frame + 1) % frames_in_flight; 
+    vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]);    
 }
 
 VkShaderModule
