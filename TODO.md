@@ -21,7 +21,6 @@
         * iterative beam optimisation
 * destruction of descriptor pools needs to be re added!!!!
 * really just improve design of renderer class
-* get rid of vertex buffer
 * optimise work group size of compute shader
 * bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
 * fix scaling of render texture to screen

@@ -162,22 +162,6 @@ renderer_t::init(){
         return false;
     }
 
-    const std::vector<f32vec2_t> vertices = {
-        f32vec2_t(-1.0f, -1.0f), 
-        f32vec2_t(-1.0f,  1.0f),
-        f32vec2_t( 1.0f, -1.0f),
-
-        f32vec2_t(-1.0f,  1.0f),
-        f32vec2_t( 1.0f,  1.0f),
-        f32vec2_t( 1.0f, -1.0f)
-    };
-
-    vertex_buffer = std::make_unique<buffer_t>(
-        allocator, device, sizeof(f32vec2_t) * 6,
-        VMA_MEMORY_USAGE_GPU_ONLY
-    );
-    vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0, command_pool, graphics_queue); 
-
     // TODO: maybe create a transfer queue for transfer operations??
     octree = std::make_unique<octree_t>(allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
@@ -264,14 +248,7 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    static std::string vertex_shader_code = "\
-    #version 450\n#extension GL_ARB_separate_shader_objects:enable\n\
-    layout(location=0)in vec2 p;\
-    out gl_PerVertex{vec4 gl_Position;};\
-    void main(){\
-        gl_Position = vec4(p, 0, 1);\
-    }";
-    // gl_Position = vec4(vec2((gl_VertexID << 1) & 2, gl_VertexID & 2) * 2 - 1, 0, 1);
+    static std::string vertex_shader_code = "#version 450\nout gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(vec2(gl_VertexID&2,(gl_VertexID<<1)&2)*2-1,0,1);}";
 
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
@@ -293,23 +270,10 @@ renderer_t::create_graphics_pipeline(){
         frag_create_info
     };
 
-    VkVertexInputBindingDescription binding_desc = {};
-    binding_desc.binding   = 0;
-    binding_desc.stride    = sizeof(f32vec2_t);
-    binding_desc.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    VkVertexInputAttributeDescription attr_desc = {};
-    attr_desc.binding  = 0;
-    attr_desc.location = 0;
-    attr_desc.format   = VK_FORMAT_R32G32B32_SFLOAT;
-    attr_desc.offset   = 0;
-
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = 1;
-    vertex_input_info.pVertexBindingDescriptions = &binding_desc;
-    vertex_input_info.vertexAttributeDescriptionCount = 1;
-    vertex_input_info.pVertexAttributeDescriptions = &attr_desc;
+    vertex_input_info.vertexBindingDescriptionCount = 0;
+    vertex_input_info.vertexAttributeDescriptionCount = 0;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -496,9 +460,6 @@ renderer_t::create_command_buffers(){
                     command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
                 );
 
-                VkBuffer raw_vertex_buffer = vertex_buffer->get_buffer();
-                VkDeviceSize offset = 0;
-                vkCmdBindVertexBuffers(command_buffer, 0, 1, &raw_vertex_buffer, &offset);
                 vkCmdBindDescriptorSets(
                     command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
                     0, 1, &desc_sets[i], 0, nullptr

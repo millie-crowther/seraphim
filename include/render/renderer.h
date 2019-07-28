@@ -64,8 +64,6 @@ private:
     VkQueue graphics_queue;
     VkQueue present_queue;
     VkQueue compute_queue;
-
-    std::unique_ptr<buffer_t> vertex_buffer;
     
     std::string fragment_shader_code;
 
