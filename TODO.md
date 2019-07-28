@@ -4,14 +4,6 @@
 
 * make `image_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
-* check if `vkQueueWaitIdle` in vk_utils post commands is bad
-    * remove if necessary
-* improve design of `allocator_t` 
-    * does the job
-    * kind of hacky
-    * at least it isnt a singleton lol
-    * need to investigate how flexible `VkCommandPool` and `VkQueue` need to be
-    * pretty sure `VmaAllocator`, `VkDevice` and `VkPhysicalDevice` aren't gonna change
 * FPS counter is weird.
     * choice of clock?
 * improve revelator design
@@ -28,11 +20,11 @@
     * e.g. one 64x64 work group for a patch of screen, 2D array of work groups to cover scene
         * iterative beam optimisation
 * destruction of descriptor pools needs to be re added!!!!
-* make debug mode a preprocessor thing
 * really just improve design of renderer class
-* create a device class
 * get rid of vertex buffer
-* make debug mode a preprocessor thing
+* optimise work group size of compute shader
+* bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
+* fix scaling of render texture to screen
 
 ## rendering
 

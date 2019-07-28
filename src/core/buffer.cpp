@@ -3,8 +3,9 @@
 #include <stdexcept>
 #include <iostream>
 #include <cstring>
+
 #include "core/blaspheme.h"
-#include "core/vk_utils.h"
+#include "core/command_buffer.h"
 
 buffer_t::buffer_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage
@@ -47,14 +48,30 @@ buffer_t::copy_buffer(
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(device->get_device(), pool, queue);
+    command_buffer_t command_buffer(device->get_device(), pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    [&](VkCommandBuffer command_buffer){
         VkBufferCopy copy_region = {};
         copy_region.srcOffset = 0;
         copy_region.dstOffset = offset;
         copy_region.size = size;
         
-        vkCmdCopyBuffer(cmd, buffer, dest, 1, &copy_region);
-    vk_utils::post_commands(device->get_device(), pool, queue, cmd);
+        vkCmdCopyBuffer(command_buffer, buffer, dest, 1, &copy_region);
+    });
+
+    auto cmd_buf = command_buffer.get_command_buffer();
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buf;
+    submit_info.pNext = nullptr;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+        
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue); // TODO: check how bad this is and remove if appropriate
 }
 
 void
@@ -90,7 +107,8 @@ buffer_t::copy_to_image(
         return;
     }
 
-    auto cmd = vk_utils::pre_commands(device->get_device(), pool, queue);
+    command_buffer_t command_buffer(device->get_device(), pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    [&](VkCommandBuffer command_buffer){
         VkBufferImageCopy region = {};
         region.bufferOffset = 0;
         region.bufferRowLength = 0;
@@ -109,11 +127,26 @@ buffer_t::copy_to_image(
         region.imageExtent = { extent[0], extent[1], 1 };
 
         vkCmdCopyBufferToImage(
-            cmd, buffer, image,
+            command_buffer, buffer, image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &region
         );
-    vk_utils::post_commands(device->get_device(), pool, queue, cmd);
+    });
+
+    auto cmd_buf = command_buffer.get_command_buffer();
+    VkSubmitInfo submit_info;
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &cmd_buf;
+    submit_info.pNext = nullptr;
+    submit_info.waitSemaphoreCount = 0;
+    submit_info.pWaitSemaphores = nullptr;
+    submit_info.pWaitDstStageMask = nullptr;
+    submit_info.signalSemaphoreCount = 0;
+    submit_info.pSignalSemaphores = nullptr;
+        
+    vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queue); // TODO: check how bad this is and remove if appropriate
 }
 
 VkDescriptorBufferInfo 

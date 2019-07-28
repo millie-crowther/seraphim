@@ -3,7 +3,6 @@
 #include <stdexcept>
 
 #include "core/blaspheme.h"
-#include "core/vk_utils.h"
 
 texture_t::texture_t(
     uint32_t binding,
@@ -192,7 +191,8 @@ texture_t::get_image(){
 
 void
 texture_t::transition_image_layout(VkImageLayout new_layout, VkCommandPool pool, VkQueue queue){
-    auto cmd = vk_utils::pre_commands(device->get_device(), pool, queue);
+    command_buffer_t command_buffer(device->get_device(), pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+    [&](VkCommandBuffer command_buffer){
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -254,9 +254,9 @@ texture_t::transition_image_layout(VkImageLayout new_layout, VkCommandPool pool,
         }
 
         vkCmdPipelineBarrier(
-            cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
+            command_buffer, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    vk_utils::post_commands(device->get_device(), pool, queue, cmd);
+    });
 
     layout = new_layout;
 }

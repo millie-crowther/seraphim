@@ -17,10 +17,13 @@ const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
-blaspheme_t::blaspheme_t(bool is_debug){
-    this->is_debug = is_debug;
+blaspheme_t::blaspheme_t(){
+#if BLASPHEME_DEBUG
+    std::cout << "Running in debug mode." << std::endl;
+#else 
+    std::cout << "Running in release mode." << std::endl;
+#endif
 
-    std::cout << "Running in " << (is_debug ? "debug" : "release") << " mode." << std::endl;
     // initialise GLFW
     glfwInit();
 

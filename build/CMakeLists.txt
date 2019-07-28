@@ -29,7 +29,6 @@ set(SOURCES
   
     ../src/core/blaspheme.cpp
     ../src/core/buffer.cpp
-    ../src/core/vk_utils.cpp
     ../src/core/uuid.cpp
     ../src/core/device.cpp
     

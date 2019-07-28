@@ -1,6 +1,8 @@
 #ifndef BLASPHEME_H
 #define BLASPHEME_H
 
+#define BLASPHEME_DEBUG 1
+
 #include "vk_mem_alloc.h"
 
 #include <string>
@@ -43,7 +45,7 @@ private:
     std::shared_ptr<camera_t> test_camera;
 
 public:
-    blaspheme_t(bool is_debug);
+    blaspheme_t();
     ~blaspheme_t();
 
     void run();

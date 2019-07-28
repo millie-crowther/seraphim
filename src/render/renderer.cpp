@@ -3,7 +3,6 @@
 #include "sdf/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
-#include "core/vk_utils.h"
 #include "core/command_buffer.h"
 
 #include <chrono>
@@ -265,7 +264,14 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    static std::string vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
+    static std::string vertex_shader_code = "\
+    #version 450\n#extension GL_ARB_separate_shader_objects:enable\n\
+    layout(location=0)in vec2 p;\
+    out gl_PerVertex{vec4 gl_Position;};\
+    void main(){\
+        gl_Position = vec4(p, 0, 1);\
+    }";
+    // gl_Position = vec4(vec2((gl_VertexID << 1) & 2, gl_VertexID & 2) * 2 - 1, 0, 1);
 
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
@@ -498,7 +504,7 @@ renderer_t::create_command_buffers(){
                     0, 1, &desc_sets[i], 0, nullptr
                 );
 
-                vkCmdDraw(command_buffer, 6, 1, 0, 0);
+                vkCmdDraw(command_buffer, 3, 1, 0, 0);
             vkCmdEndRenderPass(command_buffer);
         });
     }
