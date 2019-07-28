@@ -31,6 +31,7 @@ set(SOURCES
     ../src/core/buffer.cpp
     ../src/core/vk_utils.cpp
     ../src/core/uuid.cpp
+    ../src/core/device.cpp
     
     ../src/render/renderer.cpp
     ../src/render/texture.cpp

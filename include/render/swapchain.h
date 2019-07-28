@@ -1,20 +1,17 @@
 #ifndef SWAPCHAIN_H
 #define SWAPCHAIN_H
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
+#include <memory>
 #include <vector>
 
-#include "core/allocator.h"
+#include "core/device.h"
 #include "maths/vec.h"
 
 class swapchain_t {
 public:
     swapchain_t(
-        const allocator_t & allocator, u32vec2_t size,
-        VkSurfaceKHR surface, uint32_t graphics_family,
-        uint32_t present_family
+        std::shared_ptr<device_t> device, u32vec2_t size,
+        VkSurfaceKHR surface
     );
     ~swapchain_t();
 
@@ -28,8 +25,8 @@ private:
     VkSurfaceFormatKHR select_surface_format(VkSurfaceKHR surface); 
     VkPresentModeKHR select_present_mode(VkSurfaceKHR surface);
     VkExtent2D select_swap_extent(u32vec2_t size, VkSurfaceKHR surface);
-    allocator_t allocator;
-
+    
+    std::shared_ptr<device_t> device;
     VkSwapchainKHR handle;
     std::vector<VkImageView> image_views;
     VkFormat image_format;

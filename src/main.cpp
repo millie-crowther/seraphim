@@ -3,6 +3,8 @@
 
 #include "core/blaspheme.h"
 
+#define BLASHPEME_DEBUG true
+
 int 
 main(int argc, char ** argv) {
     bool is_debug = false;

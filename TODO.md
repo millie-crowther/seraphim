@@ -24,16 +24,15 @@
 * maybe put the pipelines in their own class
 * camera pitch rotation with mouse
 * vector class interior removal of branching using templates
-* investigate putting the whole thing in a single compute shader
-    * possible performance impact (graphics pipeline exists for a reason i guess)
-    * makes design much simpler
-    * complexity of having both compute and frag shader eliminated
-    * cleverer things possible with more control
+* do clever things in compute shader
     * e.g. one 64x64 work group for a patch of screen, 2D array of work groups to cover scene
         * iterative beam optimisation
 * destruction of descriptor pools needs to be re added!!!!
 * make debug mode a preprocessor thing
 * really just improve design of renderer class
+* create a device class
+* get rid of vertex buffer
+* make debug mode a preprocessor thing
 
 ## rendering
 
@@ -46,9 +45,6 @@
         * prune nodes with too high level of detail 
     * possibly also animation
         * parallelised construction of second octree based on transforms
-* figure out the fucking synchronisation on this thing
-    * sync between compute and fragment shaders
-    * sync with buffer writes (screen blanking sometimes)
 * implement octree sibling trick
 * remove parameter of normal map and use flag instead 
 * switch surface representation to quadratic patch

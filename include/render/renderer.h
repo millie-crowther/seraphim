@@ -11,6 +11,7 @@
 #include "render/camera.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
+#include "core/command_buffer.h"
 
 class renderer_t {
 public:
@@ -35,7 +36,8 @@ private:
 
     // fields
     push_constant_t push_constants;
-    allocator_t allocator;
+    VmaAllocator allocator;
+    std::shared_ptr<device_t> device;
     std::vector<VkFramebuffer> framebuffers;
     VkSurfaceKHR surface;
     VkRenderPass render_pass;
@@ -43,16 +45,14 @@ private:
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
     VkCommandPool command_pool;
-    std::vector<VkCommandBuffer> command_buffers;
+    std::vector<std::unique_ptr<command_buffer_t>> command_buffers;
 
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
-    std::vector<VkCommandBuffer> compute_command_buffers;
     VkCommandPool compute_command_pool;
 
     int current_frame;
     std::vector<VkSemaphore> image_available_semas;
-    std::vector<VkSemaphore> constants_pushed_semas;
     std::vector<VkSemaphore> compute_done_semas;
     std::vector<VkSemaphore> render_finished_semas;
     std::vector<VkFence> in_flight_fences;
@@ -65,10 +65,6 @@ private:
     VkQueue present_queue;
     VkQueue compute_queue;
 
-    uint32_t graphics_family;
-    uint32_t present_family;
-    uint32_t compute_family;
-
     std::unique_ptr<buffer_t> vertex_buffer;
     std::string fragment_shader_code;
     std::shared_ptr<sdf3_t> sphere;
@@ -80,7 +76,7 @@ private:
     std::unique_ptr<texture_t> render_texture;
 
     // private functions
-    VkShaderModule create_shader_module(std::string code, bool * success);
+    VkShaderModule create_shader_module(std::string code);
     bool create_render_pass();
     bool create_graphics_pipeline();    
     bool create_compute_pipeline();
@@ -103,9 +99,8 @@ private:
 public:
     // constructors and destructors
     renderer_t(
-        const allocator_t & allocator,
-        VkSurfaceKHR surface, uint32_t graphics_family, uint32_t compute_family,
-        uint32_t present_family, std::shared_ptr<window_t> window,
+        VmaAllocator allocator, std::shared_ptr<device_t> device,
+        VkSurfaceKHR surface, std::shared_ptr<window_t> window,
         std::shared_ptr<camera_t> test_camera
     );
     ~renderer_t();

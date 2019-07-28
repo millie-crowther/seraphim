@@ -7,7 +7,7 @@
 
 texture_t::texture_t(
     uint32_t binding,
-    const allocator_t & allocator,
+    VmaAllocator allocator, std::shared_ptr<device_t> device,
     u32vec2_t & size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
 ){    
@@ -15,7 +15,8 @@ texture_t::texture_t(
     format = VK_FORMAT_R8G8B8A8_UNORM;
     
     this->allocator = allocator;
-
+    this->device = device;
+    
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // create image
@@ -37,7 +38,7 @@ texture_t::texture_t(
     // VK_FORMAT_R8G8B8A8_UNORM
 
     check_format_supported(
-        allocator.physical_device,
+        device->get_physical_device(),
         format,
         image_create_info.tiling, 
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT 
@@ -66,12 +67,12 @@ texture_t::texture_t(
 
 
     // // allocate memory 
-    VkResult result = vkCreateImage(allocator.device, &image_create_info, nullptr, &image);
+    VkResult result = vkCreateImage(device->get_device(), &image_create_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
     VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(allocator.device, image, &mem_req);
+    vkGetImageMemoryRequirements(device->get_device(), image, &mem_req);
 
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -79,19 +80,19 @@ texture_t::texture_t(
     auto properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
 
-    result = vkAllocateMemory(allocator.device, &mem_alloc_info, nullptr, &memory);
+    result = vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    result = vkBindImageMemory(allocator.device, image, memory, 0);
+    result = vkBindImageMemory(device->get_device(), image, memory, 0);
 
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
 
     // create image view
-    image_view = create_image_view(allocator.device, image, format);
+    image_view = create_image_view(device->get_device(), image, format);
 
     // create sampler
     VkSamplerCreateInfo sampler_info = {};
@@ -111,7 +112,7 @@ texture_t::texture_t(
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(allocator.device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(device->get_device(), &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
 
@@ -159,18 +160,18 @@ texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
 }
 
 texture_t::~texture_t(){
-    vkDestroyImageView(allocator.device, image_view, nullptr);
+    vkDestroyImageView(device->get_device(), image_view, nullptr);
     
-    vkDestroyImage(allocator.device, image, nullptr);
-    vkFreeMemory(allocator.device, memory, nullptr);
+    vkDestroyImage(device->get_device(), image, nullptr);
+    vkFreeMemory(device->get_device(), memory, nullptr);
     // vmaDestroyImage(allocator, image, allocation);
-    vkDestroySampler(allocator.device, sampler, nullptr);
+    vkDestroySampler(device->get_device(), sampler, nullptr);
 }
 
 int
 texture_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
     VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(allocator.physical_device, &memory_prop);
+    vkGetPhysicalDeviceMemoryProperties(device->get_physical_device(), &memory_prop);
 
     for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
         if (
@@ -191,7 +192,7 @@ texture_t::get_image(){
 
 void
 texture_t::transition_image_layout(VkImageLayout new_layout, VkCommandPool pool, VkQueue queue){
-    auto cmd = vk_utils::pre_commands(allocator.device, pool, queue);
+    auto cmd = vk_utils::pre_commands(device->get_device(), pool, queue);
         VkImageLayout old_layout = layout;      
         
         VkImageMemoryBarrier barrier = {};
@@ -255,7 +256,7 @@ texture_t::transition_image_layout(VkImageLayout new_layout, VkCommandPool pool,
         vkCmdPipelineBarrier(
             cmd, src_stage, dst_stage, 0, 0, nullptr, 0, nullptr, 1, &barrier
         );
-    vk_utils::post_commands(allocator.device, pool, queue, cmd);
+    vk_utils::post_commands(device->get_device(), pool, queue, cmd);
 
     layout = new_layout;
 }

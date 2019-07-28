@@ -19,17 +19,7 @@ private:
     std::vector<const char *> get_required_extensions();
     bool setup_debug_callback();
 
-    // physical device selection
-    VkPhysicalDevice select_device();
-    bool is_suitable_device(VkPhysicalDevice phys_device);
-    bool device_has_extension(VkPhysicalDevice phys_device, const char * extension);
-    bool has_adequate_swapchain(VkPhysicalDevice phys_device);
-
-    int get_graphics_queue_family(VkPhysicalDevice phys_device);
-    int get_present_queue_family(VkPhysicalDevice phys_device);
-    int get_compute_queue_family(VkPhysicalDevice phys_device);
-    
-    bool create_logical_device();
+	std::shared_ptr<device_t> device;
 
     // update functions
     void update_fps_counter(double delta);
@@ -44,8 +34,7 @@ private:
 
     std::shared_ptr<scheduler_t> scheduler;
 
-    allocator_t allocator;
-
+	VmaAllocator allocator;
     VkInstance instance;
     VkSurfaceKHR surface;
 

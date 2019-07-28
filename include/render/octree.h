@@ -73,7 +73,8 @@ private:
 
 public:
     octree_t(
-        const allocator_t & allocator, 
+        VmaAllocator allocator,
+        std::shared_ptr<device_t> device,
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
     );

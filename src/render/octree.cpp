@@ -10,7 +10,7 @@
 #include "render/painter.h"
 
 octree_t::octree_t(
-    const allocator_t & allocator, 
+    VmaAllocator allocator, std::shared_ptr<device_t> device,
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
 ){
@@ -25,13 +25,13 @@ octree_t::octree_t(
     // extra node at end is to allow shader to avoid branching
     uint32_t octree_size = sizeof(node_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
-        allocator, octree_size + sizeof(node_t),
+        allocator, device, octree_size + sizeof(node_t),
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     uint32_t request_size = sizeof(request_t) * max_requests_size;
     request_buffer = std::make_unique<buffer_t>(
-        allocator, request_size,
+        allocator, device, request_size,
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
@@ -61,7 +61,7 @@ octree_t::octree_t(
         }
     }
 
-    vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
 
     std::array<node_t, max_structure_size> empty_octree;

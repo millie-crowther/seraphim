@@ -1,14 +1,13 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include "core/allocator.h"
-
 #include <vector>
-#include "vk_mem_alloc.h"
-#include "maths/vec.h"
+#include <memory>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include "vk_mem_alloc.h"
+
+#include "core/device.h"
+#include "maths/vec.h"
 
 class texture_t {
 private:
@@ -21,7 +20,9 @@ private:
     VkSampler sampler;
     VkDescriptorImageInfo image_info;
     uint32_t binding;
-    allocator_t allocator; // TODO: dont store a copy here
+
+    VmaAllocator allocator;
+    std::shared_ptr<device_t> device;
 
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
@@ -30,7 +31,7 @@ public:
     // constructors and destructors
     texture_t(
         uint32_t binding,
-        const allocator_t & allocator,
+        VmaAllocator allocator, std::shared_ptr<device_t> device,
         u32vec2_t & size, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage
     );

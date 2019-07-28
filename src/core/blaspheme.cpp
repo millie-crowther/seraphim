@@ -17,10 +17,6 @@ const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 
-const std::vector<const char *> device_extensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
-};
-
 blaspheme_t::blaspheme_t(bool is_debug){
     this->is_debug = is_debug;
 
@@ -54,48 +50,39 @@ blaspheme_t::blaspheme_t(bool is_debug){
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-    allocator.physical_device = select_device();
-    if (allocator.physical_device == VK_NULL_HANDLE){
-	    throw std::runtime_error("Error: Couldn't find an appropriate GPU.");
-    }
-
-    VkPhysicalDeviceProperties properties = {};
-    vkGetPhysicalDeviceProperties(allocator.physical_device, &properties);
-    std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
-
-    std::cout << "\tMaximum 1D image dimension: " << properties.limits.maxImageDimension1D << std::endl;
-    std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
-    std::cout << "\tMaximum 3D image dimension: " << properties.limits.maxImageDimension3D << std::endl;
-    std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
-
-    auto work_group_size = properties.limits.maxComputeWorkGroupSize;
-    auto work_group_count = properties.limits.maxComputeWorkGroupCount;
-    std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
-    std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
+    device = std::make_shared<device_t>(instance, surface);
 
 
-    uint32_t push_const_size = properties.limits.maxPushConstantsSize;
-    std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;
-    if (sizeof(renderer_t::push_constant_t) > push_const_size){
-        // TODO: put this check when selecting physical device
-        throw std::runtime_error("Error: Push constants too large.");
-    }
-    
-    if (!create_logical_device()){
-	    throw std::runtime_error("Error: Couldn't create logical device.");
-    }
+    // VkPhysicalDeviceProperties properties = {};
+    // vkGetPhysicalDeviceProperties(allocator.physical_device, &properties);
+    // std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
+
+    // std::cout << "\tMaximum 1D image dimension: " << properties.limits.maxImageDimension1D << std::endl;
+    // std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
+    // std::cout << "\tMaximum 3D image dimension: " << properties.limits.maxImageDimension3D << std::endl;
+    // std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
+
+    // auto work_group_size = properties.limits.maxComputeWorkGroupSize;
+    // auto work_group_count = properties.limits.maxComputeWorkGroupCount;
+    // std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
+    // std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
+
+
+    // uint32_t push_const_size = properties.limits.maxPushConstantsSize;
+    // std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;
+    // if (sizeof(renderer_t::push_constant_t) > push_const_size){
+    //     // TODO: put this check when selecting physical device
+    //     throw std::runtime_error("Error: Push constants too large.");
+    // }
 
 
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
-    allocator_info.physicalDevice = allocator.physical_device;
-    allocator_info.device = allocator.device;
+    allocator_info.physicalDevice = device->get_physical_device();
+    allocator_info.device = device->get_device();
     
-    vmaCreateAllocator(&allocator_info, &allocator.vma_allocator);
+    vmaCreateAllocator(&allocator_info, &allocator);
 
-    uint32_t graphics_family = get_graphics_queue_family(allocator.physical_device);
-    uint32_t present_family  = get_present_queue_family(allocator.physical_device);
-    uint32_t compute_family  = get_compute_queue_family(allocator.physical_device);
 
     // frame_start_follower = scheduler->on_frame_start.follow(std::bind(
     //     &blaspheme_t::update_fps_counter, this, std::placeholders::_1
@@ -104,20 +91,20 @@ blaspheme_t::blaspheme_t(bool is_debug){
     test_camera = std::make_shared<camera_t>(this);
 
     renderer = std::make_shared<renderer_t>(
-        allocator, surface, graphics_family, present_family, compute_family, window, test_camera
+        allocator, device, surface, window, test_camera
     );
 }
 
 blaspheme_t::~blaspheme_t(){
-    vkDeviceWaitIdle(allocator.device);
+    vkDeviceWaitIdle(device->get_device());
 
     // delete renderer early to release resources at appropriate time
     renderer.reset();
 
-    vmaDestroyAllocator(allocator.vma_allocator);
+    vmaDestroyAllocator(allocator);
 
-    // destroy logical device
-    vkDestroyDevice(allocator.device, nullptr);
+    // destroy device
+    device.reset();
 
     // destroy debug callback
     if (is_debug){
@@ -149,50 +136,6 @@ blaspheme_t::get_renderer() const {
 std::weak_ptr<scheduler_t> 
 blaspheme_t::get_scheduler() const {
     return scheduler;
-}
-
-bool
-blaspheme_t::create_logical_device(){
-    uint32_t graphics = get_graphics_queue_family(allocator.physical_device);
-    uint32_t present = get_present_queue_family(allocator.physical_device);
-    uint32_t compute_family = get_present_queue_family(allocator.physical_device);
-
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = { graphics, present, compute_family };
-    
-    float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pQueuePriorities = &queue_priority;
-    for (uint32_t queue_family : unique_queue_families){
-        queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_infos.push_back(queue_create_info);
-    }
-
-    VkPhysicalDeviceFeatures device_features = {};
-    device_features.samplerAnisotropy        = VK_TRUE;
-
-    VkDeviceCreateInfo create_info      = {};
-    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    create_info.pQueueCreateInfos       = queue_create_infos.data();
-    create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
-    create_info.pEnabledFeatures        = &device_features;
-    create_info.enabledExtensionCount   = device_extensions.size();
-    create_info.ppEnabledExtensionNames = device_extensions.data();
-
-    if (is_debug) {
-        create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
-        create_info.ppEnabledLayerNames = validation_layers.data();
-    } else {
-	    create_info.enabledLayerCount   = 0;
-    } 
-
-    if (vkCreateDevice(allocator.physical_device, &create_info, nullptr, &allocator.device) != VK_SUCCESS){
-	    return false;
-    }
-
-    return true;
 }
 
 bool
@@ -234,159 +177,7 @@ blaspheme_t::get_required_extensions(){
     return req_ext;
 }
 
-int 
-blaspheme_t::get_compute_queue_family(VkPhysicalDevice phys_device){
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
 
-    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
-   
-    for (uint32_t i = 0; i < queue_family_count; i++){
-        if (
-            q_families[i].queueCount > 0 && 
-            q_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT 
-        ){
-            return i;
-        }
-    }
-
-    return -1;  
-}
-
-int
-blaspheme_t::get_graphics_queue_family(VkPhysicalDevice phys_device){
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
-
-    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
-   
-    for (uint32_t i = 0; i < queue_family_count; i++){
-        if (
-            q_families[i].queueCount > 0 && 
-            q_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT
-        ){
-            return i;
-        }
-    }
-
-    return -1;    
-}
-
-int 
-blaspheme_t::get_present_queue_family(VkPhysicalDevice phys_device){
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, nullptr);
-
-    std::vector<VkQueueFamilyProperties> q_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(phys_device, &queue_family_count, q_families.data());
-   
-    for (uint32_t i = 0; i < queue_family_count; i++){
-        VkBool32 present_support = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(phys_device, i, surface, &present_support);
-
-        if (q_families[i].queueCount > 0 && present_support){
-            return i;
-        }
-    }
-
-    return -1;    
-}
-
-bool
-blaspheme_t::has_adequate_swapchain(VkPhysicalDevice physical_device){
-    uint32_t count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, nullptr);
-    if (count == 0){
-	    return false;
-    }
-
-    count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &count, nullptr);
-    if (count == 0){
-        return false;
-    }
-
-    return true;
-}
-
-bool
-blaspheme_t::is_suitable_device(VkPhysicalDevice phys_device){
-    // check that gpu isnt integrated
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(phys_device, &properties);
-    if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
-        return false;
-    }
-
-    // check device can do geometry shaders
-    VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(phys_device, &features);
-    if (!features.geometryShader || ! features.samplerAnisotropy){
-	    return false;
-    }
-
-    // check device has at least one graphics queue family
-    if (get_graphics_queue_family(phys_device) == -1){
-	    return false;
-    }
-
-    if (get_present_queue_family(phys_device) == -1){
-	    return false;
-    }
-
-    for (auto extension : device_extensions){
-        if (!device_has_extension(phys_device, extension)){
-            return false;
-        }
-    }
-
-    if (!has_adequate_swapchain(phys_device)){
-	    return false;
-    }
-
-    return true;
-}
-
-bool
-blaspheme_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension){
-    uint32_t extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
-    vkEnumerateDeviceExtensionProperties(
-        phys_device, nullptr, &extension_count, available_extensions.data()
-    );
-
-    for (auto available_extension : available_extensions){
-        if (std::string(extension) == std::string(available_extension.extensionName)){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-VkPhysicalDevice
-blaspheme_t::select_device(){
-    uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-    if (device_count == 0){
- 	    return VK_NULL_HANDLE;
-    }
-
-    std::vector<VkPhysicalDevice> devices(device_count);
-    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
-    
-    for (auto phys_device : devices){
-        if (is_suitable_device(phys_device)){
-            return phys_device;
-        }
-    }
-
-    return VK_NULL_HANDLE;
-}
 
 void
 blaspheme_t::create_instance(){
@@ -425,7 +216,7 @@ blaspheme_t::create_instance(){
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
+    create_info.enabledExtensionCount = required_extensions.size();
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
     std::cout << "Enabled extensions: " << std::endl;
@@ -447,7 +238,6 @@ blaspheme_t::create_instance(){
 
     auto result = vkCreateInstance(&create_info, nullptr, &instance);
     if (result != VK_SUCCESS){
-        std::cout << result << " : " << VK_ERROR_INCOMPATIBLE_DRIVER << std::endl;
 	    throw std::runtime_error("Failed to create Vulkan instance!");
     }
 }

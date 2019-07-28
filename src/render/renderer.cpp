@@ -10,9 +10,8 @@
 #include <stdexcept>
 
 renderer_t::renderer_t(
-    const allocator_t & allocator,
-    VkSurfaceKHR surface, uint32_t graphics_family, uint32_t compute_family,
-    uint32_t present_family, std::shared_ptr<window_t> window,
+    VmaAllocator allocator, std::shared_ptr<device_t> device,
+    VkSurfaceKHR surface, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera
 ){
     push_constants.current_frame = 0;
@@ -23,10 +22,8 @@ renderer_t::renderer_t(
 
     current_frame = 0;
     this->surface = surface;
-    this->graphics_family = graphics_family;
-    this->present_family = present_family;
-    this->compute_family = compute_family;
     this->allocator = allocator;
+    this->device = device;
 
     push_constants.window_size = window->get_size();
     // window->on_resize.follow([&](u32vec2_t size){
@@ -50,36 +47,34 @@ renderer_t::renderer_t(
 void
 renderer_t::cleanup_swapchain(){
     for (auto framebuffer : framebuffers){
-	    vkDestroyFramebuffer(allocator.device, framebuffer, nullptr);
+	    vkDestroyFramebuffer(device->get_device(), framebuffer, nullptr);
     }
 
-    vkFreeCommandBuffers(
-        allocator.device, command_pool, static_cast<uint32_t>(command_buffers.size()), command_buffers.data()
-    );
+    command_buffers.clear();
 
-    vkDestroyPipeline(allocator.device, graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(allocator.device, pipeline_layout, nullptr);
-    vkDestroyRenderPass(allocator.device, render_pass, nullptr);
+    vkDestroyPipeline(device->get_device(), graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(device->get_device(), pipeline_layout, nullptr);
+    vkDestroyRenderPass(device->get_device(), render_pass, nullptr);
 
     swapchain.reset(nullptr);
 }
 
 renderer_t::~renderer_t(){
-    vkDestroyDescriptorSetLayout(allocator.device, descriptor_layout, nullptr);
+    vkDestroyDescriptorSetLayout(device->get_device(), descriptor_layout, nullptr);
 
     cleanup_swapchain();
 
-    vkDestroyPipeline(allocator.device, compute_pipeline, nullptr);
-    vkDestroyPipelineLayout(allocator.device, compute_pipeline_layout, nullptr);
+    vkDestroyPipeline(device->get_device(), compute_pipeline, nullptr);
+    vkDestroyPipelineLayout(device->get_device(), compute_pipeline_layout, nullptr);
 
     for (int i = 0; i < frames_in_flight; i++){
-        vkDestroySemaphore(allocator.device, image_available_semas[i], nullptr);
-        vkDestroySemaphore(allocator.device, compute_done_semas[i], nullptr);
-        vkDestroySemaphore(allocator.device, render_finished_semas[i], nullptr);
-        vkDestroyFence(allocator.device, in_flight_fences[i], nullptr);
+        vkDestroySemaphore(device->get_device(), image_available_semas[i], nullptr);
+        vkDestroySemaphore(device->get_device(), compute_done_semas[i], nullptr);
+        vkDestroySemaphore(device->get_device(), render_finished_semas[i], nullptr);
+        vkDestroyFence(device->get_device(), in_flight_fences[i], nullptr);
     }
 
-    vkDestroyCommandPool(allocator.device, command_pool, nullptr); 
+    vkDestroyCommandPool(device->get_device(), command_pool, nullptr); 
 }
 
   
@@ -98,7 +93,7 @@ renderer_t::create_compute_pipeline(){
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
-	    allocator.device, &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
+	    device->get_device(), &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
     ){
         std::cout << "Error: Failed to create pipeline layout." << std::endl;
 	    return false;
@@ -106,11 +101,7 @@ renderer_t::create_compute_pipeline(){
 
     std::string compute_shader_code = resources::load_file("../src/render/shader.comp");
 
-    bool success = true;
-    VkShaderModule module = create_shader_module(compute_shader_code, &success);
-    if (success == false){
-        return false;
-    }
+    VkShaderModule module = create_shader_module(compute_shader_code);
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -121,24 +112,23 @@ renderer_t::create_compute_pipeline(){
     pipeline_create_info.layout = compute_pipeline_layout;
     
     // TODO: investigate pipeline caching. can replace VK_NULL_HANDLE with pipeline caching
-    if (vkCreateComputePipelines(allocator.device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
+    if (vkCreateComputePipelines(device->get_device(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
         return false;
     }
 
-    vkDestroyShaderModule(allocator.device, module, nullptr);    
+    vkDestroyShaderModule(device->get_device(), module, nullptr);    
 
     return true;
 }
 
 bool
 renderer_t::init(){
-    vkGetDeviceQueue(allocator.device, graphics_family, 0, &graphics_queue);
-    vkGetDeviceQueue(allocator.device, present_family, 0, &present_queue);
-    vkGetDeviceQueue(allocator.device, compute_family, 0, &compute_queue);
+    vkGetDeviceQueue(device->get_device(), device->get_graphics_family(), 0, &graphics_queue);
+    vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
+    vkGetDeviceQueue(device->get_device(), device->get_compute_family(), 0, &compute_queue);
 
     swapchain = std::make_unique<swapchain_t>(
-        allocator, push_constants.window_size, surface,
-        graphics_family, present_family
+        device, push_constants.window_size, surface
     );
 
     if (!create_render_pass()){
@@ -184,17 +174,17 @@ renderer_t::init(){
     };
 
     vertex_buffer = std::make_unique<buffer_t>(
-        allocator, sizeof(f32vec2_t) * 6,
+        allocator, device, sizeof(f32vec2_t) * 6,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
     vertex_buffer->copy((void *) vertices.data(), sizeof(f32vec2_t) * 6, 0, command_pool, graphics_queue); 
 
     // TODO: maybe create a transfer queue for transfer operations??
-    octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
+    octree = std::make_unique<octree_t>(allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
     u32vec2_t image_size(250);
     render_texture = std::make_unique<texture_t>(
-        10, allocator, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+        10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
@@ -203,25 +193,22 @@ renderer_t::init(){
             render_texture->get_descriptor_write(descriptor_set)
         );
     }
-    vkUpdateDescriptorSets(allocator.device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
     if (!create_command_buffers()){
         return false;
     }
-
-    create_compute_command_buffers();
 
     return true;
 }
 
 void
 renderer_t::recreate_swapchain(){
-    vkDeviceWaitIdle(allocator.device);
+    vkDeviceWaitIdle(device->get_device());
   
     cleanup_swapchain();    
     swapchain = std::make_unique<swapchain_t>(
-        allocator, push_constants.window_size, surface,
-        graphics_family, present_family
+        device, push_constants.window_size, surface
     );
     
     create_render_pass();
@@ -231,9 +218,6 @@ renderer_t::recreate_swapchain(){
     if (!create_command_buffers()){
         throw std::runtime_error("Error: failed to re-create command buffers on swapchain invalidation.");
     }
-
-    // TODO: is this required?
-    // create_compute_command_buffers();
 }
 
 bool
@@ -241,7 +225,7 @@ renderer_t::create_render_pass(){
     VkAttachmentDescription colour_attachment = {};
     colour_attachment.format = swapchain->get_image_format();
     colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -276,21 +260,15 @@ renderer_t::create_render_pass(){
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(allocator.device, &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
+    return vkCreateRenderPass(device->get_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
 }
 
 bool 
 renderer_t::create_graphics_pipeline(){
     static std::string vertex_shader_code = "#version 450\n#extension GL_ARB_separate_shader_objects:enable\nlayout(location=0)in vec2 p;out gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(p,0,1);}";
 
-    bool success = true;
-    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code, &success);
-    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code, &success);
-
-    if (!success){
-        std::cout << "Error: Failed to create one of the shader modules" << std::endl;
-	    return false;
-    }
+    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
+    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
 
     VkPipelineShaderStageCreateInfo vert_create_info = {}; 
     vert_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -337,8 +315,8 @@ renderer_t::create_graphics_pipeline(){
     VkViewport viewport = {};
     viewport.x          = 0;
     viewport.y          = 0;
-    viewport.width      = (float) extents.width;
-    viewport.height     = (float) extents.height;
+    viewport.width      = static_cast<float>(extents.width);
+    viewport.height     = static_cast<float>(extents.height);
     viewport.minDepth   = 0;
     viewport.maxDepth   = 1;
 
@@ -413,7 +391,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
-	    allocator.device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
+	    device->get_device(), &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
         std::cout << "Error: Failed to create pipeline layout." << std::endl;
 	    return false;
@@ -450,7 +428,7 @@ renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     VkResult result = vkCreateGraphicsPipelines(
-	    allocator.device, VK_NULL_HANDLE, 1, 
+	    device->get_device(), VK_NULL_HANDLE, 1, 
         &pipeline_info, nullptr, &graphics_pipeline
     );
 
@@ -459,8 +437,8 @@ renderer_t::create_graphics_pipeline(){
 	    return false;
     }
 
-    vkDestroyShaderModule(allocator.device, vert_shader_module, nullptr);
-    vkDestroyShaderModule(allocator.device, frag_shader_module, nullptr);
+    vkDestroyShaderModule(device->get_device(), vert_shader_module, nullptr);
+    vkDestroyShaderModule(device->get_device(), frag_shader_module, nullptr);
 
     return true;
 }
@@ -472,21 +450,19 @@ renderer_t::create_framebuffers(){
     framebuffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){
-        std::vector<VkImageView> attachments = {
-	        swapchain->get_image_view(i)
-	    };
+        VkImageView image_view = swapchain->get_image_view(i);
 
         VkFramebufferCreateInfo framebuffer_info = {};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_info.renderPass = render_pass;
-        framebuffer_info.attachmentCount = attachments.size();
-        framebuffer_info.pAttachments = attachments.data();
+        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.pAttachments = &image_view;
         framebuffer_info.width = extents.width;
         framebuffer_info.height = extents.height;
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
-            allocator.device, &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
+            device->get_device(), &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
         ){
             return false;
         }
@@ -495,53 +471,19 @@ renderer_t::create_framebuffers(){
     return true;
 }
 
-void 
-renderer_t::create_compute_command_buffers(){
-    if (compute_command_buffers.size() > 0){
-        vkFreeCommandBuffers(allocator.device, compute_command_pool, 1, compute_command_buffers.data());
-        compute_command_buffers.clear();
-    }
-
-    compute_command_buffers.resize(swapchain->get_size());
-
-    for (uint32_t i = 0; i < command_buffers.size(); i++){
-        compute_command_buffers[i] = create_command_buffer(allocator.device, compute_command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-        [&](VkCommandBuffer command_buffer){
-
-            vkCmdPushConstants(
-                command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
-                0, sizeof(push_constant_t), &push_constants
-            );
-
-            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
-            vkCmdBindDescriptorSets(
-                command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
-                0, 1, &desc_sets[i], 0, nullptr
-            );
-            vkCmdDispatch(command_buffer, 250, 250, 1);
-        });
-    }
-}
-
-
 bool
 renderer_t::create_command_buffers(){
     command_buffers.resize(swapchain->get_size());
 
-    for (uint32_t i = 0; i < command_buffers.size(); i++){
-        command_buffers[i] = create_command_buffer(allocator.device, command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, 
+    for (uint32_t i = 0; i < swapchain->get_size(); i++){
+        command_buffers[i] = std::make_unique<command_buffer_t>(device->get_device(), command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, 
         [&](VkCommandBuffer command_buffer){
-            VkClearValue clear_value = {};
-            clear_value.color = { 0.0f, 0.0f, 0.0f, 1.0f };
-
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             render_pass_info.renderPass = render_pass;
             render_pass_info.framebuffer = framebuffers[i];
             render_pass_info.renderArea.offset = { 0, 0 };
             render_pass_info.renderArea.extent = swapchain->get_extents();
-            render_pass_info.clearValueCount = 1;
-            render_pass_info.pClearValues = &clear_value;
 
             vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
                 vkCmdBindPipeline(
@@ -577,7 +519,7 @@ renderer_t::create_descriptor_pool(){
     pool_info.pPoolSizes    = pool_sizes.data();
     pool_info.maxSets       = swapchain->get_size();
 
-    if (vkCreateDescriptorPool(allocator.device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
+    if (vkCreateDescriptorPool(device->get_device(), &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
 	    return false;
     }
 
@@ -590,7 +532,7 @@ renderer_t::create_descriptor_pool(){
     alloc_info.pSetLayouts        = layouts.data();
 
     desc_sets.resize(swapchain->get_size());
-    if (vkAllocateDescriptorSets(allocator.device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
+    if (vkAllocateDescriptorSets(device->get_device(), &alloc_info, desc_sets.data()) != VK_SUCCESS){
 	    return false;
     }
 
@@ -625,7 +567,7 @@ renderer_t::create_descriptor_set_layout(){
     layout_info.bindingCount = layouts.size();
     layout_info.pBindings    = layouts.data();
 
-    if (vkCreateDescriptorSetLayout(allocator.device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
+    if (vkCreateDescriptorSetLayout(device->get_device(), &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         return false;
     }
  
@@ -637,16 +579,16 @@ renderer_t::create_command_pool(){
     // create command pool
     VkCommandPoolCreateInfo command_pool_info = {};
     command_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    command_pool_info.queueFamilyIndex = graphics_family;
+    command_pool_info.queueFamilyIndex = device->get_graphics_family();
     command_pool_info.flags = 0;
 
-    if (vkCreateCommandPool(allocator.device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
+    if (vkCreateCommandPool(device->get_device(), &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
     	return false;
     }
 
-    command_pool_info.queueFamilyIndex = compute_family;
+    command_pool_info.queueFamilyIndex = device->get_compute_family();
 
-    if (vkCreateCommandPool(allocator.device, &command_pool_info, nullptr, &compute_command_pool) != VK_SUCCESS){
+    if (vkCreateCommandPool(device->get_device(), &command_pool_info, nullptr, &compute_command_pool) != VK_SUCCESS){
     	return false;
     }
 
@@ -656,7 +598,6 @@ renderer_t::create_command_pool(){
 bool
 renderer_t::create_sync(){
     image_available_semas.resize(frames_in_flight);
-    constants_pushed_semas.resize(frames_in_flight);
     compute_done_semas.resize(frames_in_flight);
     render_finished_semas.resize(frames_in_flight);
     in_flight_fences.resize(frames_in_flight);
@@ -670,30 +611,24 @@ renderer_t::create_sync(){
  
     for (int i = 0; i < frames_in_flight; i++){
         if (vkCreateSemaphore(
-            allocator.device, &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
+            device->get_device(), &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
         if (vkCreateSemaphore(
-            allocator.device, &create_info, nullptr, &constants_pushed_semas[i]) != VK_SUCCESS
+            device->get_device(), &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
         if (vkCreateSemaphore(
-            allocator.device, &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
+            device->get_device(), &create_info, nullptr, &compute_done_semas[i]) != VK_SUCCESS
         ){
             return false;
         }
 
-        if (vkCreateSemaphore(
-            allocator.device, &create_info, nullptr, &compute_done_semas[i]) != VK_SUCCESS
-        ){
-            return false;
-        }
-
-        if (vkCreateFence(allocator.device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
+        if (vkCreateFence(device->get_device(), &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
             return false;
         }
     }
@@ -705,7 +640,7 @@ uint32_t
 renderer_t::acquire_image() const {
     uint32_t image_index;
     vkAcquireNextImageKHR(
-        allocator.device, swapchain->get_handle(), ~((uint64_t) 0), image_available_semas[current_frame], 
+        device->get_device(), swapchain->get_handle(), ~((uint64_t) 0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
     return image_index;
@@ -757,7 +692,8 @@ renderer_t::render(){
    
     uint32_t image_index = acquire_image();
 
-    auto compute_command_buffer = create_command_buffer(allocator.device, compute_command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+
+    command_buffer_t compute_command_buffer(device->get_device(), compute_command_pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
     [&](VkCommandBuffer command_buffer){
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
@@ -773,24 +709,24 @@ renderer_t::render(){
     });
 
     submit_to_queue(
-        compute_queue, compute_command_buffer, image_available_semas[current_frame], 
+        compute_queue, compute_command_buffer.get_command_buffer(), image_available_semas[current_frame], 
         compute_done_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     );
-
+    
     submit_to_queue(
-        graphics_queue, command_buffers[image_index], compute_done_semas[current_frame], 
+        graphics_queue, command_buffers[image_index]->get_command_buffer(), compute_done_semas[current_frame], 
         render_finished_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     );
 
     present(image_index);
 
     current_frame = (current_frame + 1) % frames_in_flight; 
-    vkWaitForFences(allocator.device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(allocator.device, 1, &in_flight_fences[current_frame]);    
+    vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);    
 }
 
 VkShaderModule
-renderer_t::create_shader_module(std::string code, bool * success){
+renderer_t::create_shader_module(std::string code){
     const char * c_string = code.c_str();
     
     VkShaderModuleCreateInfo create_info = {};
@@ -799,8 +735,8 @@ renderer_t::create_shader_module(std::string code, bool * success){
     create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
 
     VkShaderModule shader_module;
-    if (vkCreateShaderModule(allocator.device, &create_info, nullptr, &shader_module) != VK_SUCCESS){
-	    *success = false;
+    if (vkCreateShaderModule(device->get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS){
+	    throw std::runtime_error("Error: Failed to create shader module.");
     }
     return shader_module;
 }

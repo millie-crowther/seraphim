@@ -1,20 +1,21 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "core/allocator.h"
-
 #include "vk_mem_alloc.h"
+
+#include "core/device.h"
 #include "maths/vec.h"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+
+#include <memory>
 
 class buffer_t {
 private:
     // fields
     bool is_host_visible;
 
-    allocator_t allocator; // TODO: maybe dont keep a copy
+    VmaAllocator allocator;
+    std::shared_ptr<device_t> device;
     VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
@@ -27,7 +28,7 @@ private:
 
 public:
     // constructors and destructors
-    buffer_t(const allocator_t & allocator, uint64_t size, VmaMemoryUsage vma_usage);
+    buffer_t(VmaAllocator allocator, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage);
     ~buffer_t();
 
     // public methods
