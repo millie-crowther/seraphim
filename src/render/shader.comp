@@ -281,6 +281,7 @@ void main(){
 
     vec2 camera_uv = vec2(gl_WorkGroupID.xy) / gl_NumWorkGroups.x;
     camera_uv = camera_uv * 2.0 - 1.0;
+    camera_uv.y *= -1;
     
     vec3 up = push_const.camera_up;
     vec3 right = push_const.camera_right;
@@ -290,16 +291,15 @@ void main(){
 
     vec3 d = normalize(camera_forward * f + right * camera_uv.x + up * camera_uv.y);
     
-    out_colour = vec4(abs(d), 1);
    
-//     out_colour = sky();
+    out_colour = sky();
 
-//     ray_t r = ray_t(x0, d);
-//     intersection_t i = raycast(r);
+    ray_t r = ray_t(x0, d);
+    intersection_t i = raycast(r);
 
-//     if (i.hit){
-//         out_colour = colour(i.i) * light(vec3(-3, 3, -3), i.x, i.i);
-//     }
+    if (i.hit){
+        out_colour = colour(i.i) * light(vec3(-3, 3, -3), i.x, i.i);
+    }
 
     imageStore(render_texture, ivec2(gl_WorkGroupID.xy), out_colour);
 }

@@ -100,8 +100,6 @@ private:
     void present(uint32_t image_index) const;
     void submit_to_queue(VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage);
 
-    void update_push_const(VkCommandPool pool, VkQueue queue, VkDevice device, VkPipelineLayout layout);
-
 public:
     // constructors and destructors
     renderer_t(

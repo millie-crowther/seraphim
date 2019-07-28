@@ -192,7 +192,7 @@ renderer_t::init(){
     // TODO: maybe create a transfer queue for transfer operations??
     octree = std::make_unique<octree_t>(allocator, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
-    u32vec2_t image_size(150);
+    u32vec2_t image_size(250);
     render_texture = std::make_unique<texture_t>(
         10, allocator, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
@@ -743,83 +743,17 @@ renderer_t::submit_to_queue(
     vkQueueSubmit(queue, 1, &submit_info, fence);
 }
 
-
-void 
-renderer_t::update_push_const(
-    VkCommandPool pool, VkQueue queue, VkDevice device, VkPipelineLayout layout
-){
-    VkCommandBufferAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = pool;
-    alloc_info.commandBufferCount = 1;
-
-    VkCommandBuffer push_constants_command;
-    VkResult result = vkAllocateCommandBuffers(device, &alloc_info, &push_constants_command);
-    if (result != VK_SUCCESS){
-        throw std::runtime_error("Error: Failed to allocate command buffer.");
-    }
-
-    VkCommandBufferBeginInfo begin_info;
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    begin_info.pNext = nullptr;
-    begin_info.pInheritanceInfo = nullptr;
-
-    u32vec2_t s(1);
-    result = vkBeginCommandBuffer(push_constants_command, &begin_info);
-    if (result != VK_SUCCESS){
-        throw "fuck";
-    }
-        vkCmdPushConstants(
-            push_constants_command, layout, VK_SHADER_STAGE_COMPUTE_BIT,
-            0, sizeof(u32vec2_t), &s
-        );
-    result = vkEndCommandBuffer(push_constants_command);
-    if (result != VK_SUCCESS){
-        throw "fuck";
-    }
-
-    VkSubmitInfo submit_info;
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &push_constants_command;
-    submit_info.pNext = nullptr;
-
-    submit_info.waitSemaphoreCount = 1;
-    submit_info.pWaitSemaphores = &image_available_semas[current_frame];
-
-    VkPipelineStageFlags stage_mask = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
-    submit_info.pWaitDstStageMask = &stage_mask;
-
-    submit_info.signalSemaphoreCount = 1;
-    submit_info.pSignalSemaphores = &constants_pushed_semas[current_frame];
-        
-    result = vkQueueSubmit(queue, 1, &submit_info, in_flight_fences[current_frame]);
-    if (result != VK_SUCCESS){
-        throw "fuck";
-    }
-    vkFreeCommandBuffers(device, pool, 1, &push_constants_command);
-
-}
-
 void
 renderer_t::render(){
     push_constants.current_frame++;
 
-    // octree->handle_requests();
+    octree->handle_requests();
 
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
         push_constants.camera_up = camera->get_up().cast<float>();
     }
-
-    // update_push_const(compute_command_pool, compute_queue, allocator.device, compute_pipeline_layout);
-
-    auto r = push_constants.camera_right;
-    // std::cout << r[0] << ", " << r[1] << ", " << r[2] << std::endl;
-    // create_compute_command_buffers();
    
     uint32_t image_index = acquire_image();
 
