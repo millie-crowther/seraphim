@@ -1,7 +1,7 @@
 #ifndef BLASPHEME_H
 #define BLASPHEME_H
 
-#define BLASPHEME_DEBUG false
+#define BLASPHEME_DEBUG true
 
 #include "vk_mem_alloc.h"
 

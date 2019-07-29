@@ -68,6 +68,7 @@ private:
     VkQueue compute_queue;
     
     std::string fragment_shader_code;
+    std::string vertex_shader_code;
 
     std::shared_ptr<sdf3_t> sphere;
     std::shared_ptr<sdf3_t> plane;

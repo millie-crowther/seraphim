@@ -33,7 +33,8 @@ renderer_t::renderer_t(
     //     recreate_swapchain();
     // });
     
-    fragment_shader_code = resources::load_file("../src/render/shader.frag");
+    fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
+    vertex_shader_code = resources::load_file("../src/render/shader/shader.vert");
 
     sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3);
     plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
@@ -101,7 +102,7 @@ renderer_t::create_compute_pipeline(){
 	    return false;
     }
 
-    std::string compute_shader_code = resources::load_file("../src/render/shader.comp");
+    std::string compute_shader_code = resources::load_file("../src/render/shader/shader.comp");
 
     VkShaderModule module = create_shader_module(compute_shader_code);
 
@@ -251,8 +252,6 @@ renderer_t::create_render_pass(){
 
 bool 
 renderer_t::create_graphics_pipeline(){
-    static std::string vertex_shader_code = "#version 450\nout gl_PerVertex{vec4 gl_Position;};void main(){gl_Position=vec4(vec2(gl_VertexID&2,(gl_VertexID<<1)&2)*2-1,0,1);}";
-
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
 
