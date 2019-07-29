@@ -32,8 +32,10 @@ private:
         f32vec3_t x;
         float size;
         
-        u32vec3_t _;
-        uint32_t i;
+        uint32_t child;
+        uint32_t parent;
+        uint32_t _1;
+        uint32_t _2;
     };
 
     struct node_t {

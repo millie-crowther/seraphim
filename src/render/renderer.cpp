@@ -13,6 +13,9 @@ renderer_t::renderer_t(
     VkSurfaceKHR surface, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera
 ){
+    work_group_count = u32vec2_t(8);
+    work_group_size = u32vec2_t(32);
+
     push_constants.current_frame = 0;
 
     set_main_camera(test_camera);
@@ -165,7 +168,7 @@ renderer_t::init(){
     // TODO: maybe create a transfer queue for transfer operations??
     octree = std::make_unique<octree_t>(allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
-    u32vec2_t image_size(250);
+    u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
         10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
@@ -446,7 +449,8 @@ renderer_t::create_command_buffers(){
     command_buffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){
-        command_buffers[i] = std::make_unique<command_buffer_t>(device->get_device(), command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, 
+        command_buffers[i] = std::make_unique<command_buffer_t>(
+            device->get_device(), command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, 
         [&](VkCommandBuffer command_buffer){
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -672,7 +676,7 @@ renderer_t::render(){
             command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
             0, 1, &desc_sets[image_index], 0, nullptr
         );
-        vkCmdDispatch(command_buffer, 250, 250, 1);
+        vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
     });
 
     submit_to_queue(

@@ -32,9 +32,11 @@ public:
 
 private:
     // constants
-    static constexpr int frames_in_flight = 2;
+    static constexpr uint8_t frames_in_flight = 2;
 
     // fields
+    u32vec2_t work_group_count;
+    u32vec2_t work_group_size;
     push_constant_t push_constants;
     VmaAllocator allocator;
     std::shared_ptr<device_t> device;

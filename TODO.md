@@ -21,9 +21,12 @@
         * iterative beam optimisation
 * destruction of descriptor pools needs to be re added!!!!
 * really just improve design of renderer class
-* optimise work group size of compute shader
 * bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
 * fix scaling of render texture to screen
+* fix occasional crash of engine where it hangs
+* figure out why render texture size is stuck
+* reduce branching in compute shader
+* apply `restrict` qualifiers to relevant buffers once i can figure out what it does
 
 ## rendering
 

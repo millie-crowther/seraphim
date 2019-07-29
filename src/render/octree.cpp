@@ -230,6 +230,6 @@ octree_t::handle_requests(){
         // std::cout << "Leaf node propertion: " << static_cast<double>(leaf_nodes) / static_cast<double>(structure.size()) * 100.0 << "%" << std::endl;
     }
 
-    static request_t clear_requests[max_requests_size] = {{ f32vec3_t(), 0, u32vec3_t(), 0 }};
+    static request_t clear_requests[max_requests_size] = {{ 0 }};
     request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0, pool, queue);
 }
