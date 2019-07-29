@@ -43,11 +43,11 @@ blaspheme_t::blaspheme_t(){
 	    std::cout << "\t" << extension.extensionName << std::endl;
     }
 
-    if (is_debug){
-	    if (!setup_debug_callback()){
-	        throw std::runtime_error("Error: Failed to setup debug callback.");
-	    }
+#if BLASPHEME_DEBUG
+    if (!setup_debug_callback()){
+        throw std::runtime_error("Error: Failed to setup debug callback.");
     }
+#endif
 
     if (glfwCreateWindowSurface(instance, window->get_window(), nullptr, &surface) != VK_SUCCESS) {
 	    throw std::runtime_error("Error: Failed to create window surface.");
@@ -110,15 +110,15 @@ blaspheme_t::~blaspheme_t(){
     device.reset();
 
     // destroy debug callback
-    if (is_debug){
-        auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
-            instance, "vkDestroyDebugReportCallbackEXT"
-        );
+#if BLASPHEME_DEBUG
+    auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
+        instance, "vkDestroyDebugReportCallbackEXT"
+    );
 
-        if (func != nullptr){
-            func(instance, callback, nullptr);
-        }
+    if (func != nullptr){
+        func(instance, callback, nullptr);
     }
+#endif
    
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
@@ -141,52 +141,29 @@ blaspheme_t::get_scheduler() const {
     return scheduler;
 }
 
-bool
-blaspheme_t::check_validation_layers(){
-    uint32_t layer_count;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
-    std::vector<VkLayerProperties> available_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-
-    for (auto layer : validation_layers){
-        bool found = false;
-	
-        for (auto layer_property : available_layers){ 
-            if (layer == std::string(layer_property.layerName)){
-                found = true;
-                break;
-            }
-        }
-
-        if (!found){
-            return false;
-        }
-    }
-
-    return true;
-}
-
 std::vector<const char *>
 blaspheme_t::get_required_extensions(){
     uint32_t      extension_count = 0;
     const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
-    std::vector<const char *> req_ext(glfw_extensions, glfw_extensions + extension_count);
-    if (is_debug){
-	    req_ext.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
-    }
+    std::vector<const char *> required_extensions(glfw_extensions, glfw_extensions + extension_count);
 
-    return req_ext;
+#if BLASPHEME_DEBUG
+    required_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+#endif
+
+    return required_extensions;
 }
 
 
 
 void
 blaspheme_t::create_instance(){
-    if (is_debug && !check_validation_layers()){
+#if BLASPHEME_DEBUG
+    if (!check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
     }
+#endif
 
     // determine vulkan version
     typedef VkResult (*vulkan_version_func_t)(uint32_t *);
@@ -227,12 +204,12 @@ blaspheme_t::create_instance(){
         std::cout << "\t" << create_info.ppEnabledExtensionNames[i] << std::endl;
     }
 
-    if (is_debug){
-        create_info.ppEnabledLayerNames = validation_layers.data();
-        create_info.enabledLayerCount   = validation_layers.size();
-    } else {
-        create_info.enabledLayerCount   = 0;
-    }
+#if BLASPHEME_DEBUG
+    create_info.ppEnabledLayerNames = validation_layers.data();
+    create_info.enabledLayerCount   = validation_layers.size();
+#else
+    create_info.enabledLayerCount   = 0;
+#endif
 
     std::cout << "Enabled validation layers: "  << std::endl;
     for (uint32_t i = 0; i < create_info.enabledLayerCount; i++){
@@ -245,6 +222,7 @@ blaspheme_t::create_instance(){
     }
 }
 
+#if BLASPHEME_DEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL 
 debug_callback(
     VkDebugReportFlagsEXT flags,
@@ -262,10 +240,6 @@ debug_callback(
 
 bool
 blaspheme_t::setup_debug_callback(){
-    if (!is_debug){
-	    return true;
-    }
-
     VkDebugReportCallbackCreateInfoEXT create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT 
@@ -279,6 +253,33 @@ blaspheme_t::setup_debug_callback(){
 
     return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
+
+bool
+blaspheme_t::check_validation_layers(){
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+    for (auto layer : validation_layers){
+        bool found = false;
+	
+        for (auto layer_property : available_layers){ 
+            if (layer == std::string(layer_property.layerName)){
+                found = true;
+                break;
+            }
+        }
+
+        if (!found){
+            return false;
+        }
+    }
+
+    return true;
+}
+#endif
 
 void
 blaspheme_t::run(){

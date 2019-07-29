@@ -1,7 +1,7 @@
 #ifndef BLASPHEME_H
 #define BLASPHEME_H
 
-#define BLASPHEME_DEBUG 1
+#define BLASPHEME_DEBUG false
 
 #include "vk_mem_alloc.h"
 
@@ -17,9 +17,7 @@ private:
       initialisation functions
     */
     void create_instance();
-    bool check_validation_layers();
     std::vector<const char *> get_required_extensions();
-    bool setup_debug_callback();
 
 	std::shared_ptr<device_t> device;
 
@@ -27,9 +25,11 @@ private:
     void update_fps_counter(double delta);
 
     // debug fields
-    bool is_debug;
+#if BLASPHEME_DEBUG
     VkDebugReportCallbackEXT callback;
-
+    bool check_validation_layers();
+    bool setup_debug_callback();
+#endif
     std::shared_ptr<renderer_t> renderer;
 
     interval_revelator_t::follower_ptr_t frame_start_follower;
