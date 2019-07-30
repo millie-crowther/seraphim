@@ -113,12 +113,9 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
 
 uint32_t 
 octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
-    // std::cout << "i: " << i << std::endl;
-    // std::cout << "c: " << structure[i].c << std::endl;
     if (structure[i].type == node_type_leaf || structure[i].type == node_type_empty){
         return i;
     }
-
 
     i = structure[i].c;
 
@@ -204,7 +201,7 @@ octree_t::handle_request(const f32vec3_t & x){
 
 void
 octree_t::handle_requests(){
-    request_t data[max_requests_size];
+    static request_t data[max_requests_size];
     request_buffer->read(&data, sizeof(request_t) * max_requests_size);
 
     bool changed = false;
@@ -213,23 +210,16 @@ octree_t::handle_requests(){
         if (data[i].size > 0){
             changed = true;
             handle_request(data[i].x + data[i].size / 2);
+
+            std::cout << "child: " << data[i].child << "; parent: " << data[i].parent << std::endl;
         }
     }    
     
 
     if (changed){
         octree_buffer->copy(structure.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
-        // uint32_t leaf_nodes = 0;
-
-        // for (auto node : structure){
-        //     if (node & is_leaf_flag){
-        //         leaf_nodes++;
-        //     }
-        // }
-
-        // std::cout << "Leaf node propertion: " << static_cast<double>(leaf_nodes) / static_cast<double>(structure.size()) * 100.0 << "%" << std::endl;
     }
 
-    static request_t clear_requests[max_requests_size] = {{ 0 }};
+    static request_t clear_requests[max_requests_size];
     request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0, pool, queue);
 }

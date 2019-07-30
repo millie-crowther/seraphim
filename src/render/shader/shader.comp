@@ -7,12 +7,12 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 // constants
 //
+const uint node_type_unused = 1 << 4;
 const uint node_type_empty = 1 << 6;
 const uint node_type_leaf = 1 << 5;
 
 const uint structure_size = 25000;
 const uint requests_size = 64;
-const uint brick_id_mask = 0xFFFFFF;
 const float sqrt3 = 1.73205080757;
 
 // these ones could be push constants hypothetically
@@ -35,7 +35,7 @@ struct request_t {
 };
 
 struct octree_node_t {
-    uint a;
+    uint header;
     uint b;
     uint c;
     uint d;
@@ -86,7 +86,7 @@ layout( push_constant ) uniform push_constants {
 //
 // buffers
 //
-layout(binding = 1) readonly buffer octree_buffer {
+layout(binding = 1) buffer octree_buffer {
     octree_node_t structure[structure_size];
 } octree;
 
@@ -121,7 +121,6 @@ node_t octree_lookup(vec3 x){
     vec3 a = abs(x);
     bool invalid = max(a.x, max(a.y, a.z)) > push_const.render_distance;
 
-    // TODO: remove branch
     if (invalid){ 
         return invalid_node;
     }
@@ -129,8 +128,8 @@ node_t octree_lookup(vec3 x){
     node_t node = base_node();
 
     while (
-        (octree.structure[node.i].a & 0xFF) != node_type_empty &&
-        (octree.structure[node.i].a & 0xFF) != node_type_leaf
+        (octree.structure[node.i].header & 0xFF) != node_type_empty &&
+        (octree.structure[node.i].header & 0xFF) != node_type_leaf
     ){
         node.i = octree.structure[node.i].c;
         node.size /= 2;
@@ -175,7 +174,7 @@ intersection_t plane_intersection(ray_t r, node_t node, uint i){
 intersection_t raycast(ray_t r){
     node_t node = base_node();
 
-
+    intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
@@ -183,10 +182,10 @@ intersection_t raycast(ray_t r){
 	    node = octree_lookup(r.x);
 
         if (node.size < 0 || node.i >= structure_size){
-            return null_intersection;
+            break;
         }
     
-        if ((octree.structure[node.i].a & 0xFF) != node_type_empty){
+        if ((octree.structure[node.i].header & 0xFF) != node_type_empty){
             observe(node.i, vec4(node.min, node.size / 2));
 
 
@@ -200,7 +199,8 @@ intersection_t raycast(ray_t r){
                 i.x.x <= node.min.x + node.size && i.x.y <= node.min.y + node.size &&
                 i.x.z <= node.min.z + node.size    
             ){
-                return i;
+                intersection = i;
+                break;
             }
         }
 	
@@ -212,7 +212,7 @@ intersection_t raycast(ray_t r){
         r.x += r.d * lambda;
     }
 
-    return null_intersection;
+    return intersection;
 }
 
 float shadow(vec3 l, vec3 p){
@@ -275,23 +275,19 @@ vec4 sky(){
 }
 
 void render(){
-    vec4 out_colour;
-
-
-    vec2 camera_uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
-    camera_uv = camera_uv * 2.0 - 1.0;
-    camera_uv.y *= -1;
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    uv = uv * 2.0 - 1.0;
+    uv.y *= -1;
     
     vec3 up = push_const.camera_up;
     vec3 right = push_const.camera_right;
     vec3 x0 = push_const.camera_position;
 
-    vec3 camera_forward = cross(right, up);
+    vec3 forward = cross(right, up);
 
-    vec3 d = normalize(camera_forward * f + right * camera_uv.x + up * camera_uv.y);
+    vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
     
-   
-    out_colour = sky();
+    vec4 out_colour = sky();
 
     ray_t r = ray_t(x0, d);
     intersection_t i = raycast(r);
@@ -308,10 +304,16 @@ void octree_update(){
         gl_GlobalInvocationID.x +
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
-
+    
+    if (
+        i < structure_size && 
+        (octree.structure[i].header & 0xFF) == node_type_unused
+    ){
+        requests.requests[i % requests_size].child = i;
+    } 
 }
 
 void main(){
-    octree_update();
     render();
+    octree_update();
 }

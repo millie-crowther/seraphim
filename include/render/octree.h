@@ -36,6 +36,10 @@ private:
         uint32_t parent;
         uint32_t _1;
         uint32_t _2;
+
+        request_t(){
+            size = -1;
+        }
     };
 
     struct node_t {
@@ -48,11 +52,9 @@ private:
     };
 
     // constants
-    static constexpr uint8_t node_type_unused = 1 << 7;
+    static constexpr uint8_t node_type_unused = 1 << 4;
     static constexpr uint8_t node_type_empty  = 1 << 6;
     static constexpr uint8_t node_type_leaf   = 1 << 5;
-    static constexpr uint8_t node_type_branch = 1 << 4;
-    static constexpr uint8_t node_type_stem   = 1 << 3;
     
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
