@@ -17,7 +17,6 @@ octree_t::octree_t(
     this->pool = pool;
     this->queue = queue;
     this->sdfs = sdfs;
-    structure.reserve(max_structure_size);
 
     universal_aabb = f32vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
@@ -70,8 +69,6 @@ octree_t::octree_t(
     initial_octree.fill(unused_node);
     initial_octree[0] = create_node(universal_aabb);
 
-    structure = { initial_octree[0] };
-
     octree_buffer->copy(initial_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
 
 }
@@ -110,27 +107,6 @@ octree_t::intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sd
 
     return std::make_tuple(false, false);
 }
-
-uint32_t 
-octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
-    if (structure[i].type == node_type_leaf || structure[i].type == node_type_empty){
-        return i;
-    }
-
-    i = structure[i].c;
-
-    aabb[3] /= 2;
-
-    for (uint8_t a = 0; a < 3; a++){
-        if (x[a] > aabb[a] + aabb[3]){
-            aabb[a] += aabb[3];
-            i += 1 << a;
-        }
-    }
-
-    return lookup(x, i, aabb);    
-}
-
 
 octree_t::node_t 
 octree_t::create_node(const f32vec4_t & aabb){
@@ -183,35 +159,34 @@ octree_t::create_node(const f32vec4_t & aabb){
 
 void 
 octree_t::handle_request(const request_t & r){
-    structure[r.parent].type = node_type_branch;
-    structure[r.parent].c = structure.size();
+    node_t parent;
+    parent.type = node_type_branch;
+    parent.c = r.child;
 
+    octree_buffer->copy(&parent, sizeof(node_t), sizeof(node_t) * r.parent, pool, queue);
+
+    std::array<node_t, 8> children;
     for (uint8_t octant = 0; octant < 8; octant++){
         f32vec4_t aabb = r.aabb;
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
-        structure.push_back(create_node(aabb));
+        children[octant] = create_node(aabb);
     }
+
+    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * r.child, pool, queue);
 }
 
 void
 octree_t::handle_requests(){
-    static request_t data[max_requests_size];
-    request_buffer->read(&data, sizeof(request_t) * max_requests_size);
+    static request_t requests[max_requests_size];
+    request_buffer->read(&requests, sizeof(request_t) * max_requests_size);
 
-    bool changed = false;
-
-    for (uint32_t i = 0; i < max_requests_size; i++){
-        if (data[i].child > 0 && data[i].aabb[3] > 0){
-            changed = true;
-            handle_request(data[i]);
+    for (auto & request : requests){
+        if (request.child > 0 && request.aabb[3] > 0){
+            handle_request(request);
         }
     }    
-
-    if (changed){
-        octree_buffer->copy(structure.data(), sizeof(node_t) * structure.size(), 0, pool, queue);
-    }
 
     static request_t clear_requests[max_requests_size];
     request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0, pool, queue);

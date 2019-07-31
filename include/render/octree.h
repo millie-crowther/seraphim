@@ -60,14 +60,12 @@ private:
     static constexpr uint32_t max_requests_size  = 64;
 
     // fields
-    std::vector<node_t> structure; // TODO: should this be an array instead?
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     f32vec4_t universal_aabb;
 
     // private functions
-    uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
     std::tuple<bool, bool> intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
     node_t create_node(const f32vec4_t & aabb);
     void handle_request(const request_t & x);

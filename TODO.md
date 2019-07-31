@@ -23,7 +23,6 @@
 * really just improve design of renderer class
 * bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
 * fix scaling of render texture to screen
-* fix occasional crash of engine where it hangs
 * figure out why render texture size is stuck
 * reduce branching in compute shader
 * apply `restrict` qualifiers to relevant buffers once i can figure out what it does
@@ -32,6 +31,9 @@
 
 ### general
 * make rays that originate outside octree intersect properly
+* create octree on cpu side that stores renderables
+    * makes lookup of which sdfs to query quicker
+    * may also help with collision
 * compute shader
     * beam optimisation
     * octree pruning
