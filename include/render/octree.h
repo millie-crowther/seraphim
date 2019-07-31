@@ -29,8 +29,7 @@ private:
     // types
 
     struct request_t {
-        f32vec3_t x;
-        float size;
+        f32vec4_t aabb;
         
         uint32_t child;
         uint32_t parent;
@@ -38,7 +37,7 @@ private:
         uint32_t _2;
 
         request_t(){
-            size = -1;
+            child = 0;
         }
     };
 
@@ -52,9 +51,10 @@ private:
     };
 
     // constants
-    static constexpr uint8_t node_type_unused = 1 << 4;
+    static constexpr uint8_t node_type_unused = 1 << 3;
     static constexpr uint8_t node_type_empty  = 1 << 6;
     static constexpr uint8_t node_type_leaf   = 1 << 5;
+    static constexpr uint8_t node_type_branch = 1 << 4;
     
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
@@ -64,13 +64,13 @@ private:
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
-    vec4_t universal_aabb;
+    f32vec4_t universal_aabb;
 
     // private functions
     uint32_t lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const;
-    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-    node_t create_node(const vec4_t & aabb, uint32_t index);
-    void handle_request(const f32vec3_t & x);
+    std::tuple<bool, bool> intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+    node_t create_node(const f32vec4_t & aabb);
+    void handle_request(const request_t & x);
 
     VkCommandPool pool;
     VkQueue queue;

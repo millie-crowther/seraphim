@@ -19,7 +19,7 @@ octree_t::octree_t(
     this->sdfs = sdfs;
     structure.reserve(max_structure_size);
 
-    universal_aabb = vec4_t(-hyper::rho);
+    universal_aabb = f32vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
     // extra node at end is to allow shader to avoid branching
@@ -64,20 +64,20 @@ octree_t::octree_t(
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
 
-    std::array<node_t, max_structure_size> empty_octree;
+    std::array<node_t, max_structure_size> initial_octree;
     node_t unused_node;
     unused_node.type = node_type_unused;
+    initial_octree.fill(unused_node);
+    initial_octree[0] = create_node(universal_aabb);
 
-    empty_octree.fill(unused_node);
-    empty_octree[0] = create_node(universal_aabb, 0);
+    structure = { initial_octree[0] };
 
-    structure = { empty_octree[0] };
+    octree_buffer->copy(initial_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
 
-    octree_buffer->copy(empty_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
 }
 
 std::tuple<bool, bool> 
-octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
+octree_t::intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
     double upper_radius = vec3_t(aabb[3] / 2).norm();
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
     double p = sdf->phi(c);
@@ -133,7 +133,7 @@ octree_t::lookup(const f32vec3_t & x, uint32_t i, vec4_t & aabb) const {
 
 
 octree_t::node_t 
-octree_t::create_node(const vec4_t & aabb, uint32_t index){
+octree_t::create_node(const f32vec4_t & aabb){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     node_t node;
@@ -182,20 +182,16 @@ octree_t::create_node(const vec4_t & aabb, uint32_t index){
 }
 
 void 
-octree_t::handle_request(const f32vec3_t & x){
-    vec4_t aabb = universal_aabb;
-    uint32_t node_index = lookup(x, 0, aabb);
-    
-    structure[node_index].type = node_type_branch;
-    structure[node_index].c = structure.size();
+octree_t::handle_request(const request_t & r){
+    structure[r.parent].type = node_type_branch;
+    structure[r.parent].c = structure.size();
 
     for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t new_aabb = aabb;
-        new_aabb[3] /= 2;
-        if (octant & 1) new_aabb[0] += new_aabb[3];
-        if (octant & 2) new_aabb[1] += new_aabb[3];
-        if (octant & 4) new_aabb[2] += new_aabb[3];
-        structure.push_back(create_node(new_aabb, node_index));
+        f32vec4_t aabb = r.aabb;
+        if (octant & 1) aabb[0] += aabb[3];
+        if (octant & 2) aabb[1] += aabb[3];
+        if (octant & 4) aabb[2] += aabb[3];
+        structure.push_back(create_node(aabb));
     }
 }
 
@@ -207,17 +203,14 @@ octree_t::handle_requests(){
     bool changed = false;
 
     for (uint32_t i = 0; i < max_requests_size; i++){
-        if (data[i].size > 0){
+        if (data[i].child > 0 && data[i].aabb[3] > 0){
             changed = true;
-            handle_request(data[i].x + data[i].size / 2);
-
-            std::cout << "child: " << data[i].child << "; parent: " << data[i].parent << std::endl;
+            handle_request(data[i]);
         }
     }    
-    
 
     if (changed){
-        octree_buffer->copy(structure.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
+        octree_buffer->copy(structure.data(), sizeof(node_t) * structure.size(), 0, pool, queue);
     }
 
     static request_t clear_requests[max_requests_size];

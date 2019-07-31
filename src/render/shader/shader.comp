@@ -7,9 +7,10 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 // constants
 //
-const uint node_type_unused = 1 << 4;
+const uint node_type_unused = 1 << 3;
 const uint node_type_empty = 1 << 6;
 const uint node_type_leaf = 1 << 5;
+const uint node_type_branch = 1 << 4;
 
 const uint structure_size = 25000;
 const uint requests_size = 64;
@@ -127,10 +128,7 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    while (
-        (octree.structure[node.i].header & 0xFF) != node_type_empty &&
-        (octree.structure[node.i].header & 0xFF) != node_type_leaf
-    ){
+    while ((octree.structure[node.i].header & 0xFF) == node_type_branch){
         node.i = octree.structure[node.i].c;
         node.size /= 2;
 
@@ -307,13 +305,15 @@ void octree_update(){
     
     if (
         i < structure_size && 
+        (i & 7) == 1 &&
         (octree.structure[i].header & 0xFF) == node_type_unused
     ){
-        requests.requests[i % requests_size].child = i;
+        uint ri = ((i >> 3) + push_const.current_frame) % requests_size;
+        requests.requests[ri].child = i;
     } 
 }
 
 void main(){
-    render();
     octree_update();
+    render();
 }
