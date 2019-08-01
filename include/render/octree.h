@@ -33,11 +33,11 @@ private:
         
         uint32_t child;
         uint32_t parent;
-        uint32_t _1;
+        uint32_t state;
         uint32_t _2;
 
         request_t(){
-            child = 0;
+            state = request_state_unused;
         }
     };
 
@@ -55,6 +55,10 @@ private:
     static constexpr uint8_t node_type_empty  = 1 << 6;
     static constexpr uint8_t node_type_leaf   = 1 << 5;
     static constexpr uint8_t node_type_branch = 1 << 4;
+
+    static constexpr uint8_t request_state_unused = 1;
+    static constexpr uint8_t request_state_pending = 2;
+    static constexpr uint8_t request_state_fulfilled = 3;
     
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
@@ -72,6 +76,7 @@ private:
 
     VkCommandPool pool;
     VkQueue queue;
+    VkDevice device;
 
 public:
     octree_t(

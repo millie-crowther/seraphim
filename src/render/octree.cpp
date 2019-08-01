@@ -14,6 +14,7 @@ octree_t::octree_t(
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
 ){
+    this->device = device->get_device();
     this->pool = pool;
     this->queue = queue;
     this->sdfs = sdfs;
@@ -33,6 +34,9 @@ octree_t::octree_t(
         allocator, device, request_size,
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
+
+    std::array<request_t, max_requests_size> initial_requests;
+    request_buffer->copy(initial_requests.data(), sizeof(initial_requests), 0, pool, queue);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
@@ -159,12 +163,6 @@ octree_t::create_node(const f32vec4_t & aabb){
 
 void 
 octree_t::handle_request(const request_t & r){
-    node_t parent;
-    parent.type = node_type_branch;
-    parent.c = r.child;
-
-    octree_buffer->copy(&parent, sizeof(node_t), sizeof(node_t) * r.parent, pool, queue);
-
     std::array<node_t, 8> children;
     for (uint8_t octant = 0; octant < 8; octant++){
         f32vec4_t aabb = r.aabb;
@@ -179,15 +177,17 @@ octree_t::handle_request(const request_t & r){
 
 void
 octree_t::handle_requests(){
-    static request_t requests[max_requests_size];
-    request_buffer->read(&requests, sizeof(request_t) * max_requests_size);
+    vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
+
+    static std::array<request_t, max_requests_size> requests;
+    request_buffer->read(requests.data(), sizeof(requests));
 
     for (auto & request : requests){
-        if (request.child > 0 && request.aabb[3] > 0){
+        if (request.state == request_state_pending){
             handle_request(request);
+            request.state = request_state_fulfilled;
         }
     }    
 
-    static request_t clear_requests[max_requests_size];
-    request_buffer->copy(&clear_requests, sizeof(request_t) * max_requests_size, 0, pool, queue);
+    request_buffer->copy(requests.data(), sizeof(requests), 0, pool, queue);
 }

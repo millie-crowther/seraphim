@@ -22,6 +22,7 @@
 * destruction of descriptor pools needs to be re added!!!!
 * really just improve design of renderer class
 * bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
+    * should hopefully fix horrible sync bugs 
 * fix scaling of render texture to screen
 * figure out why render texture size is stuck
 * reduce branching in compute shader
