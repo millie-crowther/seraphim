@@ -11,11 +11,7 @@ const uint node_type_unused = 1 << 3;
 const uint node_type_empty = 1 << 6;
 const uint node_type_leaf = 1 << 5;
 const uint node_type_branch = 1 << 4;
-
-const uint request_state_unused = 1;
-const uint request_state_pending = 2;
-const uint request_state_fulfilled = 3;
-const uint request_state_writing = 4;
+const uint node_type_pending_data = 1;
 
 const uint structure_size = 25000;
 const uint requests_size = 64;
@@ -35,12 +31,12 @@ struct request_t {
     vec4 aabb;
     
     uint child;
-    uint parent;
-    uint state;
+    uint _1;
     uint _2;
+    uint _3;
 };
 
-struct octree_node_t {
+struct octree_data_t {
     uint header;
     uint b;
     uint c;
@@ -64,11 +60,11 @@ struct intersection_t {
     vec3 x;
     vec3 n;
     node_t node;
-    uint i;
+    octree_data_t data;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    node_t(0, vec3(0), 0), 0
+    node_t(0, vec3(0), 0), octree_data_t(0, 0, 0, 0)
 );
 
 //
@@ -93,7 +89,7 @@ layout( push_constant ) uniform push_constants {
 // buffers
 //
 layout(binding = 1) buffer octree_buffer {
-    octree_node_t structure[structure_size];
+    octree_data_t structure[structure_size];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
@@ -105,12 +101,17 @@ void observe(uint parent, vec4 aabb){
     bool should_request = aabb.w > epsilon * max(1, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
 
     if (should_request){
-        uint i = parent % requests_size;
+        uint ri = parent % requests_size;
+        request_t r = requests.requests[ri];
 
-        if (atomicCompSwap(requests.requests[i].state, request_state_unused, request_state_writing) == request_state_unused){
-            requests.requests[i].aabb = aabb;
-            requests.requests[i].parent = parent;
-            requests.requests[i].state = request_state_pending;
+        if (r.child > 0 && atomicCompSwap(octree.structure[r.child].header, node_type_unused, node_type_pending_data) == node_type_unused){
+            for (uint c = 1; c < 8; c++){
+                octree.structure[r.child + c].header = node_type_pending_data;
+            }
+
+            octree.structure[parent].c = r.child;
+            octree.structure[parent].header = node_type_branch;
+            requests.requests[ri].aabb = aabb;
         }
     }
 }
@@ -138,20 +139,23 @@ node_t octree_lookup(vec3 x){
         node.min += vec3(octant) * node.size;
     }
 
+    if (octree.structure[node.i].header == node_type_pending_data){
+        return invalid_node;
+    }
+
     return node;
 }
 
-vec3 normal(uint i){
-    uint data = octree.structure[i].b;
+vec3 normal(octree_data_t data){
     return vec3(
-        data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF
+        data.b & 0xFF, (data.b >> 8) & 0xFF, (data.b >> 16) & 0xFF
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, node_t node, uint i){
-    vec3 n = normal(i);
+intersection_t plane_intersection(ray_t r, node_t node, octree_data_t data){
+    vec3 n = normal(data);
 
-    float phi = float(octree.structure[i].b >> 24) / 255.0 - 0.5;
+    float phi = float(data.b >> 24) / 255.0 - 0.5;
 
     phi *= sqrt3 * node.size;
 
@@ -161,13 +165,13 @@ intersection_t plane_intersection(ray_t r, node_t node, uint i){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, n, node, i);
+        return intersection_t(true, r.x, n, node, data);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, i);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data);
 }
 
 intersection_t raycast(ray_t r){
@@ -183,11 +187,12 @@ intersection_t raycast(ray_t r){
         if (node.size < 0 || node.i >= structure_size){
             break;
         }
-    
-        if ((octree.structure[node.i].header & 0xFF) != node_type_empty){
-            observe(node.i, vec4(node.min, node.size / 2));
 
-            intersection_t i = plane_intersection(r, node, node.i);
+        octree_data_t data = octree.structure[node.i];
+        if ((data.header & 0xFF) != node_type_empty){
+            observe(node.i, vec4(node.min, node.size / 2)); // TODO: this should be inside the if
+
+            intersection_t i = plane_intersection(r, node, data);
             if (
                 i.hit &&
                 i.x.x >= node.min.x && i.x.y >= node.min.y && i.x.z >= node.min.z &&
@@ -215,14 +220,13 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(uint i){
-    uint data = octree.structure[i].c;
+vec4 colour(octree_data_t data){
     return vec4(
-        data & 0xFF, (data >> 8) & 0xFF, (data >> 16) & 0xFF, data >> 24
+        data.c & 0xFF, (data.c >> 8) & 0xFF, (data.c >> 16) & 0xFF, data.c >> 24
     ) / 255.0;
 }
 
-vec4 phong_light(vec3 light_p, vec3 x, uint i){
+vec4 phong_light(vec3 light_p, vec3 x, octree_data_t data){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec4 colour = vec4(50);
@@ -242,7 +246,7 @@ vec4 phong_light(vec3 light_p, vec3 x, uint i){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(i);
+    vec3 n = normal(data);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -260,9 +264,9 @@ vec4 phong_light(vec3 light_p, vec3 x, uint i){
     return a + (d + s) * attenuation * shadow;
 }
 
-vec4 light(vec3 p, vec3 x, uint i){
+vec4 light(vec3 p, vec3 x, octree_data_t data){
     vec3 l = normalize(p - x);
-    return phong_light(p, x, i);
+    return phong_light(p, x, data);
 }
 
 vec4 sky(){
@@ -288,14 +292,14 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.i) * light(vec3(-3, 3, -3), i.x, i.i);
+        out_colour = colour(i.data) * light(vec3(-3, 3, -3), i.x, i.data);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 
 }
 
 bool should_cull(uint i){
-    octree_node_t parent = octree.structure[i];
+    octree_data_t parent = octree.structure[i];
     if ((parent.header & 0xFF) != node_type_branch){
         return false;
     }
@@ -321,20 +325,11 @@ void octree_update(){
         gl_GlobalInvocationID.x +
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
-    if (i < requests_size){
-        request_t r = requests.requests[i];
-        if (r.state == request_state_fulfilled){
-            octree.structure[r.parent].c = r.child;
-            octree.structure[r.parent].header = node_type_branch;
-            requests.requests[i].state = request_state_unused;
-        }
-    }
-
     if (i < structure_size){
         if ((i & 7) == 1 && (octree.structure[i].header & 0xFF) == node_type_unused){
             uint ri = ((i >> 3) + push_const.current_frame) % requests_size;
 
-            requests.requests[ri].child = i;
+            atomicCompSwap(requests.requests[ri].child, 0, i);
         }
 
         if (should_cull(i)){

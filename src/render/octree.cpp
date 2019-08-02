@@ -182,12 +182,12 @@ octree_t::handle_requests(){
     static std::array<request_t, max_requests_size> requests;
     request_buffer->read(requests.data(), sizeof(requests));
 
-    for (auto & request : requests){
-        if (request.state == request_state_pending){
-            handle_request(request);
-            request.state = request_state_fulfilled;
+    request_t blank_request;
+
+    for (uint16_t i = 0; i < requests.size(); i++){
+        if (requests[i].aabb[3] > 0){
+            handle_request(requests[i]);
+            request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
         }
     }    
-
-    request_buffer->copy(requests.data(), sizeof(requests), 0, pool, queue);
 }
