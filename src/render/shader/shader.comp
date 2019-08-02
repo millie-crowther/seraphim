@@ -97,11 +97,12 @@ layout(binding = 2) buffer request_buffer {
 } requests;
 
 
-void observe(uint parent, vec4 aabb){
+void observe(node_t node){
+    vec4 aabb = vec4(node.min, node.size / 2);
     bool should_request = aabb.w > epsilon * max(1, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
 
     if (should_request){
-        uint ri = parent % requests_size;
+        uint ri = node.i % requests_size;
         request_t r = requests.requests[ri];
 
         if (r.child > 0 && atomicCompSwap(octree.structure[r.child].header, node_type_unused, node_type_pending_data) == node_type_unused){
@@ -109,8 +110,8 @@ void observe(uint parent, vec4 aabb){
                 octree.structure[r.child + c].header = node_type_pending_data;
             }
 
-            octree.structure[parent].c = r.child;
-            octree.structure[parent].header = node_type_branch;
+            octree.structure[node.i].c = r.child;
+            octree.structure[node.i].header = node_type_branch;
             requests.requests[ri].aabb = aabb;
         }
     }
@@ -190,8 +191,6 @@ intersection_t raycast(ray_t r){
 
         octree_data_t data = octree.structure[node.i];
         if ((data.header & 0xFF) != node_type_empty){
-            observe(node.i, vec4(node.min, node.size / 2)); // TODO: this should be inside the if
-
             intersection_t i = plane_intersection(r, node, data);
             if (
                 i.hit &&
@@ -293,6 +292,7 @@ void render(){
 
     if (i.hit){
         out_colour = colour(i.data) * light(vec3(-3, 3, -3), i.x, i.data);
+        observe(i.node); // TODO: this should be inside the if
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 
