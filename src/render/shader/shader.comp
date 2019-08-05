@@ -306,19 +306,22 @@ void render(){
 
 }
 
-bool should_cull(uint i){
-    octree_data_t parent = octree.structure[i];
-    if ((parent.header & 0xFF) != node_type_branch){
+bool node_expired(uint i, octree_data_t data){
+    if (i >= structure_size){
+        return false;
+    }
+
+    if ((data.header & 0xFF) != node_type_branch){
         return false;
     }
 
     for (uint child = 0; child < 8; child++){
-        if ((octree.structure[parent.c + child].header & 0xFF) != node_type_leaf){
+        if ((octree.structure[data.c + child].header & 0xFF) != node_type_leaf){
             return false;
         }
     }
 
-    bool expired = ((parent.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
+    bool expired = ((data.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
 
     return expired;
 }
@@ -331,21 +334,19 @@ void octree_update(){
     uint i = 
         gl_GlobalInvocationID.x +
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    octree_data_t data = octree.structure[i];
 
-    if (i < structure_size){
-        if ((i & 7) == 1 && (octree.structure[i].header & 0xFF) == node_type_unused){
-            uint ri = (i >> 3) % requests_size;
+    // submit free nodes to request queue
+    bool should_submit = 
+        i < structure_size && 
+        (i & 7) == 1 && 
+        (data.header & 0xFF) == node_type_unused;
+    uint ri = (i >> 3) % requests_size;
+    atomicCompSwap(requests.requests[ri].child, int(!should_submit) * structure_size, i);
 
-            // TODO: very easy to put this statement outside both if statements
-            //       replace 0 with (condition * structure_size) 
-            atomicCompSwap(requests.requests[ri].child, 0, i);
-        }
-
-        if (should_cull(i)){
-            cull(i);
-        }
+    if (node_expired(i, data)){
+        cull(i);
     }
-     
 }
 
 void main(){
