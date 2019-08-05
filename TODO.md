@@ -39,7 +39,7 @@
     * beam optimisation
     * octree pruning
         * prune nodes that haven't been seen in a while
-        * prune nodes with too high level of detail 
+        * prune nodes with too high level of detail for their distance from camera
     * possibly also animation
         * parallelised construction of second octree based on transforms
 * implement octree sibling trick

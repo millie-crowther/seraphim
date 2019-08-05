@@ -10,17 +10,21 @@
 #include "sdf/sdf.h"
 
 /*
-interior node = 0PPPPPPP PPPPPPPP PPPPPPPP PPPPPPPP
-    0 = leaf flag (not set)
-    P = pointer to first child
-    if P = 0:
-        this is a null node
+    node structure
+    
+    + for all nodes
+        + 16 bytes total
+        + byte 0 = node type
 
-leaf node     = 1NXXXXXX BBBBBBBB BBBBBBBB BBBBBBBB
-    1 = leaf flag (set)
-    N = normal flag 
-    X = unused
-    B = brick ID
+    + interior nodes
+        + byte 1     = lowest byte of number of last frame at which any of 
+                       immediate children were observed
+        + bytes 8-15 = pointer to first child
+
+    + leaf nodes
+        + bytes 4-7  = geometry of node approximant (subject to change)
+        + bytes 8-15 = RGBA colour of node
+
 
 */
 
@@ -49,10 +53,11 @@ private:
     };
 
     // constants
-    static constexpr uint8_t node_type_unused = 1 << 3;
-    static constexpr uint8_t node_type_empty  = 1 << 6;
-    static constexpr uint8_t node_type_leaf   = 1 << 5;
-    static constexpr uint8_t node_type_branch = 1 << 4;
+    // NOTE: CPU does not know what node type 1 means, only GPU knows.
+    //       (it's an internal signal for GPU to its waiting for data from CPU)
+    static constexpr uint8_t node_type_unused = 2;
+    static constexpr uint8_t node_type_empty  = 3;
+    static constexpr uint8_t node_type_leaf   = 4;
     
     static constexpr uint32_t max_structure_size = 25000;
     static constexpr uint32_t max_requests_size  = 64;
