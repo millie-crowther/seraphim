@@ -2,12 +2,14 @@
 
 ## general
 
-* make `image_t` use Vulkan Memory Allocator 
+* make `texture_t` use Vulkan Memory Allocator 
     * figure out why it blanks the screen
+    * remove some functionality from this class, its intended purpose has shifted slightly,
+      leaving some code unused.
 * FPS counter is weird.
     * choice of clock?
 * improve revelator design
-    * prone to null references atm
+    * prone to null dereferences atm
     * can improve
     * fix seg fault on exit
         * definitely something to do with revelator<T>::follower_t destructor
@@ -16,30 +18,26 @@
 * maybe put the pipelines in their own class
 * camera pitch rotation with mouse
 * vector class interior removal of branching using templates
-* do clever things in compute shader
-    * e.g. one 64x64 work group for a patch of screen, 2D array of work groups to cover scene
-        * iterative beam optimisation
 * destruction of descriptor pools needs to be re added!!!!
-* really just improve design of renderer class
-* bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
-    * should hopefully fix horrible sync bugs 
-* fix scaling of render texture to screen
-* figure out why render texture size is stuck
-* reduce branching in compute shader
-* apply `restrict` qualifiers to relevant buffers once i can figure out what it does
 
 ## rendering
 
 ### general
+* really just improve design of renderer class
+* fix scaling of render texture to screen
+* figure out why render texture size is stuck
+* apply `restrict` qualifiers to relevant buffers once i can figure out what it does
 * make rays that originate outside octree intersect properly
+* bake buffer updates into compute command buffers each frame, instead of making a separate command buffer
+    * may be able to make SSBOs VMA_USAGE_GPU_ONLY after i do this which is nice
 * create octree on cpu side that stores renderables
     * makes lookup of which sdfs to query quicker
     * may also help with collision
 * compute shader
+    * reduce branching 
     * beam optimisation
     * octree pruning
-        * prune nodes that haven't been seen in a while
-        * prune nodes with too high level of detail for their distance from camera
+        * make more sophisticated node merge algorithm (at the moment just copies first child)
     * possibly also animation
         * parallelised construction of second octree based on transforms
 * implement octree sibling trick

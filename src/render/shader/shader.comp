@@ -98,12 +98,40 @@ layout(binding = 2) buffer request_buffer {
     request_t requests[requests_size];
 } requests;
 
-void observe(node_t node){
-    vec4 aabb = vec4(node.min, node.size / 2);
-    bool should_request = aabb.w > epsilon * max(1, sigma * length(aabb.xyz + aabb.w / 2 - push_const.camera_position));
+float expected_size(vec3 x){
+    // TODO: remove sqrt
+    return epsilon * max(1, sigma * length(x - push_const.camera_position));
+}
 
-    if (should_request){
-        uint ri = node.i % requests_size;
+bool should_size_cull(float expected_size, float size, octree_data_t data){
+    for (uint child = 0; child < 8; child++){
+        if ((octree.structure[data.c + child].header & 0xFF) != node_type_leaf){
+            return false;
+        }
+    }
+
+    return size < expected_size / 2;
+}
+
+void cull(uint i, octree_data_t parent){
+    // TODO: do a more sophisticated merge than simply taking first child
+    octree.structure[i] = octree.structure[parent.c];
+
+    // reset visibility timestamp
+    octree.structure[i].header &= 0xFFFF00FF;
+    octree.structure[i].header |= (push_const.current_frame & 0xFF) << 8;
+
+    for (uint j = 0; j < 8; j++){
+        octree.structure[parent.c + j].header = node_type_unused;
+    }
+}
+
+void observe(intersection_t i){
+    vec4 aabb = vec4(i.node.min, i.node.size / 2);
+    float s = expected_size(i.x);
+
+    if (aabb.w > s){
+        uint ri = i.node.i % requests_size;
         request_t r = requests.requests[ri];
 
         if (r.child > 0 && atomicCompSwap(octree.structure[r.child].header, node_type_unused, node_type_pending_data) == node_type_unused){
@@ -112,15 +140,20 @@ void observe(node_t node){
             }
 
             // observe parent
-            uint parent_timestamp = octree.structure[node.parent].header;
+            uint parent_timestamp = octree.structure[i.node.parent].header;
             parent_timestamp &= 0xFFFF00FF;
             parent_timestamp |= (push_const.current_frame & 0xFF) << 8;
-            octree.structure[node.parent].header = parent_timestamp;
+            octree.structure[i.node.parent].header = parent_timestamp;
 
-            octree.structure[node.i].c = r.child;
-            octree.structure[node.i].header = node_type_branch;
+            octree.structure[i.node.i].c = r.child;
+            octree.structure[i.node.i].header = node_type_branch;
             requests.requests[ri].aabb = aabb;
         }
+    }
+
+    octree_data_t parent = octree.structure[i.node.parent];
+    if (should_size_cull(s, aabb.w * 2, parent)){
+        cull(i.node.parent, parent);
     }
 }
 
@@ -227,9 +260,9 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 colour(octree_data_t data){
+vec4 colour(uint c){
     return vec4(
-        data.c & 0xFF, (data.c >> 8) & 0xFF, (data.c >> 16) & 0xFF, data.c >> 24
+        c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF, c >> 24
     ) / 255.0;
 }
 
@@ -299,11 +332,10 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.data) * light(vec3(-3, 3, -3), i.x, i.data);
-        observe(i.node); 
+        out_colour = colour(i.data.c) * light(vec3(-3, 3, -3), i.x, i.data);
+        observe(i); 
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
-
 }
 
 bool node_expired(uint i, octree_data_t data){
@@ -324,19 +356,6 @@ bool node_expired(uint i, octree_data_t data){
     bool expired = ((data.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
 
     return expired;
-}
-
-void cull(uint i, octree_data_t parent){
-    // TODO: do a more sophisticated merge than simply taking first child
-    octree.structure[i] = octree.structure[parent.c];
-
-    // reset visibility timestamp
-    octree.structure[i].header &= 0xFFFF00FF;
-    octree.structure[i].header |= (push_const.current_frame & 0xFF) << 8;
-
-    for (uint j = 0; j < 8; j++){
-        octree.structure[parent.c + j].header = node_type_unused;
-    }
 }
 
 void octree_update(){
