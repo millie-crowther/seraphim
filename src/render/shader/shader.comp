@@ -326,8 +326,17 @@ bool node_expired(uint i, octree_data_t data){
     return expired;
 }
 
-void cull(uint i){
-    
+void cull(uint i, octree_data_t parent){
+    // TODO: do a more sophisticated merge than simply taking first child
+    octree.structure[i] = octree.structure[parent.c];
+
+    // reset visibility timestamp
+    octree.structure[i].header &= 0xFFFF00FF;
+    octree.structure[i].header |= (push_const.current_frame & 0xFF) << 8;
+
+    for (uint j = 0; j < 8; j++){
+        octree.structure[parent.c + j].header = node_type_unused;
+    }
 }
 
 void octree_update(){
@@ -345,7 +354,7 @@ void octree_update(){
     atomicCompSwap(requests.requests[ri].child, int(!should_submit) * structure_size, i);
 
     if (node_expired(i, data)){
-        cull(i);
+        cull(i, data);
     }
 }
 
