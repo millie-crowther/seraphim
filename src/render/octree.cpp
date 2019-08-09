@@ -66,7 +66,6 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-
     std::array<node_t, max_structure_size> initial_octree;
     node_t unused_node;
     unused_node.type = node_type_unused;
@@ -74,7 +73,6 @@ octree_t::octree_t(
     initial_octree[0] = create_node(universal_aabb);
 
     octree_buffer->copy(initial_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
-
 }
 
 std::tuple<bool, bool> 
@@ -172,7 +170,7 @@ octree_t::handle_request(const request_t & r){
         children[octant] = create_node(aabb);
     }
 
-    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * r.child, pool, queue);
+    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * (r.child_24_size_8 & 0xFFFFFF), pool, queue);
 }
 
 void

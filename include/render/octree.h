@@ -35,11 +35,12 @@ private:
     struct request_t {
         f32vec4_t aabb;
         
-        uint32_t child;
+        uint32_t child_24_size_8;
         uint32_t _[3];
 
+
         request_t(){
-            child = 0;
+            child_24_size_8 = 0;
         }
     };
 
