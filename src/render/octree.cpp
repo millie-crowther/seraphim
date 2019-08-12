@@ -161,16 +161,19 @@ octree_t::create_node(const f32vec4_t & aabb){
 
 void 
 octree_t::handle_request(const request_t & r){
+    double size = hyper::rho / (1 << ((r.child_24_size_8 >> 24)) - 1); 
+
     std::array<node_t, 8> children;
     for (uint8_t octant = 0; octant < 8; octant++){
-        f32vec4_t aabb = r.aabb;
+        f32vec4_t aabb(r.x[0], r.x[1], r.x[2], size);
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
         children[octant] = create_node(aabb);
     }
 
-    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * (r.child_24_size_8 & 0xFFFFFF), pool, queue);
+    uint32_t child_index = (r.child_24_size_8 & 0xFFFFFF);
+    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * child_index, pool, queue);
 }
 
 void
@@ -183,7 +186,7 @@ octree_t::handle_requests(){
     request_t blank_request;
 
     for (uint16_t i = 0; i < requests.size(); i++){
-        if (requests[i].aabb[3] > 0){
+        if ((requests[i].child_24_size_8 >> 24) > 0){
             handle_request(requests[i]);
             request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
         }
