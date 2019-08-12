@@ -32,12 +32,15 @@ struct request_t {
     uint child_24_size_8;
 };
 
-// TODO: rename these fields, they suck. change to array if you cant think of a name
 struct octree_data_t {
     uint header;
     uint b;
     uint c;
     uint d;
+};
+
+struct octree_node_t {
+    octree_data_t children[8];
 };
 
 struct ray_t {

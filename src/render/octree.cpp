@@ -19,7 +19,7 @@ octree_t::octree_t(
     this->queue = queue;
     this->sdfs = sdfs;
 
-    universal_aabb = f32vec4_t(-hyper::rho);
+    universal_aabb = vec4_t(-hyper::rho);
     universal_aabb[3] = hyper::rho * 2;
 
     // extra node at end is to allow shader to avoid branching
@@ -76,7 +76,7 @@ octree_t::octree_t(
 }
 
 std::tuple<bool, bool> 
-octree_t::intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
+octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
     double upper_radius = vec3_t(aabb[3] / 2).norm();
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
     double p = sdf->phi(c);
@@ -111,7 +111,7 @@ octree_t::intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sd
 }
 
 octree_t::node_t 
-octree_t::create_node(const f32vec4_t & aabb){
+octree_t::create_node(const vec4_t & aabb){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     node_t node;
@@ -161,18 +161,18 @@ octree_t::create_node(const f32vec4_t & aabb){
 
 void 
 octree_t::handle_request(const request_t & r){
-    double size = hyper::rho / (1 << ((r.child_24_size_8 >> 24)) - 1); 
+    double size = hyper::rho / (1 << ((r.child_24_depth_8 >> 24) - 1)); 
 
     std::array<node_t, 8> children;
     for (uint8_t octant = 0; octant < 8; octant++){
-        f32vec4_t aabb(r.x[0], r.x[1], r.x[2], size);
+        vec4_t aabb(r.x[0], r.x[1], r.x[2], size);
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
         children[octant] = create_node(aabb);
     }
 
-    uint32_t child_index = (r.child_24_size_8 & 0xFFFFFF);
+    uint32_t child_index = (r.child_24_depth_8 & 0xFFFFFF);
     octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * child_index, pool, queue);
 }
 
@@ -183,10 +183,10 @@ octree_t::handle_requests(){
     static std::array<request_t, max_requests_size> requests;
     request_buffer->read(requests.data(), sizeof(requests));
 
-    request_t blank_request;
+    static request_t blank_request;
 
     for (uint16_t i = 0; i < requests.size(); i++){
-        if ((requests[i].child_24_size_8 >> 24) > 0){
+        if ((requests[i].child_24_depth_8 >> 24) > 0){
             handle_request(requests[i]);
             request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
         }

@@ -40,11 +40,14 @@
         * make more sophisticated node merge algorithm (at the moment just copies first child)
     * possibly also animation
         * parallelised construction of second octree based on transforms
+        * BVH embedded in static octree?
 * implement octree sibling trick
 * remove parameter of normal map and use flag instead 
 * switch surface representation to quadratic patch
-* squidge the `request_t` data structure into 16 bytes
 * make loading in the nodes less visually noticeable
+* rearrange octree structure 
+    * make structure richer - add aabb data
+    * make material properties higher resolution than geometry
 
 ### materials
 * add textures for other material properties

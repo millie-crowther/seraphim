@@ -34,10 +34,10 @@ private:
 
     struct request_t {
         f32vec3_t x;
-        uint32_t child_24_size_8;
+        uint32_t child_24_depth_8;
 
         request_t(){
-            child_24_size_8 = 0;
+            child_24_depth_8 = 0;
         }
     };
 
@@ -64,11 +64,11 @@ private:
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
-    f32vec4_t universal_aabb;
+    vec4_t universal_aabb;
 
     // private functions
-    std::tuple<bool, bool> intersects_contains(const f32vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-    node_t create_node(const f32vec4_t & aabb);
+    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+    node_t create_node(const vec4_t & aabb);
     void handle_request(const request_t & x);
 
     VkCommandPool pool;
