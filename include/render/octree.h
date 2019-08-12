@@ -34,11 +34,7 @@ private:
 
     struct request_t {
         f32vec3_t x;
-        float unused;
-        
         uint32_t child_24_size_8;
-        uint32_t _[3];
-
 
         request_t(){
             child_24_size_8 = 0;

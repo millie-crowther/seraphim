@@ -28,12 +28,8 @@ const float shadow_softness = 64;
 // types 
 //
 struct request_t {
-    vec4 aabb;
-    
+    vec3 x;
     uint child_24_size_8;
-    uint _1;
-    uint _2;
-    uint _3;
 };
 
 // TODO: rename these fields, they suck. change to array if you cant think of a name
@@ -151,7 +147,7 @@ void observe(intersection_t i){
 
             octree.structure[i.node.i].c = r.child_24_size_8;
             octree.structure[i.node.i].header = node_type_branch;
-            requests.requests[ri].aabb = aabb;
+            requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
         }
     }
