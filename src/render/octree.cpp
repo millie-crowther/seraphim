@@ -70,7 +70,15 @@ octree_t::octree_t(
     node_t unused_node;
     unused_node.type = node_type_unused;
     initial_octree.fill(unused_node);
-    initial_octree[0] = create_node(universal_aabb);
+
+    for (uint8_t octant = 0; octant < 8; octant++){
+        vec4_t aabb = universal_aabb;
+        aabb[3] /= 2;
+        if (octant & 1) aabb[0] += aabb[3];
+        if (octant & 2) aabb[1] += aabb[3];
+        if (octant & 4) aabb[2] += aabb[3];
+        initial_octree[octant] = create_node(aabb);
+    }
 
     octree_buffer->copy(initial_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
 }
