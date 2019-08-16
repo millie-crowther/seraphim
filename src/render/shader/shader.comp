@@ -36,7 +36,7 @@ struct octree_data_t {
     uint header;
     uint b;
     uint c;
-    uint d;
+    uint child;
 };
 
 struct octree_node_t {
@@ -105,7 +105,7 @@ float expected_size(vec3 x){
 
 bool should_size_cull(float expected_size, float size, octree_data_t data){
     for (uint child = 0; child < 8; child++){
-        if ((octree.structure[data.d + child].header & 0xFF) != node_type_leaf){
+        if ((octree.structure[data.child * 8 + child].header & 0xFF) != node_type_leaf){
             return false;
         }
     }
@@ -115,14 +115,14 @@ bool should_size_cull(float expected_size, float size, octree_data_t data){
 
 void cull(uint i, octree_data_t parent){
     // TODO: do a more sophisticated merge than simply taking first child
-    octree.structure[i] = octree.structure[parent.d];
+    octree.structure[i] = octree.structure[parent.child * 8];
 
     // reset visibility timestamp
     octree.structure[i].header &= 0xFFFF00FF;
     octree.structure[i].header |= (push_const.current_frame & 0xFF) << 8;
 
     for (uint j = 0; j < 8; j++){
-        octree.structure[parent.d + j].header = node_type_unused;
+        octree.structure[parent.child * 8 + j].header = node_type_unused;
     }
 }
 
@@ -150,7 +150,7 @@ void observe(intersection_t i){
             parent_timestamp |= (push_const.current_frame & 0xFF) << 8;
             octree.structure[i.node.parent].header = parent_timestamp;
 
-            octree.structure[i.node.i].d = child;
+            octree.structure[i.node.i].child = r.child_24_size_8 & 0xFFFFFF;
             octree.structure[i.node.i].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
@@ -180,7 +180,7 @@ node_t octree_lookup(vec3 x){
     while ((octree.structure[node.i].header & 0xFF) == node_type_branch){
         node.depth++;
         node.parent = node.i;
-        node.i = octree.structure[node.i].d;
+        node.i = octree.structure[node.i].child * 8;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
@@ -355,7 +355,7 @@ bool node_expired(uint i, octree_data_t data){
     }
 
     for (uint child = 0; child < 8; child++){
-        if ((octree.structure[data.d + child].header & 0xFF) != node_type_leaf){
+        if ((octree.structure[data.child * 8 + child].header & 0xFF) != node_type_leaf){
             return false;
         }
     }
