@@ -180,7 +180,7 @@ octree_t::handle_request(const request_t & r){
         children[octant] = create_node(aabb);
     }
 
-    uint32_t child_index = (r.child_24_depth_8 & 0xFFFFFF);
+    uint32_t child_index = (r.child_24_depth_8 & 0xFFFFFF) * 8;
     octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * child_index, pool, queue);
 }
 

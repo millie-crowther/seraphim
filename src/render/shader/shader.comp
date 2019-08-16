@@ -134,12 +134,14 @@ void observe(intersection_t i){
         uint ri = i.node.i % requests_size;
         request_t r = requests.requests[ri];
 
+        uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
+
         if (
             r.child_24_size_8 > 0 && 
-            atomicCompSwap(octree.structure[r.child_24_size_8 & 0xFFFFFF].header, node_type_unused, node_type_pending_data) == node_type_unused
+            atomicCompSwap(octree.structure[child].header, node_type_unused, node_type_pending_data) == node_type_unused
         ){
             for (uint c = 1; c < 8; c++){
-                octree.structure[r.child_24_size_8 + c].header = node_type_pending_data;
+                octree.structure[child + c].header = node_type_pending_data;
             }
 
             // observe parent
@@ -148,7 +150,7 @@ void observe(intersection_t i){
             parent_timestamp |= (push_const.current_frame & 0xFF) << 8;
             octree.structure[i.node.parent].header = parent_timestamp;
 
-            octree.structure[i.node.i].d = r.child_24_size_8;
+            octree.structure[i.node.i].d = child;
             octree.structure[i.node.i].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
@@ -375,7 +377,7 @@ void octree_update(){
         (i & 7) == 1 && 
         (data.header & 0xFF) == node_type_unused;
     uint ri = (i >> 3) % requests_size;
-    atomicCompSwap(requests.requests[ri].child_24_size_8, int(!should_submit) * structure_size, i & 0xFFFFFF);
+    atomicCompSwap(requests.requests[ri].child_24_size_8, int(!should_submit) * structure_size, (i / 8) & 0xFFFFFF);
 
     if (node_expired(i, data)){
         cull(i, data);
