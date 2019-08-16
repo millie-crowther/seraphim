@@ -99,7 +99,6 @@ layout(binding = 2) buffer request_buffer {
 } requests;
 
 float expected_size(vec3 x){
-    // TODO: remove sqrt
     return epsilon * max(1, sigma * length(x - push_const.camera_position));
 }
 
@@ -114,12 +113,7 @@ bool should_size_cull(float expected_size, float size, octree_data_t data){
 }
 
 void cull(uint i, octree_data_t parent){
-    // TODO: do a more sophisticated merge than simply taking first child
-    octree.structure[i] = octree.structure[parent.child * 8];
-
-    // reset visibility timestamp
-    octree.structure[i].header &= 0xFFFF00FF;
-    octree.structure[i].header |= (push_const.current_frame & 0xFF) << 8;
+    octree.structure[i].header = node_type_leaf | ((push_const.current_frame & 0xFF) << 8);
 
     for (uint j = 0; j < 8; j++){
         octree.structure[parent.child * 8 + j].header = node_type_unused;
