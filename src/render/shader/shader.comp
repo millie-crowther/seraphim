@@ -52,10 +52,9 @@ struct node_t {
     vec3 min;
     float size;
     uint i;
-    uint parent;
     uint depth;
 };
-node_t invalid_node = node_t(vec3(0), -1.0, 0, 0, 0);
+node_t invalid_node = node_t(vec3(0), -1.0, 0, 0);
 
 struct intersection_t {
     bool hit;
@@ -113,11 +112,11 @@ bool should_size_cull(float expected_size, float size, octree_data_t data){
 }
 
 void cull(uint i, octree_data_t parent){
-    octree.structure[i].header = node_type_leaf | ((push_const.current_frame & 0xFF) << 8);
+    // octree.structure[i].header = node_type_leaf | ((push_const.current_frame & 0xFF) << 8);
 
-    for (uint j = 0; j < 8; j++){
-        octree.structure[parent.child * 8 + j].header = node_type_unused;
-    }
+    // for (uint j = 0; j < 8; j++){
+    //     octree.structure[parent.child * 8 + j].header = node_type_unused;
+    // }
 }
 
 void observe(intersection_t i){
@@ -138,11 +137,7 @@ void observe(intersection_t i){
                 octree.structure[child + c].header = node_type_pending_data;
             }
 
-            // observe parent
-            uint parent_timestamp = octree.structure[i.node.parent].header;
-            parent_timestamp &= 0xFFFF00FF;
-            parent_timestamp |= (push_const.current_frame & 0xFF) << 8;
-            octree.structure[i.node.parent].header = parent_timestamp;
+            // TODO: observe node to trigger expiration culling
 
             octree.structure[i.node.i].child = r.child_24_size_8 & 0xFFFFFF;
             octree.structure[i.node.i].header = node_type_branch;
@@ -151,14 +146,14 @@ void observe(intersection_t i){
         }
     }
 
-    octree_data_t parent = octree.structure[i.node.parent];
-    if (should_size_cull(s, aabb.w * 2, parent)){
-        cull(i.node.parent, parent);
-    }
+    // octree_data_t parent = octree.structure[i.node.parent];
+    // if (should_size_cull(s, aabb.w * 2, parent)){
+    //     cull(i.node.parent, parent);
+    // }
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0, 0, 1);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0, 1);
 }
 
 node_t octree_lookup(vec3 x){
@@ -173,7 +168,6 @@ node_t octree_lookup(vec3 x){
 
     while ((octree.structure[node.i].header & 0xFF) == node_type_branch){
         node.depth++;
-        node.parent = node.i;
         node.i = octree.structure[node.i].child * 8;
         node.size /= 2;
 
