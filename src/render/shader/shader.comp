@@ -51,10 +51,11 @@ struct ray_t {
 struct node_t {
     vec3 min;
     float size;
-    uint i;
+    uint parent_node;
+    uint octant;
     uint depth;
 };
-node_t invalid_node = node_t(vec3(0), -1.0, 0, 0);
+node_t invalid_node = node_t(vec3(0), -1.0, 0, 0, 0);
 
 struct intersection_t {
     bool hit;
@@ -124,7 +125,7 @@ void observe(intersection_t i){
     float s = expected_size(i.x);
 
     if (aabb.w > s){
-        uint ri = i.node.i % requests_size;
+        uint ri = (i.node.parent_node * 8 + i.node.octant) % requests_size;
         request_t r = requests.requests[ri];
 
         uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
@@ -139,8 +140,8 @@ void observe(intersection_t i){
 
             // TODO: observe node to trigger expiration culling
 
-            octree.structure[i.node.i].child = r.child_24_size_8 & 0xFFFFFF;
-            octree.structure[i.node.i].header = node_type_branch;
+            octree.structure[i.node.parent_node * 8 + i.node.octant].child = r.child_24_size_8 & 0xFFFFFF;
+            octree.structure[i.node.parent_node * 8 + i.node.octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
         }
@@ -153,7 +154,7 @@ void observe(intersection_t i){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0, 1);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0, 0, 1);
 }
 
 node_t octree_lookup(vec3 x){
@@ -166,17 +167,17 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    while ((octree.structure[node.i].header & 0xFF) == node_type_branch){
+    while ((octree.structure[node.parent_node * 8 + node.octant].header & 0xFF) == node_type_branch){
         node.depth++;
-        node.i = octree.structure[node.i].child * 8;
+        node.parent_node = octree.structure[node.parent_node * 8 + node.octant].child;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
-        node.i += int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
+        node.octant = int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
         node.min += vec3(octant) * node.size;
     }
 
-    if (octree.structure[node.i].header == node_type_pending_data){
+    if (octree.structure[node.parent_node * 8 + node.octant].header == node_type_pending_data){
         return invalid_node;
     }
 
@@ -227,11 +228,11 @@ intersection_t raycast(ray_t r){
         //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
-        if (node.size < 0 || node.i >= structure_size){
+        if (node.size < 0 || node.parent_node * 8 + node.octant >= structure_size){
             break;
         }
 
-        octree_data_t data = octree.structure[node.i];
+        octree_data_t data = octree.structure[node.parent_node * 8 + node.octant];
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node, data);
             if (
