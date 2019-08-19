@@ -182,7 +182,7 @@ octree_t::handle_request(const request_t & r){
     }
 
     uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
-    octree_buffer->copy(children.data(), sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
+    octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
 }
 
 void

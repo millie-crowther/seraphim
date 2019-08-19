@@ -49,6 +49,8 @@ private:
     };
 
     struct octree_node_t {
+        f32vec3_t x;
+        uint32_t flags;
         std::array<node_t, 8> children;
     };
 
