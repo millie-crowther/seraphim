@@ -13,7 +13,7 @@ const uint node_type_empty = 3;
 const uint node_type_leaf = 4;
 const uint node_type_branch = 5;
 
-const uint structure_size = 25000;
+const uint octree_size = 3125;
 const uint requests_size = 64;
 const float sqrt3 = 1.73205080757;
 
@@ -91,7 +91,7 @@ layout( push_constant ) uniform push_constants {
 // buffers
 //
 layout(binding = 1) buffer octree_buffer {
-    octree_data_t structure[structure_size];
+    octree_node_t body[octree_size];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
@@ -104,7 +104,7 @@ float expected_size(vec3 x){
 
 bool should_size_cull(float expected_size, float size, octree_data_t data){
     for (uint child = 0; child < 8; child++){
-        if ((octree.structure[data.child * 8 + child].header & 0xFF) != node_type_leaf){
+        if ((octree.body[data.child].children[child].header & 0xFF) != node_type_leaf){
             return false;
         }
     }
@@ -132,16 +132,16 @@ void observe(intersection_t i){
 
         if (
             r.child_24_size_8 > 0 && 
-            atomicCompSwap(octree.structure[child].header, node_type_unused, node_type_pending_data) == node_type_unused
+            atomicCompSwap(octree.body[r.child_24_size_8 & 0xFFFFFF].children[0].header, node_type_unused, node_type_pending_data) == node_type_unused
         ){
             for (uint c = 1; c < 8; c++){
-                octree.structure[child + c].header = node_type_pending_data;
+                octree.body[r.child_24_size_8 & 0xFFFFFF].children[c].header = node_type_pending_data;
             }
 
             // TODO: observe node to trigger expiration culling
 
-            octree.structure[i.node.parent_node * 8 + i.node.octant].child = r.child_24_size_8 & 0xFFFFFF;
-            octree.structure[i.node.parent_node * 8 + i.node.octant].header = node_type_branch;
+            octree.body[i.node.parent_node].children[i.node.octant].child = r.child_24_size_8 & 0xFFFFFF;
+            octree.body[i.node.parent_node].children[i.node.octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
         }
@@ -167,9 +167,9 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    while ((octree.structure[node.parent_node * 8 + node.octant].header & 0xFF) == node_type_branch){
+    while ((octree.body[node.parent_node].children[node.octant].header & 0xFF) == node_type_branch){
         node.depth++;
-        node.parent_node = octree.structure[node.parent_node * 8 + node.octant].child;
+        node.parent_node = octree.body[node.parent_node].children[node.octant].child;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
@@ -177,7 +177,7 @@ node_t octree_lookup(vec3 x){
         node.min += vec3(octant) * node.size;
     }
 
-    if (octree.structure[node.parent_node * 8 + node.octant].header == node_type_pending_data){
+    if (octree.body[node.parent_node].children[node.octant].header == node_type_pending_data){
         return invalid_node;
     }
 
@@ -228,11 +228,11 @@ intersection_t raycast(ray_t r){
         //       will have to check how much time that actually saves
 	    node = octree_lookup(r.x);
 
-        if (node.size < 0 || node.parent_node * 8 + node.octant >= structure_size){
+        if (node.size < 0 || node.parent_node >= octree_size){
             break;
         }
 
-        octree_data_t data = octree.structure[node.parent_node * 8 + node.octant];
+        octree_data_t data = octree.body[node.parent_node].children[node.octant];
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node, data);
             if (
@@ -334,43 +334,41 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-bool node_expired(uint i, octree_data_t data){
-    if (i >= structure_size){
-        return false;
-    }
+// bool node_expired(uint i, octree_data_t data){
+//     if (i >= octree_size){
+//         return false;
+//     }
 
-    if ((data.header & 0xFF) != node_type_branch){
-        return false;
-    }
+//     if ((data.header & 0xFF) != node_type_branch){
+//         return false;
+//     }
 
-    for (uint child = 0; child < 8; child++){
-        if ((octree.structure[data.child * 8 + child].header & 0xFF) != node_type_leaf){
-            return false;
-        }
-    }
+//     for (uint child = 0; child < 8; child++){
+//         if ((octree.body[data.child].children[child].header & 0xFF) != node_type_leaf){
+//             return false;
+//         }
+//     }
 
-    bool expired = ((data.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
+//     bool expired = ((data.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
 
-    return expired;
-}
+//     return expired;
+// }
 
 void octree_update(){
     uint i = 
         gl_GlobalInvocationID.x +
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-    octree_data_t data = octree.structure[i];
 
     // submit free nodes to request queue
     bool should_submit = 
-        i < structure_size && 
-        (i & 7) == 1 && 
-        (data.header & 0xFF) == node_type_unused;
-    uint ri = (i >> 3) % requests_size;
-    atomicCompSwap(requests.requests[ri].child_24_size_8, int(!should_submit) * structure_size, (i / 8) & 0xFFFFFF);
+        i < octree_size && 
+        (octree.body[i].children[0].header & 0xFF) == node_type_unused;
+    uint ri = i % requests_size;
+    atomicCompSwap(requests.requests[ri].child_24_size_8, int(!should_submit) * (octree_size * 8 + 8) , i & 0xFFFFFF);
 
-    if (node_expired(i, data)){
-        cull(i, data);
-    }
+    // if (node_expired(i, octree.body[i].children[0])){
+    //     cull(i, octree.body[i]);
+    // }
 }
 
 void main(){
