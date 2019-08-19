@@ -143,7 +143,7 @@ void observe(intersection_t i){
             octree.body[i.node.parent_node].children[i.node.octant].child = r.child_24_size_8 & 0xFFFFFF;
             octree.body[i.node.parent_node].children[i.node.octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
-            requests.requests[ri].child_24_size_8 |= (i.node.depth & 0xFF) << 24;
+            requests.requests[ri].child_24_size_8 |= i.node.depth << 24;
         }
     }
 
@@ -363,8 +363,7 @@ void octree_update(){
     bool should_submit = 
         i < octree_size && 
         (octree.body[i].children[0].header & 0xFF) == node_type_unused;
-    uint ri = i % requests_size;
-    atomicCompSwap(requests.requests[ri].child_24_size_8, int(!should_submit) * (octree_size * 8 + 8) , i & 0xFFFFFF);
+    atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(!should_submit) * ~0, i & 0xFFFFFF);
 
     // if (node_expired(i, octree.body[i].children[0])){
     //     cull(i, octree.body[i]);
