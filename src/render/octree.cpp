@@ -12,13 +12,13 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
     this->x = x;
     flags |= depth;
     
-    double size = hyper::rho / (1 << depth); 
-
     for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t aabb(x[0], x[1], x[2], size);
+        vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << depth));
+
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
+
         children[octant] = octree_data_t(aabb, sdfs);
     }
 }

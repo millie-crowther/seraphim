@@ -19,9 +19,6 @@ request_manager_t::request_manager_t(
     this->queue = queue;
     this->sdfs = sdfs;
 
-    universal_aabb = vec4_t(-hyper::rho);
-    universal_aabb[3] = hyper::rho * 2;
-
     // extra node at end is to allow shader to avoid branching
     octree_buffer = std::make_unique<buffer_t>(
         allocator, device, sizeof(octree_node_t) * octree_size,
@@ -67,7 +64,6 @@ request_manager_t::request_manager_t(
 
     std::array<octree_node_t, octree_size> initial_octree;
 
-
     std::vector<std::shared_ptr<sdf3_t>> initial_sdfs;
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
@@ -79,32 +75,30 @@ request_manager_t::request_manager_t(
     octree_buffer->copy(initial_octree.data(), sizeof(initial_octree), 0, pool, queue);
 }
 
-void 
-request_manager_t::handle_request(const request_t & r){
+void
+request_manager_t::handle_requests(){
+    static std::array<request_t, max_requests_size> requests;
+    static request_t blank_request;
+
+    vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
+
+    request_buffer->read(requests.data(), sizeof(requests));
+
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
             strong_sdfs.push_back(sdf);
         }
     }
-    octree_node_t new_node(r.x, (r.child_24_depth_8 >> 24) - 1, strong_sdfs);
-
-    uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
-    octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
-}
-
-void
-request_manager_t::handle_requests(){
-    vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
-
-    static std::array<request_t, max_requests_size> requests;
-    request_buffer->read(requests.data(), sizeof(requests));
-
-    static request_t blank_request;
 
     for (uint16_t i = 0; i < requests.size(); i++){
-        if ((requests[i].child_24_depth_8 >> 24) > 0){
-            handle_request(requests[i]);
+        request_t r = requests[i];
+        if ((r.child_24_depth_8 >> 24) > 0){
+            octree_node_t new_node(r.x, (r.child_24_depth_8 >> 24) - 1, strong_sdfs);
+
+            uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
+            octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
+
             request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
         }
     }    
