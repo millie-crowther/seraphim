@@ -127,7 +127,7 @@ void observe(intersection_t i){
     float s = expected_size(i.x);
 
     if (aabb.w > s){
-        uint ri = (i.node.parent_node * 8 + i.node.octant) % requests_size;
+        uint ri = uint(dot(aabb, aabb)) % requests_size;
         request_t r = requests.requests[ri];
 
         uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
@@ -175,7 +175,8 @@ node_t octree_lookup(vec3 x){
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
-        node.octant = int(octant.x) + (int(octant.y) << 1) + (int(octant.z) << 2);
+        uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+        node.octant = octant_index; // TODO delete this
         node.min += vec3(octant) * node.size;
     }
 
