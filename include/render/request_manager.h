@@ -7,6 +7,7 @@
 
 #include "core/buffer.h"
 #include "render/camera.h"
+#include "render/octree.h"
 #include "sdf/sdf.h"
 
 /*
@@ -41,19 +42,6 @@ private:
         }
     };
 
-    struct node_t {
-        uint32_t type;
-        uint32_t b;
-        uint32_t c;
-        uint32_t d;
-    };
-
-    struct octree_node_t {
-        f32vec3_t x;
-        uint32_t flags;
-        std::array<node_t, 8> children;
-    };
-
     // constants
     // NOTE: CPU does not know what node type 1 means, only GPU knows.
     //       (it's an internal signal for GPU to its waiting for data from CPU)
@@ -71,8 +59,6 @@ private:
     vec4_t universal_aabb;
 
     // private functions
-    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
-    node_t create_node(const vec4_t & aabb);
     void handle_request(const request_t & x);
 
     VkCommandPool pool;

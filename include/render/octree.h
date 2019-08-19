@@ -12,6 +12,10 @@ class octree_node_t {
 private:
     class octree_data_t {
     private:
+        static constexpr uint8_t node_type_unused = 2;
+        static constexpr uint8_t node_type_empty  = 3;
+        static constexpr uint8_t node_type_leaf   = 4;
+
         uint32_t type;
         uint32_t geometry;
         uint32_t colour;
@@ -20,20 +24,16 @@ private:
         std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
     public:
-        octree_data_t(){}
+        octree_data_t();
         octree_data_t(const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
     };
 
     f32vec3_t x;
     uint32_t flags;
-    std::array<octree_data_t, 8> children;
-
-    static constexpr uint8_t node_type_unused = 2;
-    static constexpr uint8_t node_type_empty  = 3;
-    static constexpr uint8_t node_type_leaf   = 4;
-  
+    std::array<octree_data_t, 8> children;  
 
 public:
+    octree_node_t(){}
     octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
 };
 

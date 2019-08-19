@@ -4,6 +4,10 @@
 #include "render/painter.h"
 #include "sdf/compose.h"
 
+octree_node_t::octree_data_t::octree_data_t(){
+    type = node_type_unused;
+}
+
 octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     this->x = x;
     flags |= depth;
@@ -61,7 +65,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
     
     type = node_type_leaf;
     geometry = *reinterpret_cast<uint32_t *>(&normal);
-    colour = *reinterpret_cast<uint32_t *>(&colour);
+    this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }
 
 std::tuple<bool, bool> 
