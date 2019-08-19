@@ -132,7 +132,7 @@ void observe(intersection_t i){
 
         uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
 
-        // TODO: check its okay to 
+        // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
 
         if (
             r.child_24_size_8 > 0 && 

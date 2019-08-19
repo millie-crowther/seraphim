@@ -41,13 +41,15 @@
     * possibly also animation
         * parallelised construction of second octree based on transforms
         * BVH embedded in static octree?
-* implement octree sibling trick
 * remove parameter of normal map and use flag instead 
 * switch surface representation to quadratic patch
 * make loading in the nodes less visually noticeable
-* rearrange octree structure 
-    * make structure richer - add aabb data
-    * make material properties higher resolution than geometry
+    * effectively, back up one stage in octree lookup if pending data flag seen
+* do more rearrangement of octree data
+    * lookup by `octree_node_t` not `octree_data_t`
+    * remove unnecessary flags
+    * put flags that can go in `octree_node_t::flags` there instead of children
+* lerp colour and normal values across octree node on hit
 
 ### materials
 * add textures for other material properties
