@@ -42,12 +42,14 @@ private:
     };
 
     struct node_t {
-        uint8_t type;
-        uint8_t _[3];
-
+        uint32_t type;
         uint32_t b;
         uint32_t c;
         uint32_t d;
+    };
+
+    struct octree_node_t {
+        std::array<node_t, 8> children;
     };
 
     // constants
@@ -57,7 +59,7 @@ private:
     static constexpr uint8_t node_type_empty  = 3;
     static constexpr uint8_t node_type_leaf   = 4;
     
-    static constexpr uint32_t max_structure_size = 25000;
+    static constexpr uint32_t octree_size = 3125;
     static constexpr uint32_t max_requests_size  = 64;
 
     // fields

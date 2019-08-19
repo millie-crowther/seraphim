@@ -23,9 +23,8 @@ octree_t::octree_t(
     universal_aabb[3] = hyper::rho * 2;
 
     // extra node at end is to allow shader to avoid branching
-    uint32_t octree_size = sizeof(node_t) * max_structure_size;
     octree_buffer = std::make_unique<buffer_t>(
-        allocator, device, octree_size + sizeof(node_t),
+        allocator, device, sizeof(octree_node_t) * octree_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
@@ -66,9 +65,11 @@ octree_t::octree_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    std::array<node_t, max_structure_size> initial_octree;
-    node_t unused_node;
-    unused_node.type = node_type_unused;
+    std::array<octree_node_t, octree_size> initial_octree;
+    octree_node_t unused_node;
+    node_t unused_node_data;
+    unused_node_data.type = node_type_unused;
+    unused_node.children.fill(unused_node_data);
     initial_octree.fill(unused_node);
 
     for (uint8_t octant = 0; octant < 8; octant++){
@@ -77,10 +78,10 @@ octree_t::octree_t(
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
-        initial_octree[octant] = create_node(aabb);
+        initial_octree[0].children[octant] = create_node(aabb);
     }
 
-    octree_buffer->copy(initial_octree.data(), sizeof(node_t) * max_structure_size, 0, pool, queue);
+    octree_buffer->copy(initial_octree.data(), sizeof(initial_octree), 0, pool, queue);
 }
 
 std::tuple<bool, bool> 
@@ -171,17 +172,17 @@ void
 octree_t::handle_request(const request_t & r){
     double size = hyper::rho / (1 << ((r.child_24_depth_8 >> 24) - 1)); 
 
-    std::array<node_t, 8> children;
+    octree_node_t new_node;
     for (uint8_t octant = 0; octant < 8; octant++){
         vec4_t aabb(r.x[0], r.x[1], r.x[2], size);
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
         if (octant & 4) aabb[2] += aabb[3];
-        children[octant] = create_node(aabb);
+        new_node.children[octant] = create_node(aabb);
     }
 
-    uint32_t child_index = (r.child_24_depth_8 & 0xFFFFFF) * 8;
-    octree_buffer->copy(children.data(), sizeof(node_t) * 8, sizeof(node_t) * child_index, pool, queue);
+    uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
+    octree_buffer->copy(children.data(), sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
 }
 
 void
