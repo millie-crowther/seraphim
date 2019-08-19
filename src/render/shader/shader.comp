@@ -127,10 +127,12 @@ void observe(intersection_t i){
     float s = expected_size(i.x);
 
     if (aabb.w > s){
-        uint ri = uint(dot(aabb, aabb)) % requests_size;
+        uint ri = uint(dot(aabb, aabb)) % requests_size; // TODO: this line is dodgy. suboptimal
         request_t r = requests.requests[ri];
 
         uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
+
+        // TODO: check its okay to 
 
         if (
             r.child_24_size_8 > 0 && 
