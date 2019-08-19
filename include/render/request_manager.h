@@ -28,7 +28,7 @@
 
 */
 
-class octree_t {
+class request_manager_t {
 private:
     // types
 
@@ -80,7 +80,7 @@ private:
     VkDevice device;
 
 public:
-    octree_t(
+    request_manager_t(
         VmaAllocator allocator,
         std::shared_ptr<device_t> device,
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 

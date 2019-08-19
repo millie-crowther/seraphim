@@ -167,7 +167,7 @@ renderer_t::init(){
     }
 
     // TODO: maybe create a transfer queue for transfer operations??
-    octree = std::make_unique<octree_t>(allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
+    request_manager = std::make_unique<request_manager_t>(allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue);
 
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
@@ -652,7 +652,7 @@ void
 renderer_t::render(){
     push_constants.current_frame++;
 
-    octree->handle_requests();
+    request_manager->handle_requests();
 
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();

@@ -7,7 +7,7 @@
 
 #include "core/buffer.h"
 #include "ui/window.h"
-#include "render/octree.h"
+#include "render/request_manager.h"
 #include "render/camera.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
@@ -73,7 +73,7 @@ private:
     std::shared_ptr<sdf3_t> sphere;
     std::shared_ptr<sdf3_t> plane;
     std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
-    std::unique_ptr<octree_t> octree;
+    std::unique_ptr<request_manager_t> request_manager;
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
     std::unique_ptr<texture_t> render_texture;

@@ -1,4 +1,4 @@
-#include "render/octree.h"
+#include "render/request_manager.h"
 
 #include <iostream>
 #include "core/blaspheme.h"
@@ -9,7 +9,7 @@
 #include "core/constant.h"
 #include "render/painter.h"
 
-octree_t::octree_t(
+request_manager_t::request_manager_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
@@ -85,7 +85,7 @@ octree_t::octree_t(
 }
 
 std::tuple<bool, bool> 
-octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
+request_manager_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
     double upper_radius = vec3_t(aabb[3] / 2).norm();
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
     double p = sdf->phi(c);
@@ -119,8 +119,8 @@ octree_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) 
     return std::make_tuple(false, false);
 }
 
-octree_t::node_t 
-octree_t::create_node(const vec4_t & aabb){
+request_manager_t::node_t 
+request_manager_t::create_node(const vec4_t & aabb){
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
     node_t node;
@@ -169,7 +169,7 @@ octree_t::create_node(const vec4_t & aabb){
 }
 
 void 
-octree_t::handle_request(const request_t & r){
+request_manager_t::handle_request(const request_t & r){
     double size = hyper::rho / (1 << ((r.child_24_depth_8 >> 24) - 1)); 
 
     octree_node_t new_node;
@@ -186,7 +186,7 @@ octree_t::handle_request(const request_t & r){
 }
 
 void
-octree_t::handle_requests(){
+request_manager_t::handle_requests(){
     vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
 
     static std::array<request_t, max_requests_size> requests;

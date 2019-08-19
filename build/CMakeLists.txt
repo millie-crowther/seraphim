@@ -35,7 +35,7 @@ set(SOURCES
     ../src/render/renderer.cpp
     ../src/render/texture.cpp
     ../src/render/camera.cpp
-    ../src/render/octree.cpp
+    ../src/render/request_manager.cpp
     ../src/render/swapchain.cpp
     
     ../src/maths/quat.cpp
