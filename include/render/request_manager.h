@@ -1,5 +1,5 @@
-#ifndef OCTREE_H
-#define OCTREE_H
+#ifndef REQUEST_MANAGER_H
+#define REQUEST_MANAGER_H
 
 #include <memory>
 #include <map>

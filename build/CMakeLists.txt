@@ -37,6 +37,7 @@ set(SOURCES
     ../src/render/camera.cpp
     ../src/render/request_manager.cpp
     ../src/render/swapchain.cpp
+    ../src/render/octree.cpp
     
     ../src/maths/quat.cpp
     
