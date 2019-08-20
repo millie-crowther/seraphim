@@ -53,11 +53,11 @@ struct ray_t {
 struct node_t {
     vec3 min;
     float size;
-    uint parent_node;
-    uint octant;
+    // uint parent_node;
+    // uint octant;
     uint depth;
 };
-node_t invalid_node = node_t(vec3(0), -1.0, 0, 0, 0);
+node_t invalid_node = node_t(vec3(0), -1.0, 0);
 
 struct intersection_t {
     bool hit;
@@ -122,7 +122,7 @@ void cull(uint i, octree_data_t parent){
     // }
 }
 
-void observe(intersection_t i){
+void observe(intersection_t i, uint parent_node, uint octant){
     vec4 aabb = vec4(i.node.min, i.node.size / 2);
     float s = expected_size(i.x);
 
@@ -144,8 +144,8 @@ void observe(intersection_t i){
 
             // TODO: observe node to trigger expiration culling
 
-            octree.body[i.node.parent_node].children[i.node.octant].child = r.child_24_size_8 & 0xFFFFFF;
-            octree.body[i.node.parent_node].children[i.node.octant].header = node_type_branch;
+            octree.body[parent_node].children[octant].child = r.child_24_size_8 & 0xFFFFFF;
+            octree.body[parent_node].children[octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= i.node.depth << 24;
         }
@@ -158,10 +158,10 @@ void observe(intersection_t i){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0, 0, 1);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 1);
 }
 
-node_t octree_lookup(vec3 x){
+node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
     vec3 a = abs(x);
     bool invalid = max(a.x, max(a.y, a.z)) > push_const.render_distance;
 
@@ -171,18 +171,21 @@ node_t octree_lookup(vec3 x){
 
     node_t node = base_node();
 
-    while ((octree.body[node.parent_node].children[node.octant].header & 0xFF) == node_type_branch){
+    parent_node = 0;
+    bvec3 octant = greaterThan(x, node.min + node.size);
+    octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+
+    while ((octree.body[parent_node].children[octant_index].header & 0xFF) == node_type_branch){
         node.depth++;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
-        node.parent_node = octree.body[node.parent_node].children[node.octant].child;
-        uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
-        node.octant = octant_index; // TODO delete this
+        parent_node = octree.body[parent_node].children[octant_index].child;
+        octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
         node.min += vec3(octant) * node.size;
     }
 
-    if (octree.body[node.parent_node].children[node.octant].header == node_type_pending_data){
+    if (octree.body[parent_node].children[octant_index].header == node_type_pending_data){
         return invalid_node;
     }
 
@@ -231,13 +234,15 @@ intersection_t raycast(ray_t r){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
-	    node = octree_lookup(r.x);
+        uint parent_node;
+        uint octant;
+	    node = octree_lookup(r.x, parent_node, octant);
 
-        if (node.size < 0 || node.parent_node >= octree_size){
+        if (node.size < 0 || parent_node >= octree_size){
             break;
         }
 
-        octree_data_t data = octree.body[node.parent_node].children[node.octant];
+        octree_data_t data = octree.body[parent_node].children[octant];
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node, data);
             vec3 min = node.min;
@@ -248,6 +253,7 @@ intersection_t raycast(ray_t r){
                 i.x.z <= min.z + node.size    
             ){
                 intersection = i;
+                observe(i, parent_node, octant); 
                 break;
             }
         }
@@ -335,7 +341,6 @@ void render(){
 
     if (i.hit){
         out_colour = colour(i.data.c) * light(vec3(-3, 3, -3), i.x, i.data);
-        observe(i); 
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
