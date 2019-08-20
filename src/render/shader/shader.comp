@@ -240,11 +240,12 @@ intersection_t raycast(ray_t r){
         octree_data_t data = octree.body[node.parent_node].children[node.octant];
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node, data);
+            vec3 min = node.min;
             if (
                 i.hit &&
-                i.x.x >= node.min.x && i.x.y >= node.min.y && i.x.z >= node.min.z &&
-                i.x.x <= node.min.x + node.size && i.x.y <= node.min.y + node.size &&
-                i.x.z <= node.min.z + node.size    
+                i.x.x >= min.x && i.x.y >= min.y && i.x.z >= min.z &&
+                i.x.x <= min.x + node.size && i.x.y <= min.y + node.size &&
+                i.x.z <= min.z + node.size    
             ){
                 intersection = i;
                 break;
