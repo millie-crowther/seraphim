@@ -41,7 +41,7 @@ struct octree_data_t {
 
 struct octree_node_t {
     vec3 x;
-    uint flags;
+    uint header;
     octree_data_t children[8];
 };
 
@@ -173,10 +173,10 @@ node_t octree_lookup(vec3 x){
 
     while ((octree.body[node.parent_node].children[node.octant].header & 0xFF) == node_type_branch){
         node.depth++;
-        node.parent_node = octree.body[node.parent_node].children[node.octant].child;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
+        node.parent_node = octree.body[node.parent_node].children[node.octant].child;
         uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
         node.octant = octant_index; // TODO delete this
         node.min += vec3(octant) * node.size;
