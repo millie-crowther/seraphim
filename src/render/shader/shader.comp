@@ -44,6 +44,7 @@ struct octree_node_t {
     uint header;
     octree_data_t children[8];
 };
+octree_node_t null_node;
 
 struct ray_t {
     vec3 x;
@@ -53,8 +54,9 @@ struct ray_t {
 struct node_t {
     vec3 min;
     float size;
+    octree_node_t node;
 };
-node_t invalid_node = node_t(vec3(0), -1.0);
+node_t invalid_node = node_t(vec3(0), -1.0, null_node);
 
 struct intersection_t {
     bool hit;
@@ -151,7 +153,7 @@ void observe(intersection_t i, uint parent_node, uint octant){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, octree.body[0]);
 }
 
 node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
@@ -173,6 +175,7 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
 
         bvec3 octant = greaterThan(x, node.min + node.size);
         parent_node = octree.body[parent_node].children[octant_index].child;
+        node.node = octree.body[parent_node];
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
         node.min += vec3(octant) * node.size;
     }
