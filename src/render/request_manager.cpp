@@ -93,8 +93,9 @@ request_manager_t::handle_requests(){
 
     for (uint16_t i = 0; i < requests.size(); i++){
         request_t r = requests[i];
-        if ((r.child_24_depth_8 >> 24) > 0){
-            octree_node_t new_node(r.x, (r.child_24_depth_8 >> 24) - 1, strong_sdfs);
+
+        if ((r.child_24_depth_8 >> 24) != 0xFF){
+            octree_node_t new_node(r.x, r.child_24_depth_8 >> 24, strong_sdfs);
 
             uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
             octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);

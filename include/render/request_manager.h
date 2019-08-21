@@ -17,7 +17,7 @@ private:
         uint32_t child_24_depth_8;
 
         request_t(){
-            child_24_depth_8 = 0;
+            child_24_depth_8 = 0xFF000000;
         }
     };
 

@@ -128,12 +128,9 @@ void observe(intersection_t i, uint parent_node, uint octant){
 
     if (aabb.w > s){
         uint ri = uint(dot(aabb, aabb)) % requests_size; // TODO: this line is dodgy. suboptimal
-        request_t r = requests.requests[ri];
-
-        uint child = r.child_24_size_8 & 0xFFFFFF;
+        uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
         // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
-
         if (
             child != 0 && 
             atomicCompSwap(octree.body[child].children[0].header, node_type_unused, node_type_pending_data) == node_type_unused
@@ -147,7 +144,7 @@ void observe(intersection_t i, uint parent_node, uint octant){
             octree.body[parent_node].children[octant].child = child;
             octree.body[parent_node].children[octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
-            requests.requests[ri].child_24_size_8 |= i.node.depth << 24;
+            requests.requests[ri].child_24_size_8 = (i.node.depth << 24) | child;
         }
     }
 
@@ -158,7 +155,7 @@ void observe(intersection_t i, uint parent_node, uint octant){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 1);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0);
 }
 
 node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
@@ -374,7 +371,7 @@ void octree_update(){
     bool should_submit = 
         i < octree_size && 
         (octree.body[i].children[0].header & 0xFF) == node_type_unused;
-    atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(!should_submit) * ~0, i & 0xFFFFFF);
+    atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
 
     // if (node_expired(i, octree.body[i].children[0])){
     //     cull(i, octree.body[i]);
