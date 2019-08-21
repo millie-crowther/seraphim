@@ -167,16 +167,17 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
     node_t node = base_node();
 
     parent_node = 0;
-    bvec3 octant = greaterThan(x, node.min + node.size);
-    octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+    octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while ((octree.body[parent_node].children[octant_index].header & 0xFF) == node_type_branch){
         node.size /= 2;
 
-        bvec3 octant = greaterThan(x, node.min + node.size);
         parent_node = octree.body[parent_node].children[octant_index].child;
         node.node = octree.body[parent_node];
+
+        bvec3 octant = greaterThan(x, node.node.x + node.size);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+
         node.min += vec3(octant) * node.size;
     }
 
@@ -199,14 +200,22 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, node_t node, octree_data_t data){
+intersection_t plane_intersection(ray_t r, node_t node){
+
+    bvec3 octant = greaterThan(r.x, node.node.x + node.size);
+    uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+
+    octree_data_t data = node.node.children[octant_index];
+
+
+    vec3 min = node.node.x + vec3(octant) * node.size;
     vec3 n = normal(data.b);
 
     float phi = float(data.b >> 24) / 255.0 - 0.5;
 
     phi *= sqrt3 * node.size;
 
-    vec3 c = node.min + node.size / 2;
+    vec3 c = min + node.size / 2;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
@@ -239,7 +248,7 @@ intersection_t raycast(ray_t r){
 
         octree_data_t data = octree.body[parent_node].children[octant];
         if ((data.header & 0xFF) != node_type_empty){
-            intersection_t i = plane_intersection(r, node, data);
+            intersection_t i = plane_intersection(r, node);
             vec3 min = node.min;
             if (
                 i.hit &&
