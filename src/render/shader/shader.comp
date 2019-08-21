@@ -130,21 +130,21 @@ void observe(intersection_t i, uint parent_node, uint octant){
         uint ri = uint(dot(aabb, aabb)) % requests_size; // TODO: this line is dodgy. suboptimal
         request_t r = requests.requests[ri];
 
-        uint child = (r.child_24_size_8 & 0xFFFFFF) * 8;
+        uint child = r.child_24_size_8 & 0xFFFFFF;
 
         // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
 
         if (
-            r.child_24_size_8 > 0 && 
-            atomicCompSwap(octree.body[r.child_24_size_8 & 0xFFFFFF].children[0].header, node_type_unused, node_type_pending_data) == node_type_unused
+            child != 0 && 
+            atomicCompSwap(octree.body[child].children[0].header, node_type_unused, node_type_pending_data) == node_type_unused
         ){
             for (uint c = 1; c < 8; c++){
-                octree.body[r.child_24_size_8 & 0xFFFFFF].children[c].header = node_type_pending_data;
+                octree.body[child].children[c].header = node_type_pending_data;
             }
 
             // TODO: observe node to trigger expiration culling
 
-            octree.body[parent_node].children[octant].child = r.child_24_size_8 & 0xFFFFFF;
+            octree.body[parent_node].children[octant].child = child;
             octree.body[parent_node].children[octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 |= i.node.depth << 24;
