@@ -52,11 +52,10 @@ struct ray_t {
 };
 
 struct node_t {
-    vec3 min;
     float size;
     octree_node_t node;
 };
-node_t invalid_node = node_t(vec3(0), -1.0, null_node);
+node_t invalid_node = node_t(-1.0, null_node);
 
 struct intersection_t {
     bool hit;
@@ -121,8 +120,12 @@ void cull(uint i, octree_data_t parent){
     // }
 }
 
-void observe(intersection_t i, uint parent_node, uint octant){
-    vec4 aabb = vec4(i.node.min, i.node.size / 2);
+void observe(intersection_t i, uint parent_node, uint octant_index){
+    bvec3 octant = greaterThan(i.x, i.node.node.x + i.node.size);
+    octree_data_t data = i.node.node.children[octant_index];
+    vec3 m = i.node.node.x + vec3(octant) * i.node.size;
+
+    vec4 aabb = vec4(m, i.node.size / 2);
     float s = expected_size(i.x);
 
     if (aabb.w > s){
@@ -139,8 +142,8 @@ void observe(intersection_t i, uint parent_node, uint octant){
             }
 
             // TODO: observe node to trigger expiration culling
-            octree.body[parent_node].children[octant].child = child;
-            octree.body[parent_node].children[octant].header = node_type_branch;
+            octree.body[parent_node].children[octant_index].child = child;
+            octree.body[parent_node].children[octant_index].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
             requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
         }
@@ -153,7 +156,7 @@ void observe(intersection_t i, uint parent_node, uint octant){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, octree.body[0]);
+    return node_t(push_const.render_distance * 2, octree.body[0]);
 }
 
 node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
@@ -177,8 +180,6 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
 
         bvec3 octant = greaterThan(x, node.node.x + node.size);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
-
-        node.min += vec3(octant) * node.size;
     }
 
     if (octree.body[parent_node].children[octant_index].header == node_type_pending_data){
@@ -239,31 +240,33 @@ intersection_t raycast(ray_t r){
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
         uint parent_node;
-        uint octant;
-	    node = octree_lookup(r.x, parent_node, octant);
+        uint octant_index;
+	    node = octree_lookup(r.x, parent_node, octant_index);
 
         if (node.size < 0 || parent_node >= octree_size){
             break;
         }
 
-        octree_data_t data = octree.body[parent_node].children[octant];
+        bvec3 octant = greaterThan(r.x, node.node.x + node.size);
+        octree_data_t data = node.node.children[octant_index];
+        vec3 m = node.node.x + vec3(octant) * node.size;
+
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node);
-            vec3 min = node.min;
             if (
                 i.hit &&
-                i.x.x >= min.x && i.x.y >= min.y && i.x.z >= min.z &&
-                i.x.x <= min.x + node.size && i.x.y <= min.y + node.size &&
-                i.x.z <= min.z + node.size    
+                i.x.x >= m.x && i.x.y >= m.y && i.x.z >= m.z &&
+                i.x.x <= m.x + node.size && i.x.y <= m.y + node.size &&
+                i.x.z <= m.z + node.size    
             ){
                 intersection = i;
-                observe(i, parent_node, octant); 
+                observe(i, parent_node, octant_index); 
                 break;
             }
         }
 	
         vec3 lambda_i = abs(
-            node.min + sign(max(r.d, 0)) * node.size - r.x
+            m + sign(max(r.d, 0)) * node.size - r.x
         ) / max(abs(r.d), epsilon);
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
