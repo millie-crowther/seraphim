@@ -144,7 +144,8 @@ void observe(intersection_t i, uint parent_node, uint octant){
             octree.body[parent_node].children[octant].child = child;
             octree.body[parent_node].children[octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
-            requests.requests[ri].child_24_size_8 = (i.node.depth << 24) | child;
+            // requests.requests[ri].child_24_size_8 = (i.node.depth << 24) | child;
+            requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
         }
     }
 

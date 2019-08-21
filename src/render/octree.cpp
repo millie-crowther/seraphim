@@ -10,10 +10,15 @@ octree_node_t::octree_data_t::octree_data_t(){
 
 octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     this->x = x;
-    flags |= depth;
+    flags = depth;
+    
+    // TODO: this is so hacky!!!! fix this!!!!
+    if (depth > 0){
+        depth --;
+    }
     
     for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << depth));
+        vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << (depth)));
 
         if (octant & 1) aabb[0] += aabb[3];
         if (octant & 2) aabb[1] += aabb[3];
