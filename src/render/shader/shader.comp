@@ -121,11 +121,12 @@ void cull(uint i, octree_data_t parent){
 }
 
 void observe(intersection_t i, uint parent_node, uint octant_index){
-    bvec3 octant = greaterThan(i.x, i.node.node.x + i.node.size);
+    node_t node = i.node;
+    bvec3 octant = greaterThan(i.x, i.node.node.x + node.size);
     octree_data_t data = i.node.node.children[octant_index];
-    vec3 m = i.node.node.x + vec3(octant) * i.node.size;
+    vec3 m = i.node.node.x + vec3(octant) * node.size;
 
-    vec4 aabb = vec4(m, i.node.size / 2);
+    vec4 aabb = vec4(m, node.size / 2);
     float s = expected_size(i.x);
 
     if (aabb.w > s){
