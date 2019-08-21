@@ -122,11 +122,17 @@ void cull(uint i, octree_data_t parent){
 
 void observe(intersection_t i, uint parent_node, uint octant_index){
     node_t node = i.node;
-    bvec3 octant = greaterThan(i.x, i.node.node.x + node.size);
-    octree_data_t data = i.node.node.children[octant_index];
-    vec3 m = i.node.node.x + vec3(octant) * node.size;
+    uint depth = (i.node.node.header & 0xFF);
+    if (depth > 0){
+        depth--; // TODO: this hack is on CPU as well. FIX IT!
+    }
+    float node_size = push_const.render_distance / (1 << depth);
 
-    vec4 aabb = vec4(m, node.size / 2);
+    bvec3 octant = greaterThan(i.x, i.node.node.x + node_size);
+    octree_data_t data = i.node.node.children[octant_index];
+    vec3 m = i.node.node.x + vec3(octant) * node_size;
+
+    vec4 aabb = vec4(m, node_size / 2);
     float s = expected_size(i.x);
 
     if (aabb.w > s){
