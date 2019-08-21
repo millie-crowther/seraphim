@@ -53,11 +53,8 @@ struct ray_t {
 struct node_t {
     vec3 min;
     float size;
-    // uint parent_node;
-    // uint octant;
-    uint depth;
 };
-node_t invalid_node = node_t(vec3(0), -1.0, 0);
+node_t invalid_node = node_t(vec3(0), -1.0);
 
 struct intersection_t {
     bool hit;
@@ -140,11 +137,9 @@ void observe(intersection_t i, uint parent_node, uint octant){
             }
 
             // TODO: observe node to trigger expiration culling
-
             octree.body[parent_node].children[octant].child = child;
             octree.body[parent_node].children[octant].header = node_type_branch;
             requests.requests[ri].x = aabb.xyz;
-            // requests.requests[ri].child_24_size_8 = (i.node.depth << 24) | child;
             requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
         }
     }
@@ -156,7 +151,7 @@ void observe(intersection_t i, uint parent_node, uint octant){
 }
 
 node_t base_node(){
-    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2, 0);
+    return node_t(vec3(-push_const.render_distance), push_const.render_distance * 2);
 }
 
 node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
@@ -174,7 +169,6 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
     octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
 
     while ((octree.body[parent_node].children[octant_index].header & 0xFF) == node_type_branch){
-        node.depth++;
         node.size /= 2;
 
         bvec3 octant = greaterThan(x, node.min + node.size);
