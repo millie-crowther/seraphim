@@ -122,11 +122,7 @@ void cull(uint i, octree_data_t parent){
 
 void observe(intersection_t i, uint parent_node, uint octant_index){
     node_t node = i.node;
-    uint depth = (i.node.node.header & 0xFF);
-    if (depth > 0){
-        depth--; // TODO: this hack is on CPU as well. FIX IT!
-    }
-    float node_size = push_const.render_distance / (1 << depth);
+    float node_size = 2 * push_const.render_distance / (1 << (i.node.node.header & 0xFF));
 
     bvec3 octant = greaterThan(i.x, i.node.node.x + node_size);
     octree_data_t data = i.node.node.children[octant_index];
@@ -136,7 +132,7 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
     float s = expected_size(i.x);
 
     if (aabb.w > s){
-        uint ri = uint(dot(aabb, aabb)) % requests_size; // TODO: this line is dodgy. suboptimal
+        uint ri = uint(parent_node * 8 + octant_index) % requests_size; // TODO: this line is dodgy. suboptimal
         uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
         // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
@@ -166,11 +162,12 @@ node_t base_node(){
     return node_t(push_const.render_distance * 2, octree.body[0]);
 }
 
-node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
+node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bool is_valid_node){
     vec3 a = abs(x);
-    bool invalid = max(a.x, max(a.y, a.z)) > push_const.render_distance;
-
-    if (invalid){ 
+    is_valid_node = true;
+    
+    if (max(a.x, max(a.y, a.z)) > push_const.render_distance) { 
+        is_valid_node = false;
         return invalid_node;
     }
 
@@ -190,6 +187,7 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index){
     }
 
     if (octree.body[parent_node].children[octant_index].header == node_type_pending_data){
+        is_valid_node = false;
         return invalid_node;
     }
 
@@ -209,21 +207,21 @@ vec3 normal(uint n){
 }
 
 intersection_t plane_intersection(ray_t r, node_t node){
+    float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
 
-    bvec3 octant = greaterThan(r.x, node.node.x + node.size);
+    bvec3 octant = greaterThan(r.x, node.node.x + node_size);
     uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
 
     octree_data_t data = node.node.children[octant_index];
 
 
-    vec3 min = node.node.x + vec3(octant) * node.size;
+    vec3 min = node.node.x + vec3(octant) * node_size;
     vec3 n = normal(data.b);
 
     float phi = float(data.b >> 24) / 255.0 - 0.5;
+    phi *= sqrt3 * node_size;
 
-    phi *= sqrt3 * node.size;
-
-    vec3 c = min + node.size / 2;
+    vec3 c = min + node_size / 2;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
@@ -248,23 +246,25 @@ intersection_t raycast(ray_t r){
         //       will have to check how much time that actually saves
         uint parent_node;
         uint octant_index;
-	    node = octree_lookup(r.x, parent_node, octant_index);
+        bool is_valid_node;
+	    node = octree_lookup(r.x, parent_node, octant_index, is_valid_node);
+        float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
 
-        if (node.size < 0 || parent_node >= octree_size){
+        if (!is_valid_node || parent_node >= octree_size){
             break;
         }
 
-        bvec3 octant = greaterThan(r.x, node.node.x + node.size);
+        bvec3 octant = greaterThan(r.x, node.node.x + node_size);
         octree_data_t data = node.node.children[octant_index];
-        vec3 m = node.node.x + vec3(octant) * node.size;
+        vec3 m = node.node.x + vec3(octant) * node_size;
 
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node);
             if (
                 i.hit &&
                 i.x.x >= m.x && i.x.y >= m.y && i.x.z >= m.z &&
-                i.x.x <= m.x + node.size && i.x.y <= m.y + node.size &&
-                i.x.z <= m.z + node.size    
+                i.x.x <= m.x + node_size && i.x.y <= m.y + node_size &&
+                i.x.z <= m.z + node_size    
             ){
                 intersection = i;
                 observe(i, parent_node, octant_index); 
@@ -273,7 +273,7 @@ intersection_t raycast(ray_t r){
         }
 	
         vec3 lambda_i = abs(
-            m + sign(max(r.d, 0)) * node.size - r.x
+            m + sign(max(r.d, 0)) * node_size - r.x
         ) / max(abs(r.d), epsilon);
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;

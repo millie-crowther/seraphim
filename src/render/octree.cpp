@@ -13,6 +13,7 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
     flags = depth;
     
     // TODO: this is so hacky!!!! fix this!!!!
+    // problem is that the width should be 2 * rho / (1 << depth)
     if (depth > 0){
         depth --;
     }
