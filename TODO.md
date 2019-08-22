@@ -37,8 +37,6 @@
 * beam optimisation
 * animation - parallelised construction of second octree based on transforms
 * remove parameter of normal map and use flag instead 
-* fix graphical artefacts when streaming in octree data
-    * almost definitely a sync error somewhere 
 * lerp colour and normal values across octree node on hit
 
 ### materials
