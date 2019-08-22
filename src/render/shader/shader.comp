@@ -94,16 +94,21 @@ float expected_size(vec3 x){
     return epsilon * max(1, sigma * length(x - push_const.camera_position));
 }
 
-void observe(intersection_t i, uint parent_node, uint octant_index){
+void observe(vec3 x, uint parent_node, uint octant_index){
     // mark node as seen for expiration culling
     octree.body[parent_node].header = ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
-    float node_size = 2 * push_const.render_distance / (1 << (i.node.header & 0xFF));
+    float node_size = 2 * push_const.render_distance / (1 << (octree.body[parent_node].header & 0xFF));
     uint ri = uint(parent_node * 8 + octant_index) % requests_size;
     uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
+    // TODO: i think x can actually just be removed as a parameter from this function
+    bvec3 octant = 
+    // greaterThan(uvec3(octant_index & 1, octant_index & 2, octant_index & 4), uvec3(0)); 
+    greaterThan(x, octree.body[parent_node].x + node_size);
+
     if (
-        node_size > expected_size(i.x) &&
+        node_size > expected_size(x) &&
         min(
             child, 
             (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag)
@@ -111,7 +116,7 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
     ){
         // TODO: observe node to trigger expiration culling
         octree.body[parent_node].children[octant_index].child = child;
-        requests.requests[ri].x = i.node.x + vec3(greaterThan(i.x, i.node.x + node_size)) * node_size;
+        requests.requests[ri].x = octree.body[parent_node].x + vec3(octant) * node_size;
         requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
     }
 }
@@ -220,7 +225,7 @@ intersection_t raycast(ray_t r){
                 i.x.z <= m.z + node_size    
             ){
                 intersection = i;
-                observe(i, parent_node, octant_index); 
+                observe(i.x, parent_node, octant_index); 
                 break;
             }
         }
