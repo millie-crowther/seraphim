@@ -329,12 +329,6 @@ bool should_cull_node(octree_node_t node, uint octant){
         (size_cull || expiry_cull);
 }
 
-void cull(uint i, uint octant){
-    uint child = octree.body[i].children[octant].child;
-    octree.body[i].children[octant].child = 0;
-    octree.body[child].header |= node_unused_flag;
-}
-
 void octree_update(){
     uint i = 
         gl_GlobalInvocationID.x +
@@ -347,11 +341,16 @@ void octree_update(){
     atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
 
     // cull extraneous nodes
+    uint node = i >> 3;
+    uint octant = i & 7;
     bool should_cull = 
-        (i >> 3) < octree_size && 
-        should_cull_node(octree.body[i >> 3], i & 7);
+        node < octree_size && 
+        should_cull_node(octree.body[node], octant);
+
     if (should_cull){
-        cull(i >> 3, i & 7);
+        uint child = octree.body[node].children[octant].child;
+        octree.body[node].children[octant].child = 0;
+        octree.body[child].header |= node_unused_flag;
     }
 }
 
