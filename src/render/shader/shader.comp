@@ -52,10 +52,9 @@ struct ray_t {
 };
 
 struct node_t {
-    float size;
     octree_node_t node;
 };
-node_t invalid_node = node_t(-1.0, null_node);
+node_t invalid_node = node_t(null_node);
 
 struct intersection_t {
     bool hit;
@@ -159,7 +158,7 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
 }
 
 node_t base_node(){
-    return node_t(push_const.render_distance * 2, octree.body[0]);
+    return node_t(octree.body[0]);
 }
 
 node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bool is_valid_node){
@@ -177,12 +176,11 @@ node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bo
     octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while ((octree.body[parent_node].children[octant_index].header & 0xFF) == node_type_branch){
-        node.size /= 2;
-
         parent_node = octree.body[parent_node].children[octant_index].child;
         node.node = octree.body[parent_node];
 
-        bvec3 octant = greaterThan(x, node.node.x + node.size);
+        float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
+        bvec3 octant = greaterThan(x, node.node.x + node_size);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
     }
 
