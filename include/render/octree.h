@@ -12,7 +12,7 @@ class octree_node_t {
 private:
     class octree_data_t {
     private:
-        static constexpr uint8_t node_type_empty  = 3;
+        static constexpr uint8_t node_type_empty  = 1;
 
 
         uint32_t type;

@@ -7,7 +7,7 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 // constants
 //
-const uint node_type_empty = 3;
+const uint node_type_empty = 1;
 const uint node_unused_flag = 1 << 8;
 const uint node_pending_data_flag = 1 << 9;
 
