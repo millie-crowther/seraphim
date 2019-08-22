@@ -20,6 +20,14 @@
 * vector class interior removal of branching using templates
 * destruction of descriptor pools needs to be re added!!!!
 
+## animation
+* create renderable class on cpu
+* construct animated octree on the fly
+* add support for animation every 2, 4, 8 frames based on distance from camera
+* add support for 'volatile' dynamic renderables
+    * change in value of SDF is not linked to transform and can be arbitrary
+    * stream in full octree every frame from cpu
+
 ## rendering
 
 ### general
@@ -35,9 +43,10 @@
     * may also help with collision
 * reduce branching 
 * beam optimisation
-* animation - parallelised construction of second octree based on transforms
 * remove parameter of normal map and use flag instead 
-* lerp colour and normal values across octree node on hit
+* lerp  across octree node on hit
+    * colour
+    * normal
 
 ### materials
 * add textures for other material properties
