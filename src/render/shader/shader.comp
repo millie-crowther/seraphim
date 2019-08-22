@@ -7,10 +7,9 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 // constants
 //
-const uint node_type_pending_data = 1;
-const uint node_type_unused = 2;
 const uint node_type_empty = 3;
 const uint node_unused_flag = 1 << 8;
+const uint node_pending_data_flag = 1 << 9;
 
 const uint octree_size = 3125;
 const uint requests_size = 64;
@@ -130,12 +129,8 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
         // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
         if (
             child != 0 && 
-            atomicCompSwap(octree.body[child].children[0].header, node_type_unused, node_type_pending_data) == node_type_unused
+            (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag) != 0
         ){
-            for (uint c = 1; c < 8; c++){
-                octree.body[child].children[c].header = node_type_pending_data;
-            }
-
             // TODO: observe node to trigger expiration culling
             octree.body[parent_node].children[octant_index].child = child;
             requests.requests[ri].x = aabb.xyz;
@@ -173,7 +168,7 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
     }
 
-    if (octree.body[parent_node].children[octant_index].header == node_type_pending_data){
+    if ((octree.body[parent_node].header & node_pending_data_flag) != 0){
         is_valid_node = false;
         return null_node;
     }
@@ -374,7 +369,7 @@ void octree_update(){
     // submit free nodes to request queue
     bool should_submit = 
         i < octree_size && 
-        (octree.body[i].children[0].header & 0xFF) == node_type_unused;
+        (octree.body[i].header & node_unused_flag) != 0;
     atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
 
     // if (node_expired(i, octree.body[i].children[0])){
