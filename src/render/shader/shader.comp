@@ -138,17 +138,17 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
     octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while (octree.body[parent_node].children[octant_index].child != 0){
-        parent_node = octree.body[parent_node].children[octant_index].child;
+        uint child = octree.body[parent_node].children[octant_index].child;
+        if ((octree.body[child].header & node_pending_data_flag) != 0){
+            break;
+        }   
+
+        parent_node = child;
         node = octree.body[parent_node];
 
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
         bvec3 octant = greaterThan(x, node.x + node_size);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
-    }
-
-    if ((octree.body[parent_node].header & node_pending_data_flag) != 0){
-        is_valid_node = false;
-        return null_node;
     }
 
     observe(x, parent_node, octant_index);
