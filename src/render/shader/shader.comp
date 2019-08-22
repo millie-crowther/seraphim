@@ -109,6 +109,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
 
     if (
         node_size > expected_size(x) &&
+        (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
         min(
             child, 
             (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag)
@@ -149,6 +150,8 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
         is_valid_node = false;
         return null_node;
     }
+
+    observe(x, parent_node, octant_index);
 
     return node;
 }
@@ -225,7 +228,7 @@ intersection_t raycast(ray_t r){
                 i.x.z <= m.z + node_size    
             ){
                 intersection = i;
-                observe(i.x, parent_node, octant_index); 
+                // observe(i.x, parent_node, octant_index); 
                 break;
             }
         }

@@ -35,7 +35,6 @@
     * may also help with collision
 * reduce branching 
 * beam optimisation
-* implement octree pruning when node not seen for certain number of frames
 * animation - parallelised construction of second octree based on transforms
 * remove parameter of normal map and use flag instead 
 * make loading in the nodes less visually noticeable
