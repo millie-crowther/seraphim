@@ -95,6 +95,9 @@ float expected_size(vec3 x){
 }
 
 void observe(intersection_t i, uint parent_node, uint octant_index){
+    // mark node as seen for expiration culling
+    octree.body[parent_node].header = ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
+
     float node_size = 2 * push_const.render_distance / (1 << (i.node.header & 0xFF));
     uint ri = uint(parent_node * 8 + octant_index) % requests_size;
     uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
@@ -164,7 +167,6 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
     uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
 
     octree_data_t data = node.children[octant_index];
-
 
     vec3 min = node.x + vec3(octant) * node_size;
     vec3 n = normal(data.b);
@@ -313,9 +315,9 @@ void render(){
 bool should_cull_node(octree_node_t node, uint octant){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
     bool size_cull = node_size < expected_size(node.x + node_size / 2) / 2;  // TODO
-    bool expiry_cull = false;
-
     octree_node_t child_node = octree.body[node.children[octant].child];
+    bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
+
     for (uint i = 0; i < 8; i++){
         if (child_node.children[i].child != 0){
             return false;
@@ -351,6 +353,9 @@ void octree_update(){
         uint child = octree.body[node].children[octant].child;
         octree.body[node].children[octant].child = 0;
         octree.body[child].header |= node_unused_flag;
+        
+        // reset expiration culling counter
+        octree.body[node].header = ((push_const.current_frame - 1) << 24) | (octree.body[node].header & 0xFFFFFF);
     }
 }
 

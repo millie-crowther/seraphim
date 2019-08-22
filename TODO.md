@@ -33,22 +33,13 @@
 * create octree on cpu side that stores renderables
     * makes lookup of which sdfs to query quicker
     * may also help with collision
-* compute shader
-    * reduce branching 
-    * beam optimisation
-    * octree pruning
-        * make more sophisticated node merge algorithm (at the moment just copies first child)
-    * possibly also animation
-        * parallelised construction of second octree based on transforms
-        * BVH embedded in static octree?
+* reduce branching 
+* beam optimisation
+* implement octree pruning when node not seen for certain number of frames
+* animation - parallelised construction of second octree based on transforms
 * remove parameter of normal map and use flag instead 
-* switch surface representation to quadratic patch
 * make loading in the nodes less visually noticeable
     * effectively, back up one stage in octree lookup if pending data flag seen
-* do more rearrangement of octree data
-    * lookup by `octree_node_t` not `octree_data_t`
-    * remove unnecessary flags
-    * put flags that can go in `octree_node_t::flags` there instead of children
 * lerp colour and normal values across octree node on hit
 
 ### materials
