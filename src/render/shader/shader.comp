@@ -51,21 +51,16 @@ struct ray_t {
     vec3 d;
 };
 
-struct node_t {
-    octree_node_t node;
-};
-node_t invalid_node = node_t(null_node);
-
 struct intersection_t {
     bool hit;
     vec3 x;
     vec3 n;
-    node_t node;
+    octree_node_t node;
     octree_data_t data;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    invalid_node, octree_data_t(0, 0, 0, 0)
+    null_node, octree_data_t(0, 0, 0, 0)
 );
 
 //
@@ -120,12 +115,11 @@ void cull(uint i, octree_data_t parent){
 }
 
 void observe(intersection_t i, uint parent_node, uint octant_index){
-    node_t node = i.node;
-    float node_size = 2 * push_const.render_distance / (1 << (i.node.node.header & 0xFF));
+    float node_size = 2 * push_const.render_distance / (1 << (i.node.header & 0xFF));
 
-    bvec3 octant = greaterThan(i.x, i.node.node.x + node_size);
-    octree_data_t data = i.node.node.children[octant_index];
-    vec3 m = i.node.node.x + vec3(octant) * node_size;
+    bvec3 octant = greaterThan(i.x, i.node.x + node_size);
+    octree_data_t data = i.node.children[octant_index];
+    vec3 m = i.node.x + vec3(octant) * node_size;
 
     vec4 aabb = vec4(m, node_size / 2);
     float s = expected_size(i.x);
@@ -157,36 +151,32 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
     // }
 }
 
-node_t base_node(){
-    return node_t(octree.body[0]);
-}
-
-node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bool is_valid_node){
+octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bool is_valid_node){
     vec3 a = abs(x);
     is_valid_node = true;
     
     if (max(a.x, max(a.y, a.z)) > push_const.render_distance) { 
         is_valid_node = false;
-        return invalid_node;
+        return null_node;
     }
 
-    node_t node = base_node();
+    octree_node_t node = octree.body[0];
 
     parent_node = 0;
     octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while ((octree.body[parent_node].children[octant_index].header & 0xFF) == node_type_branch){
         parent_node = octree.body[parent_node].children[octant_index].child;
-        node.node = octree.body[parent_node];
+        node = octree.body[parent_node];
 
-        float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
-        bvec3 octant = greaterThan(x, node.node.x + node_size);
+        float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+        bvec3 octant = greaterThan(x, node.x + node_size);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
     }
 
     if (octree.body[parent_node].children[octant_index].header == node_type_pending_data){
         is_valid_node = false;
-        return invalid_node;
+        return null_node;
     }
 
     return node;
@@ -204,16 +194,16 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, node_t node){
-    float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
+intersection_t plane_intersection(ray_t r, octree_node_t node){
+    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
-    bvec3 octant = greaterThan(r.x, node.node.x + node_size);
+    bvec3 octant = greaterThan(r.x, node.x + node_size);
     uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
 
-    octree_data_t data = node.node.children[octant_index];
+    octree_data_t data = node.children[octant_index];
 
 
-    vec3 min = node.node.x + vec3(octant) * node_size;
+    vec3 min = node.x + vec3(octant) * node_size;
     vec3 n = normal(data.b);
 
     float phi = float(data.b >> 24) / 255.0 - 0.5;
@@ -235,7 +225,7 @@ intersection_t plane_intersection(ray_t r, node_t node){
 }
 
 intersection_t raycast(ray_t r){
-    node_t node = base_node();
+    octree_node_t node;
 
     intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
@@ -246,15 +236,15 @@ intersection_t raycast(ray_t r){
         uint octant_index;
         bool is_valid_node;
 	    node = octree_lookup(r.x, parent_node, octant_index, is_valid_node);
-        float node_size = 2 * push_const.render_distance / (1 << (node.node.header & 0xFF));
+        float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
         if (!is_valid_node || parent_node >= octree_size){
             break;
         }
 
-        bvec3 octant = greaterThan(r.x, node.node.x + node_size);
-        octree_data_t data = node.node.children[octant_index];
-        vec3 m = node.node.x + vec3(octant) * node_size;
+        bvec3 octant = greaterThan(r.x, node.x + node_size);
+        octree_data_t data = node.children[octant_index];
+        vec3 m = node.x + vec3(octant) * node_size;
 
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node);
