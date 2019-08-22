@@ -94,54 +94,23 @@ float expected_size(vec3 x){
     return epsilon * max(1, sigma * length(x - push_const.camera_position));
 }
 
-// bool should_size_cull(float expected_size, float size, octree_data_t data){
-//     for (uint child = 0; child < 8; child++){
-//         if ((octree.body[data.child].children[child].header & 0xFF) != node_type_leaf){
-//             return false;
-//         }
-//     }
-
-//     return size < expected_size / 2;
-// }
-
-// void cull(uint i, octree_data_t parent){
-    // octree.structure[i].header = node_type_leaf | ((push_const.current_frame & 0xFF) << 8);
-
-    // for (uint j = 0; j < 8; j++){
-    //     octree.structure[parent.child * 8 + j].header = node_type_unused;
-    // }
-// }
-
 void observe(intersection_t i, uint parent_node, uint octant_index){
     float node_size = 2 * push_const.render_distance / (1 << (i.node.header & 0xFF));
+    uint ri = uint(parent_node * 8 + octant_index) % requests_size;
+    uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
-    bvec3 octant = greaterThan(i.x, i.node.x + node_size);
-    octree_data_t data = i.node.children[octant_index];
-    vec3 m = i.node.x + vec3(octant) * node_size;
-
-    vec4 aabb = vec4(m, node_size / 2);
-    float s = expected_size(i.x);
-
-    if (aabb.w > s){
-        uint ri = uint(parent_node * 8 + octant_index) % requests_size; // TODO: this line is dodgy. suboptimal
-        uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
-
-        // TODO: check its okay to write to location before writing (i.e. check for a node thats pending data)
-        if (
-            child != 0 && 
-            (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag) != 0
-        ){
-            // TODO: observe node to trigger expiration culling
-            octree.body[parent_node].children[octant_index].child = child;
-            requests.requests[ri].x = aabb.xyz;
-            requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
-        }
+    if (
+        node_size / 2 > expected_size(i.x) &&
+        min(
+            child, 
+            (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag)
+        ) != 0
+    ){
+        // TODO: observe node to trigger expiration culling
+        octree.body[parent_node].children[octant_index].child = child;
+        requests.requests[ri].x = i.node.x + vec3(greaterThan(i.x, i.node.x + node_size)) * node_size;
+        requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
     }
-
-    // octree_data_t parent = octree.structure[i.node.parent];
-    // if (should_size_cull(s, aabb.w * 2, parent)){
-    //     cull(i.node.parent, parent);
-    // }
 }
 
 // TODO: this function signature is clearly messy. refactor!
@@ -341,25 +310,13 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-// bool node_expired(uint i, octree_data_t data){
-//     if (i >= octree_size){
-//         return false;
-//     }
+bool should_cull(uint i, octree_node_t node){
+    return false;
+}
 
-//     if ((data.header & 0xFF) != node_type_branch){
-//         return false;
-//     }
+void cull(uint i){
 
-//     for (uint child = 0; child < 8; child++){
-//         if ((octree.body[data.child].children[child].header & 0xFF) != node_type_leaf){
-//             return false;
-//         }
-//     }
-
-//     bool expired = ((data.header >> 8) & 0xFF) == (push_const.current_frame & 0xFF); 
-
-//     return expired;
-// }
+}
 
 void octree_update(){
     uint i = 
@@ -372,9 +329,9 @@ void octree_update(){
         (octree.body[i].header & node_unused_flag) != 0;
     atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
 
-    // if (node_expired(i, octree.body[i].children[0])){
-    //     cull(i, octree.body[i]);
-    // }
+    if (should_cull(i, octree.body[i])){
+        cull(i);
+    }
 }
 
 void main(){
