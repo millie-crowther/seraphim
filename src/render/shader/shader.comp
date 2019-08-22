@@ -19,7 +19,7 @@ const float sqrt3 = 1.73205080757;
 const float f = 1.0;
 const int max_steps = 128;
 const float epsilon = 1.0 / 256.0;
-const float sigma = 64; // TODO: relate this to camera FOV
+const float sigma = 128; // TODO: relate this to camera FOV
 const float shadow_softness = 64;
 
 //
@@ -100,7 +100,7 @@ void observe(intersection_t i, uint parent_node, uint octant_index){
     uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
     if (
-        node_size / 2 > expected_size(i.x) &&
+        node_size > expected_size(i.x) &&
         min(
             child, 
             (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag)
@@ -310,12 +310,29 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-bool should_cull(uint i, octree_node_t node){
-    return false;
+bool should_cull_node(octree_node_t node, uint octant){
+    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+    bool size_cull = node_size < expected_size(node.x + node_size / 2) / 2;  // TODO
+    bool expiry_cull = false;
+
+    octree_node_t child_node = octree.body[node.children[octant].child];
+    for (uint i = 0; i < 8; i++){
+        if (child_node.children[i].child != 0){
+            return false;
+        }
+    }
+
+    return 
+        node.children[octant].child != 0 &&
+        (node.header & node_unused_flag) == 0 &&
+        (node.header & node_pending_data_flag) == 0 &&
+        (size_cull || expiry_cull);
 }
 
-void cull(uint i){
-
+void cull(uint i, uint octant){
+    uint child = octree.body[i].children[octant].child;
+    octree.body[i].children[octant].child = 0;
+    octree.body[child].header |= node_unused_flag;
 }
 
 void octree_update(){
@@ -329,8 +346,12 @@ void octree_update(){
         (octree.body[i].header & node_unused_flag) != 0;
     atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
 
-    if (should_cull(i, octree.body[i])){
-        cull(i);
+    // cull extraneous nodes
+    bool should_cull = 
+        (i >> 3) < octree_size && 
+        should_cull_node(octree.body[i >> 3], i & 7);
+    if (should_cull){
+        cull(i >> 3, i & 7);
     }
 }
 

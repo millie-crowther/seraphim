@@ -23,7 +23,7 @@ private:
         std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
     public:
-        octree_data_t(){}
+        octree_data_t();
         octree_data_t(const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
     };
 

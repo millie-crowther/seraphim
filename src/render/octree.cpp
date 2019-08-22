@@ -4,6 +4,10 @@
 #include "render/painter.h"
 #include "sdf/compose.h"
 
+octree_node_t::octree_data_t::octree_data_t(){
+    child = 0;
+}
+
 octree_node_t::octree_node_t(){
     header = node_unused_flag;
 }
