@@ -10,6 +10,7 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 const uint node_type_pending_data = 1;
 const uint node_type_unused = 2;
 const uint node_type_empty = 3;
+const uint node_unused_flag = 1 << 8;
 
 const uint octree_size = 3125;
 const uint requests_size = 64;

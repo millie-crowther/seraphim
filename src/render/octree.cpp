@@ -8,9 +8,13 @@ octree_node_t::octree_data_t::octree_data_t(){
     type = node_type_unused;
 }
 
+octree_node_t::octree_node_t(){
+    header = node_unused_flag;
+}
+
 octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     this->x = x;
-    flags = depth;
+    header = depth;
     
     // TODO: this is so hacky!!!! fix this!!!!
     // problem is that the width should be 2 * rho / (1 << depth)
