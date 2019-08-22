@@ -25,7 +25,6 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
         vec4_t octant_aabb = aabb;
         octant_aabb[3] /= 2;
 
-
         if (octant & 1) octant_aabb[0] += octant_aabb[3];
         if (octant & 2) octant_aabb[1] += octant_aabb[3];
         if (octant & 4) octant_aabb[2] += octant_aabb[3];
@@ -59,7 +58,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
     }
 
     compose::union_t<3> sdf(new_sdfs);
-    
+
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
 
     double p = sdf.phi(c);
@@ -82,8 +81,9 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
 
 std::tuple<bool, bool> 
 octree_node_t::octree_data_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
-    double upper_radius = vec3_t(aabb[3] / 2).norm();
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
+    double lower_radius = 0.5 * aabb[3];
+    double upper_radius = constant::sqrt3 * lower_radius;
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(lower_radius);
 
     double p = sdf->phi(c);
 
@@ -93,7 +93,7 @@ octree_node_t::octree_data_t::intersects_contains(const vec4_t & aabb, std::shar
     }
 
     // intersection check lower bound
-    if (std::abs(p) <= aabb[3] / 2){
+    if (std::abs(p) <= lower_radius){
         return std::make_tuple(true, false);
     }
 
@@ -104,12 +104,12 @@ octree_node_t::octree_data_t::intersects_contains(const vec4_t & aabb, std::shar
 
     // containment check precise
     double d = (sdf->normal(c) * p).chebyshev_norm();
-    if (p < 0 && d > aabb[3] / 2){
+    if (p < 0 && d > lower_radius){
         return std::make_tuple(false, true);
     }
 
     // intersection check precise
-    if (d <= aabb[3] / 2){
+    if (d <= lower_radius){
         return std::make_tuple(true, false);
     }
 

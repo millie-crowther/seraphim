@@ -148,7 +148,7 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
 
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
         bvec3 octant = greaterThan(x, node.x + node_size / 2);
-        octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+        octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
     }
 
     observe(x, parent_node, octant_index);
@@ -171,8 +171,11 @@ vec3 normal(uint n){
 intersection_t plane_intersection(ray_t r, octree_node_t node){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
-    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
-    uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
+    // TODO: this line is wrong but im too ill to fix it right now
+    vec3 c = node.x + node_size / 2
+
+    bvec3 octant = greaterThan(r.x, c);
+    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
 
     octree_data_t data = node.children[octant_index];
 
