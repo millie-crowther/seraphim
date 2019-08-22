@@ -103,9 +103,6 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
 
     // TODO: i think x can actually just be removed as a parameter from this function
-    bvec3 octant = 
-    // greaterThan(uvec3(octant_index & 1, octant_index & 2, octant_index & 4), uvec3(0)); 
-    greaterThan(x, octree.body[parent_node].x + node_size);
 
     if (
         node_size > expected_size(x) &&
@@ -118,7 +115,9 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         // TODO: observe node to trigger expiration culling
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
-        requests.requests[ri].x = octree.body[parent_node].x + vec3(octant) * node_size;
+
+        vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
+        requests.requests[ri].x = octree.body[parent_node].x + octant * node_size / 2;
         requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
     }
 }
@@ -148,7 +147,7 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
         node = octree.body[parent_node];
 
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-        bvec3 octant = greaterThan(x, node.x + node_size);
+        bvec3 octant = greaterThan(x, node.x + node_size / 2);
         octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
     }
 
@@ -172,18 +171,17 @@ vec3 normal(uint n){
 intersection_t plane_intersection(ray_t r, octree_node_t node){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
-    bvec3 octant = greaterThan(r.x, node.x + node_size);
+    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
     uint octant_index = uint(octant.x) + (uint(octant.y) << 1) + (uint(octant.z) << 2);
 
     octree_data_t data = node.children[octant_index];
 
-    vec3 min = node.x + vec3(octant) * node_size;
     vec3 n = normal(data.b);
 
     float phi = float(data.b >> 24) / 255.0 - 0.5;
-    phi *= sqrt3 * node_size;
+    phi *= sqrt3 * node_size / 2;
 
-    vec3 c = min + node_size / 2;
+    vec3 c = node.x + node_size / 2;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
@@ -216,26 +214,25 @@ intersection_t raycast(ray_t r){
             break;
         }
 
-        bvec3 octant = greaterThan(r.x, node.x + node_size);
+        bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
         octree_data_t data = node.children[octant_index];
-        vec3 m = node.x + vec3(octant) * node_size;
+        vec3 m = node.x + vec3(octant) * node_size / 2;
 
         if ((data.header & 0xFF) != node_type_empty){
             intersection_t i = plane_intersection(r, node);
             if (
                 i.hit &&
-                i.x.x >= m.x && i.x.y >= m.y && i.x.z >= m.z &&
-                i.x.x <= m.x + node_size && i.x.y <= m.y + node_size &&
-                i.x.z <= m.z + node_size    
+                i.x.x >= m.x && i.x.x <= m.x + node_size / 2 && 
+                i.x.y >= m.y && i.x.y <= m.y + node_size / 2 && 
+                i.x.z >= m.z && i.x.z <= m.z + node_size / 2    
             ){
                 intersection = i;
-                // observe(i.x, parent_node, octant_index); 
                 break;
             }
         }
 	
         vec3 lambda_i = abs(
-            m + sign(max(r.d, 0)) * node_size - r.x
+            m + sign(max(r.d, 0)) * node_size / 2 - r.x
         ) / max(abs(r.d), epsilon);
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;

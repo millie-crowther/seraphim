@@ -16,20 +16,19 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
     this->x = x;
     header = depth;
     
-    // TODO: this is so hacky!!!! fix this!!!!
-    // problem is that the width should be 2 * rho / (1 << depth)
-    if (depth > 0){
-        depth --;
+    vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
+    if (depth < 4){
+        std::cout << "depth: " << static_cast<int>(depth) << "; aabb: " << aabb[0] << ", " << aabb[1] << ", " << aabb[2] << ", " << aabb[3] << std::endl;
     }
-    
-    vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << (depth)));
     
     for (uint8_t octant = 0; octant < 8; octant++){
         vec4_t octant_aabb = aabb;
+        octant_aabb[3] /= 2;
 
-        if (octant & 1) octant_aabb[0] += aabb[3];
-        if (octant & 2) octant_aabb[1] += aabb[3];
-        if (octant & 4) octant_aabb[2] += aabb[3];
+
+        if (octant & 1) octant_aabb[0] += octant_aabb[3];
+        if (octant & 2) octant_aabb[1] += octant_aabb[3];
+        if (octant & 4) octant_aabb[2] += octant_aabb[3];
 
         children[octant] = octree_data_t(octant_aabb, sdfs);
     }
@@ -67,6 +66,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
     p /= constant::sqrt3 * aabb[3];
     p += 0.5;
     p *= 255;
+    // std::cout << "phi: " << p << std::endl;
     p = std::max(0.0, std::min(p, 255.0)); 
 
     vec3_t n = sdf.normal(c);
@@ -82,8 +82,9 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
 
 std::tuple<bool, bool> 
 octree_node_t::octree_data_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
-double upper_radius = vec3_t(aabb[3] / 2).norm();
+    double upper_radius = vec3_t(aabb[3] / 2).norm();
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2.0f);
+
     double p = sdf->phi(c);
 
     // containment check upper bound
