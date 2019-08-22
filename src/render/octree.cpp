@@ -69,7 +69,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
     
-    type = node_type_leaf;
+    type = 0;
     geometry = *reinterpret_cast<uint32_t *>(&normal);
     this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }

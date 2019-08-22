@@ -14,7 +14,6 @@ private:
     private:
         static constexpr uint8_t node_type_unused = 2;
         static constexpr uint8_t node_type_empty  = 3;
-        static constexpr uint8_t node_type_leaf   = 4;
 
         uint32_t type;
         uint32_t geometry;
