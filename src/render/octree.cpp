@@ -22,14 +22,16 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
         depth --;
     }
     
+    vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << (depth)));
+    
     for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t aabb(x[0], x[1], x[2], hyper::rho / (1 << (depth)));
+        vec4_t octant_aabb = aabb;
 
-        if (octant & 1) aabb[0] += aabb[3];
-        if (octant & 2) aabb[1] += aabb[3];
-        if (octant & 4) aabb[2] += aabb[3];
+        if (octant & 1) octant_aabb[0] += aabb[3];
+        if (octant & 2) octant_aabb[1] += aabb[3];
+        if (octant & 4) octant_aabb[2] += aabb[3];
 
-        children[octant] = octree_data_t(aabb, sdfs);
+        children[octant] = octree_data_t(octant_aabb, sdfs);
     }
 }
 
