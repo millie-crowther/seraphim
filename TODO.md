@@ -44,7 +44,8 @@
 * reduce branching 
 * beam optimisation
 * remove parameter of normal map and use flag instead 
-* lerp  across octree node on hit
+* find at least 4 free bits in octree_data_t to use for flags - fully filled atm
+* lerp across octree node on hit
     * colour
     * normal
 
