@@ -24,19 +24,11 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
 
         vec3_t vertex(aabb[0], aabb[1], aabb[2]);
 
-        if (octant & 1){
-            octant_aabb[0] += octant_aabb[3];
-            vertex[0] += aabb[3];
-        } 
-
-        if (octant & 2){
-            octant_aabb[1] += octant_aabb[3];
-            vertex[1] += aabb[3];
-        }
-
-        if (octant & 4){
-            octant_aabb[2] += octant_aabb[3];
-            vertex[2] += aabb[3];
+        for (uint8_t axis = 0; axis < 3; axis++){
+            if (octant & (1 << axis)){
+                octant_aabb[axis] += octant_aabb[3];
+                vertex[axis] += aabb[3];
+            }
         }
 
         children[octant] = octree_data_t(octant_aabb, vertex, sdfs);

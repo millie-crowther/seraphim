@@ -156,15 +156,40 @@ vec4 unpack_vec4(uint x){
     ) / 255.0;
 }
 
+vec4 bilinear_interpolate(vec4 x00, vec4 x01, vec4 x10, vec4 x11, vec2 alpha){
+    vec4 x = mix(x10, x00, alpha.x);
+    vec4 y = mix(x11, x01, alpha.x);
+
+    return mix(y, x, alpha.y);
+}
+
+vec4 trilinear_interpolate(vec4 x000, vec4 x001, vec4 x010, vec4 x011, vec4 x100, vec4 x101, vec4 x110, vec4 x111, vec3 alpha){
+    vec4 x00 = mix(x100, x000, alpha.x);
+    vec4 x01 = mix(x101, x001, alpha.x);
+    vec4 x10 = mix(x110, x010, alpha.x);
+    vec4 x11 = mix(x111, x011, alpha.x);
+
+    return bilinear_interpolate(x00, x01, x10, x11, alpha.yz);
+}
+
 vec4 colour(vec3 x, octree_node_t node){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-    bvec3 octant = greaterThan(x, node.x + node_size / 2);
-    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
-    uint c = node.children[octant_index].colour;
+    // bvec3 octant = greaterThan(x, node.x + node_size / 2);
+    // uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+    // uint c = node.children[octant_index].colour;
 
     vec3 alpha = (x - node.x) / node_size;
+
+    vec4 cs[8];
+    for (uint i = 0; i < 8; i++){
+        cs[i] = unpack_vec4(node.children[i].colour);
+    }
+
+    return trilinear_interpolate(
+        cs[0], cs[1], cs[2], cs[3], cs[4], cs[5], cs[6], cs[7], alpha
+    );
     
-    return unpack_vec4(c);
+    // return unpack_vec4(c);
 }
 
 vec3 normal(uint n){
