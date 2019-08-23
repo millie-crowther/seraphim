@@ -32,8 +32,8 @@ struct request_t {
 
 struct octree_data_t {
     uint header;
-    uint b;
-    uint c;
+    uint geometry;
+    uint colour;
     uint child;
 };
 
@@ -150,7 +150,12 @@ octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
     return node;
 }
 
-vec4 colour(uint c){
+vec4 colour(vec3 x, octree_node_t node){
+    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+    bvec3 octant = greaterThan(x, node.x + node_size / 2);
+    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+    uint c = node.children[octant_index].colour;
+
     return vec4(
         c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF, c >> 24
     ) / 255.0;
@@ -174,9 +179,9 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
 
     octree_data_t data = node.children[octant_index];
 
-    vec3 n = normal(data.b);
+    vec3 n = normal(data.geometry);
 
-    float phi = float(data.b >> 24) / 255.0 - 0.5;
+    float phi = float(data.geometry >> 24) / 255.0 - 0.5;
     phi *= sqrt3 * node_size / 2;
 
     vec3 c = node.x + vec3(octant) * node_size / 2 + node_size / 4;
@@ -256,7 +261,7 @@ vec4 phong_light(vec3 light_p, vec3 x, octree_data_t data){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(data.b);
+    vec3 n = normal(data.geometry);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -302,7 +307,7 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.data.c) * light(vec3(-3, 3, -3), i.x, i.data);
+        out_colour = colour(i.x, i.node) * light(vec3(-3, 3, -3), i.x, i.data);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
