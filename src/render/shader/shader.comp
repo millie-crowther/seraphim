@@ -171,11 +171,12 @@ vec3 normal(uint n){
 intersection_t plane_intersection(ray_t r, octree_node_t node){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
-    // TODO: this line is wrong but im too ill to fix it right now
-    vec3 c = node.x + node_size / 2
-
-    bvec3 octant = greaterThan(r.x, c);
+    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
     uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+
+    if ((node.children[octant_index].header & 0xFF) == node_type_empty){
+        return null_intersection;
+    }
 
     octree_data_t data = node.children[octant_index];
 
@@ -184,7 +185,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
     float phi = float(data.b >> 24) / 255.0 - 0.5;
     phi *= sqrt3 * node_size / 2;
 
-    vec3 c = node.x + node_size / 2;
+    vec3 c = node.x + vec3(octant) * node_size / 2; + node_size / 4;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
@@ -218,20 +219,16 @@ intersection_t raycast(ray_t r){
         }
 
         bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
-        octree_data_t data = node.children[octant_index];
         vec3 m = node.x + vec3(octant) * node_size / 2;
 
-        if ((data.header & 0xFF) != node_type_empty){
-            intersection_t i = plane_intersection(r, node);
-            if (
-                i.hit &&
-                i.x.x >= m.x && i.x.x <= m.x + node_size / 2 && 
-                i.x.y >= m.y && i.x.y <= m.y + node_size / 2 && 
-                i.x.z >= m.z && i.x.z <= m.z + node_size / 2    
-            ){
-                intersection = i;
-                break;
-            }
+        intersection = plane_intersection(r, node);
+        if (
+            intersection.hit &&
+            intersection.x.x >= m.x && intersection.x.x <= m.x + node_size / 2 && 
+            intersection.x.y >= m.y && intersection.x.y <= m.y + node_size / 2 && 
+            intersection.x.z >= m.z && intersection.x.z <= m.z + node_size / 2    
+        ){
+            break;
         }
 	
         vec3 lambda_i = abs(
