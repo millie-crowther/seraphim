@@ -22,15 +22,28 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
         vec4_t octant_aabb = aabb;
         octant_aabb[3] /= 2;
 
-        if (octant & 1) octant_aabb[0] += octant_aabb[3];
-        if (octant & 2) octant_aabb[1] += octant_aabb[3];
-        if (octant & 4) octant_aabb[2] += octant_aabb[3];
+        vec3_t vertex(aabb[0], aabb[1], aabb[2]);
 
-        children[octant] = octree_data_t(octant_aabb, sdfs);
+        if (octant & 1){
+            octant_aabb[0] += octant_aabb[3];
+            vertex[0] += aabb[3];
+        } 
+
+        if (octant & 2){
+            octant_aabb[1] += octant_aabb[3];
+            vertex[1] += aabb[3];
+        }
+
+        if (octant & 4){
+            octant_aabb[2] += octant_aabb[3];
+            vertex[2] += aabb[3];
+        }
+
+        children[octant] = octree_data_t(octant_aabb, vertex, sdfs);
     }
 }
 
-octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     child = 0;
     
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
@@ -66,7 +79,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const std::vect
     p = std::max(0.0, std::min(p, 255.0)); 
 
     vec3_t n = sdf.normal(c);
-    u8vec4_t colour = painter_t<3>().colour(c - n * sdf.phi(c));
+    u8vec4_t colour = painter_t<3>().colour(vertex);
 
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);

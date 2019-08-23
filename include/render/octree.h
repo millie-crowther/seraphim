@@ -24,7 +24,7 @@ private:
 
     public:
         octree_data_t();
-        octree_data_t(const vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
+        octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
     };
 
     static constexpr uint32_t node_unused_flag = 1 << 8;
