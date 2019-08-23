@@ -17,9 +17,6 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
     header = depth;
     
     vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
-    if (depth < 4){
-        std::cout << "depth: " << static_cast<int>(depth) << "; aabb: " << aabb[0] << ", " << aabb[1] << ", " << aabb[2] << ", " << aabb[3] << std::endl;
-    }
     
     for (uint8_t octant = 0; octant < 8; octant++){
         vec4_t octant_aabb = aabb;

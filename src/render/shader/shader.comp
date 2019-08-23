@@ -106,10 +106,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     if (
         node_size > expected_size(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        min(
-            child, 
-            (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag)
-        ) != 0
+        child * (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag) != 0
     ){
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
@@ -312,7 +309,7 @@ void render(){
 
 bool should_cull_node(octree_node_t node, uint octant){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-    bool size_cull = node_size < expected_size(node.x + node_size / 2) / 2;  // TODO
+    bool size_cull = node_size < expected_size(node.x + node_size / 2) / 2; 
     octree_node_t child_node = octree.body[node.children[octant].child];
     bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
 
