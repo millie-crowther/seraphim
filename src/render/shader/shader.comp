@@ -122,8 +122,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     }
 }
 
-// TODO: this function signature is clearly messy. refactor!
-octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index, out bool is_valid_node){
+octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
     vec3 a = abs(x);
     is_valid_node = true;
     
@@ -134,8 +133,8 @@ octree_node_t octree_lookup(vec3 x, out uint parent_node, out uint octant_index,
 
     octree_node_t node = octree.body[0];
 
-    parent_node = 0;
-    octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
+    uint parent_node = 0;
+    uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while (octree.body[parent_node].children[octant_index].child != 0){
         uint child = octree.body[parent_node].children[octant_index].child;
@@ -208,13 +207,11 @@ intersection_t raycast(ray_t r){
         // TODO: there's enough info here to start the lookup 
         //       halfway through the tree instead of at the start.
         //       will have to check how much time that actually saves
-        uint parent_node;
-        uint octant_index;
         bool is_valid_node;
-	    node = octree_lookup(r.x, parent_node, octant_index, is_valid_node);
+	    node = octree_lookup(r.x, is_valid_node);
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
-        if (!is_valid_node || parent_node >= octree_size){
+        if (!is_valid_node){
             break;
         }
 
