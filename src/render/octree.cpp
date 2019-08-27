@@ -37,6 +37,7 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
 
 octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     child = 0;
+    type = 0;
     
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
@@ -45,7 +46,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
         // contains
         if (std::get<1>(intersection)){
             type = node_type_empty;
-            return;
+            // return;
         }
 
         // intersects
@@ -56,7 +57,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
 
     if (new_sdfs.empty()){
         type = node_type_empty;
-        return;
+        // return;
     }
 
     compose::union_t<3> sdf(new_sdfs);
@@ -76,7 +77,6 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
     
-    type = 0;
     geometry = *reinterpret_cast<uint32_t *>(&normal);
     this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }
