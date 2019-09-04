@@ -13,12 +13,14 @@ class request_manager_t {
 private:
     // types
     struct request_t {
+        static constexpr uint32_t request_state_ready = 4;
+
         f32vec3_t x;
-        uint32_t child_24_depth_8;
+        uint32_t child;
     
         uint32_t depth;
         uint32_t mutex;
-        uint32_t unused2;
+        uint32_t renderable;
         uint32_t unused3;
 
         request_t(){

@@ -94,12 +94,10 @@ request_manager_t::handle_requests(){
     for (uint16_t i = 0; i < requests.size(); i++){
         request_t r = requests[i];
 
-        if (r.mutex == 4){
+        if (r.mutex == request_t::request_state_ready){
             octree_node_t new_node(r.x, r.depth, strong_sdfs);
 
-            uint32_t child_index = r.child_24_depth_8 & 0xFFFFFF;
-            octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * child_index, pool, queue);
-
+            octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * r.child, pool, queue);
             request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
         }
     }    

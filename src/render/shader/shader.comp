@@ -27,11 +27,11 @@ const float shadow_softness = 64;
 //
 struct request_t {
     vec3 x;
-    uint child_24_size_8;
+    uint child;
 
     uint depth;
     uint mutex;
-    uint unused2;
+    uint objectID;
     uint unused3;
 };
 
@@ -106,7 +106,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
 
     float node_size = 2 * push_const.render_distance / (1 << (octree.body[parent_node].header & 0xFF));
     uint ri = uint(parent_node * 8 + octant_index) % requests_size;
-    uint child = requests.requests[ri].child_24_size_8 & 0xFFFFFF;
+    uint child = requests.requests[ri].child;
 
     if (
         node_size > expected_size(x) &&
@@ -119,7 +119,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[ri].x = octree.body[parent_node].x + octant * node_size / 2;
-        requests.requests[ri].child_24_size_8 = child;
+        requests.requests[ri].child = child;
         requests.requests[ri].depth = (octree.body[parent_node].header & 0xFF) + 1;
         requests.requests[ri].mutex = 4;
     }
@@ -375,7 +375,7 @@ void octree_update(){
         (octree.body[i].header & node_unused_flag) != 0;
     
     if (should_submit && atomicCompSwap(requests.requests[i % requests_size].mutex, 0, 1) == 0){
-        requests.requests[i % requests_size].child_24_size_8 = i;
+        requests.requests[i % requests_size].child = i;
         requests.requests[i % requests_size].mutex = 2;
     }
 
