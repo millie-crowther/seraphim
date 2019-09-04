@@ -30,7 +30,7 @@ struct request_t {
     uint child_24_size_8;
 
     uint depth;
-    uint unused1;
+    uint mutex;
     uint unused2;
     uint unused3;
 };
@@ -111,15 +111,17 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     if (
         node_size > expected_size(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        child * (atomicAnd(octree.body[child].header, ~node_unused_flag) & node_unused_flag) != 0
+        child != 0 &&
+        atomicCompSwap(requests.requests[ri].mutex, 2, 3) == 2
     ){
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[ri].x = octree.body[parent_node].x + octant * node_size / 2;
-        requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
+        requests.requests[ri].child_24_size_8 = child;
         requests.requests[ri].depth = (octree.body[parent_node].header & 0xFF) + 1;
+        requests.requests[ri].mutex = 4;
     }
 }
 
@@ -180,10 +182,6 @@ vec4 trilinear_interpolate(vec4 x000, vec4 x001, vec4 x010, vec4 x011, vec4 x100
 
 vec4 colour(vec3 x, octree_node_t node){
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-    // bvec3 octant = greaterThan(x, node.x + node_size / 2);
-    // uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
-    // uint c = node.children[octant_index].colour;
-
     vec3 alpha = (x - node.x) / node_size;
 
     vec4 cs[8];
@@ -194,8 +192,6 @@ vec4 colour(vec3 x, octree_node_t node){
     return trilinear_interpolate(
         cs[0], cs[1], cs[2], cs[3], cs[4], cs[5], cs[6], cs[7], alpha
     );
-    
-    // return unpack_vec4(c);
 }
 
 vec3 normal(uint n){
@@ -377,7 +373,11 @@ void octree_update(){
     bool should_submit = 
         i < octree_size && 
         (octree.body[i].header & node_unused_flag) != 0;
-    atomicCompSwap(requests.requests[i % requests_size].child_24_size_8, int(should_submit) * 0xFF000000, 0xFF000000 | i);
+    
+    if (should_submit && atomicCompSwap(requests.requests[i % requests_size].mutex, 0, 1) == 0){
+        requests.requests[i % requests_size].child_24_size_8 = i;
+        requests.requests[i % requests_size].mutex = 2;
+    }
 
     // cull extraneous nodes
     uint node = i >> 3;

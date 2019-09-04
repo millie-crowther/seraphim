@@ -17,12 +17,12 @@ private:
         uint32_t child_24_depth_8;
     
         uint32_t depth;
-        uint32_t unused1;
+        uint32_t mutex;
         uint32_t unused2;
         uint32_t unused3;
 
         request_t(){
-            child_24_depth_8 = 0xFF000000;
+            mutex = 0;
         }
     };
 
