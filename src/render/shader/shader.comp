@@ -111,7 +111,6 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     if (
         node_size > expected_size(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        child != 0 &&
         atomicCompSwap(requests.requests[ri].mutex, 2, 3) == 2
     ){
         octree.body[child].header |= node_pending_data_flag;
@@ -119,7 +118,6 @@ void observe(vec3 x, uint parent_node, uint octant_index){
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[ri].x = octree.body[parent_node].x + octant * node_size / 2;
-        requests.requests[ri].child = child;
         requests.requests[ri].depth = (octree.body[parent_node].header & 0xFF) + 1;
         requests.requests[ri].mutex = 4;
     }
@@ -374,9 +372,11 @@ void octree_update(){
         i < octree_size && 
         (octree.body[i].header & node_unused_flag) != 0;
     
-    if (should_submit && atomicCompSwap(requests.requests[i % requests_size].mutex, 0, 1) == 0){
-        requests.requests[i % requests_size].child = i;
-        requests.requests[i % requests_size].mutex = 2;
+    if (should_submit){
+        if (atomicCompSwap(requests.requests[i % requests_size].mutex, 0, 1) == 0){
+            requests.requests[i % requests_size].child = i;
+            requests.requests[i % requests_size].mutex = 2;
+        }
     }
 
     // cull extraneous nodes
