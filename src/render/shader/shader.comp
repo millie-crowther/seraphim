@@ -28,6 +28,11 @@ const float shadow_softness = 64;
 struct request_t {
     vec3 x;
     uint child_24_size_8;
+
+    uint depth;
+    uint unused1;
+    uint unused2;
+    uint unused3;
 };
 
 struct octree_data_t {
@@ -114,6 +119,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[ri].x = octree.body[parent_node].x + octant * node_size / 2;
         requests.requests[ri].child_24_size_8 = ((octree.body[parent_node].header + 1) << 24) | child;
+        requests.requests[ri].depth = (octree.body[parent_node].header & 0xFF) + 1;
     }
 }
 
