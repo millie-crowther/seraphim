@@ -123,7 +123,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     }
 }
 
-octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
+octree_node_t octree_lookup(vec3 x, uint root, out bool is_valid_node){
     vec3 a = abs(x);
     is_valid_node = true;
     
@@ -134,7 +134,7 @@ octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
 
     octree_node_t node = octree.body[0];
 
-    uint parent_node = 0;
+    uint parent_node = root;
     uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while (octree.body[parent_node].children[octant_index].child != 0){
@@ -236,7 +236,7 @@ intersection_t raycast(ray_t r){
     intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
         bool is_valid_node;
-	    node = octree_lookup(r.x, is_valid_node);
+	    node = octree_lookup(r.x, 0, is_valid_node);
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
         if (!is_valid_node){
