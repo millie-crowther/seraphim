@@ -98,7 +98,7 @@ layout(binding = 2) buffer request_buffer {
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
     vec3 xc = x - push_const.camera_position;
-    return 9 + uint(log2(push_const.render_distance) - max(0, 7 + 0.5 * log2(dot(xc, xc))));
+    return 16 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
 }
 
 // TODO: i think x can actually just be removed as a parameter from this function
