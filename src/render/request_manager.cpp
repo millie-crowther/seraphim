@@ -12,12 +12,15 @@
 request_manager_t::request_manager_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-    const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
+    const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
+    uint32_t requests_size
 ){
     this->device = device->get_device();
     this->pool = pool;
     this->queue = queue;
     this->sdfs = sdfs;
+
+    requests.resize(requests_size);
 
     // extra node at end is to allow shader to avoid branching
     octree_buffer = std::make_unique<buffer_t>(
@@ -25,13 +28,12 @@ request_manager_t::request_manager_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    uint32_t request_size = sizeof(request_t) * max_requests_size;
     request_buffer = std::make_unique<buffer_t>(
-        allocator, device, request_size,
+        allocator, device, sizeof(request_t) * requests_size,
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    std::array<request_t, max_requests_size> initial_requests;
+    std::vector<request_t> initial_requests(requests_size);
     request_buffer->copy(initial_requests.data(), sizeof(initial_requests), 0, pool, queue);
 
     // write to descriptor sets
@@ -77,12 +79,11 @@ request_manager_t::request_manager_t(
 
 void
 request_manager_t::handle_requests(){
-    static std::array<request_t, max_requests_size> requests;
     static request_t blank_request;
 
     vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
 
-    request_buffer->read(requests.data(), sizeof(requests));
+    request_buffer->read(requests.data(), sizeof(request_t) * requests.size());
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){

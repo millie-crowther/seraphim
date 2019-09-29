@@ -29,12 +29,12 @@ private:
     };
 
     static constexpr uint32_t octree_size = 3125;
-    static constexpr uint32_t max_requests_size  = 64;
 
     // fields
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
+    std::vector<request_t> requests;
 
     VkCommandPool pool;
     VkQueue queue;
@@ -45,7 +45,8 @@ public:
         VmaAllocator allocator,
         std::shared_ptr<device_t> device,
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
-        const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue
+        const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
+        uint32_t requests_size
     );
 
     void handle_requests();
