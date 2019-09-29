@@ -12,7 +12,6 @@ const uint node_unused_flag = 1 << 8;
 const uint node_pending_data_flag = 1 << 9;
 
 const uint octree_size = 3125;
-const uint requests_size = 64;
 const uvec2 num_work_groups = uvec2(8);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
@@ -95,6 +94,11 @@ layout(binding = 1) buffer octree_buffer {
 layout(binding = 2) buffer request_buffer {
     request_t requests[num_work_groups.x][num_work_groups.y];
 } requests;
+
+//
+// shared memory
+//
+shared int vacant_node_index;
 
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
