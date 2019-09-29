@@ -13,6 +13,7 @@ const uint node_pending_data_flag = 1 << 9;
 
 const uint octree_size = 3125;
 const uint requests_size = 64;
+const uvec2 num_work_groups = uvec2(8);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
 
@@ -92,7 +93,7 @@ layout(binding = 1) buffer octree_buffer {
 } octree;
 
 layout(binding = 2) buffer request_buffer {
-    request_t requests[requests_size];
+    request_t requests[num_work_groups.x][num_work_groups.y];
 } requests;
 
 uint expected_depth(vec3 x){
@@ -107,21 +108,21 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     octree.body[parent_node].header = ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
     uint depth = octree.body[parent_node].header & 0xFF;
-    uint ri = uint(parent_node * 8 + octant_index) % requests_size;
-    uint child = requests.requests[ri].child;
+
+    uint child = requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child;
 
     if (
         depth < expected_depth(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        atomicCompSwap(requests.requests[ri].mutex, 2, 3) == 2
+        atomicCompSwap(requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex, 2, 3) == 2
     ){
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
-        requests.requests[ri].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
-        requests.requests[ri].depth = depth + 1;
-        requests.requests[ri].mutex = 4;
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].depth = depth + 1;
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex = 4;
     }
 }
 
@@ -376,9 +377,9 @@ void octree_update(){
         (octree.body[i].header & node_unused_flag) != 0;
     
     if (should_submit){
-        if (atomicCompSwap(requests.requests[i % requests_size].mutex, 0, 1) == 0){
-            requests.requests[i % requests_size].child = i;
-            requests.requests[i % requests_size].mutex = 2;
+        if (atomicCompSwap(requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex, 0, 1) == 0){
+            requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child = i;
+            requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex = 2;
         }
     }
 
