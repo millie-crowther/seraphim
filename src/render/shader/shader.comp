@@ -30,7 +30,7 @@ struct request_t {
     uint child;
 
     uint depth;
-    uint mutex;
+    uint is_pending;
     uint objectID;
     uint unused3;
 };
@@ -98,7 +98,8 @@ layout(binding = 2) buffer request_buffer {
 //
 // shared memory
 //
-shared int vacant_node_index;
+// TODO: change this to a uvec2
+shared uint vacant_node_index;
 
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
@@ -113,12 +114,18 @@ void observe(vec3 x, uint parent_node, uint octant_index){
 
     uint depth = octree.body[parent_node].header & 0xFF;
 
-    uint child = requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child;
+    // for vacant_node_index
+    memoryBarrierShared();
 
-    if (
+    bool should_request = 
         depth < expected_depth(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        atomicCompSwap(requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex, 2, 3) == 2
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending == 0;
+
+    uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
+
+    if (
+        child != 0
     ){
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
@@ -126,7 +133,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].depth = depth + 1;
-        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex = 4;
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending = 1;
     }
 }
 
@@ -376,15 +383,8 @@ void octree_update(){
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
-    bool should_submit = 
-        i < octree_size && 
-        (octree.body[i].header & node_unused_flag) != 0;
-    
-    if (should_submit){
-        if (atomicCompSwap(requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex, 0, 1) == 0){
-            requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child = i;
-            requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].mutex = 2;
-        }
+    if (i < octree_size && (octree.body[i].header & node_unused_flag) != 0){
+        vacant_node_index = i;
     }
 
     // cull extraneous nodes
