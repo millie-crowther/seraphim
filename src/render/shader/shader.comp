@@ -118,21 +118,20 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     memoryBarrierShared();
 
     bool should_request = 
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty &&
-        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending == 0;
+        (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty;
 
     uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
-    if (
-        child != 0
-    ){
+    if (child != 0){
         octree.body[child].header |= node_pending_data_flag;
         octree.body[parent_node].children[octant_index].child = child;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].depth = depth + 1;
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child = child;
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending = 1;
     }
 }
@@ -378,6 +377,11 @@ bool should_cull_node(octree_node_t node, uint octant){
 }
 
 void octree_update(){
+    if (gl_LocalInvocationID.xy == uvec2(0)){
+        vacant_node_index = 0;
+    }
+    memoryBarrierShared();
+
     uint i = 
         gl_GlobalInvocationID.x +
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;

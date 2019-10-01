@@ -95,7 +95,8 @@ request_manager_t::handle_requests(){
     for (uint16_t i = 0; i < requests.size(); i++){
         request_t r = requests[i];
 
-        if (r.mutex == request_t::request_state_ready){
+        if (r.is_pending == 1){
+            std::cout << "request! " << r.child << std::endl;
             octree_node_t new_node(r.x, r.depth, strong_sdfs);
 
             octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * r.child, pool, queue);
