@@ -30,7 +30,7 @@ struct request_t {
     uint child;
 
     uint depth;
-    uint is_pending;
+    uint unused2;
     uint objectID;
     uint unused3;
 };
@@ -118,7 +118,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     memoryBarrierShared();
 
     bool should_request = 
-        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending == 0 &&
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child == 0 &&
         depth < expected_depth(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty;
 
@@ -132,7 +132,6 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].depth = depth + 1;
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child = child;
-        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].is_pending = 1;
     }
 }
 

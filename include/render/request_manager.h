@@ -17,12 +17,12 @@ private:
         uint32_t child;
     
         uint32_t depth;
-        uint32_t is_pending;
+        uint32_t unused2;
         uint32_t renderable;
         uint32_t unused3;
 
         request_t(){
-            is_pending = 0;
+            child = 0;
         }
     };
 
