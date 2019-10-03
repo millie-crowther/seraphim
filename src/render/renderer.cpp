@@ -6,6 +6,7 @@
 #include "core/command_buffer.h"
 
 #include <chrono>
+#include <ctime>
 #include <stdexcept>
 
 renderer_t::renderer_t(
@@ -113,7 +114,7 @@ renderer_t::create_compute_pipeline(){
     pipeline_create_info.stage.module = module;
     pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
-    
+
     // TODO: investigate pipeline caching. can replace VK_NULL_HANDLE with pipeline caching
     if (vkCreateComputePipelines(device->get_device(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
         return false;
@@ -145,7 +146,7 @@ renderer_t::init(){
     if (!create_graphics_pipeline()){
         return false;
     }
-
+    
     if (!create_compute_pipeline()){
         return false;
     }
@@ -166,7 +167,6 @@ renderer_t::init(){
         return false;
     }
 
-    // TODO: maybe create a transfer queue for transfer operations??
     request_manager = std::make_unique<request_manager_t>(
         allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue,
         work_group_count[0] * work_group_count[1]        
@@ -521,7 +521,7 @@ renderer_t::create_descriptor_set_layout(){
     octree_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
-    auto request_layout = octree_layout;
+    VkDescriptorSetLayoutBinding request_layout = octree_layout;
     request_layout.binding = 2;
 
     VkDescriptorSetLayoutBinding image_layout = {};

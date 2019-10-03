@@ -26,7 +26,7 @@ private:
         }
     };
 
-    static constexpr uint32_t octree_size = 3125;
+    static constexpr uint32_t octree_size = 5000;
 
     // fields
     std::unique_ptr<buffer_t> octree_buffer;

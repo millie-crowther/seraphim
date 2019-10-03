@@ -11,7 +11,7 @@ const uint node_type_empty = 1;
 const uint node_unused_flag = 1 << 8;
 const uint node_pending_data_flag = 1 << 9;
 
-const uint octree_size = 3125;
+const uint octree_size = 5000;
 const uvec2 num_work_groups = uvec2(8);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
@@ -20,7 +20,6 @@ const uint max_depth = 16;
 const float f = 1.0;
 const int max_steps = 128;
 const float epsilon = 1.0 / 256.0;
-const float shadow_softness = 64;
 
 //
 // types 

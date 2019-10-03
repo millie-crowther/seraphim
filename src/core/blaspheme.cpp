@@ -56,20 +56,15 @@ blaspheme_t::blaspheme_t(){
     device = std::make_shared<device_t>(instance, surface);
 
 
-    // VkPhysicalDeviceProperties properties = {};
-    // vkGetPhysicalDeviceProperties(allocator.physical_device, &properties);
-    // std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
+    VkPhysicalDeviceProperties properties = {};
+    vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
+    std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
+    std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
 
-    // std::cout << "\tMaximum 1D image dimension: " << properties.limits.maxImageDimension1D << std::endl;
-    // std::cout << "\tMaximum 2D image dimension: " << properties.limits.maxImageDimension2D << std::endl;
-    // std::cout << "\tMaximum 3D image dimension: " << properties.limits.maxImageDimension3D << std::endl;
-    // std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
-
-    // auto work_group_size = properties.limits.maxComputeWorkGroupSize;
-    // auto work_group_count = properties.limits.maxComputeWorkGroupCount;
-    // std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
-    // std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
-
+    auto work_group_size = properties.limits.maxComputeWorkGroupSize;
+    auto work_group_count = properties.limits.maxComputeWorkGroupCount;
+    std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
+    std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
 
     // uint32_t push_const_size = properties.limits.maxPushConstantsSize;
     // std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;
@@ -77,7 +72,6 @@ blaspheme_t::blaspheme_t(){
     //     // TODO: put this check when selecting physical device
     //     throw std::runtime_error("Error: Push constants too large.");
     // }
-
 
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};

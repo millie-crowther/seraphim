@@ -8,6 +8,7 @@
 #include "maths/mat.h"
 #include "core/constant.h"
 #include "render/painter.h"
+#include <ctime>
 
 request_manager_t::request_manager_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,

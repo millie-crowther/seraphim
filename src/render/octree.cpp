@@ -68,7 +68,6 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
     p /= constant::sqrt3 * aabb[3];
     p += 0.5;
     p *= 255;
-    // std::cout << "phi: " << p << std::endl;
     p = std::max(0.0, std::min(p, 255.0)); 
 
     vec3_t n = sdf.normal(c);
