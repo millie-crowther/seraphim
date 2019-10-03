@@ -5,8 +5,6 @@
 #include <stdexcept>
 #include <string>
 
-#include "core/debug.h"
-
 const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
@@ -168,13 +166,8 @@ device_t::create_device(std::vector<const char *> enabled_validation_layers) con
     create_info.pEnabledFeatures        = &device_features;
     create_info.enabledExtensionCount   = device_extensions.size();
     create_info.ppEnabledExtensionNames = device_extensions.data();
-
-#if BLASPHEME_DEBUG
-    create_info.enabledLayerCount   = static_cast<uint32_t>(enabled_validation_layers.size());
-    create_info.ppEnabledLayerNames = enabled_validation_layers.data();
-#else
-    create_info.enabledLayerCount   = 0;
-#endif 
+    create_info.enabledLayerCount       = static_cast<uint32_t>(enabled_validation_layers.size());
+    create_info.ppEnabledLayerNames     = enabled_validation_layers.data();
 
     VkDevice device;
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
