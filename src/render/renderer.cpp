@@ -115,7 +115,6 @@ renderer_t::create_compute_pipeline(){
     pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
 
-    // TODO: investigate pipeline caching. can replace VK_NULL_HANDLE with pipeline caching
     if (vkCreateComputePipelines(device->get_device(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
         return false;
     }
@@ -167,11 +166,13 @@ renderer_t::init(){
         return false;
     }
 
+    std::cout << "about to create request manager " << std::endl;
     request_manager = std::make_unique<request_manager_t>(
         allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue,
         work_group_count[0] * work_group_count[1]        
     );
-
+    std::cout << "created request manager " << std::endl;
+ 
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
         10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY

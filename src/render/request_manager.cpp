@@ -16,6 +16,8 @@ request_manager_t::request_manager_t(
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
     uint32_t requests_size
 ){
+    std::cout << "creating request manager " << std::endl;
+
     this->device = device->get_device();
     this->pool = pool;
     this->queue = queue;
@@ -24,6 +26,7 @@ request_manager_t::request_manager_t(
     requests.resize(requests_size);
 
     // extra node at end is to allow shader to avoid branching
+    std::cout << "about to create octree buffer " << std::endl;
     octree_buffer = std::make_unique<buffer_t>(
         allocator, device, sizeof(octree_node_t) * octree_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -75,6 +78,7 @@ request_manager_t::request_manager_t(
     }
     initial_octree[0] = octree_node_t(f32vec3_t(-hyper::rho), 0, initial_sdfs);
 
+    std::cout << "about to copy to octree buffer " << std::endl;
     octree_buffer->copy(initial_octree.data(), sizeof(initial_octree), 0, pool, queue);
 }
 

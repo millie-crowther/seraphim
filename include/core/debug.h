@@ -1,0 +1,1 @@
+#define BLASPHEME_DEBUG true

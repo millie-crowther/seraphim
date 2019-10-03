@@ -5,14 +5,16 @@
 #include <stdexcept>
 #include <string>
 
+#include "core/debug.h"
+
 const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-device_t::device_t(VkInstance instance, VkSurfaceKHR surface){
+device_t::device_t(VkInstance instance, VkSurfaceKHR surface, std::vector<const char *> enabled_validation_layers){
     physical_device = select_physical_device(instance, surface);
     select_queue_families(surface);
-    device = create_device();
+    device = create_device(enabled_validation_layers);
 }
 
 bool 
@@ -142,7 +144,7 @@ device_t::select_queue_families(VkSurfaceKHR surface){
 }
 
 VkDevice 
-device_t::create_device() const {
+device_t::create_device(std::vector<const char *> enabled_validation_layers) const {
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = { graphics_family, present_family, compute_family };
     
@@ -168,8 +170,8 @@ device_t::create_device() const {
     create_info.ppEnabledExtensionNames = device_extensions.data();
 
 #if BLASPHEME_DEBUG
-    create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
-    create_info.ppEnabledLayerNames = validation_layers.data();
+    create_info.enabledLayerCount   = static_cast<uint32_t>(enabled_validation_layers.size());
+    create_info.ppEnabledLayerNames = enabled_validation_layers.data();
 #else
     create_info.enabledLayerCount   = 0;
 #endif 

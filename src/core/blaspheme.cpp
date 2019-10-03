@@ -13,9 +13,11 @@
 
 #include "logic/scheduler.h"
 
+#if BLASPHEME_DEBUG
 const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
+#endif
 
 blaspheme_t::blaspheme_t(){
 #if BLASPHEME_DEBUG
@@ -53,7 +55,11 @@ blaspheme_t::blaspheme_t(){
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-    device = std::make_shared<device_t>(instance, surface);
+#if BLASPHEME_DEBUG
+    device = std::make_shared<device_t>(instance, surface, validation_layers);
+#else   
+    device = std::make_shared<device_t>(instance, surface, {});
+#endif
 
 
     VkPhysicalDeviceProperties properties = {};
