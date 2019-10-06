@@ -101,17 +101,6 @@ request_manager_t::handle_requests(){
         }
     }
 
-    for (uint16_t i = 0; i < requests.size(); i++){
-        request_t r = requests[i];
-
-        if (r.child != 0){
-            octree_node_t new_node(r.x, r.depth, strong_sdfs);
-
-            octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * r.child, pool, queue);
-            request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
-        }
-    }
-
     for (uint32_t x = 0; x < work_group_count[0]; x++){
         for (uint32_t y = 0; y < work_group_count[1]; y++){
             uint32_t work_group_id = x * work_group_count[1] + y;
