@@ -26,8 +26,6 @@ private:
         }
     };
 
-    static constexpr uint32_t octree_size = 65536;
-
     // fields
     std::unique_ptr<buffer_t> octree_buffer;
     std::unique_ptr<buffer_t> request_buffer;
@@ -44,7 +42,7 @@ public:
         std::shared_ptr<device_t> device,
         const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
         const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
-        uint32_t requests_size
+        u32vec2_t work_group_count, uint32_t work_group_size
     );
 
     void handle_requests();

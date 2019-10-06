@@ -166,12 +166,10 @@ renderer_t::init(){
         return false;
     }
 
-    std::cout << "about to create request manager " << std::endl;
     request_manager = std::make_unique<request_manager_t>(
         allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue,
-        work_group_count[0] * work_group_count[1]        
+        work_group_count, work_group_size[0] * work_group_size[1]      
     );
-    std::cout << "created request manager " << std::endl;
  
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(

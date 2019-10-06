@@ -97,7 +97,6 @@ layout(binding = 2) buffer request_buffer {
 //
 // shared memory
 //
-// TODO: change this to a uvec2
 shared uint vacant_node_index;
 
 uint expected_depth(vec3 x){

@@ -14,26 +14,26 @@ request_manager_t::request_manager_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,
     const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
-    uint32_t requests_size
+    u32vec2_t work_group_count, uint32_t work_group_size
 ){
     this->device = device->get_device();
     this->pool = pool;
     this->queue = queue;
     this->sdfs = sdfs;
 
-    requests.resize(requests_size);
+    requests.resize(work_group_count[0] * work_group_count[1]);
 
     octree_buffer = std::make_unique<buffer_t>(
-        allocator, device, sizeof(octree_node_t) * octree_size,
+        allocator, device, sizeof(octree_node_t) * work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     request_buffer = std::make_unique<buffer_t>(
-        allocator, device, sizeof(request_t) * requests_size,
+        allocator, device, sizeof(request_t) * requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    std::vector<request_t> initial_requests(requests_size);
+    std::vector<request_t> initial_requests(requests.size());
     request_buffer->copy(initial_requests.data(), sizeof(initial_requests), 0, pool, queue);
 
     // write to descriptor sets
@@ -65,7 +65,7 @@ request_manager_t::request_manager_t(
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
     std::vector<octree_node_t> initial_octree;
-    initial_octree.resize(octree_size);
+    initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
 
     std::vector<std::shared_ptr<sdf3_t>> initial_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -73,8 +73,15 @@ request_manager_t::request_manager_t(
             initial_sdfs.push_back(sdf);
         }
     }
-    initial_octree[0] = octree_node_t(f32vec3_t(-hyper::rho), 0, initial_sdfs);
-    octree_buffer->copy(initial_octree.data(), sizeof(octree_node_t) * octree_size, 0, pool, queue);
+
+    octree_node_t root_node(f32vec3_t(-hyper::rho), 0, initial_sdfs);
+    for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
+        initial_octree[i] = root_node;
+    }
+    
+    octree_buffer->copy(
+        initial_octree.data(), sizeof(octree_node_t) * initial_octree.size(), 0, pool, queue
+    );
 }
 
 void
