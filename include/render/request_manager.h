@@ -32,6 +32,9 @@ private:
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     std::vector<request_t> requests;
 
+    u32vec2_t work_group_count;
+    uint32_t work_group_size;
+
     VkCommandPool pool;
     VkQueue queue;
     VkDevice device;
