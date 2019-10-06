@@ -87,7 +87,7 @@ layout( push_constant ) uniform push_constants {
 // buffers
 //
 layout(binding = 1) buffer octree_buffer {
-    octree_node_t body[];
+    octree_node_t body[][num_work_groups.x][num_work_groups.y];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
@@ -109,9 +109,11 @@ uint expected_depth(vec3 x){
 // TODO: i think x can actually just be removed as a parameter from this function
 void observe(vec3 x, uint parent_node, uint octant_index){
     // mark node as seen for expiration culling
-    octree.body[parent_node].header = ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
+    octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].header = 
+        ((push_const.current_frame - 1) << 24) | 
+        (octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].header & 0xFFFFFF);
 
-    uint depth = octree.body[parent_node].header & 0xFF;
+    uint depth = octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].header & 0xFF;
 
     // for vacant_node_index
     memoryBarrierShared();
@@ -119,16 +121,17 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     bool should_request = 
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty;
+        (octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant_index].header & 0xFF) != node_type_empty;
 
     uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child != 0 && should_request){
-        octree.body[child].header |= node_pending_data_flag;
-        octree.body[parent_node].children[octant_index].child = child;
+        octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_pending_data_flag;
+        octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant_index].child = child;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
-        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
+        requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].x = 
+            octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].x + octant * push_const.render_distance / (1 << depth);
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].depth = depth + 1;
         requests.requests[gl_WorkGroupID.x][gl_WorkGroupID.y].child = child;
     }
@@ -143,19 +146,19 @@ octree_node_t octree_lookup(vec3 x, uint root, out bool is_valid_node){
         return null_node;
     }
 
-    octree_node_t node = octree.body[0];
+    octree_node_t node = octree.body[0][gl_WorkGroupID.x][gl_WorkGroupID.y];
 
     uint parent_node = root;
     uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
-    while (octree.body[parent_node].children[octant_index].child != 0){
-        uint child = octree.body[parent_node].children[octant_index].child;
-        if ((octree.body[child].header & node_pending_data_flag) != 0){
+    while (octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant_index].child != 0){
+        uint child = octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant_index].child;
+        if ((octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_pending_data_flag) != 0){
             break;
         }   
 
         parent_node = child;
-        node = octree.body[parent_node];
+        node = octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y];
 
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
         bvec3 octant = greaterThan(x, node.x + node_size / 2);
@@ -358,7 +361,7 @@ bool should_cull_node(octree_node_t node, uint octant){
     uint depth = node.header & 0xFF;
     bool size_cull = depth > expected_depth(node.x + push_const.render_distance / (1 << depth));
 
-    octree_node_t child_node = octree.body[node.children[octant].child];
+    octree_node_t child_node = octree.body[node.children[octant].child][gl_WorkGroupID.x][gl_WorkGroupID.y];
     bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
 
     for (uint i = 0; i < 8; i++){
@@ -385,7 +388,7 @@ void octree_update(){
         gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
-    if (i < octree_size && (octree.body[i].header & node_unused_flag) != 0){
+    if (i < octree_size && (octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
@@ -394,15 +397,17 @@ void octree_update(){
     uint octant = i & 7;
     bool should_cull = 
         node < octree_size && 
-        should_cull_node(octree.body[node], octant);
+        should_cull_node(octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y], octant);
 
     if (should_cull){
-        uint child = octree.body[node].children[octant].child;
-        octree.body[node].children[octant].child = 0;
-        octree.body[child].header |= node_unused_flag;
+        uint child = octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child;
+        octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child = 0;
+        octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_unused_flag;
         
         // reset expiration culling counter
-        octree.body[node].header = ((push_const.current_frame - 1) << 24) | (octree.body[node].header & 0xFFFFFF);
+        octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].header = 
+            ((push_const.current_frame - 1) << 24) | 
+            (octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].header & 0xFFFFFF);
     }
 }
 
