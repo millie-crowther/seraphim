@@ -381,7 +381,7 @@ void octree_update(){
     }
     memoryBarrierShared();
 
-    uint i = gl_GlobalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
     if ((octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_unused_flag) != 0){
@@ -389,19 +389,19 @@ void octree_update(){
     }
 
     // cull extraneous nodes
-    uint node = i >> 3;
-    uint octant = i & 7;
+    for (uint octant = 0; octant < 8; octant++){
+        octree_node_t node = octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y];
 
-    if (should_cull_node(octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y], octant)){
-        uint child = octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child;
-        octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child = 0;
-        octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_unused_flag;
-        
-        // reset expiration culling counter
-        octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].header = 
-            ((push_const.current_frame - 1) << 24) | 
-            (octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].header & 0xFFFFFF);
-    }
+        if (should_cull_node(node, octant)){
+            uint child = node.children[octant].child;
+            octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child = 0;
+            octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_unused_flag;
+            
+            // reset expiration culling counter
+            octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header = 
+                ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
+        }
+    }  
 }
 
 void main(){
