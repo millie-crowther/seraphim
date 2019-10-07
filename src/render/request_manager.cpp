@@ -23,20 +23,17 @@ request_manager_t::request_manager_t(
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
 
-    requests.resize(work_group_count[0] * work_group_count[1]);
-
     octree_buffer = std::make_unique<buffer_t>(
         allocator, device, sizeof(octree_node_t) * work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
+    requests.resize(work_group_count[0] * work_group_count[1]);
     request_buffer = std::make_unique<buffer_t>(
         allocator, device, sizeof(request_t) * requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
-
-    std::vector<request_t> initial_requests(requests.size());
-    request_buffer->copy(initial_requests.data(), sizeof(initial_requests), 0, pool, queue);
+    request_buffer->copy(requests.data(), sizeof(request_t) * requests.size(), 0, pool, queue);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
@@ -66,9 +63,6 @@ request_manager_t::request_manager_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    std::vector<octree_node_t> initial_octree;
-    initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
-
     std::vector<std::shared_ptr<sdf3_t>> initial_sdfs;
     for (auto sdf_ptr : sdfs){
         if (auto sdf = sdf_ptr.lock()){
@@ -77,9 +71,8 @@ request_manager_t::request_manager_t(
     }
 
     octree_node_t root_node(f32vec3_t(-hyper::rho), 0, initial_sdfs);
-    for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
-        initial_octree[i] = root_node;
-    }
+    std::vector<octree_node_t> initial_octree(work_group_count[0] * work_group_count[1], root_node);
+    initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
     
     octree_buffer->copy(
         initial_octree.data(), sizeof(octree_node_t) * initial_octree.size(), 0, pool, queue
@@ -106,9 +99,13 @@ request_manager_t::handle_requests(){
             uint32_t work_group_id = x * work_group_count[1] + y;
             request_t r = requests[work_group_id];
 
-
             if (r.child != 0){
-                uint32_t i = work_group_size * r.child + work_group_id;
+                std::cout << "request at: " << r.child << std::endl;
+                if (rand() % 10 == 0){
+                    std::cout << "---" << std::endl;
+                }
+
+                uint32_t i = work_group_count[0] * work_group_count[1] * r.child + work_group_id;
 
                 octree_node_t new_node(r.x, r.depth, strong_sdfs);
 

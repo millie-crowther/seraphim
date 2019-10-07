@@ -11,7 +11,6 @@ const uint node_type_empty = 1;
 const uint node_unused_flag = 1 << 8;
 const uint node_pending_data_flag = 1 << 9;
 
-const uint octree_size = 65536;
 const uvec2 num_work_groups = uvec2(8);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
@@ -136,7 +135,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     }
 }
 
-octree_node_t octree_lookup(vec3 x, uint root, out bool is_valid_node){
+octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
     vec3 a = abs(x);
     is_valid_node = true;
     
@@ -147,7 +146,7 @@ octree_node_t octree_lookup(vec3 x, uint root, out bool is_valid_node){
 
     octree_node_t node = octree.body[0][gl_WorkGroupID.x][gl_WorkGroupID.y];
 
-    uint parent_node = root;
+    uint parent_node = 0;
     uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
 
     while (octree.body[parent_node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant_index].child != 0){
@@ -249,7 +248,7 @@ intersection_t raycast(ray_t r){
     intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
         bool is_valid_node;
-	    node = octree_lookup(r.x, 0, is_valid_node);
+	    node = octree_lookup(r.x, is_valid_node);
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
         if (!is_valid_node){
@@ -382,23 +381,18 @@ void octree_update(){
     }
     memoryBarrierShared();
 
-    uint i = 
-        gl_GlobalInvocationID.x +
-        gl_GlobalInvocationID.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    uint i = gl_GlobalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
-    if (i < octree_size && (octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_unused_flag) != 0){
+    if ((octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
     // cull extraneous nodes
     uint node = i >> 3;
     uint octant = i & 7;
-    bool should_cull = 
-        node < octree_size && 
-        should_cull_node(octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y], octant);
 
-    if (should_cull){
+    if (should_cull_node(octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y], octant)){
         uint child = octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child;
         octree.body[node][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child = 0;
         octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_unused_flag;
