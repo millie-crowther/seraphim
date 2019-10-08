@@ -104,6 +104,10 @@ uint expected_depth(vec3 x){
     return 16 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
 }
 
+uint work_group_offset(){
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+}
+
 // TODO: i think x can actually just be removed as a parameter from this function
 void observe(vec3 x, uint parent_node, uint octant_index){
     // mark node as seen for expiration culling
@@ -135,10 +139,6 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         requests.requests[request_id].depth = depth + 1;
         requests.requests[request_id].child = child;
     }
-}
-
-uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
 octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
@@ -389,24 +389,24 @@ void octree_update(){
     }
     memoryBarrierShared();
 
-    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x + work_group_offset();
 
     // submit free nodes to request queue
-    if ((octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header & node_unused_flag) != 0){
+    if ((octree.body[i].header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
     // cull extraneous nodes
     for (uint octant = 0; octant < 8; octant++){
-        octree_node_t node = octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y];
+        octree_node_t node = octree.body[i];
 
         if (should_cull_node(node, octant)){
-            uint child = node.children[octant].child;
-            octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].children[octant].child = 0;
-            octree.body[child][gl_WorkGroupID.x][gl_WorkGroupID.y].header |= node_unused_flag;
+            uint child = node.children[octant].child + work_group_offset();
+            octree.body[i].children[octant].child = 0;
+            octree.body[child].header |= node_unused_flag;
             
             // reset expiration culling counter
-            octree.body[i][gl_WorkGroupID.x][gl_WorkGroupID.y].header = 
+            octree.body[i].header = 
                 ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
         }
     }  

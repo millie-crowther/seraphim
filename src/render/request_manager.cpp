@@ -71,8 +71,12 @@ request_manager_t::request_manager_t(
     }
 
     octree_node_t root_node(f32vec3_t(-hyper::rho), 0, initial_sdfs);
-    std::vector<octree_node_t> initial_octree(work_group_count[0] * work_group_count[1], root_node);
+    std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
+
+    for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size){
+        initial_octree[i] = root_node;
+    }
     
     octree_buffer->copy(
         initial_octree.data(), sizeof(octree_node_t) * initial_octree.size(), 0, pool, queue
@@ -100,17 +104,10 @@ request_manager_t::handle_requests(){
             request_t r = requests[work_group_id];
 
             if (r.child != 0){
-                std::cout << "request at: " << r.child << std::endl;
-                if (rand() % 10 == 0){
-                    std::cout << "---" << std::endl;
-                }
-
-                uint32_t i = work_group_count[0] * work_group_count[1] * r.child + work_group_id;
-
                 octree_node_t new_node(r.x, r.depth, strong_sdfs);
 
                 octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * r.child, pool, queue);
-                request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * i, pool, queue);
+                request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * work_group_id, pool, queue);
             }
         }
     }   
