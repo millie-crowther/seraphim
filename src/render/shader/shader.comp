@@ -389,24 +389,25 @@ void octree_update(){
     }
     memoryBarrierShared();
 
-    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x + work_group_offset();
+    uint local_id = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    uint global_id = local_id + work_group_offset();
 
     // submit free nodes to request queue
-    if ((octree.body[i].header & node_unused_flag) != 0){
-        vacant_node_index = i;
+    if ((octree.body[global_id].header & node_unused_flag) != 0){
+        vacant_node_index = local_id;
     }
 
     // cull extraneous nodes
     for (uint octant = 0; octant < 8; octant++){
-        octree_node_t node = octree.body[i];
+        octree_node_t node = octree.body[global_id];
 
         if (should_cull_node(node, octant)){
             uint child = node.children[octant].child + work_group_offset();
-            octree.body[i].children[octant].child = 0;
+            octree.body[global_id].children[octant].child = 0;
             octree.body[child].header |= node_unused_flag;
             
             // reset expiration culling counter
-            octree.body[i].header = 
+            octree.body[global_id].header = 
                 ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
         }
     }  
