@@ -125,19 +125,19 @@ void observe(vec3 x, uint parent_node, uint octant_index){
         depth < expected_depth(x) &&
         (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty;
 
-    uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
+    uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
-    if (child != 0 && should_request){
-        child += work_group_offset();
+    if (child_local != 0 && should_request){
+        uint child_global = child_local + work_group_offset();
 
-        octree.body[child].header |= node_pending_data_flag;
-        octree.body[parent_node].children[octant_index].child = child;
+        octree.body[child_global].header |= node_pending_data_flag;
+        octree.body[parent_node].children[octant_index].child = child_local;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[request_id].x = 
             octree.body[parent_node].x + octant * push_const.render_distance / (1 << depth);
         requests.requests[request_id].depth = depth + 1;
-        requests.requests[request_id].child = child;
+        requests.requests[request_id].child = child_global;
     }
 }
 
