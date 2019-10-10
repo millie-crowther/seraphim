@@ -25,7 +25,7 @@ private:
 
     // helper methods
     void copy(
-	    buffer_t<T> & destination, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
+	    const buffer_t<T> & destination, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
     ){
         if (size == 0){
             return;
@@ -54,7 +54,7 @@ private:
         submit_info.pSignalSemaphores = nullptr;
             
         vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue); // TODO: check how bad this is and remove if appropriate
+        vkQueueWaitIdle(queue); // remove! this line! updates need to be batched 
     }
 
 public:
@@ -86,40 +86,37 @@ public:
     }
 
     // public methods
-    void write(const T * data, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue){
-        if (size == 0 || data == nullptr){
+    void write(const std::vector<T> & source, uint64_t offset, VkCommandPool pool, VkQueue queue){
+        if (source.empty()){
             return;
         }
 
         if (is_host_visible){
             void * mem_map;
-            vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * size, 0, &mem_map);
-                std::memcpy(mem_map, data, sizeof(T) * size);
+            vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &mem_map);
+                std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
             vkUnmapMemory(device->get_device(), memory);
         
         } else {
             buffer_t<T> staging_buffer(
-                allocator, device, size,
+                allocator, device, source.size(),
                 VMA_MEMORY_USAGE_CPU_ONLY
             );
 
-            staging_buffer.write(data, size, 0, pool, queue);
-            staging_buffer.copy(*this, size, offset, pool, queue); 
+            staging_buffer.write(source, 0, pool, queue);
+            staging_buffer.copy(*this, source.size(), offset, pool, queue); 
         }
     }
 
-    void read(T * data, uint64_t size) {
-        if (is_host_visible){
-            void * mem_map;
-            vkMapMemory(device->get_device(), memory, 0, sizeof(T) * size, 0, &mem_map);
-                std::memcpy(data, mem_map, sizeof(T) * size);
-            vkUnmapMemory(device->get_device(), memory);
-        } 
-    }
+    void read(std::vector<T> & destination) {
+        if (destination.empty() || !is_host_visible){
+            return;
+        }
 
-    // getters
-    VkBuffer get_buffer(){
-        return buffer;
+        void * mem_map;
+        vkMapMemory(device->get_device(), memory, 0, sizeof(T) * destination.size(), 0, &mem_map);
+            std::memcpy(destination.data(), mem_map, sizeof(T) * destination.size());
+        vkUnmapMemory(device->get_device(), memory);
     }
 
     VkDescriptorBufferInfo get_descriptor_info() const {

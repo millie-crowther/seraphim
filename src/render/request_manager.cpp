@@ -33,7 +33,7 @@ request_manager_t::request_manager_t(
         allocator, device, requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
-    request_buffer->write(requests.data(), requests.size(), 0, pool, queue);
+    request_buffer->write(requests, 0, pool, queue);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
@@ -78,9 +78,7 @@ request_manager_t::request_manager_t(
         initial_octree[i] = root_node;
     }
     
-    octree_buffer->write(
-        initial_octree.data(), initial_octree.size(), 0, pool, queue
-    );
+    octree_buffer->write(initial_octree, 0, pool, queue);
 }
 
 void
@@ -89,7 +87,7 @@ request_manager_t::handle_requests(){
 
     vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
 
-    request_buffer->read(requests.data(), requests.size());
+    request_buffer->read(requests);
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -106,8 +104,8 @@ request_manager_t::handle_requests(){
             if (r.child != 0){
                 octree_node_t new_node(r.x, r.depth, strong_sdfs);
 
-                octree_buffer->write(&new_node, 1, r.child, pool, queue);
-                request_buffer->write(&blank_request, 1, work_group_id, pool, queue);
+                octree_buffer->write({ new_node }, r.child, pool, queue);
+                request_buffer->write({ blank_request }, work_group_id, pool, queue);
             }
         }
     }   
