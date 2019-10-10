@@ -23,17 +23,17 @@ request_manager_t::request_manager_t(
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
 
-    octree_buffer = std::make_unique<buffer_t>(
-        allocator, device, sizeof(octree_node_t) * work_group_count[0] * work_group_count[1] * work_group_size,
+    octree_buffer = std::make_unique<buffer_t<octree_node_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     requests.resize(work_group_count[0] * work_group_count[1]);
-    request_buffer = std::make_unique<buffer_t>(
-        allocator, device, sizeof(request_t) * requests.size(),
+    request_buffer = std::make_unique<buffer_t<request_t>>(
+        allocator, device, requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
-    request_buffer->copy(requests.data(), sizeof(request_t) * requests.size(), 0, pool, queue);
+    request_buffer->write(requests.data(), requests.size(), 0, pool, queue);
 
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
@@ -78,8 +78,8 @@ request_manager_t::request_manager_t(
         initial_octree[i] = root_node;
     }
     
-    octree_buffer->copy(
-        initial_octree.data(), sizeof(octree_node_t) * initial_octree.size(), 0, pool, queue
+    octree_buffer->write(
+        initial_octree.data(), initial_octree.size(), 0, pool, queue
     );
 }
 
@@ -89,7 +89,7 @@ request_manager_t::handle_requests(){
 
     vkDeviceWaitIdle(device); //TODO: remove this by baking in buffer updates
 
-    request_buffer->read(requests.data(), sizeof(request_t) * requests.size());
+    request_buffer->read(requests.data(), requests.size());
 
     std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
     for (auto sdf_ptr : sdfs){
@@ -106,8 +106,8 @@ request_manager_t::handle_requests(){
             if (r.child != 0){
                 octree_node_t new_node(r.x, r.depth, strong_sdfs);
 
-                octree_buffer->copy(&new_node, sizeof(octree_node_t), sizeof(octree_node_t) * r.child, pool, queue);
-                request_buffer->copy(&blank_request, sizeof(request_t), sizeof(request_t) * work_group_id, pool, queue);
+                octree_buffer->write(&new_node, 1, r.child, pool, queue);
+                request_buffer->write(&blank_request, 1, work_group_id, pool, queue);
             }
         }
     }   
