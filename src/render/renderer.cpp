@@ -41,7 +41,7 @@ renderer_t::renderer_t(
     plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
 
     renderable_sdfs.push_back(sphere);
-    // renderable_sdfs.push_back(plane);
+    renderable_sdfs.push_back(plane);
 
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");

@@ -21,15 +21,13 @@ private:
 
 	std::shared_ptr<device_t> device;
 
-    // update functions
-    void update_fps_counter(double delta);
-
     // debug fields
 #if BLASPHEME_DEBUG
     VkDebugReportCallbackEXT callback;
     bool check_validation_layers();
     bool setup_debug_callback();
 #endif
+
     std::shared_ptr<renderer_t> renderer;
 
     interval_revelator_t::follower_ptr_t frame_start_follower;
