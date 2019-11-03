@@ -58,10 +58,11 @@ struct intersection_t {
     vec3 n;
     octree_node_t node;
     octree_data_t data;
+    float d;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    null_node, octree_data_t(0, 0, 0, 0)
+    null_node, octree_data_t(0, 0, 0, 0), 0
 );
 
 //
@@ -231,13 +232,13 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, n, node, data);
+        return intersection_t(true, r.x, n, node, data, 0);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data, lambda);
 }
 
 intersection_t static_raycast(ray_t r){
@@ -264,7 +265,7 @@ intersection_t static_raycast(ray_t r){
     float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
 
     intersection.hit = false;
-    intersection.x = r.x + r.d * lambda;
+    intersection.d = lambda;
 
     return intersection;
 }
@@ -272,11 +273,12 @@ intersection_t static_raycast(ray_t r){
 intersection_t raycast(ray_t r){
     for (int i = 0; i < max_steps; i++){
         intersection_t intersection = static_raycast(r);
+        r.x += r.d * intersection.d;
+
         if (intersection.hit){
+            intersection.x = r.x;
             return intersection;
         }
-
-        r.x = intersection.x;
 
         // check if out of bounds
         vec3 a = abs(r.x);
