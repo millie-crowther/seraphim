@@ -58,11 +58,10 @@ struct intersection_t {
     vec3 n;
     octree_node_t node;
     octree_data_t data;
-    float d;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    null_node, octree_data_t(0, 0, 0, 0), 0
+    null_node, octree_data_t(0, 0, 0, 0)
 );
 
 //
@@ -232,50 +231,61 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, n, node, data, 0);
+        return intersection_t(true, r.x, n, node, data);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data, lambda);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data);
+}
+
+intersection_t static_raycast(ray_t r){
+    octree_node_t node = octree_lookup(r.x);
+    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+
+    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
+    vec3 m = node.x + vec3(octant) * node_size / 2;
+
+    intersection_t intersection = plane_intersection(r, node);
+    if (
+        intersection.hit &&
+        intersection.x.x >= m.x && intersection.x.x <= m.x + node_size / 2 && 
+        intersection.x.y >= m.y && intersection.x.y <= m.y + node_size / 2 && 
+        intersection.x.z >= m.z && intersection.x.z <= m.z + node_size / 2    
+    ){
+        return intersection;
+    }
+
+    vec3 lambda_i = abs(
+        m + sign(max(r.d, 0)) * node_size / 2 - r.x
+    ) / max(abs(r.d), epsilon);
+
+    float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
+
+    intersection.hit = false;
+    intersection.x = r.x + r.d * lambda;
+
+    return intersection;
 }
 
 intersection_t raycast(ray_t r){
-    octree_node_t node;
-
-    intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
-	    node = octree_lookup(r.x);
-        float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-
-        bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
-        vec3 m = node.x + vec3(octant) * node_size / 2;
-
-        intersection = plane_intersection(r, node);
-        if (
-            intersection.hit &&
-            intersection.x.x >= m.x && intersection.x.x <= m.x + node_size / 2 && 
-            intersection.x.y >= m.y && intersection.x.y <= m.y + node_size / 2 && 
-            intersection.x.z >= m.z && intersection.x.z <= m.z + node_size / 2    
-        ){
-            break;
+        intersection_t intersection = static_raycast(r);
+        if (intersection.hit){
+            return intersection;
         }
-	
-        vec3 lambda_i = abs(
-            m + sign(max(r.d, 0)) * node_size / 2 - r.x
-        ) / max(abs(r.d), epsilon);
 
-        float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-        r.x += r.d * lambda;
+        r.x = intersection.x;
 
         // check if out of bounds
-        if (max(r.x.x, max(r.x.y, r.x.z)) > push_const.render_distance) { 
+        vec3 a = abs(r.x);
+        if (max(a.x, max(a.y, a.z)) > push_const.render_distance) { 
             return null_intersection;
         }
     }
 
-    return intersection;
+    return null_intersection;
 }
 
 float shadow(vec3 l, vec3 p){
