@@ -61,7 +61,6 @@ blaspheme_t::blaspheme_t(){
     device = std::make_shared<device_t>(instance, surface, {});
 #endif
 
-
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;

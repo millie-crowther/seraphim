@@ -58,10 +58,11 @@ struct intersection_t {
     vec3 n;
     octree_node_t node;
     octree_data_t data;
+    float d;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0), vec3(0), 
-    null_node, octree_data_t(0, 0, 0, 0)
+    null_node, octree_data_t(0, 0, 0, 0), 0
 );
 
 //
@@ -141,15 +142,7 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     }
 }
 
-octree_node_t octree_lookup(vec3 x, out bool is_valid_node){
-    vec3 a = abs(x);
-    is_valid_node = true;
-    
-    if (max(a.x, max(a.y, a.z)) > push_const.render_distance) { 
-        is_valid_node = false;
-        return null_node;
-    }
-
+octree_node_t octree_lookup(vec3 x){
     uint parent_node = work_group_offset();
     octree_node_t node = octree.body[parent_node];
 
@@ -239,13 +232,13 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, n, node, data);
+        return intersection_t(true, r.x, n, node, data, 0);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, n, node, data, lambda);
 }
 
 intersection_t raycast(ray_t r){
@@ -253,13 +246,8 @@ intersection_t raycast(ray_t r){
 
     intersection_t intersection = null_intersection;
     for (int i = 0; i < max_steps; i++){
-        bool is_valid_node;
-	    node = octree_lookup(r.x, is_valid_node);
+	    node = octree_lookup(r.x);
         float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-
-        if (!is_valid_node){
-            break;
-        }
 
         bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
         vec3 m = node.x + vec3(octant) * node_size / 2;
@@ -280,6 +268,11 @@ intersection_t raycast(ray_t r){
 
         float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
         r.x += r.d * lambda;
+
+        // check if out of bounds
+        if (max(r.x.x, max(r.x.y, r.x.z)) > push_const.render_distance) { 
+            return null_intersection;
+        }
     }
 
     return intersection;
