@@ -270,24 +270,26 @@ intersection_t static_raycast(ray_t r){
 }
 
 intersection_t sphere_intersection(ray_t r){
-    vec3 centre = vec3(1, 0.5, 3);
+    vec3 centre = vec3(1, 0.5, -3);
     float radius = 1.1;
 
     float x = dot(r.d, r.x - centre);
     float determinant = x * x - dot(r.x - centre, r.x - centre) + radius * radius;
 
+    intersection_t result = null_intersection;
     if (determinant < 0){
-        return null_intersection;
+        result.d = push_const.render_distance;
+        return result;
     }
 
     float lambda_a = -x + sqrt(determinant);
     float lambda_b = -x - sqrt(determinant);
 
     if (max(lambda_a, lambda_b) < 0){
-        return null_intersection;
+        result.d = push_const.render_distance;
+        return result;
     }
 
-    intersection_t result = null_intersection;
     result.hit = true;
 
     float lambda = lambda_b < 0 ? lambda_a : lambda_b;
@@ -299,8 +301,12 @@ intersection_t sphere_intersection(ray_t r){
 
 intersection_t raycast(ray_t r){
     for (int i = 0; i < max_steps; i++){
-        intersection_t intersection = static_raycast(r);
-        r.x += r.d * intersection.d;
+        intersection_t static_intersection = static_raycast(r);
+        intersection_t dynamic_interseciton = sphere_intersection(r);
+
+        intersection_t intersection = static_intersection.d < dynamic_interseciton.d ? static_intersection : dynamic_interseciton;
+
+        r.x += r.d * (intersection.d + epsilon);
 
         if (intersection.hit){
             intersection.x = r.x;
