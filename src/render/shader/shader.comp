@@ -218,9 +218,7 @@ vec3 normal(uint n){
 }
 
 intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
-    float node_size = aabb.w * 2;
-
-    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
+    bvec3 octant = greaterThan(r.x, node.x + aabb.w);
     uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
 
     if ((node.children[octant_index].header & node_empty_flag) != 0){
@@ -232,9 +230,9 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     vec3 n = normal(data.geometry);
 
     float phi = float(data.geometry >> 24) / 255.0 - 0.5;
-    phi *= sqrt3 * node_size / 2;
+    phi *= sqrt3 * aabb.w;
 
-    vec3 c = node.x + vec3(octant) * node_size / 2 + node_size / 4;
+    vec3 c = node.x + vec3(octant) * aabb.w + aabb.w / 2;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
