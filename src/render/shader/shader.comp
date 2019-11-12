@@ -110,8 +110,8 @@ uint work_group_offset(){
 
 void observe(vec3 x, uint parent_node, uint octant_index, uint depth){
     // mark node as seen for expiration culling
-    octree.body[parent_node].header = 
-        ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
+    // octree.body[parent_node].header = 
+    //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
     // TODO: this shouldnt be here
     depth--;
@@ -251,23 +251,22 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
 intersection_t static_raycast(ray_t r){
     vec4 aabb;
     octree_node_t node = octree_lookup(r.x, aabb);
-    float node_size = aabb.w * 2;
 
-    bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
-    vec3 m = node.x + vec3(octant) * node_size / 2;
+    bvec3 octant = greaterThan(r.x, node.x + aabb.w);
+    vec3 m = node.x + vec3(octant) * aabb.w;
 
     intersection_t intersection = plane_intersection(r, node, aabb);
     if (
         intersection.hit &&
-        intersection.x.x >= m.x && intersection.x.x <= m.x + node_size / 2 && 
-        intersection.x.y >= m.y && intersection.x.y <= m.y + node_size / 2 && 
-        intersection.x.z >= m.z && intersection.x.z <= m.z + node_size / 2    
+        intersection.x.x >= m.x && intersection.x.x <= m.x + aabb.w && 
+        intersection.x.y >= m.y && intersection.x.y <= m.y + aabb.w && 
+        intersection.x.z >= m.z && intersection.x.z <= m.z + aabb.w    
     ){
         return intersection;
     }
 
     vec3 lambda_i = abs(
-        m + sign(max(r.d, 0)) * node_size / 2 - r.x
+        m + sign(max(r.d, 0)) * aabb.w - r.x
     ) / max(abs(r.d), epsilon);
 
     float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
