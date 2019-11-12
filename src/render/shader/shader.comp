@@ -108,7 +108,6 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-// TODO: i think x can actually just be removed as a parameter from this function
 void observe(vec3 x, uint parent_node, uint octant_index){
     // mark node as seen for expiration culling
     octree.body[parent_node].header = 
@@ -141,7 +140,9 @@ void observe(vec3 x, uint parent_node, uint octant_index){
     }
 }
 
-octree_node_t octree_lookup(vec3 x){
+octree_node_t octree_lookup(vec3 x, out vec4 aabb){
+    aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
+
     uint parent_node = work_group_offset();
     octree_node_t node = octree.body[parent_node];
 
@@ -157,11 +158,14 @@ octree_node_t octree_lookup(vec3 x){
         parent_node = child;
         node = octree.body[parent_node];
 
-        float node_size = 2 * push_const.render_distance / (1 << depth);
         depth++;
 
-        bvec3 octant = greaterThan(x, node.x + node_size / 2);
+        aabb.w /= 2;
+
+        bvec3 octant = greaterThan(x, node.x + aabb.w);
         octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+
+        aabb.xyz += vec3(octant) * aabb.w;
     }
 
     observe(x, parent_node, octant_index);
@@ -244,7 +248,8 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
 }
 
 intersection_t static_raycast(ray_t r){
-    octree_node_t node = octree_lookup(r.x);
+    vec4 aabb;
+    octree_node_t node = octree_lookup(r.x, aabb);
     float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
 
     bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
@@ -372,7 +377,6 @@ void render(){
 bool should_cull_node(octree_node_t node, uint octant){
     uint depth = node.header & 0xFF;
     bool size_cull = depth > expected_depth(node.x + push_const.render_distance / (1 << depth));
-
 
     uint child_index = node.children[octant].child + work_group_offset();
     octree_node_t child_node = octree.body[child_index];
