@@ -14,7 +14,7 @@ octree_node_t::octree_node_t(){
 
 octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     this->x = x;
-    header = depth;
+    header = 0;
     
     vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
     

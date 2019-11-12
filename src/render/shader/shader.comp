@@ -108,12 +108,13 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void observe(vec3 x, uint parent_node, uint octant_index){
+void observe(vec3 x, uint parent_node, uint octant_index, uint depth){
     // mark node as seen for expiration culling
     octree.body[parent_node].header = 
         ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
-    uint depth = octree.body[parent_node].header & 0xFF;
+    // TODO: this shouldnt be here
+    depth--;
 
     // for vacant_node_index
     memoryBarrierShared();
@@ -168,7 +169,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         aabb.xyz += vec3(octant) * aabb.w;
     }
 
-    observe(x, parent_node, octant_index);
+    observe(x, parent_node, octant_index, depth);
 
     return node;
 }
@@ -215,8 +216,8 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, octree_node_t node){
-    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
+    float node_size = aabb.w * 2;
 
     bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
     uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
@@ -250,12 +251,12 @@ intersection_t plane_intersection(ray_t r, octree_node_t node){
 intersection_t static_raycast(ray_t r){
     vec4 aabb;
     octree_node_t node = octree_lookup(r.x, aabb);
-    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
+    float node_size = aabb.w * 2;
 
     bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
     vec3 m = node.x + vec3(octant) * node_size / 2;
 
-    intersection_t intersection = plane_intersection(r, node);
+    intersection_t intersection = plane_intersection(r, node, aabb);
     if (
         intersection.hit &&
         intersection.x.x >= m.x && intersection.x.x <= m.x + node_size / 2 && 
@@ -374,26 +375,26 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-bool should_cull_node(octree_node_t node, uint octant){
-    uint depth = node.header & 0xFF;
-    bool size_cull = depth > expected_depth(node.x + push_const.render_distance / (1 << depth));
+// bool should_cull_node(octree_node_t node, uint octant){
+//     uint depth = node.header & 0xFF;
+//     bool size_cull = depth > expected_depth(node.x + push_const.render_distance / (1 << depth));
 
-    uint child_index = node.children[octant].child + work_group_offset();
-    octree_node_t child_node = octree.body[child_index];
-    bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
+//     uint child_index = node.children[octant].child + work_group_offset();
+//     octree_node_t child_node = octree.body[child_index];
+//     bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
 
-    for (uint i = 0; i < 8; i++){
-        if (child_node.children[i].child != 0){
-            return false;
-        }
-    }
+//     for (uint i = 0; i < 8; i++){
+//         if (child_node.children[i].child != 0){
+//             return false;
+//         }
+//     }
 
-    return 
-        node.children[octant].child != 0 &&
-        (node.header & node_unused_flag) == 0 &&
-        (node.header & node_pending_data_flag) == 0 &&
-        (size_cull || expiry_cull);
-}
+//     return 
+//         node.children[octant].child != 0 &&
+//         (node.header & node_unused_flag) == 0 &&
+//         (node.header & node_pending_data_flag) == 0 &&
+//         (size_cull || expiry_cull);
+// }
 
 void octree_update(){
     if (gl_LocalInvocationID.xy == uvec2(0)){
@@ -410,19 +411,19 @@ void octree_update(){
     }
 
     // cull extraneous nodes
-    for (uint octant = 0; octant < 8; octant++){
-        octree_node_t node = octree.body[global_id];
+    // for (uint octant = 0; octant < 8; octant++){
+    //     octree_node_t node = octree.body[global_id];
 
-        if (should_cull_node(node, octant)){
-            uint child = node.children[octant].child + work_group_offset();
-            octree.body[global_id].children[octant].child = 0;
-            octree.body[child].header |= node_unused_flag;
+    //     if (should_cull_node(node, octant)){
+    //         uint child = node.children[octant].child + work_group_offset();
+    //         octree.body[global_id].children[octant].child = 0;
+    //         octree.body[child].header |= node_unused_flag;
             
-            // reset expiration culling counter
-            octree.body[global_id].header = 
-                ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
-        }
-    }  
+    //         // reset expiration culling counter
+    //         octree.body[global_id].header = 
+    //             ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
+    //     }
+    // }  
 }
 
 void main(){
