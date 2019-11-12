@@ -7,8 +7,9 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 // constants
 //
-const uint node_type_empty = 1;
-const uint node_unused_flag = 1 << 8;
+const uint node_empty_flag = 1 << 0;
+const uint node_unused_flag = 1 << 1;
+
 const uint node_pending_data_flag = 1 << 9;
 
 const uvec2 work_group_count = uvec2(8);
@@ -123,7 +124,7 @@ void observe(vec3 x, uint parent_node, uint octant_index, uint depth){
     bool should_request = 
         requests.requests[request_id].child == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[parent_node].children[octant_index].header & 0xFF) != node_type_empty;
+        (octree.body[parent_node].children[octant_index].header & node_empty_flag) == 0;
 
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
@@ -222,7 +223,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     bvec3 octant = greaterThan(r.x, node.x + node_size / 2);
     uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
 
-    if ((node.children[octant_index].header & 0xFF) == node_type_empty){
+    if ((node.children[octant_index].header & node_empty_flag) != 0){
         return null_intersection;
     }
 
@@ -405,7 +406,7 @@ void octree_update(){
     uint global_id = local_id + work_group_offset();
 
     // submit free nodes to request queue
-    if ((octree.body[global_id].header & node_unused_flag) != 0){
+    if ((octree.body[global_id].children[0].header & node_unused_flag) != 0){
         vacant_node_index = local_id;
     }
 

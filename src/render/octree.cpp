@@ -6,6 +6,7 @@
 
 octree_node_t::octree_data_t::octree_data_t(){
     child = 0;
+    header = node_unused_flag;
 }
 
 octree_node_t::octree_node_t(){
@@ -37,7 +38,7 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
 
 octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     child = 0;
-    type = 0;
+    header = 0;
     
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
 
@@ -45,7 +46,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
         auto intersection = intersects_contains(aabb, sdf);
         // contains
         if (std::get<1>(intersection)){
-            type = node_type_empty;
+            header = node_empty_flag;
             // return;
         }
 
@@ -56,7 +57,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
     }
 
     if (new_sdfs.empty()){
-        type = node_type_empty;
+        header = node_empty_flag;
         // return;
     }
 
