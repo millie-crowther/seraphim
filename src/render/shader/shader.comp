@@ -40,8 +40,6 @@ struct octree_data_t {
 };
 
 struct octree_node_t {
-    vec3 x;
-    uint header;
     octree_data_t children[8];
 };
 octree_node_t null_node;

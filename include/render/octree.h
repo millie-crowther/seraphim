@@ -27,8 +27,6 @@ private:
         octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
     };
 
-    f32vec3_t x;
-    uint32_t header;
     std::array<octree_data_t, 8> children;  
 
 public:
