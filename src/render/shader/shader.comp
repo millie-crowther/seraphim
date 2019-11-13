@@ -9,8 +9,7 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 const uint node_empty_flag = 1 << 0;
 const uint node_unused_flag = 1 << 1;
-
-const uint node_pending_data_flag = 1 << 9;
+const uint node_pending_data_flag = 1 << 2;
 
 const uvec2 work_group_count = uvec2(8);
 const float sqrt3 = 1.73205080757;
@@ -131,7 +130,10 @@ void observe(vec3 x, uint parent_node, uint octant_index, uint depth){
     if (child_local != 0 && should_request){
         uint child_global = child_local + work_group_offset();
 
-        octree.body[child_global].header |= node_pending_data_flag;
+        for (uint octant = 0; octant < 8; octant++){
+            octree.body[child_global].children[octant].header |= node_pending_data_flag;
+        }
+
         octree.body[parent_node].children[octant_index].child = child_local;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
@@ -153,7 +155,8 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 1;
     while (octree.body[parent_node].children[octant_index].child != 0){
         uint child = octree.body[parent_node].children[octant_index].child + work_group_offset();
-        if ((octree.body[child].header & node_pending_data_flag) != 0){
+
+        if ((octree.body[child].children[octant_index].header & node_pending_data_flag) != 0){
             break;
         }   
 
@@ -175,24 +178,10 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     return node;
 }
 
-vec4 unpack_vec4(uint x){
+vec4 colour(uint x){
     return vec4(
         x & 0xFF, (x >> 8) & 0xFF, (x >> 16) & 0xFF, x >> 24
     ) / 255.0;
-}
-
-vec4 colour(vec3 x, octree_node_t node){
-    float node_size = 2 * push_const.render_distance / (1 << (node.header & 0xFF));
-    vec3 alpha = (x - node.x) / node_size;
-
-    vec4 cs[8];
-    for (uint i = 0; i < 8; i++){
-        cs[i] = unpack_vec4(node.children[i].colour);
-    }
-
-    return trilinear_interpolate(
-        cs[0], cs[1], cs[2], cs[3], cs[4], cs[5], cs[6], cs[7], alpha
-    );
 }
 
 vec3 normal(uint n){
@@ -286,7 +275,7 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 phong_light(vec3 light_p, vec3 x, octree_data_t data){
+vec4 light(vec3 light_p, vec3 x, octree_data_t data){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec4 colour = vec4(50);
@@ -324,11 +313,6 @@ vec4 phong_light(vec3 light_p, vec3 x, octree_data_t data){
     return a + (d + s) * attenuation * shadow;
 }
 
-vec4 light(vec3 p, vec3 x, octree_data_t data){
-    vec3 l = normalize(p - x);
-    return phong_light(p, x, data);
-}
-
 vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
@@ -352,7 +336,7 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.x, i.node) * light(vec3(-3, 3, -3), i.x, i.data);
+        out_colour = colour(i.data.colour) * light(vec3(-3, 3, -3), i.x, i.data);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
