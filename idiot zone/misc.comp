@@ -1,0 +1,16 @@
+
+vec4 bilinear_interpolate(vec4 x00, vec4 x01, vec4 x10, vec4 x11, vec2 alpha){
+    vec4 x = mix(x00, x10, alpha.x);
+    vec4 y = mix(x01, x11, alpha.x);
+
+    return mix(y, x, alpha.y);
+}
+
+vec4 trilinear_interpolate(vec4 x000, vec4 x001, vec4 x010, vec4 x011, vec4 x100, vec4 x101, vec4 x110, vec4 x111, vec3 alpha){
+    vec4 x00 = mix(x000, x100, alpha.x);
+    vec4 x01 = mix(x001, x101, alpha.x);
+    vec4 x10 = mix(x010, x110, alpha.x);
+    vec4 x11 = mix(x011, x111, alpha.x);
+
+    return bilinear_interpolate(x00, x01, x10, x11, alpha.yz);
+}
