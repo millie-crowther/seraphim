@@ -143,11 +143,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
     uint parent_node = work_group_offset();
-    octree_node_t node = octree.body[parent_node];
-
     uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
-
     uint depth = 1;
+    
     while (octree.body[parent_node].children[octant_index].child != 0){
         uint child = octree.body[parent_node].children[octant_index].child + work_group_offset();
 
@@ -156,21 +154,19 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         }   
 
         parent_node = child;
-        node = octree.body[parent_node];
 
         depth++;
 
+        aabb.xyz += vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2) * aabb.w;
+
         aabb.w /= 2;
-
-        bvec3 octant = greaterThan(x, node.x + aabb.w);
+        bvec3 octant = greaterThan(x, aabb.xyz + aabb.w);
         octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
-
-        aabb.xyz += vec3(octant) * aabb.w;
     }
 
     observe(x, parent_node, octant_index, depth);
 
-    return node;
+    return octree.body[parent_node];
 }
 
 vec4 colour(uint x){
