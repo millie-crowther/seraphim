@@ -9,7 +9,6 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 //
 const uint node_empty_flag = 1 << 0;
 const uint node_unused_flag = 1 << 1;
-const uint node_pending_data_flag = 1 << 2;
 
 const uvec2 work_group_count = uvec2(8);
 const float sqrt3 = 1.73205080757;
@@ -130,10 +129,6 @@ void observe(vec3 x, uint parent_node, uint octant_index, uint depth){
     if (child_local != 0 && should_request){
         uint child_global = child_local + work_group_offset();
 
-        for (uint octant = 0; octant < 8; octant++){
-            octree.body[child_global].children[octant].header |= node_pending_data_flag;
-        }
-
         octree.body[parent_node].children[octant_index].child = child_local;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
@@ -156,7 +151,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     while (octree.body[parent_node].children[octant_index].child != 0){
         uint child = octree.body[parent_node].children[octant_index].child + work_group_offset();
 
-        if ((octree.body[child].children[octant_index].header & node_pending_data_flag) != 0){
+        if ((octree.body[child].children[octant_index].header & node_unused_flag) != 0){
             break;
         }   
 
