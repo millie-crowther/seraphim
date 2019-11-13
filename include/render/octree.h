@@ -34,7 +34,7 @@ private:
     std::array<octree_data_t, 8> children;  
 
 public:
-    octree_node_t();
+    octree_node_t(){}
     octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
 };
 
