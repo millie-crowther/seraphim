@@ -8,30 +8,23 @@
 #include "maths/vec.h"
 #include "sdf/sdf.h"
 
-class octree_node_t {
+class octree_data_t {
 private:
-    class octree_data_t {
-    private:
-        static constexpr uint8_t node_empty_flag  = 1 << 0;
-        static constexpr uint8_t node_unused_flag = 1 << 1;
+    static constexpr uint8_t node_empty_flag  = 1 << 0;
+    static constexpr uint8_t node_unused_flag = 1 << 1;
 
-        uint32_t header;
-        uint32_t geometry;
-        uint32_t colour;
-        uint32_t child;    
-        
-        std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+    uint32_t header;
+    uint32_t geometry;
+    uint32_t colour;
+    uint32_t child;    
+    
+    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
-    public:
-        octree_data_t();
-        octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
-    };
-
-    std::array<octree_data_t, 8> children;  
-
+    octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
 public:
-    octree_node_t(){}
-    octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
+    octree_data_t();
+
+    static std::array<octree_data_t, 8> create(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
 };
 
 #endif

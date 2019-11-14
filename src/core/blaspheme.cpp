@@ -71,8 +71,6 @@ blaspheme_t::blaspheme_t(){
     std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
     std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
-    std::cout << "\tShared mem size: " << (sizeof(octree_node_t) * 32 * 32) << std::endl;
-    
 
     // uint32_t push_const_size = properties.limits.maxPushConstantsSize;
     // std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;

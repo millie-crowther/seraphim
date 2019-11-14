@@ -4,12 +4,14 @@
 #include "render/painter.h"
 #include "sdf/compose.h"
 
-octree_node_t::octree_data_t::octree_data_t(){
+octree_data_t::octree_data_t(){
     child = 0;
     header = node_unused_flag;
 }
 
-octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+std::array<octree_data_t, 8>
+octree_data_t::create(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+    std::array<octree_data_t, 8> children;
     vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
     
     for (uint8_t octant = 0; octant < 8; octant++){
@@ -27,9 +29,11 @@ octree_node_t::octree_node_t(const f32vec3_t & x, uint8_t depth, const std::vect
 
         children[octant] = octree_data_t(octant_aabb, vertex, sdfs);
     }
+
+    return children;
 }
 
-octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     child = 0;
     header = 0;
     
@@ -75,7 +79,7 @@ octree_node_t::octree_data_t::octree_data_t(const vec4_t & aabb, const vec3_t & 
 }
 
 std::tuple<bool, bool> 
-octree_node_t::octree_data_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
+octree_data_t::intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const {
     double lower_radius = 0.5 * aabb[3];
     double upper_radius = constant::sqrt3 * lower_radius;
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(lower_radius);
