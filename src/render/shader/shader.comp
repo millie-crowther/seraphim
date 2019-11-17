@@ -175,15 +175,13 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
+intersection_t plane_intersection(ray_t r, octree_data_t data, vec4 aabb){
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
     uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
 
-    if ((node.children[octant_index].header & node_empty_flag) != 0){
+    if ((data.header & node_empty_flag) != 0){
         return null_intersection;
     }
-
-    octree_data_t data = node.children[octant_index];
 
     vec3 n = normal(data.geometry);
 
@@ -210,9 +208,10 @@ intersection_t static_raycast(ray_t r){
     octree_node_t node = octree_lookup(r.x, aabb);
 
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
+    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
     vec3 m = aabb.xyz + vec3(octant) * aabb.w;
 
-    intersection_t intersection = plane_intersection(r, node, aabb);
+    intersection_t intersection = plane_intersection(r, node.children[octant_index], aabb);
     if (
         intersection.hit &&
         intersection.x.x >= m.x && intersection.x.x <= m.x + aabb.w && 
