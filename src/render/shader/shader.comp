@@ -133,7 +133,7 @@ void observe(vec3 x, uint parent_node, uint octant_index, uint depth, vec4 aabb)
     }
 }
 
-octree_node_t octree_lookup(vec3 x, out vec4 aabb){
+octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
     uint parent_node = work_group_offset();
@@ -160,7 +160,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
     observe(x, parent_node, octant_index, depth, aabb);
 
-    return octree.body[parent_node];
+    return octree.body[parent_node].children[octant_index];
 }
 
 vec4 colour(uint x){
@@ -205,13 +205,12 @@ intersection_t plane_intersection(ray_t r, octree_data_t data, vec4 aabb){
 
 intersection_t static_raycast(ray_t r){
     vec4 aabb;
-    octree_node_t node = octree_lookup(r.x, aabb);
+    octree_data_t data = octree_lookup(r.x, aabb);
 
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
-    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
     vec3 m = aabb.xyz + vec3(octant) * aabb.w;
 
-    intersection_t intersection = plane_intersection(r, node.children[octant_index], aabb);
+    intersection_t intersection = plane_intersection(r, data, aabb);
     if (
         intersection.hit &&
         intersection.x.x >= m.x && intersection.x.x <= m.x + aabb.w && 
