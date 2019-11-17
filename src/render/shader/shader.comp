@@ -102,7 +102,7 @@ uint expected_depth(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8;
 }
 
 void observe(vec3 x, uint parent_node, uint octant_index, uint depth, vec4 aabb){
@@ -360,7 +360,7 @@ void octree_update(){
     uint global_id = local_id + work_group_offset();
 
     // submit free nodes to request queue
-    if ((octree.body[global_id].children[0].header & node_unused_flag) != 0){
+    if (local_id < 128 && (octree.body[global_id].children[0].header & node_unused_flag) != 0){
         vacant_node_index = local_id;
     }
 

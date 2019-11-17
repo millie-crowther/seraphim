@@ -24,7 +24,7 @@ request_manager_t::request_manager_t(
     this->work_group_size = work_group_size;
 
     octree_buffer = std::make_unique<buffer_t<std::array<octree_data_t, 8>>>(
-        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size / 8,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
