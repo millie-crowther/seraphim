@@ -42,7 +42,7 @@ struct octree_data_t {
 struct octree_node_t {
     octree_data_t children[8];
 };
-octree_node_t null_node;
+octree_data_t null_node;
 
 struct ray_t {
     vec3 x;
@@ -52,13 +52,12 @@ struct ray_t {
 struct intersection_t {
     bool hit;
     vec3 x;
-    octree_node_t node;
     octree_data_t data;
     float d;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0),
-    null_node, octree_data_t(0, 0, 0, 0), 0
+    null_node, 0
 );
 
 //
@@ -197,13 +196,13 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, node, data, 0);
+        return intersection_t(true, r.x, data, 0);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, node, data, lambda);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, data, lambda);
 }
 
 intersection_t static_raycast(ray_t r){
