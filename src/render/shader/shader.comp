@@ -125,14 +125,12 @@ void observe(vec3 x, uint parent_node, uint octant_index, uint depth, vec4 aabb)
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child_local != 0 && should_request){
-        uint child_global = child_local + work_group_offset();
-
         octree.body[parent_node].children[octant_index].child = child_local;
 
         vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
         requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
         requests.requests[request_id].depth = depth + 1;
-        requests.requests[request_id].child = child_global;
+        requests.requests[request_id].child = child_local + work_group_offset();
     }
 }
 
