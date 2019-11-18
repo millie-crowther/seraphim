@@ -94,7 +94,7 @@ shared octree_node_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
     vec3 xc = x - push_const.camera_position;
-    return 16 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
+    return 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
 }
 
 uint work_group_offset(){
@@ -120,7 +120,7 @@ void observe(vec3 x, uint i, uint depth, vec3 m){
         octree_global.body[i + work_group_offset()].child = child_local;
 
         requests.requests[request_id].x = m;
-        requests.requests[request_id].depth = depth + 1;
+        requests.requests[request_id].depth = depth;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
 }
@@ -148,10 +148,10 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         aabb.xyz += o * aabb.w;
     }
 
-    // TODO: why is this line (and the depth - 1) necessary?
-    //       something a bit weird here
+    // TODO: why is this line necessary?
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
-    observe(x, i, depth - 1, aabb.xyz);
+    
+    observe(x, i, depth, aabb.xyz);
 
     return node;
 }
