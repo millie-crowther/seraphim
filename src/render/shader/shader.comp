@@ -135,7 +135,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 0;
 
     while (true){
-        uint child = octree_global.body[i + work_group_offset()].child;
+        uint child = octree[i + work_group_offset()].child;
         if (child == 0 || (octree_global.body[child + work_group_offset()].header & node_unused_flag) != 0){
             break;
         }   
@@ -335,13 +335,17 @@ void render(){
 // }
 
 void octree_update(){
-    if (gl_LocalInvocationID.xy == uvec2(0)){
-        vacant_node_index = 0;
-    }
+    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+
+    vacant_node_index = 0;
+
+    // load octree from global memory into shared memory
+    octree[i] = octree_global.body[i + work_group_offset()];
+
+    memoryBarrier();
 
     // submit free nodes to request queue
-    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
-    if (i % 8 == 0 && (octree_global.body[i + work_group_offset()].header & node_unused_flag) != 0){
+    if (i % 8 == 0 && (octree[i].header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
