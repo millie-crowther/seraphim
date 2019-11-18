@@ -90,9 +90,9 @@ layout(binding = 2) buffer request_buffer {
 //
 shared uint vacant_node_index;
 shared octree_node_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uint hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 32];
 
 uint expected_depth(vec3 x){
-    // TODO: remove magic numbers from here, also check for efficiency
     vec3 xc = x - push_const.camera_position;
     return 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
 }
@@ -110,7 +110,7 @@ void observe(vec3 x, uint i, uint depth, vec3 m){
     bool should_request = 
         octree[i].child == 0 && 
         requests.requests[request_id].child == 0 &&
-        depth < expected_depth(x) &&
+        depth <= expected_depth(x) &&
         (octree[i].header & node_empty_flag) == 0;
 
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
@@ -136,7 +136,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
-        // check that data isnt still pending
+        // check that child data is present, possible that:
+        // 1) CPU hasn't yet streamed in requested data
+        // 2) child has already been culled for being too high resolution 
         octree_node_t next_node = octree[i];
         if ((next_node.header & node_unused_flag) != 0){
             break;
@@ -150,7 +152,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
     // TODO: why is this line necessary?
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
-    
+
     observe(x, i, depth, aabb.xyz);
 
     return node;
