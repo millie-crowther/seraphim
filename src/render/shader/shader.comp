@@ -150,9 +150,9 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
 
         aabb.xyz += vec3(i & 1, (i & 2) >> 1, (i & 4) >> 2) * aabb.w;
         aabb.w /= 2;
-        
-        bvec3 octant = greaterThan(x, aabb.xyz + aabb.w);
-        i = child | uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+
+        uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
+        i = child | o.x | (o.y << 1) | (o.z << 2);
     }
 
     observe(x, i, depth, aabb);
