@@ -129,26 +129,21 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint i = 0;
     octree_node_t node = null_node;
     
-    for (;;){
-        if (depth > 0 && node.child == 0){
-            break;
-        }
-
+    for (; depth == 0 || node.child != 0; depth++){
+        // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
+        // check that data isnt still pending
         octree_node_t next_node = octree_global.body[i + work_group_offset()];
-
         if ((next_node.header & node_unused_flag) != 0){
             break;
         }   
-
-        aabb.w /= 2;
-        aabb.xyz += o * aabb.w;
-
         node = next_node;
 
-        depth++;
+        // refine bounding box
+        aabb.w /= 2;
+        aabb.xyz += o * aabb.w;
     }
 
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
