@@ -140,9 +140,8 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         }
 
         vec3 min = aabb.xyz + o * aabb.w;
-        float size = aabb.w / 2;
 
-        o = uvec3(greaterThan(x, min + size));
+        o = uvec3(greaterThan(x, min + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
         octree_node_t next_node = octree_global.body[i + work_group_offset()];
@@ -152,10 +151,13 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         }   
 
         aabb.xyz = min;
-        aabb.w = size;
+        aabb.w /= 2;
         depth++;
 
         node = next_node;
+        if (node.child == 0){
+            break;
+        }
     }
 
     observe(x, i, depth, aabb);
