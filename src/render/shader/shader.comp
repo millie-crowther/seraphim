@@ -79,7 +79,7 @@ layout( push_constant ) uniform push_constants {
 //
 layout(binding = 1) buffer octree_buffer {
     octree_data_t body[];
-} octree;
+} octree_global;
 
 layout(binding = 2) buffer request_buffer {
     request_t requests[];
@@ -89,6 +89,7 @@ layout(binding = 2) buffer request_buffer {
 // shared memory
 //
 shared uint vacant_node_index;
+shared octree_data_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
@@ -112,12 +113,12 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     bool should_request = 
         requests.requests[request_id].child == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[j + work_group_offset()].header & node_empty_flag) == 0;
+        (octree_global.body[j + work_group_offset()].header & node_empty_flag) == 0;
 
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child_local != 0 && should_request){
-        octree.body[j + work_group_offset()].child = child_local;
+        octree_global.body[j + work_group_offset()].child = child_local;
 
         vec3 octant = vec3(j & 1, (j & 2) >> 1, (j & 4) >> 2); 
         requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
@@ -134,8 +135,8 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 0;
 
     while (true){
-        uint child = octree.body[i + work_group_offset()].child;
-        if (child == 0 || (octree.body[child + work_group_offset()].header & node_unused_flag) != 0){
+        uint child = octree_global.body[i + work_group_offset()].child;
+        if (child == 0 || (octree_global.body[child + work_group_offset()].header & node_unused_flag) != 0){
             break;
         }   
 
@@ -149,7 +150,7 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
 
     observe(x, i, depth, aabb);
 
-    return octree.body[i + work_group_offset()];
+    return octree_global.body[i + work_group_offset()];
 }
 
 vec4 colour(uint x){
@@ -340,7 +341,7 @@ void octree_update(){
 
     // submit free nodes to request queue
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
-    if (i % 8 == 0 && (octree.body[i + work_group_offset()].header & node_unused_flag) != 0){
+    if (i % 8 == 0 && (octree_global.body[i + work_group_offset()].header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
