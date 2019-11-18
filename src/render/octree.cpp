@@ -9,9 +9,9 @@ octree_data_t::octree_data_t(){
     header = node_unused_flag;
 }
 
-std::array<octree_data_t, 8>
+std::vector<octree_data_t>
 octree_data_t::create(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    std::array<octree_data_t, 8> children;
+    std::vector<octree_data_t> children;
     vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
     
     for (uint8_t octant = 0; octant < 8; octant++){
@@ -27,7 +27,7 @@ octree_data_t::create(const f32vec3_t & x, uint8_t depth, const std::vector<std:
             }
         }
 
-        children[octant] = octree_data_t(octant_aabb, vertex, sdfs);
+        children.emplace_back(octant_aabb, vertex, sdfs);
     }
 
     return children;

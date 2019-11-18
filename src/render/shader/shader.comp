@@ -123,7 +123,7 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
         vec3 octant = vec3(j & 1, (j & 2) >> 1, (j & 4) >> 2); 
         requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
         requests.requests[request_id].depth = depth + 1;
-        requests.requests[request_id].child = (child_local + work_group_offset()) / 8;
+        requests.requests[request_id].child = child_local + work_group_offset();
     }
 }
 
