@@ -108,6 +108,7 @@ void observe(vec3 x, uint i, uint depth, vec3 m){
 
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     bool should_request = 
+        octree[i].child == 0 && 
         requests.requests[request_id].child == 0 &&
         depth < expected_depth(x) &&
         (octree[i].header & node_empty_flag) == 0;
@@ -115,6 +116,7 @@ void observe(vec3 x, uint i, uint depth, vec3 m){
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child_local != 0 && should_request){
+        octree[i].child = child_local;
         octree_global.body[i + work_group_offset()].child = child_local;
 
         requests.requests[request_id].x = m;
@@ -135,8 +137,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
         // check that data isnt still pending
-        memoryBarrier();
-        octree_node_t next_node = octree_global.body[i + work_group_offset()];
+        octree_node_t next_node = octree[i];
         if ((next_node.header & node_unused_flag) != 0){
             break;
         }   
@@ -215,7 +216,6 @@ intersection_t static_raycast(ray_t r){
         aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
     ) / max(abs(r.d), epsilon);
 
-    intersection.hit = false;
     intersection.d = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
 
     return intersection;
@@ -341,12 +341,12 @@ void octree_update(){
     octree_node_t node = octree_global.body[i + work_group_offset()];
     octree[i] = node;
 
-    memoryBarrier();
-
     // submit free nodes to request queue
     if (i % 8 == 0 && (node.header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
+
+    barrier();
 
     // cull extraneous nodes
     // for (uint octant = 0; octant < 8; octant++){
