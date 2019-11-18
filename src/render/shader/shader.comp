@@ -109,9 +109,6 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     // octree.body[parent_node].header = 
     //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
-    // TODO: this shouldnt be here
-    depth--;
-
     // for vacant_node_index
     memoryBarrierShared();
 
@@ -137,7 +134,7 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
     uint i = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
-    uint depth = 1;
+    uint depth = 0;
 
     while (octree.body[i / 8 + work_group_offset()].children[i % 8].child != 0){
         uint child = octree.body[i / 8 + work_group_offset()].children[i % 8].child;
