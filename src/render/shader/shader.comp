@@ -131,9 +131,12 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint i = o.x | (o.y << 1) | (o.z << 2);
     uint depth = 0;
 
+    octree_node_t node;
+
     while (true){
-        uint child = octree_global.body[i + work_group_offset()].child;
-        if (child == 0 || (octree_global.body[child + work_group_offset()].header & node_unused_flag) != 0){
+        node = octree_global.body[i + work_group_offset()];
+
+        if (node.child == 0 || (octree_global.body[node.child + work_group_offset()].header & node_unused_flag) != 0){
             break;
         }   
 
@@ -142,12 +145,12 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         depth++;
 
         o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
-        i = child | o.x | (o.y << 1) | (o.z << 2);
+        i = node.child | o.x | (o.y << 1) | (o.z << 2);
     }
 
     observe(x, i, depth, aabb);
 
-    return octree[i];
+    return node;
 }
 
 vec4 colour(uint x){
