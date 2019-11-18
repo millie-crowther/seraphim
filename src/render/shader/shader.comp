@@ -337,13 +337,11 @@ void octree_update(){
     if (gl_LocalInvocationID.xy == uvec2(0)){
         vacant_node_index = 0;
     }
-    memoryBarrierShared();
-
-    uint local_id = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
-    if (local_id % 8 == 0 && (octree.body[local_id + work_group_offset()].header & node_unused_flag) != 0){
-        vacant_node_index = local_id;
+    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    if (i % 8 == 0 && (octree.body[i + work_group_offset()].header & node_unused_flag) != 0){
+        vacant_node_index = i;
     }
 
     // cull extraneous nodes
