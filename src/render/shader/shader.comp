@@ -104,10 +104,13 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8;
 }
 
-void observe(vec3 x, uint i, uint octant_index, uint depth, vec4 aabb){
+void observe(vec3 x, uint j, uint depth, vec4 aabb){
     // mark node as seen for expiration culling
     // octree.body[parent_node].header = 
     //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
+
+    uint i = j / 8;
+    uint octant_index = j % 8;
 
     // TODO: this shouldnt be here
     depth--;
@@ -158,7 +161,9 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
         octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
     }
 
-    observe(x, i, octant_index, depth, aabb);
+    uint j = i * 8 + octant_index;
+
+    observe(x, j, depth, aabb);
 
     return octree.body[i + work_group_offset()].children[octant_index];
 }
