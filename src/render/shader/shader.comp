@@ -125,18 +125,32 @@ void observe(vec3 x, uint i, uint depth, vec3 m){
 
 octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
+    uint depth = 0;
+    uint i = 0;
+    octree_node_t node;
     
     uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-    uint i = o.x | (o.y << 1) | (o.z << 2);
-    uint depth = 0;
+    i = o.x | (o.y << 1) | (o.z << 2);
 
-    octree_node_t node = octree_global.body[i + work_group_offset()];
+    octree_node_t next_node = octree_global.body[i + work_group_offset()];
+
+    if ((next_node.header & node_unused_flag) != 0){
+        
+    }   
 
     aabb.w /= 2;
     aabb.xyz += o * aabb.w;
 
-    for (; node.child != 0; depth++){
-        o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
+    node = next_node;
+
+    depth++;
+
+    for (;;){
+        if (depth > 0 && node.child == 0){
+            break;
+        }
+
+        uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
         octree_node_t next_node = octree_global.body[i + work_group_offset()];
@@ -150,11 +164,12 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
         node = next_node;
 
+        depth++;
     }
 
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
 
-    observe(x, i, depth, aabb.xyz);
+    observe(x, i, depth - 1, aabb.xyz);
 
     return node;
 }
