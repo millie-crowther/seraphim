@@ -133,22 +133,21 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
 octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
-    uint i = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
+    uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
+    uint i = o.x | (o.y << 1) | (o.z << 2);
     uint depth = 0;
 
-    while (octree.body[i / 8 + work_group_offset()].children[i % 8].child != 0){
+    while (true){
         uint child = octree.body[i / 8 + work_group_offset()].children[i % 8].child;
-
-        if ((octree.body[child / 8 + work_group_offset()].children[0].header & node_unused_flag) != 0){
+        if (child == 0 || (octree.body[child / 8 + work_group_offset()].children[0].header & node_unused_flag) != 0){
             break;
         }   
 
+        aabb.xyz += o * aabb.w;
+        aabb.w /= 2;
         depth++;
 
-        aabb.xyz += vec3(i & 1, (i & 2) >> 1, (i & 4) >> 2) * aabb.w;
-        aabb.w /= 2;
-
-        uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
+        o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
         i = child | o.x | (o.y << 1) | (o.z << 2);
     }
 
