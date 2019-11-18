@@ -38,7 +38,7 @@ struct octree_node_t {
     uint colour;
     uint child;
 };
-octree_node_t null_node;
+octree_node_t null_node = { 0, 0, 0, 0 };
 
 struct ray_t {
     vec3 x;
@@ -127,24 +127,8 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
     uint depth = 0;
     uint i = 0;
-    octree_node_t node;
+    octree_node_t node = null_node;
     
-    uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-    i = o.x | (o.y << 1) | (o.z << 2);
-
-    octree_node_t next_node = octree_global.body[i + work_group_offset()];
-
-    if ((next_node.header & node_unused_flag) != 0){
-        
-    }   
-
-    aabb.w /= 2;
-    aabb.xyz += o * aabb.w;
-
-    node = next_node;
-
-    depth++;
-
     for (;;){
         if (depth > 0 && node.child == 0){
             break;
