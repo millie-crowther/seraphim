@@ -124,28 +124,38 @@ void observe(vec3 x, uint i, uint depth, vec4 aabb){
     }
 }
 
+// TODO: this has gotten quite backwards, try to clean it up
 octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
-
+    
     uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
     uint i = o.x | (o.y << 1) | (o.z << 2);
     uint depth = 0;
 
-    octree_node_t node;
+    octree_node_t node = octree_global.body[i + work_group_offset()];
 
     while (true){
-        node = octree_global.body[i + work_group_offset()];
+        if (node.child == 0){
+            break;
+        }
 
-        if (node.child == 0 || (octree_global.body[node.child + work_group_offset()].header & node_unused_flag) != 0){
+        vec3 min = aabb.xyz + o * aabb.w;
+        float size = aabb.w / 2;
+
+        o = uvec3(greaterThan(x, min + size));
+        i = node.child | o.x | (o.y << 1) | (o.z << 2);
+
+        octree_node_t next_node = octree_global.body[i + work_group_offset()];
+
+        if ((next_node.header & node_unused_flag) != 0){
             break;
         }   
 
-        aabb.xyz += o * aabb.w;
-        aabb.w /= 2;
+        aabb.xyz = min;
+        aabb.w = size;
         depth++;
 
-        o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
-        i = node.child | o.x | (o.y << 1) | (o.z << 2);
+        node = next_node;
     }
 
     observe(x, i, depth, aabb);
