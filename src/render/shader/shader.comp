@@ -135,6 +135,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
         // check that data isnt still pending
+        memoryBarrier();
         octree_node_t next_node = octree_global.body[i + work_group_offset()];
         if ((next_node.header & node_unused_flag) != 0){
             break;
@@ -146,8 +147,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         aabb.xyz += o * aabb.w;
     }
 
+    // TODO: why is this line (and the depth - 1) necessary?
+    //       something a bit weird here
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
-
     observe(x, i, depth - 1, aabb.xyz);
 
     return node;
@@ -336,12 +338,13 @@ void octree_update(){
     vacant_node_index = 0;
 
     // load octree from global memory into shared memory
-    octree[i] = octree_global.body[i + work_group_offset()];
+    octree_node_t node = octree_global.body[i + work_group_offset()];
+    octree[i] = node;
 
     memoryBarrier();
 
     // submit free nodes to request queue
-    if (i % 8 == 0 && (octree[i].header & node_unused_flag) != 0){
+    if (i % 8 == 0 && (node.header & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
