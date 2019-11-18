@@ -124,7 +124,6 @@ void observe(vec3 x, uint i, uint depth, vec4 aabb){
     }
 }
 
-// TODO: this has gotten quite backwards, try to clean it up
 octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
     
@@ -134,11 +133,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
     octree_node_t node = octree_global.body[i + work_group_offset()];
 
-    while (true){
-        if (node.child == 0){
-            break;
-        }
-
+    for (; node.child != 0; depth++){
         vec3 min = aabb.xyz + o * aabb.w;
 
         o = uvec3(greaterThan(x, min + aabb.w / 2));
@@ -152,12 +147,8 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
         aabb.xyz = min;
         aabb.w /= 2;
-        depth++;
 
         node = next_node;
-        if (node.child == 0){
-            break;
-        }
     }
 
     observe(x, i, depth, aabb);
