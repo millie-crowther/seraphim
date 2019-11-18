@@ -142,10 +142,9 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     while (octree.body[i / 8 + work_group_offset()].children[i % 8].child != 0){
         uint child = octree.body[i / 8 + work_group_offset()].children[i % 8].child;
 
-        if ((octree.body[child / 8 + work_group_offset()].children[i % 8].header & node_unused_flag) != 0){
+        if ((octree.body[child / 8 + work_group_offset()].children[0].header & node_unused_flag) != 0){
             break;
         }   
-
 
         depth++;
 
