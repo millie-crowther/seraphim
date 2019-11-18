@@ -101,7 +101,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void observe(vec3 x, uint i, uint depth, vec4 aabb){
+void observe(vec3 x, uint i, uint depth, vec3 m){
     // mark node as seen for expiration culling
     // octree.body[parent_node].header = 
     //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
@@ -117,8 +117,7 @@ void observe(vec3 x, uint i, uint depth, vec4 aabb){
     if (child_local != 0 && should_request){
         octree_global.body[i + work_group_offset()].child = child_local;
 
-        vec3 octant = vec3(i & 1, (i & 2) >> 1, (i & 4) >> 2); 
-        requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
+        requests.requests[request_id].x = m;
         requests.requests[request_id].depth = depth + 1;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
@@ -134,9 +133,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     octree_node_t node = octree_global.body[i + work_group_offset()];
 
     for (; node.child != 0; depth++){
-        vec3 min = aabb.xyz + o * aabb.w;
+        vec3 m = aabb.xyz + o * aabb.w;
 
-        o = uvec3(greaterThan(x, min + aabb.w / 2));
+        o = uvec3(greaterThan(x, m + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
         octree_node_t next_node = octree_global.body[i + work_group_offset()];
@@ -145,13 +144,15 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
             break;
         }   
 
-        aabb.xyz = min;
+        aabb.xyz = m;
         aabb.w /= 2;
 
         node = next_node;
     }
 
-    observe(x, i, depth, aabb);
+    aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
+
+    observe(x, i, depth, aabb.xyz);
 
     return node;
 }
@@ -169,8 +170,6 @@ vec3 normal(uint n){
 }
 
 intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
-    bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
-
     if ((node.header & node_empty_flag) != 0){
         return null_intersection;
     }
@@ -180,7 +179,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float phi = float(node.geometry >> 24) / 255.0 - 0.5;
     phi *= sqrt3 * aabb.w;
 
-    vec3 c = aabb.xyz + vec3(octant) * aabb.w + aabb.w / 2;
+    vec3 c = aabb.xyz + aabb.w / 2;
     float d = dot(c, n) - phi;
 
     float xn = dot(r.x, n);
@@ -192,34 +191,34 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, node, lambda);
+    vec3 x = r.x + lambda * r.d;
+
+    if (
+        lambda >= 0 &&
+        all(greaterThanEqual(x, aabb.xyz)) &&
+        all(lessThanEqual(x, aabb.xyz + aabb.w))
+    ){
+        return intersection_t(true, x, node, lambda);
+    } else {
+        return null_intersection;
+    }
 }
 
 intersection_t static_raycast(ray_t r){
     vec4 aabb;
     octree_node_t node = octree_lookup(r.x, aabb);
 
-    bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
-    vec3 m = aabb.xyz + vec3(octant) * aabb.w;
-
     intersection_t intersection = plane_intersection(r, node, aabb);
-    if (
-        intersection.hit &&
-        intersection.x.x >= m.x && intersection.x.x <= m.x + aabb.w && 
-        intersection.x.y >= m.y && intersection.x.y <= m.y + aabb.w && 
-        intersection.x.z >= m.z && intersection.x.z <= m.z + aabb.w    
-    ){
+    if (intersection.hit){
         return intersection;
     }
 
     vec3 lambda_i = abs(
-        m + sign(max(r.d, 0)) * aabb.w - r.x
+        aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
     ) / max(abs(r.d), epsilon);
 
-    float lambda = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-
     intersection.hit = false;
-    intersection.d = lambda;
+    intersection.d = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
 
     return intersection;
 }
@@ -251,8 +250,6 @@ float shadow(vec3 l, vec3 p){
 }
 
 vec4 light(vec3 light_p, vec3 x, octree_node_t node){
-    //TODO: 1) blinn-phong lighting
-    //      2) more complex lighting
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
