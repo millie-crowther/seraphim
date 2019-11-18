@@ -38,10 +38,6 @@ struct octree_data_t {
     uint colour;
     uint child;
 };
-
-struct octree_node_t {
-    octree_data_t children[8];
-};
 octree_data_t null_node;
 
 struct ray_t {
@@ -82,7 +78,7 @@ layout( push_constant ) uniform push_constants {
 // buffers
 //
 layout(binding = 1) buffer octree_buffer {
-    octree_node_t body[];
+    octree_data_t body[];
 } octree;
 
 layout(binding = 2) buffer request_buffer {
@@ -101,7 +97,7 @@ uint expected_depth(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
 void observe(vec3 x, uint j, uint depth, vec4 aabb){
@@ -116,17 +112,17 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     bool should_request = 
         requests.requests[request_id].child == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[j / 8 + work_group_offset()].children[j % 8].header & node_empty_flag) == 0;
+        (octree.body[j + work_group_offset()].header & node_empty_flag) == 0;
 
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child_local != 0 && should_request){
-        octree.body[j / 8 + work_group_offset()].children[j % 8].child = child_local;
+        octree.body[j + work_group_offset()].child = child_local;
 
         vec3 octant = vec3(j & 1, (j & 2) >> 1, (j & 4) >> 2); 
         requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
         requests.requests[request_id].depth = depth + 1;
-        requests.requests[request_id].child = child_local / 8 + work_group_offset();
+        requests.requests[request_id].child = (child_local + work_group_offset()) / 8;
     }
 }
 
@@ -138,8 +134,8 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 0;
 
     while (true){
-        uint child = octree.body[i / 8 + work_group_offset()].children[i % 8].child;
-        if (child == 0 || (octree.body[child / 8 + work_group_offset()].children[0].header & node_unused_flag) != 0){
+        uint child = octree.body[i + work_group_offset()].child;
+        if (child == 0 || (octree.body[child + work_group_offset()].header & node_unused_flag) != 0){
             break;
         }   
 
@@ -153,7 +149,7 @@ octree_data_t octree_lookup(vec3 x, out vec4 aabb){
 
     observe(x, i, depth, aabb);
 
-    return octree.body[i / 8 + work_group_offset()].children[i % 8];
+    return octree.body[i + work_group_offset()];
 }
 
 vec4 colour(uint x){
@@ -346,7 +342,7 @@ void octree_update(){
     uint local_id = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     // submit free nodes to request queue
-    if (local_id % 8 == 0 && (octree.body[local_id / 8 + work_group_offset()].children[0].header & node_unused_flag) != 0){
+    if (local_id % 8 == 0 && (octree.body[local_id + work_group_offset()].header & node_unused_flag) != 0){
         vacant_node_index = local_id;
     }
 
