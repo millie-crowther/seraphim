@@ -32,13 +32,13 @@ struct request_t {
     uint unused3;
 };
 
-struct octree_data_t {
+struct octree_node_t {
     uint header;
     uint geometry;
     uint colour;
     uint child;
 };
-octree_data_t null_node;
+octree_node_t null_node;
 
 struct ray_t {
     vec3 x;
@@ -48,7 +48,7 @@ struct ray_t {
 struct intersection_t {
     bool hit;
     vec3 x;
-    octree_data_t data;
+    octree_node_t node;
     float d;
 };
 intersection_t null_intersection = intersection_t(
@@ -78,7 +78,7 @@ layout( push_constant ) uniform push_constants {
 // buffers
 //
 layout(binding = 1) buffer octree_buffer {
-    octree_data_t body[];
+    octree_node_t body[];
 } octree_global;
 
 layout(binding = 2) buffer request_buffer {
@@ -89,7 +89,7 @@ layout(binding = 2) buffer request_buffer {
 // shared memory
 //
 shared uint vacant_node_index;
-shared octree_data_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared octree_node_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     // TODO: remove magic numbers from here, also check for efficiency
@@ -127,7 +127,7 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     }
 }
 
-octree_data_t octree_lookup(vec3 x, out vec4 aabb){
+octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
     uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w));
@@ -165,16 +165,16 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r, octree_data_t data, vec4 aabb){
+intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
 
-    if ((data.header & node_empty_flag) != 0){
+    if ((node.header & node_empty_flag) != 0){
         return null_intersection;
     }
 
-    vec3 n = normal(data.geometry);
+    vec3 n = normal(node.geometry);
 
-    float phi = float(data.geometry >> 24) / 255.0 - 0.5;
+    float phi = float(node.geometry >> 24) / 255.0 - 0.5;
     phi *= sqrt3 * aabb.w;
 
     vec3 c = aabb.xyz + vec3(octant) * aabb.w + aabb.w / 2;
@@ -183,23 +183,23 @@ intersection_t plane_intersection(ray_t r, octree_data_t data, vec4 aabb){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, data, 0);
+        return intersection_t(true, r.x, node, 0);
     }
 
     float dn = dot(r.d, n);
     float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
 
-    return intersection_t(lambda >= 0, r.x + lambda * r.d, data, lambda);
+    return intersection_t(lambda >= 0, r.x + lambda * r.d, node, lambda);
 }
 
 intersection_t static_raycast(ray_t r){
     vec4 aabb;
-    octree_data_t data = octree_lookup(r.x, aabb);
+    octree_node_t node = octree_lookup(r.x, aabb);
 
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
     vec3 m = aabb.xyz + vec3(octant) * aabb.w;
 
-    intersection_t intersection = plane_intersection(r, data, aabb);
+    intersection_t intersection = plane_intersection(r, node, aabb);
     if (
         intersection.hit &&
         intersection.x.x >= m.x && intersection.x.x <= m.x + aabb.w && 
@@ -247,7 +247,7 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, octree_data_t data){
+vec4 light(vec3 light_p, vec3 x, octree_node_t node){
     //TODO: 1) blinn-phong lighting
     //      2) more complex lighting
     vec4 colour = vec4(50);
@@ -267,7 +267,7 @@ vec4 light(vec3 light_p, vec3 x, octree_data_t data){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(data.geometry);
+    vec3 n = normal(node.geometry);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -308,7 +308,7 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.data.colour) * light(vec3(-3, 3, -3), i.x, i.data);
+        out_colour = colour(i.node.colour) * light(vec3(-3, 3, -3), i.x, i.node);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }

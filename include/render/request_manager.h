@@ -27,7 +27,7 @@ private:
     };
 
     // fields
-    std::unique_ptr<buffer_t<octree_data_t>> octree_buffer;
+    std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
     std::unique_ptr<buffer_t<request_t>> request_buffer;
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     std::vector<request_t> requests;
