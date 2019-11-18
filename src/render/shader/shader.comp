@@ -135,7 +135,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 0;
 
     while (true){
-        uint child = octree[i + work_group_offset()].child;
+        uint child = octree_global.body[i + work_group_offset()].child;
         if (child == 0 || (octree_global.body[child + work_group_offset()].header & node_unused_flag) != 0){
             break;
         }   
