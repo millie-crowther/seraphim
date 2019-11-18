@@ -109,9 +109,6 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     // octree.body[parent_node].header = 
     //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
 
-    uint i = j / 8;
-    uint octant_index = j % 8;
-
     // TODO: this shouldnt be here
     depth--;
 
@@ -122,14 +119,14 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
     bool should_request = 
         requests.requests[request_id].child == 0 &&
         depth < expected_depth(x) &&
-        (octree.body[i + work_group_offset()].children[octant_index].header & node_empty_flag) == 0;
+        (octree.body[j / 8 + work_group_offset()].children[j % 8].header & node_empty_flag) == 0;
 
     uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
 
     if (child_local != 0 && should_request){
-        octree.body[i + work_group_offset()].children[octant_index].child = child_local;
+        octree.body[j / 8 + work_group_offset()].children[j % 8].child = child_local;
 
-        vec3 octant = vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2); 
+        vec3 octant = vec3(j & 1, (j & 2) >> 1, (j & 4) >> 2); 
         requests.requests[request_id].x = aabb.xyz + octant * aabb.w;
         requests.requests[request_id].depth = depth + 1;
         requests.requests[request_id].child = child_local / 8 + work_group_offset();
@@ -179,7 +176,6 @@ vec3 normal(uint n){
 
 intersection_t plane_intersection(ray_t r, octree_data_t data, vec4 aabb){
     bvec3 octant = greaterThan(r.x, aabb.xyz + aabb.w);
-    uint octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
 
     if ((data.header & node_empty_flag) != 0){
         return null_intersection;
