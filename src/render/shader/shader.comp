@@ -139,33 +139,30 @@ void observe(vec3 x, uint j, uint depth, vec4 aabb){
 octree_data_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), push_const.render_distance);
 
-    uint i = 0;
-    uint octant_index = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
+    uint i = uint(x.x > 0) + (uint(x.y > 0) << 1) + (uint(x.z > 0) << 2);
     uint depth = 1;
 
-    while (octree.body[i / 8 + work_group_offset()].children[octant_index].child != 0){
-        uint child = octree.body[i / 8 + work_group_offset()].children[octant_index].child;
+    while (octree.body[i / 8 + work_group_offset()].children[i % 8].child != 0){
+        uint child = octree.body[i / 8 + work_group_offset()].children[i % 8].child;
 
-        if ((octree.body[child / 8 + work_group_offset()].children[octant_index].header & node_unused_flag) != 0){
+        if ((octree.body[child / 8 + work_group_offset()].children[i % 8].header & node_unused_flag) != 0){
             break;
         }   
 
-        i = child;
 
         depth++;
 
-        aabb.xyz += vec3(octant_index & 1, (octant_index & 2) >> 1, (octant_index & 4) >> 2) * aabb.w;
+        aabb.xyz += vec3(i & 1, (i & 2) >> 1, (i & 4) >> 2) * aabb.w;
+        i = child;
 
         aabb.w /= 2;
         bvec3 octant = greaterThan(x, aabb.xyz + aabb.w);
-        octant_index = uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
+        i += uint(octant.x) | (uint(octant.y) << 1) | (uint(octant.z) << 2);
     }
 
-    uint j = i + octant_index;
+    observe(x, i, depth, aabb);
 
-    observe(x, j, depth, aabb);
-
-    return octree.body[i / 8 + work_group_offset()].children[octant_index];
+    return octree.body[i / 8 + work_group_offset()].children[i % 8];
 }
 
 vec4 colour(uint x){
