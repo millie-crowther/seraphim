@@ -49,11 +49,10 @@ struct intersection_t {
     bool hit;
     vec3 x;
     octree_node_t node;
-    float d;
 };
 intersection_t null_intersection = intersection_t(
     false, vec3(0),
-    null_node, 0
+    null_node
 );
 
 //
@@ -185,7 +184,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float xn = dot(r.x, n);
 
     if (xn < d){
-        return intersection_t(true, r.x, node, 0);
+        return intersection_t(true, r.x, node);
     }
 
     float dn = dot(r.d, n);
@@ -198,7 +197,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
         all(greaterThanEqual(x, aabb.xyz)) &&
         all(lessThanEqual(x, aabb.xyz + aabb.w))
     ){
-        return intersection_t(true, x, node, lambda);
+        return intersection_t(true, x, node);
     } else {
         return null_intersection;
     }
@@ -211,7 +210,6 @@ intersection_t raycast(ray_t r){
 
         intersection_t intersection = plane_intersection(r, node, aabb);    
         if (intersection.hit){
-            intersection.x = r.x + r.d * intersection.d;;
             return intersection;
         }
 
