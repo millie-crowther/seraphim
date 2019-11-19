@@ -34,7 +34,6 @@ struct octree_node_t {
     uint colour;
     uint child;
 };
-octree_node_t null_node = { 0, 0, 0, 0 };
 
 struct ray_t {
     vec3 x;
@@ -114,9 +113,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
     uint depth = 0;
     uint i = 0;
-    octree_node_t node = null_node;
+    octree_node_t node = { 0, 0, 0, 1 };
     
-    for (; depth == 0 || node.child != 0; depth++){
+    for (; node.child != 0; depth++){
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
@@ -133,6 +132,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         // refine bounding box
         aabb.w /= 2;
         aabb.xyz += o * aabb.w;
+
+        // mark hitmap
+        atomicOr(hitmap[i / 8 / 32], 1 << ((i / 8) % 32));
     }
 
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
@@ -177,7 +179,7 @@ intersection_t advance_ray(inout ray_t r){
 }
 
 intersection_t raycast(ray_t r){
-    intersection_t intersection = intersection_t(false, vec3(0), null_node);
+    intersection_t intersection = intersection_t(false, vec3(0), octree_node_t(0, 0, 0, 0));
 
     for (int i = 0; !intersection.hit && i < max_steps; i++){
         intersection = advance_ray(r);
