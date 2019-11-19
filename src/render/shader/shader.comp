@@ -16,7 +16,7 @@ const uint max_depth = 16;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
-const int max_steps = 128;
+const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 //
@@ -180,8 +180,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float phi = float(node.geometry >> 24) / 255.0 - 0.5;
     phi *= sqrt3 * aabb.w;
 
-    vec3 c = aabb.xyz + aabb.w / 2;
-    float d = dot(c, n) - phi;
+    float d = dot(aabb.xyz + aabb.w / 2, n) - phi;
 
     float xn = dot(r.x, n);
 
@@ -205,34 +204,22 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     }
 }
 
-intersection_t static_raycast(ray_t r){
-    vec4 aabb;
-    octree_node_t node = octree_lookup(r.x, aabb);
-
-    intersection_t intersection = plane_intersection(r, node, aabb);
-    if (intersection.hit){
-        return intersection;
-    }
-
-    vec3 lambda_i = abs(
-        aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
-    ) / max(abs(r.d), epsilon);
-
-    intersection.d = min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon;
-
-    return intersection;
-}
-
 intersection_t raycast(ray_t r){
     for (int i = 0; i < max_steps; i++){
-        intersection_t intersection = static_raycast(r);
+        vec4 aabb;
+        octree_node_t node = octree_lookup(r.x, aabb);
 
-        r.x += r.d * (intersection.d + epsilon);
-
+        intersection_t intersection = plane_intersection(r, node, aabb);    
         if (intersection.hit){
-            intersection.x = r.x;
+            intersection.x = r.x + r.d * intersection.d;;
             return intersection;
         }
+
+        vec3 lambda_i = abs(
+            aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
+        ) / max(abs(r.d), epsilon);
+
+        r.x += r.d * (min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon);
 
         // check if out of bounds
         vec3 a = abs(r.x);
@@ -334,7 +321,7 @@ void render(){
 //         (size_cull || expiry_cull);
 // }
 
-void octree_update(){
+void load_octree(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     vacant_node_index = 0;
@@ -348,8 +335,8 @@ void octree_update(){
         vacant_node_index = i;
     }
 
-    barrier();
 
+    barrier();
     // cull extraneous nodes
     // for (uint octant = 0; octant < 8; octant++){
     //     octree_node_t node = octree.body[global_id];
@@ -367,6 +354,6 @@ void octree_update(){
 }
 
 void main(){
-    octree_update();
+    load_octree();
     render();
 }
