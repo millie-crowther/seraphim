@@ -172,20 +172,11 @@ intersection_t advance_ray(inout ray_t r){
     vec3 lambda_i = abs(
         aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
     ) / max(abs(r.d), epsilon);
-
     float lambda_aabb = min(lambda_i.x, min(lambda_i.y, lambda_i.z));
 
     vec3 n = normal(node.geometry);
-
-    float phi = float(node.geometry >> 24) / 255.0 - 0.5;
-    phi *= sqrt3 * aabb.w;
-
-    float d = dot(aabb.xyz + aabb.w / 2, n) - phi;
-
-    float dn = dot(r.d, n);
-    float lambda_plane = min(d - dot(r.x, n), 0) / (dn + float(dn == 0) * epsilon);
-
-    vec3 p = r.x + lambda_plane * r.d;
+    float phi = (float(node.geometry >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
+    float lambda_plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
 
     bool hit = 
         (node.header & node_empty_flag) == 0 &&
