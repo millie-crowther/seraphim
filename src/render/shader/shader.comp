@@ -50,10 +50,6 @@ struct intersection_t {
     vec3 x;
     octree_node_t node;
 };
-intersection_t null_intersection = intersection_t(
-    false, vec3(0),
-    null_node
-);
 
 //
 // push constants
@@ -169,7 +165,7 @@ vec3 normal(uint n){
     ) / 127.5 - 1;
 }
 
-intersection_t plane_intersection(ray_t r){
+intersection_t advance_ray(inout ray_t r){
     vec4 aabb;
     octree_node_t node = octree_lookup(r.x, aabb);
 
@@ -198,20 +194,18 @@ intersection_t plane_intersection(ray_t r){
 
     float lambda = mix(lambda_aabb, lambda_plane, hit) + epsilon;
 
-    return intersection_t(hit, r.x + lambda * r.d, node);
+    r.x += r.d * lambda;
+    return intersection_t(hit, r.x, node);
 }
 
 intersection_t raycast(ray_t r){
-    for (int i = 0; i < max_steps; i++){
-        intersection_t intersection = plane_intersection(r);    
-        if (intersection.hit){
-            return intersection;
-        }
+    intersection_t intersection = intersection_t(false, vec3(0), null_node);
 
-        r.x = intersection.x;
+    for (int i = 0; !intersection.hit && i < max_steps; i++){
+        intersection = advance_ray(r);
     }
 
-    return null_intersection;
+    return intersection;
 }
 
 float shadow(vec3 l, vec3 p){
