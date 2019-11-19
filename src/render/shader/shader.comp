@@ -181,14 +181,8 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
 
     float d = dot(aabb.xyz + aabb.w / 2, n) - phi;
 
-    float xn = dot(r.x, n);
-
-    if (xn < d){
-        return intersection_t(true, r.x, node);
-    }
-
     float dn = dot(r.d, n);
-    float lambda = (d - xn) / (dn + float(dn == 0) * epsilon);
+    float lambda = min(d - dot(r.x, n), 0) / (dn + float(dn == 0) * epsilon);
 
     vec3 x = r.x + lambda * r.d;
 
