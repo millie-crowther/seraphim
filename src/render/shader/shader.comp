@@ -184,26 +184,23 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     float d = dot(aabb.xyz + aabb.w / 2, n) - phi;
 
     float dn = dot(r.d, n);
-    float lambda = min(d - dot(r.x, n), 0) / (dn + float(dn == 0) * epsilon);
+    float lambda_plane = min(d - dot(r.x, n), 0) / (dn + float(dn == 0) * epsilon);
 
-    // bool hit = lambda_plane < lambda_aabb;
-    // float
-    // // lambda = max(lambda, 0);
+    vec3 x = r.x + lambda_plane * r.d;
 
-    vec3 x = r.x + lambda * r.d;
-
-    if (
+    bool hit = 
         (node.header & node_empty_flag) == 0 &&
-        lambda >= 0 &&
-        all(greaterThanEqual(x, aabb.xyz)) &&
-        all(lessThanEqual(x, aabb.xyz + aabb.w))
-    ){
-        return intersection_t(true, x, node);
+        lambda_plane >= 0 &&
+        all(greaterThanEqual(r.x + lambda_plane * r.d, aabb.xyz)) &&
+        all(lessThanEqual(r.x + lambda_plane * r.d, aabb.xyz + aabb.w));
+
+    if (hit){
+        return intersection_t(hit, x, node);
     } else {
 
         r.x += r.d * (lambda_aabb + epsilon);
 
-        return intersection_t(false, r.x, node);
+        return intersection_t(hit, r.x, node);
     }
 }
 
