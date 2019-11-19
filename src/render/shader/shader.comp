@@ -220,12 +220,6 @@ intersection_t raycast(ray_t r){
         ) / max(abs(r.d), epsilon);
 
         r.x += r.d * (min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon);
-
-        // check if out of bounds
-        vec3 a = abs(r.x);
-        if (max(a.x, max(a.y, a.z)) > push_const.render_distance) { 
-            return null_intersection;
-        }
     }
 
     return null_intersection;
