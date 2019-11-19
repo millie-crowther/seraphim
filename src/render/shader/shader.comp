@@ -74,7 +74,7 @@ layout(binding = 2) buffer request_buffer {
 // shared memory
 shared uint vacant_node_index;
 shared octree_node_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared uint hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 32 / 8];
+shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - push_const.camera_position;
@@ -86,10 +86,6 @@ uint work_group_offset(){
 }
 
 void observe(vec3 x, uint i, uint depth, vec3 m){
-    // mark node as seen for expiration culling
-    // octree.body[parent_node].header = 
-    //     ((push_const.current_frame - 1) << 24) | (octree.body[parent_node].header & 0xFFFFFF);
-
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     bool should_request = 
         octree[i].child == 0 && 
@@ -134,7 +130,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
         aabb.xyz += o * aabb.w;
 
         // mark hitmap
-        atomicOr(hitmap[i / 8 / 32], 1 << ((i / 8) % 32));
+        hitmap[i / 8] = true;
     }
 
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
@@ -259,27 +255,6 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-// bool should_cull_node(octree_node_t node, uint octant){
-//     uint depth = node.header & 0xFF;
-//     bool size_cull = depth > expected_depth(node.x + push_const.render_distance / (1 << depth));
-
-//     uint child_index = node.children[octant].child + work_group_offset();
-//     octree_node_t child_node = octree.body[child_index];
-//     bool expiry_cull = (child_node.header >> 24) == (push_const.current_frame & 0xFF);
-
-//     for (uint i = 0; i < 8; i++){
-//         if (child_node.children[i].child != 0){
-//             return false;
-//         }
-//     }
-
-//     return 
-//         node.children[octant].child != 0 &&
-//         (node.header & node_unused_flag) == 0 &&
-//         (node.header & node_pending_data_flag) == 0 &&
-//         (size_cull || expiry_cull);
-// }
-
 void load_octree(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
@@ -294,25 +269,15 @@ void load_octree(){
         vacant_node_index = i;
     }
 
-
     barrier();
-    // cull extraneous nodes
-    // for (uint octant = 0; octant < 8; octant++){
-    //     octree_node_t node = octree.body[global_id];
+}
 
-    //     if (should_cull_node(node, octant)){
-    //         uint child = node.children[octant].child + work_group_offset();
-    //         octree.body[global_id].children[octant].child = 0;
-    //         octree.body[child].header |= node_unused_flag;
-            
-    //         // reset expiration culling counter
-    //         octree.body[global_id].header = 
-    //             ((push_const.current_frame - 1) << 24) | (node.header & 0xFFFFFF);
-    //     }
-    // }  
+void cull(){
+
 }
 
 void main(){
     load_octree();
     render();
+    cull();
 }
