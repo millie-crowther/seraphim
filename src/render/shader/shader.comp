@@ -169,9 +169,7 @@ intersection_t advance_ray(inout ray_t r){
     vec4 aabb;
     octree_node_t node = octree_lookup(r.x, aabb);
 
-    vec3 lambda_i = abs(
-        aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
-    ) / max(abs(r.d), epsilon);
+    vec3 lambda_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
     float lambda_aabb = min(lambda_i.x, min(lambda_i.y, lambda_i.z));
 
     vec3 n = normal(node.geometry);
@@ -255,7 +253,9 @@ void render(){
 
     vec3 forward = cross(right, up);
 
+    // create ray direction vector. remove zero components for efficiency later on
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
+    d += vec3(equal(d, vec3(0))) * epsilon;
     
     vec4 out_colour = sky();
 
