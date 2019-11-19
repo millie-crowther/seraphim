@@ -190,7 +190,13 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     ){
         return intersection_t(true, x, node);
     } else {
-        return null_intersection;
+        vec3 lambda_i = abs(
+            aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
+        ) / max(abs(r.d), epsilon);
+
+        r.x += r.d * (min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon);
+
+        return intersection_t(false, r.x, node);
     }
 }
 
@@ -204,11 +210,7 @@ intersection_t raycast(ray_t r){
             return intersection;
         }
 
-        vec3 lambda_i = abs(
-            aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x
-        ) / max(abs(r.d), epsilon);
-
-        r.x += r.d * (min(lambda_i.x, min(lambda_i.y, lambda_i.z)) + epsilon);
+        r.x = intersection.x;
     }
 
     return null_intersection;
