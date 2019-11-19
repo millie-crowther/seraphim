@@ -272,7 +272,7 @@ void load_octree(uint i){
 
 void cull(uint i){
     // TODO: cull
-    // if (!hitmap[i / 8]){
+    // if (i % 8 == 0 && !hitmap[i / 8]){
     //     octree_global.body[i + work_group_offset()].header |= node_unused_flag;
     // }
 }
