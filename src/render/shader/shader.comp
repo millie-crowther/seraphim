@@ -170,10 +170,6 @@ vec3 normal(uint n){
 }
 
 intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
-    if ((node.header & node_empty_flag) != 0){
-        return null_intersection;
-    }
-
     vec3 n = normal(node.geometry);
 
     float phi = float(node.geometry >> 24) / 255.0 - 0.5;
@@ -187,6 +183,7 @@ intersection_t plane_intersection(ray_t r, octree_node_t node, vec4 aabb){
     vec3 x = r.x + lambda * r.d;
 
     if (
+        (node.header & node_empty_flag) == 0 &&
         lambda >= 0 &&
         all(greaterThanEqual(x, aabb.xyz)) &&
         all(lessThanEqual(x, aabb.xyz + aabb.w))
