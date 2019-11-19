@@ -255,9 +255,7 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-void load_octree(){
-    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
-
+void load_octree(uint i){
     vacant_node_index = 0;
 
     // load octree from global memory into shared memory
@@ -269,15 +267,24 @@ void load_octree(){
         vacant_node_index = i;
     }
 
-    barrier();
+    hitmap[i / 8] = false;
 }
 
-void cull(){
-
+void cull(uint i){
+    // TODO: cull
+    // if (!hitmap[i / 8]){
+    //     octree_global.body[i + work_group_offset()].header |= node_unused_flag;
+    // }
 }
 
 void main(){
-    load_octree();
+    uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+
+    load_octree(i);
+
+    barrier();
     render();
-    cull();
+    barrier();
+
+    cull(i);
 }
