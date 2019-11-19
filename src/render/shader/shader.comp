@@ -109,9 +109,9 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
     uint depth = 0;
     uint i = 0;
-    octree_node_t node = { 0, 0, 0, 1 };
+    octree_node_t node = { 0, 0, 0, 0 };
     
-    for (; node.child != 0; depth++){
+    for (; depth == 0 || node.child != 0; depth++){
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
