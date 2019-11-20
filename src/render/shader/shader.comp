@@ -87,15 +87,9 @@ uint work_group_offset(){
 
 void observe(vec3 x, uint i, uint depth, vec3 m){
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
-    bool should_request = 
-        octree[i].child == 0 && 
-        requests.requests[request_id].child == 0 &&
-        depth <= expected_depth(x) &&
-        (octree[i].header & node_empty_flag) == 0;
+    uint child_local = atomicAnd(vacant_node_index, 0); 
 
-    uint child_local = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
-
-    if (child_local != 0 && should_request){
+    if (child_local != 0){
         octree[i].child = child_local;
         octree_global.body[i + work_group_offset()].child = child_local;
 
@@ -110,15 +104,22 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint depth = 0;
     uint i = 0;
     octree_node_t node = { 0, 0, 0, 0 };
+
+    uint expected_depth = expected_depth(x);
     
-    for (; depth == 0 || node.child != 0; depth++){
+    for (; depth <= expected_depth; depth++){
+        if (depth != 0 && node.child == 0){
+            if ((node.header & node_empty_flag) == 0){
+                observe(x, i, depth, aabb.xyz);
+            }
+            break;
+        }
+
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
         i = node.child | o.x | (o.y << 1) | (o.z << 2);
 
-        // check that child data is present, possible that:
-        // 1) CPU hasn't yet streamed in requested data
-        // 2) child has already been culled for being too high resolution 
+        // check for presence of child data
         octree_node_t next_node = octree[i];
         if ((next_node.header & node_unused_flag) != 0){
             break;
@@ -134,8 +135,6 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     }
 
     aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
-
-    observe(x, i, depth, aabb.xyz);
 
     return node;
 }
