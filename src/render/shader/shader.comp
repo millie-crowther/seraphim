@@ -28,11 +28,6 @@ struct request_t {
     uint unused3;
 };
 
-struct octree_node_t {
-    uint header;
-    uint geometry;
-};
-
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -41,7 +36,7 @@ struct ray_t {
 struct intersection_t {
     bool hit;
     vec3 x;
-    octree_node_t node;
+    uvec2 node;
 };
 
 // push constants
@@ -62,7 +57,7 @@ layout( push_constant ) uniform push_constants {
 
 // buffers
 layout(binding = 1) buffer octree_buffer {
-    octree_node_t body[];
+    uvec2 body[];
 } octree_global;
 
 layout(binding = 2) buffer request_buffer {
@@ -71,7 +66,7 @@ layout(binding = 2) buffer request_buffer {
 
 // shared memory
 shared uint vacant_node_index;
-shared octree_node_t octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
@@ -88,7 +83,7 @@ void request_data(uint i, uint depth, vec3 m){
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
-        octree_global.body[i + work_group_offset()].header |= child_local;
+        octree_global.body[i + work_group_offset()].x |= child_local;
 
         requests.requests[request_id].x = m;
         requests.requests[request_id].depth = depth;
@@ -96,17 +91,17 @@ void request_data(uint i, uint depth, vec3 m){
     }
 }
 
-octree_node_t octree_lookup(vec3 x, out vec4 aabb){
+uvec2 octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
     uint depth = 0;
     uint i = 0;
-    octree_node_t node = { 0, 0 };
+    uvec2 node = { 0, 0 };
 
     uint expected_depth = expected_depth(x);
     
     for (; depth <= expected_depth; depth++){
-        if (depth != 0 && (node.header & 0xFFFF) == 0){
-            if ((node.header & node_empty_flag) == 0){
+        if (depth != 0 && (node.x & 0xFFFF) == 0){
+            if ((node.x & node_empty_flag) == 0){
                 request_data(i, depth, aabb.xyz);
             }
             break;
@@ -114,11 +109,11 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-        i = (node.header & 0xFFFF) | o.x | (o.y << 1) | (o.z << 2);
+        i = (node.x & 0xFFFF) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
-        octree_node_t next_node = octree[i];
-        if ((next_node.header & node_unused_flag) != 0){
+        uvec2 next_node = octree[i];
+        if ((next_node.x & node_unused_flag) != 0){
             break;
         }   
         node = next_node;
@@ -149,26 +144,26 @@ vec3 normal(uint n){
 intersection_t advance_ray(inout ray_t r){
     // lookup octree node
     vec4 aabb;
-    octree_node_t node = octree_lookup(r.x, aabb);
+    uvec2 node = octree_lookup(r.x, aabb);
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
     float cube = min(cube_i.x, min(cube_i.y, cube_i.z));
 
     // calculate distance to intersect plane
-    vec3 n = normal(node.geometry);
-    float phi = (float(node.geometry >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
+    vec3 n = normal(node.y);
+    float phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
     float plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
-    bool hit = (node.header & node_empty_flag) == 0 && plane >= 0 && plane < cube;
+    bool hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
     r.x += r.d * (mix(cube, plane, hit) + epsilon);
     
     return intersection_t(hit, r.x, node);
 }
 
 intersection_t raycast(ray_t r){
-    intersection_t intersection = intersection_t(false, vec3(0), octree_node_t(0, 0));
+    intersection_t intersection = intersection_t(false, vec3(0), uvec2(0));
 
     for (int i = 0; !intersection.hit && i < max_steps; i++){
         intersection = advance_ray(r);
@@ -182,7 +177,7 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, octree_node_t node){
+vec4 light(vec3 light_p, vec3 x, uvec2 node){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
@@ -200,7 +195,7 @@ vec4 light(vec3 light_p, vec3 x, octree_node_t node){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(node.geometry);
+    vec3 n = normal(node.y);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -254,11 +249,11 @@ void load_octree(uint i){
     hitmap[i / 8] = false;
 
     // load octree from global memory into shared memory
-    octree_node_t node = octree_global.body[i + work_group_offset()];
+    uvec2 node = octree_global.body[i + work_group_offset()];
     octree[i] = node;
 
     // submit free nodes to request queue
-    if (i % 8 == 0 && (node.header & node_unused_flag) != 0){
+    if (i % 8 == 0 && (node.x & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 }
