@@ -10,8 +10,8 @@
 
 class octree_node_t {
 private:
-    static constexpr uint8_t node_empty_flag  = 1 << 0;
-    static constexpr uint8_t node_unused_flag = 1 << 1;
+    static constexpr uint32_t node_empty_flag  = 1 << 8;
+    static constexpr uint32_t node_unused_flag = 1 << 9;
 
     uint32_t header;
     uint32_t geometry;
