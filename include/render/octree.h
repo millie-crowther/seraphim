@@ -8,10 +8,15 @@
 #include "maths/vec.h"
 #include "sdf/sdf.h"
 
+/*
+    ------EU -------- -------- CCCCCCCC
+    XXXXXXXX YYYYYYYY ZZZZZZZZ PPPPPPPP
+*/
+
 class octree_node_t {
 private:
-    static constexpr uint32_t node_empty_flag  = 1 << 8;
-    static constexpr uint32_t node_unused_flag = 1 << 9;
+    static constexpr uint32_t node_empty_flag  = 1 << 24;
+    static constexpr uint32_t node_unused_flag = 1 << 25;
 
     uint32_t header;
     uint32_t geometry;

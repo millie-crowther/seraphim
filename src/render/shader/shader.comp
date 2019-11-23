@@ -5,8 +5,8 @@ layout (local_size_x = 32, local_size_y = 32) in;
 layout (binding = 10) uniform writeonly image2D render_texture;
 
 // constants
-const uint node_empty_flag = 1 << 8;
-const uint node_unused_flag = 1 << 9;
+const uint node_empty_flag = 1 << 24;
+const uint node_unused_flag = 1 << 25;
 
 const uvec2 work_group_count = uvec2(8);
 const float sqrt3 = 1.73205080757;
@@ -32,7 +32,7 @@ struct octree_node_t {
     uint header;
     uint geometry;
     uint colour;
-    uint child;
+    uint _;
 };
 
 struct ray_t {
@@ -90,8 +90,7 @@ void request_data(uint i, uint depth, vec3 m){
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
-        octree[i].child = child_local;
-        octree_global.body[i + work_group_offset()].child = child_local;
+        octree_global.body[i + work_group_offset()].header |= child_local;
 
         requests.requests[request_id].x = m;
         requests.requests[request_id].depth = depth;
@@ -108,7 +107,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
     uint expected_depth = expected_depth(x);
     
     for (; depth <= expected_depth; depth++){
-        if (depth != 0 && node.child == 0){
+        if (depth != 0 && (node.header & 0xFFFF) == 0){
             if ((node.header & node_empty_flag) == 0){
                 request_data(i, depth, aabb.xyz);
             }
@@ -117,7 +116,7 @@ octree_node_t octree_lookup(vec3 x, out vec4 aabb){
 
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-        i = node.child | o.x | (o.y << 1) | (o.z << 2);
+        i = (node.header & 0xFFFF) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
         octree_node_t next_node = octree[i];
