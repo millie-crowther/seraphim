@@ -20,8 +20,6 @@ private:
 
     uint32_t header;
     uint32_t geometry;
-    uint32_t colour;
-    uint32_t child;    
     
     std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 

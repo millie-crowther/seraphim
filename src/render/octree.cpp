@@ -5,7 +5,6 @@
 #include "sdf/compose.h"
 
 octree_node_t::octree_node_t(){
-    child = 0;
     header = node_unused_flag;
 }
 
@@ -34,7 +33,6 @@ octree_node_t::create(const f32vec3_t & x, uint8_t depth, const std::vector<std:
 }
 
 octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
-    child = 0;
     header = 0;
     
     std::vector<std::shared_ptr<sdf3_t>> new_sdfs;
@@ -75,7 +73,7 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, const s
     u8vec4_t normal(n[0], n[1], n[2], p);
     
     geometry = *reinterpret_cast<uint32_t *>(&normal);
-    this->colour = *reinterpret_cast<uint32_t *>(&colour);
+    // this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }
 
 std::tuple<bool, bool> 
