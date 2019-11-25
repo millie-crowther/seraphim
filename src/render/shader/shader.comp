@@ -7,6 +7,7 @@ layout (binding = 10) uniform writeonly image2D render_texture;
 // constants
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
+const uint node_child_mask = 0xFFFF;
 
 const uvec2 work_group_count = uvec2(8);
 const float sqrt3 = 1.73205080757;
@@ -100,7 +101,7 @@ uvec2 octree_lookup(vec3 x, out vec4 aabb){
     uint expected_depth = expected_depth(x);
     
     for (; depth <= expected_depth; depth++){
-        if (depth != 0 && (node.x & 0xFFFF) == 0){
+        if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
                 request_data(i, depth, aabb.xyz);
             }
@@ -109,7 +110,7 @@ uvec2 octree_lookup(vec3 x, out vec4 aabb){
 
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-        i = (node.x & 0xFFFF) | o.x | (o.y << 1) | (o.z << 2);
+        i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
         uvec2 next_node = octree[i];
