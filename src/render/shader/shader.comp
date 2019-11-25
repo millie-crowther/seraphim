@@ -259,11 +259,11 @@ void load_octree(uint i){
 }
 
 void cull(uint i){
-    // uint c = octree[i].child;
-    // if (!hitmap[c / 8]){
-    //     octree_global.body[i + work_group_offset()].child = 0;
-    //     octree_global.body[c + work_group_offset()].header |= node_unused_flag;
-    // }
+    uint c = (octree[i].x & node_child_mask);
+    if (!hitmap[c / 8]){
+        octree_global.body[i + work_group_offset()].x &= ~node_child_mask;
+        octree_global.body[c + work_group_offset()].x |= node_unused_flag;
+    }
 }
 
 void main(){
