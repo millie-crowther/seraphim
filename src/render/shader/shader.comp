@@ -72,7 +72,7 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - push_const.camera_position;
-    return 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc))));
+    return max(1, 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
 }
 
 uint work_group_offset(){
@@ -94,13 +94,12 @@ void request_data(uint i, uint depth, vec3 m){
 
 uvec2 octree_lookup(vec3 x, out vec4 aabb){
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
-    uint depth = 0;
-    uint i = 0;
-    uvec2 node = { 0, 0 };
+    uint i;
+    uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
     
-    for (; depth <= expected_depth; depth++){
+    for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
                 request_data(i, depth, aabb.xyz);
