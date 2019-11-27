@@ -40,6 +40,11 @@ struct intersection_t {
     uvec2 node;
 };
 
+struct renderable_t {
+    float size;
+    uint root;
+};
+
 // push constants
 layout( push_constant ) uniform push_constants {
     uvec2 window_size;
