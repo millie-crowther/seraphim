@@ -21,9 +21,9 @@ const float epsilon = 1.0 / 256.0;
 // types 
 struct request_t {
     vec3 x;
-    uint child;
-
     uint depth;
+
+    uint child;
     uint unused2;
     uint objectID;
     uint unused3;
@@ -40,7 +40,7 @@ struct intersection_t {
     uvec2 node;
 };
 
-struct renderable_t {
+struct object_t {
     float size;
     uint root;
 };
@@ -61,12 +61,13 @@ layout( push_constant ) uniform push_constants {
     float dummy4;
 } push_const;
 
-// buffers
-layout(binding = 1) buffer octree_buffer {
+// input buffers
+layout (binding = 1) buffer octree_buffer {
     uvec2 body[];
 } octree_global;
 
-layout(binding = 2) buffer request_buffer {
+// output buffers
+layout (binding = 2) buffer request_buffer {
     request_t requests[];
 } requests;
 
@@ -95,6 +96,10 @@ void request_data(uint i, uint depth, vec3 m){
         requests.requests[request_id].depth = depth;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
+}
+
+object_t nearest_object(vec3 x){
+    return object_t(0, 0);
 }
 
 uvec2 octree_lookup(vec3 x, out vec4 aabb){

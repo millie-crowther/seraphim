@@ -98,10 +98,7 @@ public:
             vkUnmapMemory(device->get_device(), memory);
         
         } else {
-            buffer_t<T> staging_buffer(
-                allocator, device, source.size(),
-                VMA_MEMORY_USAGE_CPU_ONLY
-            );
+            buffer_t<T> staging_buffer(allocator, device, source.size(), VMA_MEMORY_USAGE_CPU_ONLY);
 
             staging_buffer.write(source, 0, pool, queue);
             staging_buffer.copy(*this, source.size(), offset, pool, queue); 
