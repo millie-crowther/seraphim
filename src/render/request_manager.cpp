@@ -70,7 +70,10 @@ request_manager_t::request_manager_t(
         }
     }
 
-    std::vector<octree_node_t> root_node = octree_node_t::create(f32vec3_t(-hyper::rho), 0, initial_sdfs);
+    std::vector<octree_node_t> root_node = octree_node_t::create(
+        f32vec4_t(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho), 
+        initial_sdfs
+    );
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
 
@@ -104,7 +107,7 @@ request_manager_t::handle_requests(){
             request_t r = requests[work_group_id];
 
             if (r.child != 0){
-                std::vector<octree_node_t> new_node = octree_node_t::create(r.x, r.depth, strong_sdfs);
+                std::vector<octree_node_t> new_node = octree_node_t::create(r.aabb, strong_sdfs);
 
                 octree_buffer->write(new_node, r.child, pool, queue);
                 request_buffer->write({ blank_request }, work_group_id, pool, queue);

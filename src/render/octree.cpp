@@ -9,12 +9,11 @@ octree_node_t::octree_node_t(){
 }
 
 std::vector<octree_node_t>
-octree_node_t::create(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
+octree_node_t::create(const f32vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs){
     std::vector<octree_node_t> children;
-    vec4_t aabb(x[0], x[1], x[2], 2 * hyper::rho / (1 << depth));
     
     for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t octant_aabb = aabb;
+        vec4_t octant_aabb = aabb.cast<double>();
         octant_aabb[3] /= 2;
 
         vec3_t vertex(aabb[0], aabb[1], aabb[2]);

@@ -27,7 +27,7 @@ public:
     octree_node_t();
     octree_node_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
 
-    static std::vector<octree_node_t> create(const f32vec3_t & x, uint8_t depth, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
+    static std::vector<octree_node_t> create(const f32vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
 };
 
 #endif

@@ -13,8 +13,7 @@ class request_manager_t {
 private:
     // types
     struct request_t {
-        f32vec3_t x;
-        uint32_t depth;
+        f32vec4_t aabb;
 
         uint32_t child;
         uint32_t unused2;
