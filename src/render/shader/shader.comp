@@ -120,11 +120,10 @@ uvec2 octree_lookup(vec3 x, out vec4 aabb){
         i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
-        uvec2 next_node = octree[i];
-        if ((next_node.x & node_unused_flag) != 0){
+        if ((octree[i].x & node_unused_flag) != 0){
             break;
         }   
-        node = next_node;
+        node = octree[i];
 
         // refine bounding box
         aabb.w /= 2;
