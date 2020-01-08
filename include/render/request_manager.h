@@ -17,11 +17,12 @@ private:
 
         uint32_t child;
         uint32_t unused2;
-        uint32_t renderable;
+        uint32_t objectID;
         uint32_t unused3;
 
         request_t(){
             child = 0;
+            objectID = 0;
         }
     };
 
