@@ -69,31 +69,32 @@ octree_node_t::intersects(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) cons
 
     double p = sdf->phi(c);
 
-    // containment check upper bound
+    // 1. is aabb definitely fully inside SDF?
     if (p <= -upper_radius){
         return true;
     }
 
-    // intersection check lower bound
+    // 2. is it possible that part of aabb is partially outside SDF?
     if (std::abs(p) <= lower_radius){
         return false;
     }
 
-    // intersection check upper bound
+    // 3. is aabb definitely fully outside SDF?
     if (p >= upper_radius){
         return true;
     }
 
-    // containment check precise
+    // 4. same as test 1 but more expensive and precise
     double d = (sdf->normal(c) * p).chebyshev_norm();
     if (p < 0 && d > lower_radius){
         return true;
     }
 
-    // intersection check precise
+    // 5. same as test 2 but more precise (again, i think)
     if (d <= lower_radius){
         return false;
     }
 
+    // 6. default case
     return true;
 }
