@@ -40,7 +40,7 @@ struct intersection_t {
 };
 
 struct object_t {
-    float size;
+    uint id;
     uint root;
 };
 
@@ -75,6 +75,10 @@ shared uint vacant_node_index;
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
+object_t get_object_at(vec3 x){
+    return object_t(0, 0);
+}
+
 uint expected_depth(vec3 x){
     vec3 xc = x - push_const.camera_position;
     return max(1, 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
@@ -84,26 +88,24 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void request_data(uint i, vec4 aabb){
+void request_data(uint i, uint objectID, vec4 aabb){
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
         octree_global.body[i + work_group_offset()].x |= child_local;
 
-        requests.requests[request_id].objectID = 0; // TODO: use appropriate object ID
+        requests.requests[request_id].objectID = objectID;
         requests.requests[request_id].aabb = aabb;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
 }
 
-object_t nearest_object(vec3 x){
-    return object_t(0, 0);
-}
-
 uvec2 octree_lookup(vec3 x, out vec4 aabb){
+    object_t object = get_object_at(x);
+
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
-    uint i;
+    uint i = object.root;
     uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
@@ -111,7 +113,7 @@ uvec2 octree_lookup(vec3 x, out vec4 aabb){
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, aabb);
+                request_data(i, object.id, aabb);
             }
             break;
         }

@@ -38,7 +38,7 @@ octree_node_t::create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> weak_sdf){
 octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::shared_ptr<sdf3_t> sdf){
     header = 0;
 
-    if (intersects(aabb, sdf)){
+    if (!intersects(aabb, sdf)){
         header = node_empty_flag;
     }
 
@@ -71,30 +71,30 @@ octree_node_t::intersects(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) cons
 
     // 1. is aabb definitely fully inside SDF?
     if (p <= -upper_radius){
-        return true;
+        return false;
     }
 
     // 2. is it possible that part of aabb is partially outside SDF?
     if (std::abs(p) <= lower_radius){
-        return false;
+        return true;
     }
 
     // 3. is aabb definitely fully outside SDF?
     if (p >= upper_radius){
-        return true;
+        return false;
     }
 
     // 4. same as test 1 but more expensive and precise
     double d = (sdf->normal(c) * p).chebyshev_norm();
     if (p < 0 && d > lower_radius){
-        return true;
+        return false;
     }
 
     // 5. same as test 2 but more precise (again, i think)
     if (d <= lower_radius){
-        return false;
+        return true;
     }
 
     // 6. default case
-    return true;
+    return false;
 }

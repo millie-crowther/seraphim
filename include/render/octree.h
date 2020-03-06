@@ -1,7 +1,6 @@
 #ifndef OCTREE_H
 #define OCTREE_H
 
-#include <array>
 #include <memory>
 
 #include "sdf/sdf.h"
