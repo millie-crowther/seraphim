@@ -3,9 +3,7 @@
 
 #include <array>
 #include <memory>
-#include <tuple>
 
-#include "maths/vec.h"
 #include "sdf/sdf.h"
 
 /*

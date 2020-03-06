@@ -51,12 +51,13 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::sh
     p = std::max(0.0, std::min(p, 255.0)); 
 
     vec3_t n = sdf->normal(c);
-    u8vec4_t colour = painter_t<3>().colour(vertex);
 
     n = (n / 2 + 0.5) * 255;
     u8vec4_t normal(n[0], n[1], n[2], p);
     
     geometry = *reinterpret_cast<uint32_t *>(&normal);
+
+    // u8vec4_t colour = painter_t<3>().colour(vertex);
     // this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }
 
