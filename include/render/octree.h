@@ -21,13 +21,13 @@ private:
     uint32_t header;
     uint32_t geometry;
     
-    std::tuple<bool, bool> intersects_contains(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+    bool intersects(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
 
 public:
     octree_node_t();
-    octree_node_t(const vec4_t & aabb, const vec3_t & vertex, const std::vector<std::shared_ptr<sdf3_t>> & sdf);
+    octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::shared_ptr<sdf3_t> sdf);
 
-    static std::vector<octree_node_t> create(const f32vec4_t & aabb, const std::vector<std::shared_ptr<sdf3_t>> & sdfs);
+    static std::vector<octree_node_t> create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> sdf);
 };
 
 #endif

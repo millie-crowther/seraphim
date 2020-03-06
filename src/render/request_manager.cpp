@@ -63,16 +63,9 @@ request_manager_t::request_manager_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    std::vector<std::shared_ptr<sdf3_t>> initial_sdfs;
-    for (auto sdf_ptr : sdfs){
-        if (auto sdf = sdf_ptr.lock()){
-            initial_sdfs.push_back(sdf);
-        }
-    }
-
     std::vector<octree_node_t> root_node = octree_node_t::create(
         f32vec4_t(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho), 
-        initial_sdfs
+        sdfs[0] // TODO
     );
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
@@ -94,20 +87,13 @@ request_manager_t::handle_requests(){
 
     request_buffer->read(requests);
 
-    std::vector<std::shared_ptr<sdf3_t>> strong_sdfs;
-    for (auto sdf_ptr : sdfs){
-        if (auto sdf = sdf_ptr.lock()){
-            strong_sdfs.push_back(sdf);
-        }
-    }
-
     for (uint32_t x = 0; x < work_group_count[0]; x++){
         for (uint32_t y = 0; y < work_group_count[1]; y++){
             uint32_t work_group_id = x * work_group_count[1] + y;
             request_t r = requests[work_group_id];
 
             if (r.child != 0){
-                std::vector<octree_node_t> new_node = octree_node_t::create(r.aabb, strong_sdfs);
+                std::vector<octree_node_t> new_node = octree_node_t::create(r.aabb, sdfs[r.objectID]);
 
                 octree_buffer->write(new_node, r.child, pool, queue);
                 request_buffer->write({ blank_request }, work_group_id, pool, queue);

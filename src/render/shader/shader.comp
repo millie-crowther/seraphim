@@ -91,6 +91,7 @@ void request_data(uint i, vec4 aabb){
     if (child_local != 0){
         octree_global.body[i + work_group_offset()].x |= child_local;
 
+        requests.requests[request_id].objectID = 0; // TODO: use appropriate object ID
         requests.requests[request_id].aabb = aabb;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
@@ -156,6 +157,10 @@ intersection_t advance_ray(inout ray_t r){
     // calculate distance to edge of bounding cube
     vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
     float cube = min(cube_i.x, min(cube_i.y, cube_i.z));
+    
+    // TODO: 
+    //      early finish if node empty flag detected???
+    //      depending on GPU black magic it may or may not improve performance
 
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
