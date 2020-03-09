@@ -77,7 +77,11 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 object_t get_object_at(vec3 x){
-    return object_t(0, 0);
+    if (x.y < 0.0001){
+        return object_t(1, 1);
+    } else {
+        return object_t(0, 0);
+    }
 }
 
 uint expected_depth(vec3 x){
