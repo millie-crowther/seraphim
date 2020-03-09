@@ -40,9 +40,10 @@ struct intersection_t {
 };
 
 struct object_t {
-    uint id;
+    int id;
     uint root;
 };
+object_t null_object = object_t(-1, 0);
 
 // push constants
 layout( push_constant ) uniform push_constants {

@@ -63,16 +63,20 @@ request_manager_t::request_manager_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    std::vector<octree_node_t> root_node = octree_node_t::create(
-        f32vec4_t(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho), 
-        sdfs[0] // TODO
-    );
+    f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
+    std::vector<std::vector<octree_node_t>> root_nodes;
+    for (auto sdf : sdfs){
+        root_nodes.push_back(octree_node_t::create(bounds, sdf));
+    }
+
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
 
     for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size){
-        for (uint32_t j = 0; j < 8; j++){
-            initial_octree[i + j] = root_node[j];
+        for (uint32_t j = 0; j < root_nodes.size(); j++){
+            for (uint32_t k = 0; k < 8; k++){
+                initial_octree[i + j * 8 + k] = root_nodes[j][k];
+            }
         }
     }
     
