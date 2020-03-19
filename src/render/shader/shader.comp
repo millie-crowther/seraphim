@@ -40,10 +40,12 @@ struct intersection_t {
 };
 
 struct object_t {
-    int id;
-    uint root;
+    int root;
 };
-object_t null_object = object_t(-1, 0);
+object_t objects[2] = {
+    object_t(0),
+    object_t(1)
+};
 
 // push constants
 layout( push_constant ) uniform push_constants {
@@ -76,11 +78,11 @@ shared uint vacant_node_index;
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
-object_t get_object_at(vec3 x){
+uint get_object_at(vec3 x){
     if (x.y < 0.0001){
-        return object_t(1, 1);
+        return 1;
     } else {
-        return object_t(0, 0);
+        return 0;
     }
 }
 
@@ -107,10 +109,10 @@ void request_data(uint i, uint objectID, vec4 aabb){
 }
 
 uvec2 octree_lookup(vec3 x, out vec4 aabb){
-    object_t object = get_object_at(x);
+    uint objectID = get_object_at(x);
 
     aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
-    uint i = object.root;
+    uint i = objects[objectID].root;
     uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
@@ -118,7 +120,7 @@ uvec2 octree_lookup(vec3 x, out vec4 aabb){
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, object.id, aabb);
+                request_data(i, objectID, aabb);
             }
             break;
         }

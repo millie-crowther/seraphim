@@ -6,7 +6,7 @@
 #include "sdf/sdf.h"
 
 /*
-    ------EU -------- -------- CCCCCCCC
+    ------UE -------- -------- CCCCCCCC
     XXXXXXXX YYYYYYYY ZZZZZZZZ PPPPPPPP
 */
 
