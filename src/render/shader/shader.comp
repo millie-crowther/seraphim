@@ -40,11 +40,8 @@ struct intersection_t {
 };
 
 struct object_t {
-    int root;
-};
-object_t objects[2] = {
-    object_t(0),
-    object_t(1)
+    vec3 x;
+    uint root;
 };
 
 // push constants
@@ -75,6 +72,7 @@ layout (binding = 2) buffer request_buffer {
 
 // shared memory
 shared uint vacant_node_index;
+shared object_t objects[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
@@ -288,6 +286,11 @@ void cull(uint i){
 }
 
 void main(){
+    // initialise object array
+    // TODO: do this from CPU and load in
+    objects[0] = object_t(vec3(0), 0);
+    objects[1] = object_t(vec3(0), 1);
+
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     load_octree(i);
