@@ -181,7 +181,7 @@ blaspheme_t::create_instance(){
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pNext = nullptr;
-    app_info.pApplicationName = "Chalet test";
+    app_info.pApplicationName = "BLASPHEME";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.pEngineName = "BLASPHEME";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -293,7 +293,7 @@ blaspheme_t::run(){
             double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
             previous = now;
 
-            std::cout << "FPS: " << frequency / delta << std::endl;
+            //std::cout << "FPS: " << frequency / delta << std::endl;
         }
 
         current_frame++;
