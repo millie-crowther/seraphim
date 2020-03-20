@@ -523,6 +523,9 @@ renderer_t::create_descriptor_set_layout(){
     VkDescriptorSetLayoutBinding request_layout = octree_layout;
     request_layout.binding = 2;
 
+    VkDescriptorSetLayoutBinding visibility_buffer_layout = octree_layout;
+    visibility_buffer_layout.binding = 3;
+
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
     image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -530,8 +533,7 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout, request_layout, 
-        image_layout 
+        octree_layout, request_layout, visibility_buffer_layout, image_layout 
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};

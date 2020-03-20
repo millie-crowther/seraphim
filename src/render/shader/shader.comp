@@ -70,6 +70,11 @@ layout (binding = 2) buffer request_buffer {
     request_t requests[];
 } requests;
 
+// gpu local buffers
+layout (binding = 3) buffer visibility_buffer {
+    vec4 aabb[];
+} visibility;
+
 // shared memory
 shared uint vacant_node_index;
 shared object_t objects[gl_WorkGroupSize.x * gl_WorkGroupSize.y];

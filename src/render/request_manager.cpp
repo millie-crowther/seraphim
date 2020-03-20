@@ -43,7 +43,8 @@ request_manager_t::request_manager_t(
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
         octree_buffer->get_descriptor_info(),
-        request_buffer->get_descriptor_info()
+        request_buffer->get_descriptor_info(),
+        visibility_buffer->get_descriptor_info()
     };
 
     VkWriteDescriptorSet write_desc_set = {};
