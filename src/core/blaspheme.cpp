@@ -279,7 +279,7 @@ blaspheme_t::check_validation_layers(){
 void
 blaspheme_t::run(){
     uint32_t current_frame = 0;
-    uint32_t frequency = 25;
+    uint32_t frequency = 50;
     auto   previous   = std::chrono::steady_clock::now();
 
     while (!window->should_close()){
@@ -293,7 +293,7 @@ blaspheme_t::run(){
             double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
             previous = now;
 
-            //std::cout << "FPS: " << frequency / delta << std::endl;
+            std::cout << "FPS: " << frequency / delta << std::endl;
         }
 
         current_frame++;

@@ -35,6 +35,11 @@ request_manager_t::request_manager_t(
     );
     request_buffer->write(requests, 0, pool, queue);
 
+    visibility_buffer = std::make_unique<buffer_t<f32vec4_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
     // write to descriptor sets
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
         octree_buffer->get_descriptor_info(),
