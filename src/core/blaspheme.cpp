@@ -20,6 +20,8 @@ const std::vector<const char *> validation_layers = {
 #endif
 
 blaspheme_t::blaspheme_t(){
+
+
 #if BLASPHEME_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else 
@@ -149,8 +151,6 @@ blaspheme_t::get_required_extensions(){
 
     return required_extensions;
 }
-
-
 
 void
 blaspheme_t::create_instance(){
