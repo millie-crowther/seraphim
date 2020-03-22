@@ -26,10 +26,14 @@ private:
         }
     };
 
-    // fields
+    // buffer for gpu octree data
     std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
+    
+    // buffer for gpu to cpu messaging
     std::unique_ptr<buffer_t<request_t>> request_buffer;
-    std::unique_ptr<buffer_t<f32vec4_t>> visibility_buffer;
+
+    // buffer for per-work-group persistent data
+    std::unique_ptr<buffer_t<std::array<float, 8>>> persistent_state_buffer;
 
     std::vector<std::weak_ptr<sdf3_t>> sdfs;
     std::vector<request_t> requests;

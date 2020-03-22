@@ -40,3 +40,4 @@ build
 # vscode files
 *.bin
 *.ipch
+.vscode

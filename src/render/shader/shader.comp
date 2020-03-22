@@ -28,6 +28,8 @@ struct request_t {
     uint unused3;
 };
 
+
+
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -70,10 +72,18 @@ layout (binding = 2) buffer request_buffer {
     request_t requests[];
 } requests;
 
-// gpu local buffers
-layout (binding = 3) buffer visibility_buffer {
-    vec4 aabb[];
-} visibility;
+// work group data that is persistent between frames
+struct persistent_t {
+    vec3 v_min;
+    float _1;
+
+    vec3 v_max;
+    float _2;
+};
+
+layout (binding = 3) buffer persistent_buffer {
+    persistent_t data; 
+} persistent;
 
 // shared memory
 shared ivec3 visibility_min;

@@ -35,7 +35,7 @@ request_manager_t::request_manager_t(
     );
     request_buffer->write(requests, 0, pool, queue);
 
-    visibility_buffer = std::make_unique<buffer_t<f32vec4_t>>(
+    persistent_state_buffer = std::make_unique<buffer_t<std::array<float, 8>>>(
         allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
@@ -44,7 +44,7 @@ request_manager_t::request_manager_t(
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
         octree_buffer->get_descriptor_info(),
         request_buffer->get_descriptor_info(),
-        visibility_buffer->get_descriptor_info()
+        persistent_state_buffer->get_descriptor_info()
     };
 
     VkWriteDescriptorSet write_desc_set = {};
