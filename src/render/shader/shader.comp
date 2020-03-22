@@ -28,8 +28,6 @@ struct request_t {
     uint unused3;
 };
 
-
-
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -287,7 +285,7 @@ void render(){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
 
-void load_octree(uint i){
+void prerender(uint i){
     // clear shared variables
     vacant_node_index = 0;
     hitmap[i / 8] = false;
@@ -304,11 +302,18 @@ void load_octree(uint i){
     }
 }
 
-void cull(uint i){
+void postrender(uint i){
+    // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c / 8]){
         octree_global.body[i + work_group_offset()].x &= ~node_child_mask;
         octree_global.body[c + work_group_offset()].x |= node_unused_flag;
+    }
+
+    // update visiblity aabb
+    if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0){
+        persistent.data.v_min = intBitsToFloat(visibility_min);
+        persistent.data.v_max = intBitsToFloat(visibility_max);
     }
 }
 
@@ -320,11 +325,11 @@ void main(){
 
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
-    load_octree(i);
+    prerender(i);
 
     barrier();
     render();
     barrier();
 
-    cull(i);
+    postrender(i);
 }
