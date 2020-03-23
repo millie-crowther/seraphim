@@ -42,6 +42,8 @@ struct intersection_t {
 struct object_t {
     vec3 x;
     uint root;
+
+    vec4 quat;
 };
 
 // push constants
@@ -80,13 +82,14 @@ struct persistent_t {
 };
 
 layout (binding = 3) buffer persistent_buffer {
-    persistent_t data; 
+    persistent_t data[]; 
 } persistent;
 
 // shared memory
 shared ivec3 visibility_min;
 shared ivec3 visibility_max;
 shared uint vacant_node_index;
+
 shared object_t objects[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
@@ -271,6 +274,7 @@ void render(){
     intersection_t i = raycast(r, v_min, v_max);
 
     // set visibility bounds 
+    // TODO: avoid using atomics if possible due to performance cost
     atomicMin(visibility_min.x, floatBitsToInt(v_min.x));
     atomicMin(visibility_min.y, floatBitsToInt(v_min.y));
     atomicMin(visibility_min.z, floatBitsToInt(v_min.z));
@@ -312,16 +316,16 @@ void postrender(uint i){
 
     // update visiblity aabb
     if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0){
-        persistent.data.v_min = intBitsToFloat(visibility_min);
-        persistent.data.v_max = intBitsToFloat(visibility_max);
+        persistent.data[i].v_min = intBitsToFloat(visibility_min);
+        persistent.data[i].v_max = intBitsToFloat(visibility_max);
     }
 }
 
 void main(){
     // initialise object array
     // TODO: do this from CPU and load in
-    objects[0] = object_t(vec3(0), 0);
-    objects[1] = object_t(vec3(0), 1);
+    objects[0] = object_t(vec3(0), 0, vec4(0));
+    objects[1] = object_t(vec3(0), 1, vec4(0));
 
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
