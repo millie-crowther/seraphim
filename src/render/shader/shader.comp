@@ -19,14 +19,6 @@ const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 // types 
-struct request_t {
-    vec4 aabb;
-
-    uint child;
-    uint unused2;
-    uint objectID;
-    uint unused3;
-};
 
 struct ray_t {
     vec3 x;
@@ -68,6 +60,15 @@ layout (binding = 1) buffer octree_buffer {
 } octree_global;
 
 // output buffers
+struct request_t {
+    vec4 aabb;
+
+    uint child;
+    uint unused2;
+    uint objectID;
+    uint unused3;
+};
+
 layout (binding = 2) buffer request_buffer {
     request_t requests[];
 } requests;
@@ -90,6 +91,7 @@ shared ivec3 visibility_min;
 shared ivec3 visibility_max;
 shared uint vacant_node_index;
 
+shared uint object_bvh[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared object_t objects[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
