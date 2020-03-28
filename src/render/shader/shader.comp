@@ -19,7 +19,6 @@ const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 // types 
-
 struct ray_t {
     vec3 x;
     vec3 d;
@@ -31,12 +30,6 @@ struct intersection_t {
     uvec2 node;
 };
 
-struct object_t {
-    vec3 x;
-    uint root;
-
-    vec4 quat;
-};
 
 // push constants
 layout( push_constant ) uniform push_constants {
@@ -55,9 +48,19 @@ layout( push_constant ) uniform push_constants {
 } push_const;
 
 // input buffers
-layout (binding = 1) buffer octree_buffer {
-    uvec2 body[];
-} octree_global;
+struct object_t {
+    vec3 x;
+    uint root;
+
+    vec3 size;    
+};
+
+layout (binding = 1) buffer input_buffer {
+    uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+    
+    uint num_objects;
+    object_t object_bvh[];
+} input_data;
 
 // output buffers
 struct request_t {
@@ -118,7 +121,7 @@ void request_data(uint i, uint objectID, vec4 aabb){
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
-        octree_global.body[i + work_group_offset()].x |= child_local;
+        input_data.octree[i + work_group_offset()].x |= child_local;
 
         requests.requests[request_id].objectID = objectID;
         requests.requests[request_id].aabb = aabb;
@@ -297,23 +300,27 @@ void prerender(uint i){
     hitmap[i / 8] = false;
     visibility_min = floatBitsToInt(push_const.camera_position);
     visibility_max = visibility_min;
+    object_bvh[i] = 0;
 
     // load octree from global memory into shared memory
-    uvec2 node = octree_global.body[i + work_group_offset()];
+    uvec2 node = input_data.octree[i + work_group_offset()];
     octree[i] = node;
 
     // submit free nodes to request queue
     if (i % 8 == 0 && (node.x & node_unused_flag) != 0){
         vacant_node_index = i;
     }
+
+    // build octree
+    
 }
 
 void postrender(uint i){
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c / 8]){
-        octree_global.body[i + work_group_offset()].x &= ~node_child_mask;
-        octree_global.body[c + work_group_offset()].x |= node_unused_flag;
+        input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
+        input_data.octree[c + work_group_offset()].x |= node_unused_flag;
     }
 
     // update visiblity aabb
@@ -326,8 +333,8 @@ void postrender(uint i){
 void main(){
     // initialise object array
     // TODO: do this from CPU and load in
-    objects[0] = object_t(vec3(0), 0, vec4(0));
-    objects[1] = object_t(vec3(0), 1, vec4(0));
+    objects[0] = object_t(vec3(0), 0, vec3(0));
+    objects[1] = object_t(vec3(0), 1, vec3(0));
 
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
