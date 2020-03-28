@@ -26,8 +26,17 @@ private:
         }
     };
 
-    // buffer for gpu octree data
+    struct object_t {
+        f32vec3_t x;
+        uint32_t root;
+
+        f32vec3_t size;
+        float _1;
+    };
+
+    // buffers for gpu input data
     std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
+    std::unique_ptr<buffer_t<object_t>> object_buffer;
     
     // buffer for gpu to cpu messaging
     std::unique_ptr<buffer_t<request_t>> request_buffer;

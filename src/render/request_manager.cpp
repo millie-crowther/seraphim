@@ -28,6 +28,11 @@ request_manager_t::request_manager_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
+    object_buffer = std::make_unique<buffer_t<object_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
+
     requests.resize(work_group_count[0] * work_group_count[1]);
     request_buffer = std::make_unique<buffer_t<request_t>>(
         allocator, device, requests.size(),

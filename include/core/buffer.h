@@ -54,7 +54,7 @@ private:
         submit_info.pSignalSemaphores = nullptr;
             
         vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue); // remove! this line! updates need to be batched 
+        vkQueueWaitIdle(queue); // remove! this line! updates need to be properly integrated into pipeline
     }
 
 public:
