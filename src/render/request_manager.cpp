@@ -12,14 +12,14 @@
 
 request_manager_t::request_manager_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,
-    const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
+    const std::vector<std::weak_ptr<substance_t>> & substances, 
     const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
     u32vec2_t work_group_count, uint32_t work_group_size
 ){
     this->device = device->get_device();
     this->pool = pool;
     this->queue = queue;
-    this->sdfs = sdfs;
+    this->substances = substances;
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
 
@@ -28,7 +28,7 @@ request_manager_t::request_manager_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    object_buffer = std::make_unique<buffer_t<object_t>>(
+    object_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
         allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
@@ -80,8 +80,12 @@ request_manager_t::request_manager_t(
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size);
 
     for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size){
-        for (uint32_t j = 0; j < sdfs.size(); j++){
-            std::vector<octree_node_t> root_node = octree_node_t::create(bounds, sdfs[j]);
+        for (uint32_t j = 0; j < substances.size(); j++){
+            std::vector<octree_node_t> root_node(8);
+            
+            if (auto substance = substances[j].lock()){
+                root_node = octree_node_t::create(bounds, substance->get_sdf());
+            }
 
             for (uint32_t k = 0; k < 8; k++){
                 initial_octree[i + j * 8 + k] = root_node[k];
@@ -106,7 +110,10 @@ request_manager_t::handle_requests(){
             request_t r = requests[work_group_id];
 
             if (r.child != 0){
-                std::vector<octree_node_t> new_node = octree_node_t::create(r.aabb, sdfs[r.objectID]);
+                std::vector<octree_node_t> new_node(8);
+                if (auto substance = substances[r.objectID].lock()){
+                    new_node = octree_node_t::create(r.aabb, substance->get_sdf());
+                }
 
                 octree_buffer->write(new_node, r.child, pool, queue);
                 request_buffer->write({ blank_request }, work_group_id, pool, queue);

@@ -37,11 +37,16 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code = resources::load_file("../src/render/shader/shader.vert");
 
-    sphere = std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3);
-    plane  = std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0),
+    sphere = std::make_shared<substance_t>(
+        std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)
+    );
 
-    renderable_sdfs.push_back(sphere);
-    renderable_sdfs.push_back(plane);
+    plane  = std::make_shared<substance_t>(
+        std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0)
+    );
+
+    substances.push_back(sphere);
+    substances.push_back(plane);
 
     if (!init()){
         throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
@@ -167,7 +172,7 @@ renderer_t::init(){
     }
 
     request_manager = std::make_unique<request_manager_t>(
-        allocator, device, renderable_sdfs, desc_sets, compute_command_pool, compute_queue,
+        allocator, device, substances, desc_sets, compute_command_pool, compute_queue,
         work_group_count, work_group_size[0] * work_group_size[1]      
     );
  

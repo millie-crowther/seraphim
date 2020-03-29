@@ -12,6 +12,7 @@
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "core/command_buffer.h"
+#include "render/substance.h"
 
 class renderer_t {
 public:
@@ -70,9 +71,11 @@ private:
     std::string fragment_shader_code;
     std::string vertex_shader_code;
 
-    std::shared_ptr<sdf3_t> sphere;
-    std::shared_ptr<sdf3_t> plane;
-    std::vector<std::weak_ptr<sdf3_t>> renderable_sdfs;
+    std::shared_ptr<substance_t> sphere;
+    std::shared_ptr<substance_t> plane;
+    
+    std::vector<std::weak_ptr<substance_t>> substances;
+
     std::unique_ptr<request_manager_t> request_manager;
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;

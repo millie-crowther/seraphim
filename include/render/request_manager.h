@@ -7,7 +7,7 @@
 
 #include "core/buffer.h"
 #include "render/octree.h"
-#include "sdf/sdf.h"
+#include "render/substance.h"
 
 class request_manager_t {
 private:
@@ -26,17 +26,9 @@ private:
         }
     };
 
-    struct object_t {
-        f32vec3_t x;
-        uint32_t root;
-
-        f32vec3_t size;
-        float _1;
-    };
-
     // buffers for gpu input data
     std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
-    std::unique_ptr<buffer_t<object_t>> object_buffer;
+    std::unique_ptr<buffer_t<substance_t::data_t>> object_buffer;
     
     // buffer for gpu to cpu messaging
     std::unique_ptr<buffer_t<request_t>> request_buffer;
@@ -44,7 +36,7 @@ private:
     // buffer for per-work-group persistent data
     std::unique_ptr<buffer_t<std::array<float, 8>>> persistent_state_buffer;
 
-    std::vector<std::weak_ptr<sdf3_t>> sdfs;
+    std::vector<std::weak_ptr<substance_t>> substances;
     std::vector<request_t> requests;
 
     u32vec2_t work_group_count;
@@ -58,7 +50,7 @@ public:
     request_manager_t(
         VmaAllocator allocator,
         std::shared_ptr<device_t> device,
-        const std::vector<std::weak_ptr<sdf3_t>> & sdfs, 
+        const std::vector<std::weak_ptr<substance_t>> & substances, 
         const std::vector<VkDescriptorSet> & desc_sets, VkCommandPool pool, VkQueue queue,
         u32vec2_t work_group_count, uint32_t work_group_size
     );

@@ -27,4 +27,5 @@ public:
     static std::vector<octree_node_t> create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> sdf);
 };
 
+
 #endif
