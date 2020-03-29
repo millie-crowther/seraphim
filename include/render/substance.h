@@ -9,7 +9,7 @@ class substance_t {
 public:
     struct data_t {
         f32vec3_t x;
-        uint32_t root;
+        int32_t root;
 
         f32vec3_t size;
         float _1;
