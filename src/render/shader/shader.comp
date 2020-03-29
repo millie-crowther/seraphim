@@ -57,7 +57,7 @@ struct substance_t {
 };
 
 layout (binding = 1) buffer octree_buffer { uvec2 body[]; } octree_global;
-layout (binding = 4) buffer object_buffer { substance_t objects[]; } objects_global;
+layout (binding = 4) buffer object_buffer { substance_t substances[]; } substances_global;
 
 // output buffers
 struct request_t {
@@ -306,8 +306,12 @@ void prerender(uint i){
         vacant_node_index = i;
     }
 
-    // build octree
-    
+    // load substances into shared memory
+    // uint local_id = gl_LocalInvocationID.x * gl_WorkGroupSize.y + gl_LocalInvocationID.y;
+    // substances[local_id] = substances_global.substances[local_id];
+
+    substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
+    substances[1] = substance_t(vec3(0), 1, vec3(0), 0);
 }
 
 void postrender(uint i){
@@ -326,10 +330,6 @@ void postrender(uint i){
 }
 
 void main(){
-    // initialise object array
-    substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
-    substances[1] = substance_t(vec3(0), 1, vec3(0), 0);
-
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
     prerender(i);

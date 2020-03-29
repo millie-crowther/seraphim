@@ -13,6 +13,8 @@ public:
 
         f32vec3_t size;
         float _1;
+
+        data_t();
     };
 
     std::weak_ptr<sdf3_t> get_sdf() const;

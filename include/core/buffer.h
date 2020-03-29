@@ -21,7 +21,7 @@ private:
     VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
-    VkDeviceSize size;
+    uint32_t size;
 
     // helper methods
     void copy(

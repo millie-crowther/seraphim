@@ -55,7 +55,6 @@ public:
         u32vec2_t work_group_count, uint32_t work_group_size
     );
 
-    void upload_substances(VkCommandPool pool, VkQueue queue);
     void handle_requests();
 };
 

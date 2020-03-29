@@ -666,9 +666,6 @@ renderer_t::render(){
 
     request_manager->handle_requests();
 
-    // TODO: this line fucks top left work group?
-    // request_manager->upload_substances(compute_command_pool, compute_queue);
-
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
