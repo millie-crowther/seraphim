@@ -28,7 +28,7 @@ private:
 
     // buffers for gpu input data
     std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
-    std::unique_ptr<buffer_t<substance_t::data_t>> object_buffer;
+    std::unique_ptr<buffer_t<substance_t::data_t>> substance_buffer;
     
     // buffer for gpu to cpu messaging
     std::unique_ptr<buffer_t<request_t>> request_buffer;
@@ -55,6 +55,7 @@ public:
         u32vec2_t work_group_count, uint32_t work_group_size
     );
 
+    void upload_substances(VkCommandPool pool, VkQueue queue);
     void handle_requests();
 };
 

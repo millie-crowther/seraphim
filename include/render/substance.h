@@ -1,6 +1,8 @@
 #ifndef SUBSTANCE_H
 #define SUBSTANCE_H
 
+#include <memory>
+
 #include "sdf/sdf.h"
 
 class substance_t {
@@ -13,11 +15,13 @@ public:
         float _1;
     };
 
-    std::weak_ptr<sdf3_t> get_sdf() const { return sdf; }
+    std::weak_ptr<sdf3_t> get_sdf() const;
+    data_t get_data() const;
 
-    substance_t(std::shared_ptr<sdf3_t> sdf){ this->sdf = sdf;}
+    substance_t(std::shared_ptr<sdf3_t> sdf);
 
 private:
+    data_t data;
     std::shared_ptr<sdf3_t> sdf;
 
 };

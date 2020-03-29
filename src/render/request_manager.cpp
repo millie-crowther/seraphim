@@ -28,7 +28,7 @@ request_manager_t::request_manager_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    object_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
+    substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
         allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
@@ -120,4 +120,16 @@ request_manager_t::handle_requests(){
             }
         }
     }   
+}
+
+void
+request_manager_t::upload_substances(VkCommandPool pool, VkQueue queue){
+    std::vector<substance_t::data_t> substance_data;
+    for (auto & substance_ptr : substances){
+        if (auto substance = substance_ptr.lock()){
+            substance_data.push_back(substance->get_data());
+        }
+    }
+
+    substance_buffer->write(substance_data, 0, pool, queue);
 }
