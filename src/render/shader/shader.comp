@@ -180,7 +180,7 @@ uint get_bin(vec3 x){
 
 // }
 
-bool advance_ray(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
+bool substance_intersect(inout ray_t r, uint substanceID, out float phi, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
@@ -197,23 +197,25 @@ bool advance_ray(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_m
     
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
-    float phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
-    float plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
+    float plane_phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
+    float plane = min(dot(aabb.xyz + aabb.w / 2, n) - plane_phi - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
     bool hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
-    r.x += r.d * (mix(cube, plane, hit) + epsilon);
+    phi = mix(cube, plane, hit);
     
     return hit;
 }
 
 intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
-    uvec2 hit_node;
     bool hit = false;
+    float phi;
+    uvec2 hit_node;
 
     for (int i = 0; !hit && i < max_steps; i++){
         uint substanceID = get_object_at(r.x);
-        hit = advance_ray(r, substanceID, hit_node, v_min, v_max);
+        hit = substance_intersect(r, substanceID, phi, hit_node, v_min, v_max);
+        r.x += r.d * (phi + epsilon);
     }
 
     return intersection_t(hit, r.x, hit_node);
