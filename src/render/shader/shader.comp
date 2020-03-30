@@ -180,33 +180,33 @@ intersection_t advance_ray(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
-    uint bin = get_bin(r.x);
-    uint bin_data = substance_bins[bin];
-    uint num_substances = bin_data & 0xFFFFFFFF;
-    uint substance_index = bin_data >> 16;
+    // uint bin = get_bin(r.x);
+    // uint bin_data = substance_bins[bin];
+    // uint num_substances = bin_data & 0xFFFFFFFF;
+    // uint substance_index = bin_data >> 16;
 
     uvec2 node;
     bool hit = false;
     float d = push_const.render_distance;
 
-    for (uint substanceID = substance_index; substanceID < substance_index + num_substances; substanceID++){
-        node = octree_lookup(r.x, substanceID, aabb);
+    uint substanceID = get_object_at(r.x);
+    node = octree_lookup(r.x, substanceID, aabb);
 
-        // calculate distance to edge of bounding cube
-        vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
-        float cube = min(cube_i.x, min(cube_i.y, cube_i.z));
-        
-        // calculate distance to intersect plane
-        vec3 n = normal(node.y);
-        float phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
-        float plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
+    // calculate distance to edge of bounding cube
+    vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
+    float cube = min(cube_i.x, min(cube_i.y, cube_i.z));
+    
+    // calculate distance to intersect plane
+    vec3 n = normal(node.y);
+    float phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
+    float plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
 
-        // advance ray appropriately
-        if ((node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube){
-            hit = true;
-        }
-        d = min(d, mix(cube, plane, hit));
+    // advance ray appropriately
+    if ((node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube){
+        hit = true;
     }
+    d = min(d, mix(cube, plane, hit));
+    // }
 
     // TODO: handle case when no relevant substances
     r.x += r.d * (d + epsilon);
