@@ -176,7 +176,11 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-intersection_t advance_ray(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
+// intersection_t substance_lookup(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
+
+// }
+
+intersection_t advance_ray(inout ray_t r, uint substanceID, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
@@ -189,7 +193,6 @@ intersection_t advance_ray(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
     bool hit = false;
     float d = push_const.render_distance;
 
-    uint substanceID = get_object_at(r.x);
     node = octree_lookup(r.x, substanceID, aabb);
 
     // calculate distance to edge of bounding cube
@@ -206,7 +209,6 @@ intersection_t advance_ray(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
         hit = true;
     }
     d = min(d, mix(cube, plane, hit));
-    // }
 
     // TODO: handle case when no relevant substances
     r.x += r.d * (d + epsilon);
@@ -218,7 +220,8 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     intersection_t intersection = intersection_t(false, vec3(0), uvec2(0));
 
     for (int i = 0; !intersection.hit && i < max_steps; i++){
-        intersection = advance_ray(r, v_min, v_max);
+        uint substanceID = get_object_at(r.x);
+        intersection = advance_ray(r, substanceID, v_min, v_max);
     }
 
     return intersection;
