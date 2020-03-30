@@ -180,7 +180,7 @@ uint get_bin(vec3 x){
 
 // }
 
-intersection_t advance_ray(inout ray_t r, uint substanceID, inout vec3 v_min, inout vec3 v_max){
+bool advance_ray(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
@@ -188,10 +188,6 @@ intersection_t advance_ray(inout ray_t r, uint substanceID, inout vec3 v_min, in
     // uint bin_data = substance_bins[bin];
     // uint num_substances = bin_data & 0xFFFFFFFF;
     // uint substance_index = bin_data >> 16;
-
-    uvec2 node;
-    bool hit = false;
-    float d = push_const.render_distance;
 
     node = octree_lookup(r.x, substanceID, aabb);
 
@@ -205,26 +201,22 @@ intersection_t advance_ray(inout ray_t r, uint substanceID, inout vec3 v_min, in
     float plane = min(dot(aabb.xyz + aabb.w / 2, n) - phi - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
-    if ((node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube){
-        hit = true;
-    }
-    d = min(d, mix(cube, plane, hit));
-
-    // TODO: handle case when no relevant substances
-    r.x += r.d * (d + epsilon);
+    bool hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
+    r.x += r.d * (mix(cube, plane, hit) + epsilon);
     
-    return intersection_t(hit, r.x, node);
+    return hit;
 }
 
 intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
-    intersection_t intersection = intersection_t(false, vec3(0), uvec2(0));
+    uvec2 hit_node;
+    bool hit = false;
 
-    for (int i = 0; !intersection.hit && i < max_steps; i++){
+    for (int i = 0; !hit && i < max_steps; i++){
         uint substanceID = get_object_at(r.x);
-        intersection = advance_ray(r, substanceID, v_min, v_max);
+        hit = advance_ray(r, substanceID, hit_node, v_min, v_max);
     }
 
-    return intersection;
+    return intersection_t(hit, r.x, hit_node);
 }
 
 float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
