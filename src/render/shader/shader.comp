@@ -45,7 +45,7 @@ layout( push_constant ) uniform push_constants {
 
     vec3 camera_up;
     float dummy4;
-} push_const;
+} pc;
 
 // input buffers
 struct substance_t {
@@ -95,7 +95,7 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint get_object_at(vec3 x){
-    if (x.y < 0.0001){
+    if (x.y < 2 * epsilon){
         return 1;
     } else {
         return 0;
@@ -103,7 +103,7 @@ uint get_object_at(vec3 x){
 }
 
 uint expected_depth(vec3 x){
-    vec3 xc = x - push_const.camera_position;
+    vec3 xc = x - pc.camera_position;
     return max(1, 17 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
 }
 
@@ -125,7 +125,7 @@ void request_data(uint i, uint objectID, vec4 aabb){
 }
 
 uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
-    aabb = vec4(vec3(-push_const.render_distance), 2 * push_const.render_distance);
+    aabb = vec4(vec3(-pc.render_distance), 2 * pc.render_distance);
     uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
@@ -180,7 +180,7 @@ uint get_bin(vec3 x){
 
 // }
 
-bool substance_intersect(inout ray_t r, uint substanceID, out float phi, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
+float substance_phi(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
@@ -193,7 +193,7 @@ bool substance_intersect(inout ray_t r, uint substanceID, out float phi, out uve
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
-    float cube = min(cube_i.x, min(cube_i.y, cube_i.z));
+    float cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
     
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
@@ -202,23 +202,24 @@ bool substance_intersect(inout ray_t r, uint substanceID, out float phi, out uve
 
     // advance ray appropriately
     bool hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
-    phi = mix(cube, plane, hit);
-    
-    return hit;
+    return mix(cube, plane, hit);
 }
 
 intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     bool hit = false;
-    float phi;
     uvec2 hit_node;
 
     for (int i = 0; !hit && i < max_steps; i++){
         uint substanceID = get_object_at(r.x);
-        hit = substance_intersect(r, substanceID, phi, hit_node, v_min, v_max);
-        r.x += r.d * (phi + epsilon);
+        float phi = substance_phi(r, substanceID, hit_node, v_min, v_max);
+        r.x += r.d * phi;
+        hit = abs(phi) < epsilon;
     }
 
-    return intersection_t(hit, r.x, hit_node);
+    vec3 x = pc.camera_position - r.x;
+    bool is_in_bounds = dot(x, x) < pc.render_distance * pc.render_distance;
+
+    return intersection_t(hit && is_in_bounds, r.x, hit_node);
 }
 
 float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
@@ -249,9 +250,9 @@ vec4 light(vec3 light_p, vec3 x, uvec2 node, inout vec3 v_min, inout vec3 v_max)
     vec4 d = kd * dot(l, n) * colour;
 
     //specular
-    vec3 v = x - push_const.camera_position;
-    vec3 right = push_const.camera_right;
-    vec3 u = push_const.camera_up;
+    vec3 v = x - pc.camera_position;
+    vec3 right = pc.camera_right;
+    vec3 u = pc.camera_up;
 
     // TODO: not sure about order of cross product here??
     v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
@@ -271,9 +272,9 @@ void render(){
     uv = uv * 2.0 - 1.0;
     uv.y *= -1;
     
-    vec3 up = push_const.camera_up;
-    vec3 right = push_const.camera_right;
-    vec3 x0 = push_const.camera_position;
+    vec3 up = pc.camera_up;
+    vec3 right = pc.camera_right;
+    vec3 x0 = pc.camera_position;
 
     vec3 forward = cross(right, up);
 
@@ -283,7 +284,7 @@ void render(){
     
     vec4 out_colour = sky();
 
-    vec3 v_min = push_const.camera_position;
+    vec3 v_min = pc.camera_position;
     vec3 v_max = v_min;
 
     ray_t r = ray_t(x0, d);
@@ -309,7 +310,7 @@ void prerender(uint i){
     // clear shared variables
     vacant_node_index = 0;
     hitmap[i / 8] = false;
-    visibility_min = floatBitsToInt(push_const.camera_position);
+    visibility_min = floatBitsToInt(pc.camera_position);
     visibility_max = visibility_min;
     substance_bins[i] = 0;
 
