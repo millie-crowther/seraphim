@@ -80,9 +80,7 @@ struct persistent_t {
     float _2;
 };
 
-layout (binding = 3) buffer persistent_buffer {
-    persistent_t data[]; 
-} persistent;
+layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persistent;
 
 // shared memory
 shared ivec3 visibility_min;
@@ -126,10 +124,10 @@ void request_data(uint i, uint substanceID, vec4 aabb){
 
 uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
     aabb = vec4(vec3(-pc.render_distance), 2 * pc.render_distance);
-    uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
-    uint i = substanceID * 8; // TODO: fix
+    uint i = substanceID * 8; // substances[substanceID].root;
+    uvec2 node = uvec2(i & node_child_mask, 0);
 
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
@@ -141,6 +139,8 @@ uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
 
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
+
+        // bug is on this line
         i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
