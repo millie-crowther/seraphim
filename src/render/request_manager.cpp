@@ -28,14 +28,14 @@ request_manager_t::request_manager_t(
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    // substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
-    //     allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
-    //     VMA_MEMORY_USAGE_CPU_TO_GPU
-    // );
-    // std::vector<substance_t::data_t> substance_data(work_group_size);
-    // substance_data[0].root = 0;
-    // substance_data[1].root = 8;
-    // substance_buffer->write(substance_data, 0, pool, queue);
+    substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
+    std::vector<substance_t::data_t> substance_data(work_group_size);
+    substance_data[0].root = 0;
+    substance_data[1].root = 8;
+    substance_buffer->write(substance_data, 0, pool, queue);
 
     requests.resize(work_group_count[0] * work_group_count[1]);
     request_buffer = std::make_unique<buffer_t<request_t>>(

@@ -57,7 +57,7 @@ struct substance_t {
 };
 
 layout (binding = 1) buffer octree_buffer { uvec2 body[]; } octree_global;
-layout (binding = 4) buffer object_buffer { substance_t substances[]; } substances_global;
+layout (binding = 4) buffer substance_buffer { substance_t substances[]; } substances_global;
 
 // output buffers
 struct request_t {
@@ -126,7 +126,7 @@ uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
     aabb = vec4(vec3(-pc.render_distance), 2 * pc.render_distance);
 
     uint expected_depth = expected_depth(x);
-    uint i = substanceID * 8; // substances[substanceID].root;
+    uint i = substances[substanceID].root;
     uvec2 node = uvec2(i & node_child_mask, 0);
 
     for (uint depth = 0; depth <= expected_depth; depth++){
@@ -176,18 +176,9 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-// intersection_t substance_lookup(inout ray_t r, inout vec3 v_min, inout vec3 v_max){
-
-// }
-
 float substance_phi(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
-
-    // uint bin = get_bin(r.x);
-    // uint bin_data = substance_bins[bin];
-    // uint num_substances = bin_data & 0xFFFFFFFF;
-    // uint substance_index = bin_data >> 16;
 
     node = octree_lookup(r.x, substanceID, aabb);
 
@@ -210,8 +201,13 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     uvec2 hit_node;
 
     for (int i = 0; !hit && i < max_steps; i++){
+        uint bin = get_bin(r.x);
+        uint bin_data = substance_bins[bin];
+        uint num_substances = bin_data & 0xFFFFFFFF;
+        uint substance_index = bin_data >> 16;
+
         float phi = pc.render_distance;
-        for (uint substanceID = 0; !hit && substanceID < 2; substanceID++){
+        for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
             phi = min(phi, substance_phi(r, substanceID, hit_node, v_min, v_max));
             hit = phi < epsilon;
         }
@@ -331,10 +327,10 @@ void prerender(uint i){
 
     // TODO: these two writes dont complete by the time of first lookup.
     //       everything set to zero as a result
-    // substances[0] = substance_t(vec3(0), 9, vec3(0), 0);
-    // substances[1] = substance_t(vec3(0), 9, vec3(0), 0); 
+    substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
+    substances[1] = substance_t(vec3(0), 8, vec3(0), 0); 
 
-    // substance_bins[0] = 2;
+    substance_bins[0] = 2;
 }
 
 void postrender(uint i){
