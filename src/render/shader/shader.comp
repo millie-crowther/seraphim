@@ -65,7 +65,7 @@ struct request_t {
 
     uint child;
     uint unused2;
-    uint objectID;
+    uint substanceID;
     uint unused3;
 };
 
@@ -111,14 +111,14 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void request_data(uint i, uint objectID, vec4 aabb){
+void request_data(uint i, uint substanceID, vec4 aabb){
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
         octree_global.body[i + work_group_offset()].x |= child_local;
 
-        requests.requests[request_id].objectID = objectID;
+        requests.requests[request_id].substanceID = substanceID;
         requests.requests[request_id].aabb = aabb;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
@@ -129,7 +129,7 @@ uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
     uvec2 node = uvec2(0);
 
     uint expected_depth = expected_depth(x);
-    uint i = substances[substanceID].root; 
+    uint i = substanceID * 8; // TODO: fix
 
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
@@ -210,14 +210,16 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     uvec2 hit_node;
 
     for (int i = 0; !hit && i < max_steps; i++){
-        uint substanceID = get_object_at(r.x);
-        float phi = substance_phi(r, substanceID, hit_node, v_min, v_max);
+        float phi = pc.render_distance;
+        for (uint substanceID = 0; !hit && substanceID < 2; substanceID++){
+            phi = min(phi, substance_phi(r, substanceID, hit_node, v_min, v_max));
+            hit = phi < epsilon;
+        }
         r.x += r.d * phi;
-        hit = abs(phi) < epsilon;
     }
 
-    vec3 x = pc.camera_position - r.x;
-    bool is_in_bounds = dot(x, x) < pc.render_distance * pc.render_distance;
+    vec3 d = pc.camera_position - r.x;
+    bool is_in_bounds = dot(d, d) < pc.render_distance * pc.render_distance;
 
     return intersection_t(hit && is_in_bounds, r.x, hit_node);
 }
@@ -327,10 +329,12 @@ void prerender(uint i){
     // uint local_id = gl_LocalInvocationID.x * gl_WorkGroupSize.y + gl_LocalInvocationID.y;
     // substances[local_id] = substances_global.substances[local_id];
 
-    substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
-    substances[1] = substance_t(vec3(0), 1, vec3(0), 0); 
+    // TODO: these two writes dont complete by the time of first lookup.
+    //       everything set to zero as a result
+    // substances[0] = substance_t(vec3(0), 9, vec3(0), 0);
+    // substances[1] = substance_t(vec3(0), 9, vec3(0), 0); 
 
-    substance_bins[0] = 2;
+    // substance_bins[0] = 2;
 }
 
 void postrender(uint i){
