@@ -29,7 +29,9 @@ blaspheme_t::blaspheme_t(){
 #endif
 
     // initialise GLFW
-    glfwInit();
+    if (!glfwInit()){
+        throw std::runtime_error("Error: Failed to initialise GLFW.");
+    }
 
     scheduler = std::make_shared<scheduler_t>();
     window = std::make_shared<window_t>(u32vec2_t(640u, 480u), scheduler);

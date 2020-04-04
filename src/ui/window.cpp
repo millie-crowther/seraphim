@@ -1,5 +1,7 @@
 #include "ui/window.h"
 
+#include <exception>
+
 static void 
 window_resize_callback(GLFWwindow * glfw_window, int width, int height){
     void * data = glfwGetWindowUserPointer(glfw_window);
@@ -14,6 +16,10 @@ window_t::window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler){
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(size[0], size[1], "BLASPHEME", nullptr, nullptr);
+
+    if (window == nullptr){
+        throw std::runtime_error("Error: Failed to create main window.");
+    }
 
     glfwSetWindowUserPointer(window, static_cast<void *>(this));
     glfwSetWindowSizeCallback(window, window_resize_callback); 
