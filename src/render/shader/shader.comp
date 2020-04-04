@@ -313,9 +313,7 @@ void prerender(uint i){
     }
 
     // load substances into shared memory
-
-    // this line is causing the crash
-    // substances[i] = substances_global.substances[i];
+    substances[i] = substances_global.substances[i];
 
     substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
     substances[1] = substance_t(vec3(0), 8, vec3(0), 0); 

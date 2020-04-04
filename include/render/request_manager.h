@@ -34,7 +34,7 @@ private:
     std::unique_ptr<buffer_t<request_t>> request_buffer;
 
     // buffer for per-work-group persistent data
-    std::unique_ptr<buffer_t<std::array<float, 8>>> persistent_state_buffer;
+    std::unique_ptr<buffer_t<uint8_t>> persistent_state_buffer;
 
     std::vector<std::weak_ptr<substance_t>> substances;
     std::vector<request_t> requests;

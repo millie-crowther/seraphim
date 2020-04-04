@@ -31,20 +31,14 @@ request_manager_t::request_manager_t(
     substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
         allocator, device, work_group_size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
-    std::vector<substance_t::data_t> substance_data(work_group_size);
-    substance_data[0].root = 0;
-    substance_data[1].root = 8;
-    substance_buffer->write(substance_data, 0, pool, queue);
 
     requests.resize(work_group_count[0] * work_group_count[1]);
     request_buffer = std::make_unique<buffer_t<request_t>>(
         allocator, device, requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
-    request_buffer->write(requests, 0, pool, queue);
-
-    persistent_state_buffer = std::make_unique<buffer_t<std::array<float, 8>>>(
-        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
+    persistent_state_buffer = std::make_unique<buffer_t<uint8_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size * 32,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
 
@@ -52,7 +46,8 @@ request_manager_t::request_manager_t(
     std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
         octree_buffer->get_descriptor_info(),
         request_buffer->get_descriptor_info(),
-        persistent_state_buffer->get_descriptor_info()
+        persistent_state_buffer->get_descriptor_info(),
+        substance_buffer->get_descriptor_info()
     };
 
     VkWriteDescriptorSet write_desc_set = {};
@@ -76,6 +71,13 @@ request_manager_t::request_manager_t(
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+
+    request_buffer->write(requests, 0, pool, queue);
+
+    std::vector<substance_t::data_t> substance_data(work_group_size);
+    substance_data[0].root = 0;
+    substance_data[1].root = 8;
+    substance_buffer->write(substance_data, 0, pool, queue);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
 
