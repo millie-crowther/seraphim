@@ -29,8 +29,7 @@ request_manager_t::request_manager_t(
     );
 
     substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
-        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size,
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        allocator, device, work_group_size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
     std::vector<substance_t::data_t> substance_data(work_group_size);
     substance_data[0].root = 0;

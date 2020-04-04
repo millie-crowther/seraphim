@@ -30,7 +30,6 @@ struct intersection_t {
     uvec2 node;
 };
 
-
 // push constants
 layout( push_constant ) uniform push_constants {
     uvec2 window_size;
@@ -91,14 +90,6 @@ shared uint substance_bins[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared substance_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
-
-uint get_object_at(vec3 x){
-    if (x.y < 2 * epsilon){
-        return 1;
-    } else {
-        return 0;
-    }
-}
 
 uint expected_depth(vec3 x){
     vec3 xc = x - pc.camera_position;
@@ -322,11 +313,10 @@ void prerender(uint i){
     }
 
     // load substances into shared memory
-    // uint local_id = gl_LocalInvocationID.x * gl_WorkGroupSize.y + gl_LocalInvocationID.y;
-    // substances[local_id] = substances_global.substances[local_id];
 
-    // TODO: these two writes dont complete by the time of first lookup.
-    //       everything set to zero as a result
+    // this line is causing the crash
+    // substances[i] = substances_global.substances[i];
+
     substances[0] = substance_t(vec3(0), 0, vec3(0), 0);
     substances[1] = substance_t(vec3(0), 8, vec3(0), 0); 
 
