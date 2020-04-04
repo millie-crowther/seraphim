@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "core/hyper.h"
 #include <iostream>
+#include <numeric>
 
 template<class T, uint8_t N>
 class vec_t {

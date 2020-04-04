@@ -2,6 +2,7 @@
 #define SDF_H
 
 #include "maths/vec.h"
+#include <functional>
 
 template<uint8_t D>
 class sdf_t {

@@ -8,7 +8,7 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}")
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package ( Threads REQUIRED )
 
-set(VULKAN_SDK_PATH "$ENV{HOME}/VulkanSDK/1.1.101.0/x86_64")
+set(VULKAN_SDK_PATH "$ENV{HOME}/VulkanSDK/1.2.131.2/x86_64")
 set(Vulkan_INCLUDE_DIR "${VULKAN_SDK_PATH}/include")
 set(Vulkan_LIBRARY "${VULKAN_SDK_PATH}/lib/libvulkan.so") # for macOS, .dylib
 find_package(Vulkan REQUIRED)
