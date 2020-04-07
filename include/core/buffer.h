@@ -14,55 +14,23 @@ template<class T>
 class buffer_t {
 private:
     // fields
-    bool is_host_visible;
-
     VmaAllocator allocator;
     std::shared_ptr<device_t> device;
+    std::unique_ptr<buffer_t<T>> staging_buffer;
     VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
     uint32_t size;
-
-    // helper methods
-    void copy(
-	    const buffer_t<T> & destination, uint64_t size, uint64_t offset, VkCommandPool pool, VkQueue queue
-    ){
-        if (size == 0){
-            return;
-        }
-
-        command_buffer_t command_buffer(device->get_device(), pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-        [&](VkCommandBuffer command_buffer){
-            VkBufferCopy copy_region = {};
-            copy_region.srcOffset = 0;
-            copy_region.dstOffset = sizeof(T) * offset;
-            copy_region.size = sizeof(T) * size;
-            
-            vkCmdCopyBuffer(command_buffer, buffer, destination.buffer, 1, &copy_region);
-        });
-
-        auto cmd_buf = command_buffer.get_command_buffer();
-        VkSubmitInfo submit_info;
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &cmd_buf;
-        submit_info.pNext = nullptr;
-        submit_info.waitSemaphoreCount = 0;
-        submit_info.pWaitSemaphores = nullptr;
-        submit_info.pWaitDstStageMask = nullptr;
-        submit_info.signalSemaphoreCount = 0;
-        submit_info.pSignalSemaphores = nullptr;
-            
-        vkQueueSubmit(queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(queue); // remove! this line! updates need to be properly integrated into pipeline
-    }
+    uint32_t binding;
+    VkDescriptorBufferInfo desc_buffer_info;
 
 public:
     // constructors and destructors
-    buffer_t(VmaAllocator allocator, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage){
+    buffer_t(VmaAllocator allocator, uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage){
         this->allocator = allocator;
         this->device = device;
         this->size = size;
+        this->binding = binding;
 
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -78,7 +46,16 @@ public:
         
         vkBindBufferMemory(device->get_device(), buffer, memory, 0); 
 
-        is_host_visible = vma_usage != VMA_MEMORY_USAGE_GPU_ONLY;
+        if (vma_usage == VMA_MEMORY_USAGE_GPU_ONLY){
+            staging_buffer = std::make_unique<buffer_t<T>>(
+                allocator, 0, device, size, VMA_MEMORY_USAGE_CPU_ONLY
+            );
+        }
+
+        desc_buffer_info = {};
+        desc_buffer_info.buffer = buffer;
+        desc_buffer_info.offset = 0;
+        desc_buffer_info.range  = sizeof(T) * size;
     }
 
     ~buffer_t(){
@@ -91,22 +68,14 @@ public:
             return;
         }
 
-        if (is_host_visible){
-            void * mem_map;
-            vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &mem_map);
-                std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
-            vkUnmapMemory(device->get_device(), memory);
-        
-        } else {
-            buffer_t<T> staging_buffer(allocator, device, source.size(), VMA_MEMORY_USAGE_CPU_ONLY);
-
-            staging_buffer.write(source, 0, pool, queue);
-            staging_buffer.copy(*this, source.size(), offset, pool, queue); 
-        }
+        void * mem_map;
+        vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &mem_map);
+            std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
+        vkUnmapMemory(device->get_device(), memory);
     }
 
     void read(std::vector<T> & destination) {
-        if (destination.empty() || !is_host_visible){
+        if (destination.empty()){
             return;
         }
 
@@ -116,12 +85,29 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
-    VkDescriptorBufferInfo get_descriptor_info() const {
-        VkDescriptorBufferInfo desc_buffer_info = {};
-        desc_buffer_info.buffer = buffer;
-        desc_buffer_info.offset = 0;
-        desc_buffer_info.range  = sizeof(T) * size;
-        return desc_buffer_info;
+    VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
+        VkWriteDescriptorSet write_desc_set = {};
+        write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_desc_set.pNext = nullptr;
+        write_desc_set.dstArrayElement = 0;
+        write_desc_set.descriptorCount = 1;
+        write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        write_desc_set.pImageInfo = nullptr;
+        write_desc_set.pTexelBufferView = nullptr;
+        write_desc_set.dstSet = descriptor_set;
+        write_desc_set.dstBinding = binding;
+        write_desc_set.pBufferInfo = &desc_buffer_info;
+        return write_desc_set;
+    }
+
+    VkDescriptorSetLayoutBinding get_descriptor_set_layout_binding() const {
+        VkDescriptorSetLayoutBinding layout_binding = {};
+        layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        layout_binding.descriptorCount = 1;
+        layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+        layout_binding.pImmutableSamplers = nullptr;
+        layout_binding.binding = binding;
+        return layout_binding;
     }
 };
 

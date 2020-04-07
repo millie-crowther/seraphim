@@ -29,10 +29,6 @@ renderer_t::renderer_t(
     this->device = device;
 
     push_constants.window_size = window->get_size();
-    // window->on_resize.follow([&](u32vec2_t size){
-    //     push_constants.window_size = size;
-    //     recreate_swapchain();
-    // });
     
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code = resources::load_file("../src/render/shader/shader.vert");
@@ -143,6 +139,8 @@ renderer_t::init(){
         return false;
     }
 
+    create_buffers();
+
     if (!create_descriptor_set_layout()){
         return false;
     }
@@ -171,7 +169,7 @@ renderer_t::init(){
         return false;
     }
 
-    create_buffers();
+    initialise_buffers();
  
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
@@ -515,22 +513,6 @@ renderer_t::create_descriptor_pool(){
 
 bool
 renderer_t::create_descriptor_set_layout(){
-    VkDescriptorSetLayoutBinding octree_layout = {};
-    octree_layout.binding = 1;
-    octree_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    octree_layout.descriptorCount = 1;
-    octree_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    octree_layout.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding substance_buffer_layout = octree_layout;
-    substance_buffer_layout.binding = 2;
-
-    VkDescriptorSetLayoutBinding request_layout = octree_layout;
-    request_layout.binding = 3;
-
-    VkDescriptorSetLayoutBinding visibility_buffer_layout = octree_layout;
-    visibility_buffer_layout.binding = 4;
-
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
     image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -538,7 +520,11 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout, substance_buffer_layout, request_layout, visibility_buffer_layout, image_layout 
+        octree_buffer->get_descriptor_set_layout_binding(),
+        substance_buffer->get_descriptor_set_layout_binding(),
+        request_buffer->get_descriptor_set_layout_binding(),
+        persistent_state_buffer->get_descriptor_set_layout_binding(),
+        image_layout 
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -753,50 +739,34 @@ renderer_t::handle_requests(){
 void 
 renderer_t::create_buffers(){
     octree_buffer = std::make_unique<buffer_t<octree_node_t>>(
-        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
+        allocator, 1, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
-        allocator, device, work_group_size[0] * work_group_size[1], VMA_MEMORY_USAGE_CPU_TO_GPU
+        allocator, 2, device, work_group_size[0] * work_group_size[1], VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     requests.resize(work_group_count[0] * work_group_count[1]);
     request_buffer = std::make_unique<buffer_t<request_t>>(
-        allocator, device, requests.size(),
+        allocator, 3, device, requests.size(),
         VMA_MEMORY_USAGE_GPU_TO_CPU
     );
     persistent_state_buffer = std::make_unique<buffer_t<uint8_t>>(
-        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1] * 32,
+        allocator, 4, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1] * 32,
         VMA_MEMORY_USAGE_GPU_ONLY
     );
+}
 
+void
+renderer_t::initialise_buffers(){
     // write to descriptor sets
-    std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
-        octree_buffer->get_descriptor_info(),
-        substance_buffer->get_descriptor_info(),
-        request_buffer->get_descriptor_info(),
-        persistent_state_buffer->get_descriptor_info()
-    };
-
-    VkWriteDescriptorSet write_desc_set = {};
-    write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    write_desc_set.pNext = nullptr;
-    write_desc_set.dstArrayElement = 0;
-    write_desc_set.descriptorCount = 1;
-    write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    write_desc_set.pImageInfo = nullptr;
-    write_desc_set.pTexelBufferView = nullptr;
-
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (uint32_t i = 0; i < desc_sets.size(); i++){
-        write_desc_set.dstSet = desc_sets[i];
-
-        for (uint32_t j = 0; j < desc_buffer_infos.size(); j++){
-            write_desc_set.dstBinding = j + 1;
-            write_desc_set.pBufferInfo = &desc_buffer_infos[j];
-            write_desc_sets.push_back(write_desc_set);
-        }
+        write_desc_sets.push_back(octree_buffer->get_write_descriptor_set(desc_sets[i]));
+        write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(desc_sets[i]));
+        write_desc_sets.push_back(request_buffer->get_write_descriptor_set(desc_sets[i]));
+        write_desc_sets.push_back(persistent_state_buffer->get_write_descriptor_set(desc_sets[i]));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -828,4 +798,5 @@ renderer_t::create_buffers(){
     }
     
     octree_buffer->write(initial_octree, 0, compute_command_pool, compute_queue);
+
 }

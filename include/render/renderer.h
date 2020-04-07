@@ -125,6 +125,7 @@ private:
     void create_compute_command_buffers();
 
     void create_buffers();
+    void initialise_buffers();
     void handle_requests();
 
     uint32_t acquire_image() const;
