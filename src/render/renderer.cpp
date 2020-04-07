@@ -798,5 +798,4 @@ renderer_t::initialise_buffers(){
     }
     
     octree_buffer->write(initial_octree, 0, compute_command_pool, compute_queue);
-
 }

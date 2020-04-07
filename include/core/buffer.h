@@ -16,7 +16,6 @@ private:
     // fields
     VmaAllocator allocator;
     std::shared_ptr<device_t> device;
-    std::unique_ptr<buffer_t<T>> staging_buffer;
     VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
@@ -46,12 +45,6 @@ public:
         
         vkBindBufferMemory(device->get_device(), buffer, memory, 0); 
 
-        if (vma_usage == VMA_MEMORY_USAGE_GPU_ONLY){
-            staging_buffer = std::make_unique<buffer_t<T>>(
-                allocator, 0, device, size, VMA_MEMORY_USAGE_CPU_ONLY
-            );
-        }
-
         desc_buffer_info = {};
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
@@ -70,7 +63,7 @@ public:
 
         void * mem_map;
         vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &mem_map);
-            std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
+        std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
@@ -81,7 +74,7 @@ public:
 
         void * mem_map;
         vkMapMemory(device->get_device(), memory, 0, sizeof(T) * destination.size(), 0, &mem_map);
-            std::memcpy(destination.data(), mem_map, sizeof(T) * destination.size());
+        std::memcpy(destination.data(), mem_map, sizeof(T) * destination.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
