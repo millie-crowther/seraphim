@@ -738,23 +738,25 @@ renderer_t::handle_requests(){
 
 void 
 renderer_t::create_buffers(){
+    uint32_t count = work_group_count[0] * work_group_count[1];
+    uint32_t size = work_group_size[0] * work_group_size[1];
+
     octree_buffer = std::make_unique<buffer_t<octree_node_t>>(
-        allocator, 1, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
+        allocator, 1, device, count * size,
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
-        allocator, 2, device, work_group_size[0] * work_group_size[1], VMA_MEMORY_USAGE_CPU_TO_GPU
+        allocator, 2, device, size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    requests.resize(work_group_count[0] * work_group_count[1]);
+    requests.resize(count);
     request_buffer = std::make_unique<buffer_t<request_t>>(
-        allocator, 3, device, requests.size(),
-        VMA_MEMORY_USAGE_GPU_TO_CPU
+        allocator, 3, device, count, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
+
     persistent_state_buffer = std::make_unique<buffer_t<uint8_t>>(
-        allocator, 4, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1] * 32,
-        VMA_MEMORY_USAGE_GPU_ONLY
+        allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
     );
 }
 
