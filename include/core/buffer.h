@@ -56,7 +56,8 @@ public:
     }
 
     // public methods
-    void write(const std::vector<T> & source, uint64_t offset, VkCommandPool pool, VkQueue queue){
+    template<class collection_t>
+    void write(const collection_t & source, uint64_t offset, VkCommandPool pool, VkQueue queue){
         if (source.empty()){
             return;
         }
@@ -67,7 +68,8 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
-    void read(std::vector<T> & destination) {
+    template<class collection_t>
+    void read(collection_t & destination) {
         if (destination.empty()){
             return;
         }

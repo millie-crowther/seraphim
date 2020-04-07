@@ -712,7 +712,7 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 
 void 
 renderer_t::handle_requests(){
-    static request_t blank_request;
+    static std::vector<request_t> blank_request(1);
 
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
@@ -730,7 +730,7 @@ renderer_t::handle_requests(){
                 }
 
                 octree_buffer->write(new_node, r.child, compute_command_pool, compute_queue);
-                request_buffer->write({ blank_request }, work_group_id, compute_command_pool, compute_queue);
+                request_buffer->write(blank_request, work_group_id, compute_command_pool, compute_queue);
             }
         }
     }   
