@@ -7,12 +7,12 @@
 
 #include "core/buffer.h"
 #include "ui/window.h"
-#include "render/request_manager.h"
 #include "render/camera.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "core/command_buffer.h"
 #include "render/substance.h"
+#include "render/octree.h"
 
 class renderer_t {
 public:
@@ -76,10 +76,36 @@ private:
     
     std::vector<std::weak_ptr<substance_t>> substances;
 
-    std::unique_ptr<request_manager_t> request_manager;
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
-    std::unique_ptr<texture_t> render_texture;
+    std::unique_ptr<texture_t> render_texture; 
+    
+    // types
+    struct request_t {
+        f32vec4_t aabb;
+
+        uint32_t child;
+        uint32_t unused2;
+        uint32_t objectID;
+        uint32_t unused3;
+
+        request_t(){
+            child = 0;
+            objectID = 0;
+        }
+    };
+
+    // buffers for gpu input data
+    std::unique_ptr<buffer_t<octree_node_t>> octree_buffer;
+    std::unique_ptr<buffer_t<substance_t::data_t>> substance_buffer;
+    
+    // buffer for gpu to cpu messaging
+    std::unique_ptr<buffer_t<request_t>> request_buffer;
+
+    // buffer for per-work-group persistent data
+    std::unique_ptr<buffer_t<uint8_t>> persistent_state_buffer;
+
+    std::vector<request_t> requests;
 
     // private functions
     VkShaderModule create_shader_module(std::string code);
@@ -97,6 +123,9 @@ private:
     bool init();
 
     void create_compute_command_buffers();
+
+    void create_buffers();
+    void handle_requests();
 
     uint32_t acquire_image() const;
     void present(uint32_t image_index) const;

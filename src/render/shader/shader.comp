@@ -56,7 +56,9 @@ struct substance_t {
 };
 
 layout (binding = 1) buffer octree_buffer { uvec2 body[]; } octree_global;
-layout (binding = 4) buffer substance_buffer { substance_t substances[]; } substances_global;
+layout (binding = 2) buffer substance_buffer { 
+    substance_t substances[]; 
+} substances_global;
 
 // output buffers
 struct request_t {
@@ -68,7 +70,7 @@ struct request_t {
     uint unused3;
 };
 
-layout (binding = 2) buffer request_buffer { request_t requests[]; } requests;
+layout (binding = 3) buffer request_buffer { request_t requests[]; } requests;
 
 // work group data that is persistent between frames
 struct persistent_t {
@@ -79,7 +81,7 @@ struct persistent_t {
     float _2;
 };
 
-layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persistent;
+layout (binding = 4) buffer persistent_buffer { persistent_t data[]; } persistent;
 
 // shared memory
 shared ivec3 visibility_min;
@@ -346,4 +348,6 @@ void main(){
     barrier();
 
     postrender(i);
+    // vec4 out_colour = vec4(substances[0].root == 0, 0, substances[1].root == 8, 1);
+    // imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }

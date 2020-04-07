@@ -171,10 +171,7 @@ renderer_t::init(){
         return false;
     }
 
-    request_manager = std::make_unique<request_manager_t>(
-        allocator, device, substances, desc_sets, compute_command_pool, compute_queue,
-        work_group_count, work_group_size[0] * work_group_size[1]      
-    );
+    create_buffers();
  
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
@@ -525,14 +522,14 @@ renderer_t::create_descriptor_set_layout(){
     octree_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     octree_layout.pImmutableSamplers = nullptr;
 
+    VkDescriptorSetLayoutBinding substance_buffer_layout = octree_layout;
+    substance_buffer_layout.binding = 2;
+
     VkDescriptorSetLayoutBinding request_layout = octree_layout;
-    request_layout.binding = 2;
+    request_layout.binding = 3;
 
     VkDescriptorSetLayoutBinding visibility_buffer_layout = octree_layout;
-    visibility_buffer_layout.binding = 3;
-
-    VkDescriptorSetLayoutBinding substance_buffer_layout = octree_layout;
-    substance_buffer_layout.binding = 4;
+    visibility_buffer_layout.binding = 4;
 
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
@@ -541,7 +538,7 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_layout, request_layout, visibility_buffer_layout, substance_buffer_layout, image_layout 
+        octree_layout, substance_buffer_layout, request_layout, visibility_buffer_layout, image_layout 
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -664,7 +661,7 @@ void
 renderer_t::render(){
     push_constants.current_frame++;
 
-    request_manager->handle_requests();
+    handle_requests();
 
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
@@ -725,4 +722,110 @@ renderer_t::create_shader_module(std::string code){
 void 
 renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
     main_camera = camera;
+}
+
+void 
+renderer_t::handle_requests(){
+    static request_t blank_request;
+
+    vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
+
+    request_buffer->read(requests);
+
+    for (uint32_t x = 0; x < work_group_count[0]; x++){
+        for (uint32_t y = 0; y < work_group_count[1]; y++){
+            uint32_t work_group_id = x * work_group_count[1] + y;
+            request_t r = requests[work_group_id];
+
+            if (r.child != 0){
+                std::vector<octree_node_t> new_node(8);
+                if (auto substance = substances[r.objectID].lock()){
+                    new_node = octree_node_t::create(r.aabb, substance->get_sdf());
+                }
+
+                octree_buffer->write(new_node, r.child, compute_command_pool, compute_queue);
+                request_buffer->write({ blank_request }, work_group_id, compute_command_pool, compute_queue);
+            }
+        }
+    }   
+}
+
+void 
+renderer_t::create_buffers(){
+    octree_buffer = std::make_unique<buffer_t<octree_node_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
+        VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
+
+    substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
+        allocator, device, work_group_size[0] * work_group_size[1], VMA_MEMORY_USAGE_CPU_TO_GPU
+    );
+
+    requests.resize(work_group_count[0] * work_group_count[1]);
+    request_buffer = std::make_unique<buffer_t<request_t>>(
+        allocator, device, requests.size(),
+        VMA_MEMORY_USAGE_GPU_TO_CPU
+    );
+    persistent_state_buffer = std::make_unique<buffer_t<uint8_t>>(
+        allocator, device, work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1] * 32,
+        VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    // write to descriptor sets
+    std::vector<VkDescriptorBufferInfo> desc_buffer_infos = {
+        octree_buffer->get_descriptor_info(),
+        substance_buffer->get_descriptor_info(),
+        request_buffer->get_descriptor_info(),
+        persistent_state_buffer->get_descriptor_info()
+    };
+
+    VkWriteDescriptorSet write_desc_set = {};
+    write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_desc_set.pNext = nullptr;
+    write_desc_set.dstArrayElement = 0;
+    write_desc_set.descriptorCount = 1;
+    write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write_desc_set.pImageInfo = nullptr;
+    write_desc_set.pTexelBufferView = nullptr;
+
+    std::vector<VkWriteDescriptorSet> write_desc_sets;
+    for (uint32_t i = 0; i < desc_sets.size(); i++){
+        write_desc_set.dstSet = desc_sets[i];
+
+        for (uint32_t j = 0; j < desc_buffer_infos.size(); j++){
+            write_desc_set.dstBinding = j + 1;
+            write_desc_set.pBufferInfo = &desc_buffer_infos[j];
+            write_desc_sets.push_back(write_desc_set);
+        }
+    }
+
+    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+
+    request_buffer->write(requests, 0, compute_command_pool, compute_queue);
+
+    std::vector<substance_t::data_t> substance_data(work_group_size[0] * work_group_size[1]);
+    substance_data[0].root = 0;
+    substance_data[1].root = 8;
+    substance_buffer->write(substance_data, 0, compute_command_pool, compute_queue);
+
+    f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
+
+    std::vector<octree_node_t> initial_octree;
+    initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
+
+    for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){
+        for (uint32_t j = 0; j < substances.size(); j++){
+            std::vector<octree_node_t> root_node(8);
+            
+            if (auto substance = substances[j].lock()){
+                root_node = octree_node_t::create(bounds, substance->get_sdf());
+            }
+
+            for (uint32_t k = 0; k < 8; k++){
+                initial_octree[i + j * 8 + k] = root_node[k];
+            }
+        }
+    }
+    
+    octree_buffer->write(initial_octree, 0, compute_command_pool, compute_queue);
 }

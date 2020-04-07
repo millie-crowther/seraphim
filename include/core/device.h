@@ -32,7 +32,6 @@ public:
     uint32_t get_graphics_family() const;
     uint32_t get_present_family() const;
     uint32_t get_compute_family() const;
-    
 };
 
 #endif
