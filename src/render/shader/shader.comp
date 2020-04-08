@@ -132,8 +132,6 @@ uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
 
         // find octant
         uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
-
-        // bug is on this line
         i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data

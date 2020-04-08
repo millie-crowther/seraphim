@@ -24,8 +24,7 @@ public:
         alloc_info.commandPool = command_pool;
         alloc_info.commandBufferCount = 1;
 
-        VkResult result = vkAllocateCommandBuffers(device, &alloc_info, &command_buffer);
-        if (result != VK_SUCCESS){
+        if (vkAllocateCommandBuffers(device, &alloc_info, &command_buffer) != VK_SUCCESS){
             throw std::runtime_error("Error: Failed to allocate command buffer.");
         }
 

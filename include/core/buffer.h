@@ -13,7 +13,6 @@
 template<class T>
 class buffer_t {
 private:
-    // fields
     VmaAllocator allocator;
     std::shared_ptr<device_t> device;
     VmaAllocation allocation;
@@ -22,6 +21,7 @@ private:
     uint32_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
+    void * memory_map;
 
 public:
     // constructors and destructors
@@ -62,9 +62,8 @@ public:
             return;
         }
 
-        void * mem_map;
-        vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &mem_map);
-        std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
+        vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &memory_map);
+        std::memcpy(memory_map, source.data(), sizeof(T) * source.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
@@ -74,9 +73,8 @@ public:
             return;
         }
 
-        void * mem_map;
-        vkMapMemory(device->get_device(), memory, 0, sizeof(T) * destination.size(), 0, &mem_map);
-        std::memcpy(destination.data(), mem_map, sizeof(T) * destination.size());
+        vkMapMemory(device->get_device(), memory, 0, sizeof(T) * destination.size(), 0, &memory_map);
+        std::memcpy(destination.data(), memory_map, sizeof(T) * destination.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
