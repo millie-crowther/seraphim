@@ -655,23 +655,19 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 
 void 
 renderer_t::handle_requests(){
-    static std::vector<request_t> blank_request(1);
-
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
     request_buffer->read(requests, 0);
 
     for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
-        request_t r = requests[i];
-
-        if (r.child != 0){
+        if (requests[i].child != 0){
             std::vector<octree_node_t> new_node(8);
-            if (auto substance = substances[r.objectID].lock()){
-                new_node = octree_node_t::create(r.aabb, substance->get_sdf());
+            if (auto substance = substances[requests[i].objectID].lock()){
+                new_node = octree_node_t::create(requests[i].aabb, substance->get_sdf());
             }
 
-            octree_buffer->write(new_node, r.child * sizeof(octree_node_t));
-            request_buffer->write(blank_request, i * sizeof(request_t));
+            input_buffer->write(new_node, 1024 * sizeof(substance_t::data_t) + requests[i].child * sizeof(octree_node_t));
+            request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
         }
     }   
 }
@@ -681,33 +677,31 @@ renderer_t::create_buffers(){
     uint32_t count = work_group_count[0] * work_group_count[1];
     uint32_t size = work_group_size[0] * work_group_size[1];
 
-    octree_buffer = std::make_shared<buffer_t>(
-        allocator, 1, device, sizeof(octree_node_t) * count * size, VMA_MEMORY_USAGE_CPU_TO_GPU
-    );
-
-    substance_buffer = std::make_shared<buffer_t>(
-        allocator, 2, device, sizeof(substance_t::data_t) * size, VMA_MEMORY_USAGE_CPU_TO_GPU
+    input_buffer = std::make_shared<buffer_t>(
+        allocator, 1, device, 
+        sizeof(substance_t::data_t) * 1024 + sizeof(octree_node_t) * count * size, 
+        VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     requests.resize(count);
     request_buffer = std::make_shared<buffer_t>(
-        allocator, 3, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
+        allocator, 2, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    buffers = { octree_buffer, substance_buffer, request_buffer };
+    buffers = { input_buffer, request_buffer };
 
     // add persistent GPU state buffer
     buffers.push_back(std::make_shared<buffer_t>(
-        allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
+        allocator, 3, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
     ));
 }
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<substance_t::data_t> substance_data(work_group_size[0] * work_group_size[1]);
+    std::vector<substance_t::data_t> substance_data(2);
     substance_data[0].root = 0;
     substance_data[1].root = 8;
-    substance_buffer->write(substance_data, 0);
+    input_buffer->write(substance_data, 0);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
 
@@ -726,5 +720,5 @@ renderer_t::initialise_buffers(){
         }
     }
     
-    octree_buffer->write(initial_octree, 0);
+    input_buffer->write(initial_octree, 1024 * sizeof(substance_t::data_t));
 }

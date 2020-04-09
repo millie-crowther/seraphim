@@ -97,8 +97,7 @@ private:
     std::vector<std::shared_ptr<buffer_t>> buffers;
 
     // buffers for gpu input data
-    std::shared_ptr<buffer_t> octree_buffer;
-    std::shared_ptr<buffer_t> substance_buffer;
+    std::shared_ptr<buffer_t> input_buffer;
     
     // buffer for gpu to cpu messaging
     std::shared_ptr<buffer_t> request_buffer;
