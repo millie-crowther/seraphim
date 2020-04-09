@@ -103,9 +103,6 @@ private:
     // buffer for gpu to cpu messaging
     std::shared_ptr<buffer_t> request_buffer;
 
-    // buffer for per-work-group persistent data
-    std::shared_ptr<buffer_t> persistent_state_buffer;
-
     std::vector<request_t> requests;
 
     // private functions

@@ -694,11 +694,12 @@ renderer_t::create_buffers(){
         allocator, 3, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    persistent_state_buffer = std::make_shared<buffer_t>(
-        allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
-    );
+    buffers = { octree_buffer, substance_buffer, request_buffer };
 
-    buffers = { octree_buffer, substance_buffer, request_buffer, persistent_state_buffer };
+    // add persistent GPU state buffer
+    buffers.push_back(std::make_shared<buffer_t>(
+        allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
+    ));
 }
 
 void
