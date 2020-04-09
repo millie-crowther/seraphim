@@ -508,13 +508,10 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.descriptorCount = 1;
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
-        octree_buffer->get_descriptor_set_layout_binding(),
-        substance_buffer->get_descriptor_set_layout_binding(),
-        request_buffer->get_descriptor_set_layout_binding(),
-        persistent_state_buffer->get_descriptor_set_layout_binding(),
-        image_layout 
-    };
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { image_layout };
+    for (auto buffer : buffers){
+        layouts.push_back(buffer->get_descriptor_set_layout_binding());
+    }
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -684,22 +681,24 @@ renderer_t::create_buffers(){
     uint32_t count = work_group_count[0] * work_group_count[1];
     uint32_t size = work_group_size[0] * work_group_size[1];
 
-    octree_buffer = std::make_unique<buffer_t>(
+    octree_buffer = std::make_shared<buffer_t>(
         allocator, 1, device, sizeof(octree_node_t) * count * size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    substance_buffer = std::make_unique<buffer_t>(
+    substance_buffer = std::make_shared<buffer_t>(
         allocator, 2, device, sizeof(substance_t::data_t) * size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     requests.resize(count);
-    request_buffer = std::make_unique<buffer_t>(
+    request_buffer = std::make_shared<buffer_t>(
         allocator, 3, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    persistent_state_buffer = std::make_unique<buffer_t>(
+    persistent_state_buffer = std::make_shared<buffer_t>(
         allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
     );
+
+    buffers = { octree_buffer, substance_buffer, request_buffer, persistent_state_buffer };
 }
 
 void
@@ -707,10 +706,9 @@ renderer_t::initialise_buffers(){
     // write to descriptor sets
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (uint32_t i = 0; i < desc_sets.size(); i++){
-        write_desc_sets.push_back(octree_buffer->get_write_descriptor_set(desc_sets[i]));
-        write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(desc_sets[i]));
-        write_desc_sets.push_back(request_buffer->get_write_descriptor_set(desc_sets[i]));
-        write_desc_sets.push_back(persistent_state_buffer->get_write_descriptor_set(desc_sets[i]));
+        for (auto buffer : buffers){
+            write_desc_sets.push_back(buffer->get_write_descriptor_set(desc_sets[i]));
+        }
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);

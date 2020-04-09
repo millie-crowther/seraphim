@@ -94,15 +94,17 @@ private:
         }
     };
 
+    std::vector<std::shared_ptr<buffer_t>> buffers;
+
     // buffers for gpu input data
-    std::unique_ptr<buffer_t> octree_buffer;
-    std::unique_ptr<buffer_t> substance_buffer;
+    std::shared_ptr<buffer_t> octree_buffer;
+    std::shared_ptr<buffer_t> substance_buffer;
     
     // buffer for gpu to cpu messaging
-    std::unique_ptr<buffer_t> request_buffer;
+    std::shared_ptr<buffer_t> request_buffer;
 
     // buffer for per-work-group persistent data
-    std::unique_ptr<buffer_t> persistent_state_buffer;
+    std::shared_ptr<buffer_t> persistent_state_buffer;
 
     std::vector<request_t> requests;
 
