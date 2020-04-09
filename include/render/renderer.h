@@ -62,9 +62,7 @@ private:
     std::vector<VkDescriptorSet> desc_sets;
     VkDescriptorPool desc_pool;
 
-    VkQueue graphics_queue;
     VkQueue present_queue;
-    VkQueue compute_queue;
     
     std::string fragment_shader_code;
     std::string vertex_shader_code;
@@ -128,9 +126,7 @@ private:
     void initialise_buffers();
     void handle_requests();
 
-    uint32_t acquire_image() const;
     void present(uint32_t image_index) const;
-    void submit_to_queue(VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage);
 
 public:
     // constructors and destructors

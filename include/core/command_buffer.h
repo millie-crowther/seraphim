@@ -11,12 +11,14 @@ private:
     VkCommandBuffer command_buffer;
     VkDevice device;
     VkCommandPool command_pool;
+    VkQueue queue;
 
 public:
     template<class F>
-    command_buffer_t(VkDevice device, VkCommandPool command_pool, VkCommandBufferUsageFlags usage, const F & f){
+    command_buffer_t(VkDevice device, VkCommandPool command_pool, VkQueue queue, VkCommandBufferUsageFlags usage, const F & f){
         this->device = device;
         this->command_pool = command_pool;
+        this->queue = queue;
 
         VkCommandBufferAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -52,12 +54,27 @@ public:
     VkCommandBuffer get_command_buffer() const {
         return command_buffer;
     }
+
+    void submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage){
+        VkSubmitInfo submit_info = {};
+        submit_info.pWaitDstStageMask = &stage;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffer;
+        
+        submit_info.waitSemaphoreCount = wait_sema == VK_NULL_HANDLE ? 0 : 1;
+        submit_info.pWaitSemaphores = &wait_sema;
+        submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
+        submit_info.pSignalSemaphores = &signal_sema;
+
+        vkQueueSubmit(queue, 1, &submit_info, fence);
+    }
 };
 
 class command_pool_t {
 private:
     VkDevice device;
     VkCommandPool command_pool;
+    VkQueue queue;
 
 public:
     command_pool_t(VkDevice device, uint32_t queue_family){
@@ -71,6 +88,8 @@ public:
         if (vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
             throw std::runtime_error("Error: failed to create command pool.");
         }    
+
+        vkGetDeviceQueue(device, queue_family, 0, &queue);
     }
 
     ~command_pool_t(){
@@ -79,11 +98,7 @@ public:
 
     template<class F>
     std::shared_ptr<command_buffer_t> create_command_buffer(VkCommandBufferUsageFlags usage, const F & f) const {
-        return std::make_shared<command_buffer_t>(device, command_pool, usage, f);
-    }
-
-    VkCommandPool get_command_pool() const {
-        return command_pool;
+        return std::make_shared<command_buffer_t>(device, command_pool, queue, usage, f);
     }
 };
 

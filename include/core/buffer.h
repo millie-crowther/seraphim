@@ -57,7 +57,7 @@ public:
 
     // public methods
     template<class collection_t>
-    void write(const collection_t & source, uint64_t offset, VkCommandPool pool, VkQueue queue){
+    void write(const collection_t & source, uint64_t offset){
         if (source.empty()){
             return;
         }

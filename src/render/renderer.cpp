@@ -125,9 +125,7 @@ renderer_t::create_compute_pipeline(){
 
 bool
 renderer_t::init(){
-    vkGetDeviceQueue(device->get_device(), device->get_graphics_family(), 0, &graphics_queue);
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
-    vkGetDeviceQueue(device->get_device(), device->get_compute_family(), 0, &compute_queue);
 
     swapchain = std::make_unique<swapchain_t>(
         device, push_constants.window_size, surface
@@ -577,16 +575,6 @@ renderer_t::create_sync(){
     return true;
 }
 
-uint32_t 
-renderer_t::acquire_image() const {
-    uint32_t image_index;
-    vkAcquireNextImageKHR(
-        device->get_device(), swapchain->get_handle(), ~((uint64_t) 0), image_available_semas[current_frame], 
-        VK_NULL_HANDLE, &image_index
-    );
-    return image_index;
-}
-
 void 
 renderer_t::present(uint32_t image_index) const {
     VkSwapchainKHR swapchain_handle = swapchain->get_handle();
@@ -602,23 +590,6 @@ renderer_t::present(uint32_t image_index) const {
     vkQueuePresentKHR(present_queue, &present_info);
 }
 
-void 
-renderer_t::submit_to_queue(
-    VkQueue queue, VkCommandBuffer command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage
-){
-    VkSubmitInfo submit_info = {};
-    submit_info.pWaitDstStageMask = &stage;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer;
-    
-    submit_info.waitSemaphoreCount = wait_sema == VK_NULL_HANDLE ? 0 : 1;
-    submit_info.pWaitSemaphores = &wait_sema;
-    submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
-    submit_info.pSignalSemaphores = &signal_sema;
-
-    vkQueueSubmit(queue, 1, &submit_info, fence);
-}
-
 void
 renderer_t::render(){
     push_constants.current_frame++;
@@ -631,7 +602,11 @@ renderer_t::render(){
         push_constants.camera_up = camera->get_up().cast<float>();
     }
    
-    uint32_t image_index = acquire_image();
+    uint32_t image_index;
+    vkAcquireNextImageKHR(
+        device->get_device(), swapchain->get_handle(), ~((uint64_t) 0), image_available_semas[current_frame], 
+        VK_NULL_HANDLE, &image_index
+    );
 
     auto compute_command_buffer = compute_command_pool->create_command_buffer(
         VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer command_buffer){
@@ -649,14 +624,14 @@ renderer_t::render(){
         }
     );
 
-    submit_to_queue(
-        compute_queue, compute_command_buffer->get_command_buffer(), image_available_semas[current_frame], 
-        compute_done_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
+    compute_command_buffer->submit(
+        image_available_semas[current_frame], compute_done_semas[current_frame], 
+        in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     );
     
-    submit_to_queue(
-        graphics_queue, command_buffers[image_index]->get_command_buffer(), compute_done_semas[current_frame], 
-        render_finished_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+    command_buffers[image_index]->submit(
+        compute_done_semas[current_frame], render_finished_semas[current_frame], 
+        in_flight_fences[current_frame], VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
     );
 
     present(image_index);
@@ -704,8 +679,8 @@ renderer_t::handle_requests(){
                 new_node = octree_node_t::create(r.aabb, substance->get_sdf());
             }
 
-            octree_buffer->write(new_node, r.child, compute_command_pool->get_command_pool(), compute_queue);
-            request_buffer->write(blank_request, i, compute_command_pool->get_command_pool(), compute_queue);
+            octree_buffer->write(new_node, r.child);
+            request_buffer->write(blank_request, i);
         }
     }   
 }
@@ -749,7 +724,7 @@ renderer_t::initialise_buffers(){
     std::vector<substance_t::data_t> substance_data(work_group_size[0] * work_group_size[1]);
     substance_data[0].root = 0;
     substance_data[1].root = 8;
-    substance_buffer->write(substance_data, 0, compute_command_pool->get_command_pool(), compute_queue);
+    substance_buffer->write(substance_data, 0);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
 
@@ -768,5 +743,5 @@ renderer_t::initialise_buffers(){
         }
     }
     
-    octree_buffer->write(initial_octree, 0, compute_command_pool->get_command_pool(), compute_queue);
+    octree_buffer->write(initial_octree, 0);
 }
