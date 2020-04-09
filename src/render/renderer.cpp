@@ -78,8 +78,6 @@ renderer_t::~renderer_t(){
         vkDestroySemaphore(device->get_device(), render_finished_semas[i], nullptr);
         vkDestroyFence(device->get_device(), in_flight_fences[i], nullptr);
     }
-
-    vkDestroyCommandPool(device->get_device(), command_pool, nullptr); 
 }
 
   
@@ -153,9 +151,8 @@ renderer_t::init(){
         return false;
     }
 
-    if (!create_command_pool()){
-        return false;
-    }
+    graphics_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_graphics_family());
+    compute_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_compute_family());
 
     if (!create_framebuffers()){
         return false;
@@ -447,32 +444,32 @@ renderer_t::create_framebuffers(){
 
 bool
 renderer_t::create_command_buffers(){
-    command_buffers.resize(swapchain->get_size());
+    command_buffers.clear();
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){
-        command_buffers[i] = std::make_unique<command_buffer_t>(
-            device->get_device(), command_pool, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, 
-        [&](VkCommandBuffer command_buffer){
-            VkRenderPassBeginInfo render_pass_info = {};
-            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            render_pass_info.renderPass = render_pass;
-            render_pass_info.framebuffer = framebuffers[i];
-            render_pass_info.renderArea.offset = { 0, 0 };
-            render_pass_info.renderArea.extent = swapchain->get_extents();
+        command_buffers.push_back(graphics_command_pool->create_command_buffer(
+            VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, [&](VkCommandBuffer command_buffer){
+                VkRenderPassBeginInfo render_pass_info = {};
+                render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                render_pass_info.renderPass = render_pass;
+                render_pass_info.framebuffer = framebuffers[i];
+                render_pass_info.renderArea.offset = { 0, 0 };
+                render_pass_info.renderArea.extent = swapchain->get_extents();
 
-            vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(
-                    command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
-                );
+                vkCmdBeginRenderPass(command_buffer, &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+                    vkCmdBindPipeline(
+                        command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline
+                    );
 
-                vkCmdBindDescriptorSets(
-                    command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
-                    0, 1, &desc_sets[i], 0, nullptr
-                );
+                    vkCmdBindDescriptorSets(
+                        command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+                        0, 1, &desc_sets[i], 0, nullptr
+                    );
 
-                vkCmdDraw(command_buffer, 3, 1, 0, 0);
-            vkCmdEndRenderPass(command_buffer);
-        });
+                    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+                vkCmdEndRenderPass(command_buffer);
+            }
+        ));
     }
 
     return true;
@@ -536,27 +533,6 @@ renderer_t::create_descriptor_set_layout(){
         return false;
     }
  
-    return true;
-}
-
-bool
-renderer_t::create_command_pool(){
-    // create command pool
-    VkCommandPoolCreateInfo command_pool_info = {};
-    command_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    command_pool_info.queueFamilyIndex = device->get_graphics_family();
-    command_pool_info.flags = 0;
-
-    if (vkCreateCommandPool(device->get_device(), &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
-    	return false;
-    }
-
-    command_pool_info.queueFamilyIndex = device->get_compute_family();
-
-    if (vkCreateCommandPool(device->get_device(), &command_pool_info, nullptr, &compute_command_pool) != VK_SUCCESS){
-    	return false;
-    }
-
     return true;
 }
 
@@ -657,23 +633,24 @@ renderer_t::render(){
    
     uint32_t image_index = acquire_image();
 
-    command_buffer_t compute_command_buffer(device->get_device(), compute_command_pool, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-    [&](VkCommandBuffer command_buffer){
-        vkCmdPushConstants(
-            command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
-            0, sizeof(push_constant_t), &push_constants
-        );
+    auto compute_command_buffer = compute_command_pool->create_command_buffer(
+        VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, [&](VkCommandBuffer command_buffer){
+            vkCmdPushConstants(
+                command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
+                0, sizeof(push_constant_t), &push_constants
+            );
 
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
-        vkCmdBindDescriptorSets(
-            command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
-            0, 1, &desc_sets[image_index], 0, nullptr
-        );
-        vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
-    });
+            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline);
+            vkCmdBindDescriptorSets(
+                command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, compute_pipeline_layout,
+                0, 1, &desc_sets[image_index], 0, nullptr
+            );
+            vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
+        }
+    );
 
     submit_to_queue(
-        compute_queue, compute_command_buffer.get_command_buffer(), image_available_semas[current_frame], 
+        compute_queue, compute_command_buffer->get_command_buffer(), image_available_semas[current_frame], 
         compute_done_semas[current_frame], in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     );
     
@@ -727,8 +704,8 @@ renderer_t::handle_requests(){
                 new_node = octree_node_t::create(r.aabb, substance->get_sdf());
             }
 
-            octree_buffer->write(new_node, r.child, compute_command_pool, compute_queue);
-            request_buffer->write(blank_request, i, compute_command_pool, compute_queue);
+            octree_buffer->write(new_node, r.child, compute_command_pool->get_command_pool(), compute_queue);
+            request_buffer->write(blank_request, i, compute_command_pool->get_command_pool(), compute_queue);
         }
     }   
 }
@@ -772,7 +749,7 @@ renderer_t::initialise_buffers(){
     std::vector<substance_t::data_t> substance_data(work_group_size[0] * work_group_size[1]);
     substance_data[0].root = 0;
     substance_data[1].root = 8;
-    substance_buffer->write(substance_data, 0, compute_command_pool, compute_queue);
+    substance_buffer->write(substance_data, 0, compute_command_pool->get_command_pool(), compute_queue);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
 
@@ -791,5 +768,5 @@ renderer_t::initialise_buffers(){
         }
     }
     
-    octree_buffer->write(initial_octree, 0, compute_command_pool, compute_queue);
+    octree_buffer->write(initial_octree, 0, compute_command_pool->get_command_pool(), compute_queue);
 }

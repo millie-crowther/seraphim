@@ -54,4 +54,37 @@ public:
     }
 };
 
+class command_pool_t {
+private:
+    VkDevice device;
+    VkCommandPool command_pool;
+
+public:
+    command_pool_t(VkDevice device, uint32_t queue_family){
+        this->device = device;
+
+        VkCommandPoolCreateInfo command_pool_info = {};
+        command_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        command_pool_info.queueFamilyIndex = queue_family;
+        command_pool_info.flags = 0;
+
+        if (vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool) != VK_SUCCESS){
+            throw std::runtime_error("Error: failed to create command pool.");
+        }    
+    }
+
+    ~command_pool_t(){
+        vkDestroyCommandPool(device, command_pool, nullptr);
+    }
+
+    template<class F>
+    std::shared_ptr<command_buffer_t> create_command_buffer(VkCommandBufferUsageFlags usage, const F & f) const {
+        return std::make_shared<command_buffer_t>(device, command_pool, usage, f);
+    }
+
+    VkCommandPool get_command_pool() const {
+        return command_pool;
+    }
+};
+
 #endif

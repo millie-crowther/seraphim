@@ -47,12 +47,10 @@ private:
 
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
-    VkCommandPool command_pool;
-    std::vector<std::unique_ptr<command_buffer_t>> command_buffers;
+    std::vector<std::shared_ptr<command_buffer_t>> command_buffers;
 
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
-    VkCommandPool compute_command_pool;
 
     int current_frame;
     std::vector<VkSemaphore> image_available_semas;
@@ -80,6 +78,9 @@ private:
     std::weak_ptr<camera_t> main_camera;
     std::unique_ptr<texture_t> render_texture; 
     
+    std::unique_ptr<command_pool_t> compute_command_pool;
+    std::unique_ptr<command_pool_t> graphics_command_pool;
+
     // types
     struct request_t {
         f32vec4_t aabb;
@@ -115,7 +116,6 @@ private:
     bool create_framebuffers();
     bool create_command_buffers();
     bool create_descriptor_set_layout();
-    bool create_command_pool();
     bool create_descriptor_pool();
     bool create_sync();
     void cleanup_swapchain();
