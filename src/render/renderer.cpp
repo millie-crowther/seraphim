@@ -127,9 +127,7 @@ bool
 renderer_t::init(){
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
-    swapchain = std::make_unique<swapchain_t>(
-        device, push_constants.window_size, surface
-    );
+    swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
 
     if (!create_render_pass()){
         return false;
@@ -191,9 +189,7 @@ renderer_t::recreate_swapchain(){
     vkDeviceWaitIdle(device->get_device());
   
     cleanup_swapchain();    
-    swapchain = std::make_unique<swapchain_t>(
-        device, push_constants.window_size, surface
-    );
+    swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
     
     create_render_pass();
     create_graphics_pipeline();

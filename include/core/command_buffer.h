@@ -51,10 +51,6 @@ public:
         vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
     }
 
-    VkCommandBuffer get_command_buffer() const {
-        return command_buffer;
-    }
-
     void submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage){
         VkSubmitInfo submit_info = {};
         submit_info.pWaitDstStageMask = &stage;
