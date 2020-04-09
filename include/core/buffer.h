@@ -6,7 +6,7 @@
 #include <cstring>
 #include <memory>
 
-#include "core/command_buffer.h"
+#include "core/command.h"
 #include "core/device.h"
 #include "maths/vec.h"
 

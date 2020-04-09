@@ -10,7 +10,7 @@
 #include "render/camera.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
-#include "core/command_buffer.h"
+#include "core/command.h"
 #include "render/substance.h"
 #include "render/octree.h"
 
