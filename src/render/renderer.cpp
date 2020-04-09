@@ -670,8 +670,8 @@ renderer_t::handle_requests(){
                 new_node = octree_node_t::create(r.aabb, substance->get_sdf());
             }
 
-            octree_buffer->write(new_node, r.child);
-            request_buffer->write(blank_request, i);
+            octree_buffer->write(new_node, r.child * sizeof(octree_node_t));
+            request_buffer->write(blank_request, i * sizeof(request_t));
         }
     }   
 }

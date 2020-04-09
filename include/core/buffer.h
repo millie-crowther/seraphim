@@ -29,7 +29,7 @@ private:
 
         void * memory_map;
         vkMapMemory(
-            device->get_device(), memory, sizeof(typename collection_t::value_type) * offset, 
+            device->get_device(), memory, offset, 
             sizeof(typename collection_t::value_type) * c.size(), 0, &memory_map
         );
 
