@@ -30,7 +30,7 @@ renderer_t::renderer_t(
     set_main_camera(test_camera);
 
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
-    vertex_shader_code = resources::load_file("../src/render/shader/shader.vert");
+    vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
     sphere = std::make_shared<substance_t>(
         std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)

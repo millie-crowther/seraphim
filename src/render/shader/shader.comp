@@ -55,7 +55,10 @@ struct substance_t {
     float _1;  
 };
 
-layout (binding = 1) buffer octree_buffer { uvec2 body[]; } octree_global;
+layout (binding = 1) buffer octree_buffer { 
+    uvec2 body[gl_WorkGroupSize.x * gl_WorkGroupSize.y]; 
+} octree_global;
+
 layout (binding = 2) buffer substance_buffer { 
     substance_t substances[]; 
 } substances_global;

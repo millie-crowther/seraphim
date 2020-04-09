@@ -78,7 +78,7 @@ public:
     }
 
     template<class collection_t>
-    void read(collection_t & destination, uint64_t offset) {
+    void read(const collection_t & destination, uint64_t offset) {
         map(destination, offset, false);
     }
 
