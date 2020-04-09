@@ -14,22 +14,22 @@ renderer_t::renderer_t(
     VkSurfaceKHR surface, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera
 ){
+    this->allocator = allocator;
+    this->device = device;
+    this->surface = surface;
+
     work_group_count = u32vec2_t(8);
     work_group_size = u32vec2_t(32);
 
-    push_constants.current_frame = 0;
-
-    set_main_camera(test_camera);
-    
-    push_constants.render_distance = static_cast<float>(hyper::rho);
+    create_buffers();
 
     current_frame = 0;
-    this->surface = surface;
-    this->allocator = allocator;
-    this->device = device;
-
+    push_constants.current_frame = 0;
+    push_constants.render_distance = static_cast<float>(hyper::rho);
     push_constants.window_size = window->get_size();
-    
+
+    set_main_camera(test_camera);
+
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code = resources::load_file("../src/render/shader/shader.vert");
 
@@ -133,7 +133,6 @@ renderer_t::init(){
         return false;
     }
 
-    create_buffers();
 
     if (!create_descriptor_set_layout()){
         return false;
@@ -686,20 +685,20 @@ renderer_t::create_buffers(){
     uint32_t count = work_group_count[0] * work_group_count[1];
     uint32_t size = work_group_size[0] * work_group_size[1];
 
-    octree_buffer = std::make_unique<buffer_t<octree_node_t>>(
-        allocator, 1, device, count * size, VMA_MEMORY_USAGE_CPU_TO_GPU
+    octree_buffer = std::make_unique<buffer_t>(
+        allocator, 1, device, sizeof(octree_node_t) * count * size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    substance_buffer = std::make_unique<buffer_t<substance_t::data_t>>(
-        allocator, 2, device, size, VMA_MEMORY_USAGE_CPU_TO_GPU
+    substance_buffer = std::make_unique<buffer_t>(
+        allocator, 2, device, sizeof(substance_t::data_t) * size, VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
     requests.resize(count);
-    request_buffer = std::make_unique<buffer_t<request_t>>(
-        allocator, 3, device, count, VMA_MEMORY_USAGE_GPU_TO_CPU
+    request_buffer = std::make_unique<buffer_t>(
+        allocator, 3, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    persistent_state_buffer = std::make_unique<buffer_t<uint8_t>>(
+    persistent_state_buffer = std::make_unique<buffer_t>(
         allocator, 4, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
     );
 }

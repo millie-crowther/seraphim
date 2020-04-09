@@ -10,7 +10,6 @@
 #include "core/device.h"
 #include "maths/vec.h"
 
-template<class T>
 class buffer_t {
 private:
     VmaAllocator allocator;
@@ -33,7 +32,7 @@ public:
 
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_info.size = sizeof(T) * size;
+        buffer_info.size = size;
 
         VmaAllocationCreateInfo alloc_create_info = {};
         alloc_create_info.usage = vma_usage;
@@ -48,7 +47,7 @@ public:
         desc_buffer_info = {};
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
-        desc_buffer_info.range  = sizeof(T) * size;
+        desc_buffer_info.range  = size;
     }
 
     ~buffer_t(){
@@ -56,14 +55,17 @@ public:
     }
 
     // public methods
-    template<class collection_t>
+    template<typename collection_t>
     void write(const collection_t & source, uint64_t offset){
         if (source.empty()){
             return;
         }
 
-        vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * source.size(), 0, &memory_map);
-        std::memcpy(memory_map, source.data(), sizeof(T) * source.size());
+        vkMapMemory(
+            device->get_device(), memory, sizeof(typename collection_t::value_type) * offset, 
+            sizeof(typename collection_t::value_type) * source.size(), 0, &memory_map
+        );
+        std::memcpy(memory_map, source.data(), sizeof(typename collection_t::value_type) * source.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
@@ -73,8 +75,11 @@ public:
             return;
         }
 
-        vkMapMemory(device->get_device(), memory, 0, sizeof(T) * destination.size(), 0, &memory_map);
-        std::memcpy(destination.data(), memory_map, sizeof(T) * destination.size());
+        vkMapMemory(
+            device->get_device(), memory, 0, 
+            sizeof(typename collection_t::value_type) * destination.size(), 0, &memory_map
+        );
+        std::memcpy(destination.data(), memory_map, sizeof(typename collection_t::value_type) * destination.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
