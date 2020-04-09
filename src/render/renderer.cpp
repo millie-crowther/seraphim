@@ -78,7 +78,6 @@ renderer_t::~renderer_t(){
         vkDestroyFence(device->get_device(), in_flight_fences[i], nullptr);
     }
 }
-
   
 bool 
 renderer_t::create_compute_pipeline(){
@@ -132,7 +131,6 @@ renderer_t::init(){
         return false;
     }
 
-
     if (!create_descriptor_set_layout()){
         return false;
     }
@@ -160,8 +158,6 @@ renderer_t::init(){
         return false;
     }
 
-    initialise_buffers();
- 
     u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
         10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
@@ -169,12 +165,16 @@ renderer_t::init(){
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
-        write_desc_sets.push_back(
-            render_texture->get_descriptor_write(descriptor_set)
-        );
+        write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
+        for (auto buffer : buffers){
+            write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
+        }
     }
+
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
+    initialise_buffers();
+ 
     if (!create_command_buffers()){
         return false;
     }
@@ -704,16 +704,6 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    // write to descriptor sets
-    std::vector<VkWriteDescriptorSet> write_desc_sets;
-    for (uint32_t i = 0; i < desc_sets.size(); i++){
-        for (auto buffer : buffers){
-            write_desc_sets.push_back(buffer->get_write_descriptor_set(desc_sets[i]));
-        }
-    }
-
-    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
-
     std::vector<substance_t::data_t> substance_data(work_group_size[0] * work_group_size[1]);
     substance_data[0].root = 0;
     substance_data[1].root = 8;
