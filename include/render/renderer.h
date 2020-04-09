@@ -106,17 +106,16 @@ private:
 
     // private functions
     VkShaderModule create_shader_module(std::string code);
-    bool create_render_pass();
-    bool create_graphics_pipeline();    
-    bool create_compute_pipeline();
-    bool create_framebuffers();
-    bool create_command_buffers();
-    bool create_descriptor_set_layout();
-    bool create_descriptor_pool();
-    bool create_sync();
+    void create_render_pass();
+    void create_graphics_pipeline();    
+    void create_compute_pipeline();
+    void create_framebuffers();
+    void create_command_buffers();
+    void create_descriptor_set_layout();
+    void create_descriptor_pool();
+    void create_sync();
     void cleanup_swapchain();
     void recreate_swapchain();
-    bool init();
 
     void create_compute_command_buffers();
 

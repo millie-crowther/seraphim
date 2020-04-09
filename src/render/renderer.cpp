@@ -43,9 +43,39 @@ renderer_t::renderer_t(
     substances.push_back(sphere);
     substances.push_back(plane);
 
-    if (!init()){
-        throw std::runtime_error("Error: Failed to initialise renderer subsystem.");
+    vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
+
+    swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
+
+    create_render_pass();
+    create_descriptor_set_layout();
+    create_graphics_pipeline();
+    create_compute_pipeline();
+
+    graphics_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_graphics_family());
+    compute_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_compute_family());
+
+    create_framebuffers();
+    create_descriptor_pool();
+    create_sync();
+
+    u32vec2_t image_size = work_group_count * work_group_size;
+    render_texture = std::make_unique<texture_t>(
+        10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+    );
+
+    std::vector<VkWriteDescriptorSet> write_desc_sets;
+    for (auto descriptor_set : desc_sets){
+        write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
+        for (auto buffer : buffers){
+            write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
+        }
     }
+
+    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+
+    initialise_buffers();
+    create_command_buffers();
 }
 
 void
@@ -79,7 +109,7 @@ renderer_t::~renderer_t(){
     }
 }
   
-bool 
+void 
 renderer_t::create_compute_pipeline(){
     VkPushConstantRange push_const_range = {};
     push_const_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -96,8 +126,7 @@ renderer_t::create_compute_pipeline(){
     if (vkCreatePipelineLayout(
 	    device->get_device(), &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
     ){
-        std::cout << "Error: Failed to create pipeline layout." << std::endl;
-	    return false;
+        throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
     std::string compute_shader_code = resources::load_file("../src/render/shader/shader.comp");
@@ -113,73 +142,10 @@ renderer_t::create_compute_pipeline(){
     pipeline_create_info.layout = compute_pipeline_layout;
 
     if (vkCreateComputePipelines(device->get_device(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
-        return false;
+        throw std::runtime_error("Error: Failed to create compute pipeline.");
     }
 
     vkDestroyShaderModule(device->get_device(), module, nullptr);    
-
-    return true;
-}
-
-bool
-renderer_t::init(){
-    vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
-
-    swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
-
-    if (!create_render_pass()){
-        return false;
-    }
-
-    if (!create_descriptor_set_layout()){
-        return false;
-    }
-    
-    if (!create_graphics_pipeline()){
-        return false;
-    }
-    
-    if (!create_compute_pipeline()){
-        return false;
-    }
-
-    graphics_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_graphics_family());
-    compute_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_compute_family());
-
-    if (!create_framebuffers()){
-        return false;
-    }
-
-    if (!create_descriptor_pool()){
-        return false;
-    }
-
-    if (!create_sync()){
-        return false;
-    }
-
-    u32vec2_t image_size = work_group_count * work_group_size;
-    render_texture = std::make_unique<texture_t>(
-        10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
-    );
-
-    std::vector<VkWriteDescriptorSet> write_desc_sets;
-    for (auto descriptor_set : desc_sets){
-        write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
-        for (auto buffer : buffers){
-            write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
-        }
-    }
-
-    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
-
-    initialise_buffers();
- 
-    if (!create_command_buffers()){
-        return false;
-    }
-
-    return true;
 }
 
 void
@@ -192,13 +158,10 @@ renderer_t::recreate_swapchain(){
     create_render_pass();
     create_graphics_pipeline();
     create_framebuffers();
-
-    if (!create_command_buffers()){
-        throw std::runtime_error("Error: failed to re-create command buffers on swapchain invalidation.");
-    }
+    create_command_buffers();
 }
 
-bool
+void
 renderer_t::create_render_pass(){
     VkAttachmentDescription colour_attachment = {};
     colour_attachment.format = swapchain->get_image_format();
@@ -238,10 +201,12 @@ renderer_t::create_render_pass(){
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    return vkCreateRenderPass(device->get_device(), &render_pass_info, nullptr, &render_pass) == VK_SUCCESS;
+    if (vkCreateRenderPass(device->get_device(), &render_pass_info, nullptr, &render_pass) != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to create render pass.");
+    }
 }
 
-bool 
+void 
 renderer_t::create_graphics_pipeline(){
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
@@ -356,8 +321,7 @@ renderer_t::create_graphics_pipeline(){
     if (vkCreatePipelineLayout(
 	    device->get_device(), &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
-        std::cout << "Error: Failed to create pipeline layout." << std::endl;
-	    return false;
+        throw std::runtime_error("Error: Failed to create graphics pipeline layout.");
     }
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -396,17 +360,14 @@ renderer_t::create_graphics_pipeline(){
     );
 
     if (result != VK_SUCCESS){
-        std::cout << "Error: Failed to create graphics pipeline." << std::endl;
-	    return false;
+        throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
 
     vkDestroyShaderModule(device->get_device(), vert_shader_module, nullptr);
     vkDestroyShaderModule(device->get_device(), frag_shader_module, nullptr);
-
-    return true;
 }
 
-bool
+void
 renderer_t::create_framebuffers(){
     VkExtent2D extents = swapchain->get_extents();
 
@@ -427,14 +388,12 @@ renderer_t::create_framebuffers(){
         if (vkCreateFramebuffer(
             device->get_device(), &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
         ){
-            return false;
+            throw std::runtime_error("Error: Failed to create framebuffer.");
         }
     }
-
-    return true;
 }
 
-bool
+void
 renderer_t::create_command_buffers(){
     command_buffers.clear();
 
@@ -463,11 +422,9 @@ renderer_t::create_command_buffers(){
             }
         ));
     }
-
-    return true;
 }
 
-bool 
+void 
 renderer_t::create_descriptor_pool(){
     std::vector<VkDescriptorPoolSize> pool_sizes = {
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size() },
@@ -481,7 +438,7 @@ renderer_t::create_descriptor_pool(){
     pool_info.maxSets       = swapchain->get_size();
 
     if (vkCreateDescriptorPool(device->get_device(), &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
-	    return false;
+	    throw std::runtime_error("Error: Failed to create descriptor pool.");
     }
 
     std::vector<VkDescriptorSetLayout> layouts(swapchain->get_size(), descriptor_layout);
@@ -494,13 +451,11 @@ renderer_t::create_descriptor_pool(){
 
     desc_sets.resize(swapchain->get_size());
     if (vkAllocateDescriptorSets(device->get_device(), &alloc_info, desc_sets.data()) != VK_SUCCESS){
-	    return false;
+	    throw std::runtime_error("Error: Failed to allocate descriptor sets.");
     }
-
-    return true;
 }
 
-bool
+void
 renderer_t::create_descriptor_set_layout(){
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
@@ -519,13 +474,11 @@ renderer_t::create_descriptor_set_layout(){
     layout_info.pBindings    = layouts.data();
 
     if (vkCreateDescriptorSetLayout(device->get_device(), &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
-        return false;
+        throw std::runtime_error("Error: Failed to create descriptor set layout.");
     }
- 
-    return true;
 }
 
-bool
+void
 renderer_t::create_sync(){
     image_available_semas.resize(frames_in_flight);
     compute_done_semas.resize(frames_in_flight);
@@ -539,31 +492,17 @@ renderer_t::create_sync(){
     fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
  
+    uint32_t result = VK_SUCCESS;
     for (int i = 0; i < frames_in_flight; i++){
-        if (vkCreateSemaphore(
-            device->get_device(), &create_info, nullptr, &image_available_semas[i]) != VK_SUCCESS
-        ){
-            return false;
-        }
-
-        if (vkCreateSemaphore(
-            device->get_device(), &create_info, nullptr, &render_finished_semas[i]) != VK_SUCCESS
-        ){
-            return false;
-        }
-
-        if (vkCreateSemaphore(
-            device->get_device(), &create_info, nullptr, &compute_done_semas[i]) != VK_SUCCESS
-        ){
-            return false;
-        }
-
-        if (vkCreateFence(device->get_device(), &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS){
-            return false;
-        }
+        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &image_available_semas[i]);
+        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &render_finished_semas[i]);
+        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &compute_done_semas[i]);
+        result |= vkCreateFence(device->get_device(), &fence_info, nullptr, &in_flight_fences[i]);
     }
 
-    return true;
+    if (result != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to create synchronisation primitives.");
+    }
 }
 
 void 
