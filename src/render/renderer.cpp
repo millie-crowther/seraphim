@@ -659,7 +659,7 @@ renderer_t::handle_requests(){
 
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
-    request_buffer->read(requests);
+    request_buffer->read(requests, 0);
 
     for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
         request_t r = requests[i];

@@ -20,7 +20,24 @@ private:
     uint32_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
-    void * memory_map;
+
+    template<typename collection_t>
+    void map(const collection_t & c, uint64_t offset, bool is_write){
+        if (c.empty()){
+            return;
+        }
+
+        void * memory_map;
+        vkMapMemory(
+            device->get_device(), memory, sizeof(typename collection_t::value_type) * offset, 
+            sizeof(typename collection_t::value_type) * c.size(), 0, &memory_map
+        );
+
+        void * from = is_write ? memory_map          : ((void *) c.data());
+        void * to   = is_write ? ((void *) c.data()) : memory_map;
+        std::memcpy(from, to, sizeof(typename collection_t::value_type) * c.size());
+        vkUnmapMemory(device->get_device(), memory);
+    }
 
 public:
     // constructors and destructors
@@ -57,30 +74,12 @@ public:
     // public methods
     template<typename collection_t>
     void write(const collection_t & source, uint64_t offset){
-        if (source.empty()){
-            return;
-        }
-
-        vkMapMemory(
-            device->get_device(), memory, sizeof(typename collection_t::value_type) * offset, 
-            sizeof(typename collection_t::value_type) * source.size(), 0, &memory_map
-        );
-        std::memcpy(memory_map, source.data(), sizeof(typename collection_t::value_type) * source.size());
-        vkUnmapMemory(device->get_device(), memory);
+        map(source, offset, true);
     }
 
     template<class collection_t>
-    void read(collection_t & destination) {
-        if (destination.empty()){
-            return;
-        }
-
-        vkMapMemory(
-            device->get_device(), memory, 0, 
-            sizeof(typename collection_t::value_type) * destination.size(), 0, &memory_map
-        );
-        std::memcpy(destination.data(), memory_map, sizeof(typename collection_t::value_type) * destination.size());
-        vkUnmapMemory(device->get_device(), memory);
+    void read(collection_t & destination, uint64_t offset) {
+        map(destination, offset, false);
     }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
