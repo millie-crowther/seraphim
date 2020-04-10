@@ -27,10 +27,9 @@ blaspheme_t::blaspheme_t(){
     std::cout << "Running in release mode." << std::endl;
 #endif
 
-    work_group_count = u32vec2_t(16);
+    work_group_count = u32vec2_t(12);
     work_group_size = u32vec2_t(32);
 
-    // initialise GLFW
     if (!glfwInit()){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
@@ -212,14 +211,9 @@ blaspheme_t::create_instance(){
 #if BLASPHEME_DEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL 
 debug_callback(
-    VkDebugReportFlagsEXT flags,
-    VkDebugReportObjectTypeEXT obj_type,
-    uint64_t obj,
-    size_t location,
-    int32_t code,
-    const char * layer_prefix,
-    const char * msg,
-    void * user_data
+    VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
+    uint64_t obj, size_t location, int32_t code,
+    const char * layer_prefix, const char * msg, void * user_data
 ){
     std::cout << "Validation layer debug message: " << msg << std::endl;
     return VK_FALSE;

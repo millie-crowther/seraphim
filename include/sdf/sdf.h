@@ -2,6 +2,7 @@
 #define SDF_H
 
 #include "maths/vec.h"
+#include "maths/aabb.h"
 #include <functional>
 #include "core/hyper.h"
 
@@ -11,9 +12,9 @@ protected:
     // protected constructor for abstract class
     sdf_t(){}
 
-    // TODO: may need a virtual destuctor here
-
 public:
+    virtual ~sdf_t(){}
+
     // virtual accessors 
     virtual double phi(const vec_t<double, D> & x) const = 0;
 

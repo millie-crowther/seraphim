@@ -117,6 +117,18 @@ public:
         return r;
     }
 
+    vec_t<T, N> min(const vec_t<T, N> & x) const {
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::min<T>());
+        return r;
+    }
+
+    vec_t<T, N> max(const vec_t<T, N> & x) const {
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::max<T>());
+        return r;
+    }
+
     template<class S>
     vec_t<S, N> cast() const {
         vec_t<S, N> x;

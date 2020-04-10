@@ -9,7 +9,7 @@ const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
 
-const uvec2 work_group_count = uvec2(16);
+const uvec2 work_group_count = uvec2(12);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
 
