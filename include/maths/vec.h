@@ -7,6 +7,9 @@
 #include "core/hyper.h"
 #include <iostream>
 #include <numeric>
+#include <functional>
+
+using namespace std::placeholders;
 
 template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
@@ -60,19 +63,6 @@ public:
         return ys;
     }
 
-    /*
-        modifiers
-    */ 
-    template<class F>
-    void for_each(const F & f){
-        for (uint8_t i = 0; i < N; i++){ f(i); }
-    }
-
-    template<class F>
-    void transform(const F & f){
-        std::transform(this->begin(), this->end(), this->begin(), f);
-    }
-
     /* 
         accessors
     */
@@ -83,36 +73,32 @@ public:
         return x;
     }
 
-    template<class F>
-    vec_t<T, N> map(const F & f) const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), f);
-        return x;
-    }
-
     /*
         modifier operators    
     */
     void operator+=(const vec_t<T, N> & v){
-        for_each([&](uint8_t i){ (*this)[i] += v[i]; });
+        std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::plus<T>());
     }
 
     void operator-=(const vec_t<T, N> & v){
-        for_each([&](uint8_t i){ (*this)[i] -= v[i]; });
+        std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::minus<T>());
     }
 
     void operator*=(const T & s){
-        transform([&](const T & x){ return x * s; });
+        std::transform(this->begin(), this->end(), this->begin(), std::bind(std::multiplies<T>(), s, _1));
     }
 
     void operator/=(const T & s){
-        transform([&](const T & x){ return x / s; });
+        std::transform(this->begin(), this->end(), this->begin(), std::bind(std::divides<T>(), _1, s));
     }
   
     /*
         accessor operators
     */
     T operator*(const vec_t<T, N> & x) const {
+        // vec_t<T, N> h = hadamard(x);
+        // return std::accumulate(h.begin(), h.end(), 0);
+        
         T result = 0;
         for (uint8_t i = 0; i < N; i++){ 
             result += (*this)[i] * x[i]; 
@@ -121,29 +107,40 @@ public:
     }
 
     vec_t<T, N> operator+(const vec_t<T, N> & x) const {
-        return enumerate([&](uint8_t i){ return (*this)[i] + x[i]; });
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus<T>());
+        return r;
     }
 
     vec_t<T, N> operator-(const vec_t<T, N> & x) const {
-        return enumerate([&](uint8_t i){ return (*this)[i] - x[i]; });
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
+        return r;
     } 
 
     vec_t<T, N> operator-() const {
-        return map(std::negate<T>());
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), std::negate<T>());
+        return x;
     }
 
     vec_t<T, N> operator*(const T & s) const {
-        return map([&](const T & x){ return x * s; });
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), std::bind(std::multiplies<T>(), s, _1));
+        return x;
     }
 
     vec_t<T, N> operator/(const T & s) const {
-        return map([&](const T & x){ return x / s; });
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), std::bind(std::divides<T>(), _1, s));
+        return x;
     }
 
-    // vec_t<T, N> hadamard(const vec_t<T, N> & x) const {
-    //     vec_t<T, N> r = *this;
-    //     std::transform(this->xs.begin(), this->xs.end(), r.xs.begin)
-    // }
+    vec_t<T, N> hadamard(const vec_t<T, N> & x) const {
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies<T>());
+        return r;
+    }
 
     template<class S = vec_t<T, 3>>
     typename std::enable_if<N == 3, S>::type
