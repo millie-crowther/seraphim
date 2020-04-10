@@ -7,7 +7,7 @@
 texture_t::texture_t(
     uint32_t binding,
     VmaAllocator allocator, std::shared_ptr<device_t> device,
-    u32vec2_t & size, VkImageUsageFlags usage, 
+    u32vec2_t size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
 ){    
     this->binding = binding;
