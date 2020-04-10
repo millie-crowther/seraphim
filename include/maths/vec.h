@@ -9,14 +9,7 @@
 #include <numeric>
 
 template<class T, uint8_t N>
-class vec_t {
-protected:
-    std::array<T, N> xs;
-
-    vec_t(const std::array<T, N> & xs){
-        this->xs = xs;
-    }
-
+class vec_t : public std::array<T, N> {
 public:
     /*
         constructors
@@ -24,11 +17,11 @@ public:
     vec_t() : vec_t(T(0)){}
 
     vec_t(const T & x){
-        xs.fill(x); 
+        this->fill(x); 
     }
 
     template<class... Xs>
-    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : xs({ x, _xs...}) {}
+    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : std::array<T, N>({ x, _xs...}) {}
 
     /*
        norms
@@ -42,7 +35,7 @@ public:
     }   
 
     T chebyshev_norm() const {
-        return std::accumulate(xs.begin(), xs.end(), 0, [](const T & a, const T & b){ 
+        return std::accumulate(this->begin(), this->end(), 0, [](const T & a, const T & b){ 
             return std::max(a, std::abs(b));
         });
     }
@@ -62,7 +55,7 @@ public:
     vec_t<S, N> cast() const {
         vec_t<S, N> ys;
         for (uint8_t i = 0; i < N; i++){
-            ys[i] = static_cast<S>(xs[i]);
+            ys[i] = static_cast<S>((*this)[i]);
         }
         return ys;
     }
@@ -77,7 +70,7 @@ public:
 
     template<class F>
     void transform(const F & f){
-        std::transform(xs.begin(), xs.end(), xs.begin(), f);
+        std::transform(this->begin(), this->end(), this->begin(), f);
     }
 
     /* 
@@ -85,38 +78,27 @@ public:
     */
     template<class F>
     vec_t<T, N> enumerate(const F & f) const {
-        std::array<T, N> x;
+        vec_t<T, N> x;
         for (uint8_t i = 0; i < N; i++){ x[i] = f(i); }
-        return vec_t<T, N>(x);
+        return x;
     }
 
     template<class F>
     vec_t<T, N> map(const F & f) const {
-        std::array<T, N> x;
-        std::transform(xs.begin(), xs.end(), x.begin(), f);
-        return vec_t<T, N>(x);
-    }
-
-    /*
-        subscript operators
-    */
-    T operator[](uint8_t i) const {
-        return xs[i];
-    }
-
-    T & operator[](uint8_t i){
-        return xs[i];
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), f);
+        return x;
     }
 
     /*
         modifier operators    
     */
     void operator+=(const vec_t<T, N> & v){
-        for_each([&](uint8_t i){ xs[i] += v[i]; });
+        for_each([&](uint8_t i){ (*this)[i] += v[i]; });
     }
 
     void operator-=(const vec_t<T, N> & v){
-        for_each([&](uint8_t i){ xs[i] -= v[i]; });
+        for_each([&](uint8_t i){ (*this)[i] -= v[i]; });
     }
 
     void operator*=(const T & s){
@@ -133,17 +115,17 @@ public:
     T operator*(const vec_t<T, N> & x) const {
         T result = 0;
         for (uint8_t i = 0; i < N; i++){ 
-            result += xs[i] * x.xs[i]; 
+            result += (*this)[i] * x[i]; 
         }
         return result;
     }
 
     vec_t<T, N> operator+(const vec_t<T, N> & x) const {
-        return enumerate([&](uint8_t i){ return xs[i] + x.xs[i]; });
+        return enumerate([&](uint8_t i){ return (*this)[i] + x[i]; });
     }
 
     vec_t<T, N> operator-(const vec_t<T, N> & x) const {
-        return enumerate([&](uint8_t i){ return xs[i] - x.xs[i]; });
+        return enumerate([&](uint8_t i){ return (*this)[i] - x[i]; });
     } 
 
     vec_t<T, N> operator-() const {
@@ -167,9 +149,9 @@ public:
     typename std::enable_if<N == 3, S>::type
     operator%(const vec_t<T, 3> & v) const {
         return vec_t<T, 3>(
-            xs[1] * v.xs[2] - xs[2] * v.xs[1],
-            xs[2] * v.xs[0] - xs[0] * v.xs[2],
-            xs[0] * v.xs[1] - xs[1] * v.xs[0]
+            (*this)[1] * v[2] - (*this)[2] * v[1],
+            (*this)[2] * v[0] - (*this)[0] * v[2],
+            (*this)[0] * v[1] - (*this)[1] * v[0]
         );
     }
 
@@ -178,8 +160,8 @@ public:
     */
     bool operator<(const vec_t<T, N> & x) const {
         for (uint8_t i = 0; i < N; i++){
-            if (xs[i] != x.xs[i]){
-                return xs[i] < x.xs[i];
+            if ((*this)[i] != x[i]){
+                return (*this)[i] < x[i];
             }
         }
         return false;
