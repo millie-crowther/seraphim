@@ -36,7 +36,7 @@ blaspheme_t::blaspheme_t(){
     }
 
     scheduler = std::make_shared<scheduler_t>();
-    window = std::make_shared<window_t>(u32vec2_t(640u, 480u), scheduler);
+    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size), scheduler);
 
     // initialise vulkan
     create_instance();

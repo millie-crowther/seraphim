@@ -4,7 +4,6 @@
 #include <cmath>
 #include <array>
 #include <algorithm>
-#include "core/hyper.h"
 #include <iostream>
 #include <numeric>
 #include <functional>
@@ -71,6 +70,7 @@ public:
         accessors
     */
     T operator*(const vec_t<T, N> & x) const {
+        // TODO: figure out why this wont work
         // vec_t<T, N> h = hadamard(x);
         // return std::accumulate(h.begin(), h.end(), 0);
         

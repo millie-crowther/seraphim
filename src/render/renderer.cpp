@@ -20,7 +20,7 @@ renderer_t::renderer_t(
 
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
-    
+
     create_buffers();
 
     current_frame = 0;
@@ -60,9 +60,9 @@ renderer_t::renderer_t(
     create_descriptor_pool();
     create_sync();
 
-    u32vec2_t image_size = work_group_count * work_group_size;
     render_texture = std::make_unique<texture_t>(
-        10, allocator, device, image_size, VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
+        10, allocator, device, work_group_count * work_group_size, 
+        VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;

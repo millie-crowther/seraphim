@@ -3,6 +3,7 @@
 
 #include "maths/vec.h"
 #include <functional>
+#include "core/hyper.h"
 
 template<uint8_t D>
 class sdf_t {
