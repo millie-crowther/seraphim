@@ -45,32 +45,7 @@ public:
 
     vec_t<T, N> normalise() const {
         T l = norm();
-        if (l == T(0)){
-            return vec_t<T, N>(0);
-        }
-        return *this / l;
-    }
-
-    /*
-        accessors
-    */
-    template<class S>
-    vec_t<S, N> cast() const {
-        vec_t<S, N> ys;
-        for (uint8_t i = 0; i < N; i++){
-            ys[i] = static_cast<S>((*this)[i]);
-        }
-        return ys;
-    }
-
-    /* 
-        accessors
-    */
-    template<class F>
-    vec_t<T, N> enumerate(const F & f) const {
-        vec_t<T, N> x;
-        for (uint8_t i = 0; i < N; i++){ x[i] = f(i); }
-        return x;
+        return *this / (l == T(0) ? T(1) : l);
     }
 
     /*
@@ -93,7 +68,7 @@ public:
     }
   
     /*
-        accessor operators
+        accessors
     */
     T operator*(const vec_t<T, N> & x) const {
         // vec_t<T, N> h = hadamard(x);
@@ -142,6 +117,13 @@ public:
         return r;
     }
 
+    template<class S>
+    vec_t<S, N> cast() const {
+        vec_t<S, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), [](const T & t){ return static_cast<S>(t); }); 
+        return x;
+    }
+
     template<class S = vec_t<T, 3>>
     typename std::enable_if<N == 3, S>::type
     operator%(const vec_t<T, 3> & v) const {
@@ -177,13 +159,13 @@ public:
     */
     template<class F, class Tx, uint8_t Nx>
     static vec_t<T, N> nabla(const F & f, const vec_t<Tx, Nx> & x, const Tx & delta){
-        // TODO: move division by (2 * delta) outside loop.
-        //       for some reason, compiler gets confused if its outside loop
-        return vec_t<T, N>().enumerate([&](uint8_t i){
+        vec_t<T, N> r;
+        for (uint8_t i = 0; i < N; i++){
             vec_t<Tx, Nx> axis;
             axis[i] = delta;
-            return (f(x + axis) - f(x - axis)) / (2 * delta);
-        });
+            r[i] = (f(x + axis) - f(x - axis));
+        }
+        return r / (2 * delta);
     }
 
     template<uint8_t A>
