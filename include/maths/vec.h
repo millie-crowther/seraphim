@@ -158,6 +158,11 @@ public:
         return map([&](const T & x){ return x / s; });
     }
 
+    // vec_t<T, N> hadamard(const vec_t<T, N> & x) const {
+    //     vec_t<T, N> r = *this;
+    //     std::transform(this->xs.begin(), this->xs.end(), r.xs.begin)
+    // }
+
     template<class S = vec_t<T, 3>>
     typename std::enable_if<N == 3, S>::type
     operator%(const vec_t<T, 3> & v) const {
@@ -185,7 +190,7 @@ public:
     }
 
     bool operator!=(const vec_t<T, N> & x) const {
-        return x < *this || *this < x;
+        return !(x == *this);
     }
 
     /*

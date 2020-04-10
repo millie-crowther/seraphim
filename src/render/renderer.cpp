@@ -11,15 +11,16 @@
 renderer_t::renderer_t(
     VmaAllocator allocator, std::shared_ptr<device_t> device,
     VkSurfaceKHR surface, std::shared_ptr<window_t> window,
-    std::shared_ptr<camera_t> test_camera
+    std::shared_ptr<camera_t> test_camera,
+    u32vec2_t work_group_count, u32vec2_t work_group_size
 ){
     this->allocator = allocator;
     this->device = device;
     this->surface = surface;
 
-    work_group_count = u32vec2_t(8);
-    work_group_size = u32vec2_t(32);
-
+    this->work_group_count = work_group_count;
+    this->work_group_size = work_group_size;
+    
     create_buffers();
 
     current_frame = 0;

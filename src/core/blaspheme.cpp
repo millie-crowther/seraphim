@@ -21,12 +21,14 @@ const std::vector<const char *> validation_layers = {
 
 blaspheme_t::blaspheme_t(){
 
-
 #if BLASPHEME_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else 
     std::cout << "Running in release mode." << std::endl;
 #endif
+
+    work_group_count = u32vec2_t(8);
+    work_group_size = u32vec2_t(32);
 
     // initialise GLFW
     if (!glfwInit()){
@@ -61,27 +63,15 @@ blaspheme_t::blaspheme_t(){
 
 #if BLASPHEME_DEBUG
     device = std::make_shared<device_t>(instance, surface, validation_layers);
-#else   
-    device = std::make_shared<device_t>(instance, surface, {});
-#endif
 
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
-
-    auto work_group_size = properties.limits.maxComputeWorkGroupSize;
-    auto work_group_count = properties.limits.maxComputeWorkGroupCount;
-    std::cout << "\tMaximum work group count: " << work_group_count[0] << ", " << work_group_count[1] << ", " << work_group_count[2] << std::endl;
-    std::cout << "\tMaximum work group size: " << work_group_size[0] << ", " << work_group_size[1] << ", " << work_group_size[2] << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
-
-    // uint32_t push_const_size = properties.limits.maxPushConstantsSize;
-    // std::cout << "\tMaximum push constants size: " << push_const_size << ". Push constants data structure size: " << sizeof(renderer_t::push_constant_t) << std::endl;
-    // if (sizeof(renderer_t::push_constant_t) > push_const_size){
-    //     // TODO: put this check when selecting physical device
-    //     throw std::runtime_error("Error: Push constants too large.");
-    // }
+#else   
+    device = std::make_shared<device_t>(instance, surface, {});
+#endif
 
     // initialise vulkan memory allocator
     VmaAllocatorCreateInfo allocator_info = {};
@@ -93,7 +83,7 @@ blaspheme_t::blaspheme_t(){
     test_camera = std::make_shared<camera_t>(this);
 
     renderer = std::make_shared<renderer_t>(
-        allocator, device, surface, window, test_camera
+        allocator, device, surface, window, test_camera, work_group_count, work_group_size
     );
 }
 

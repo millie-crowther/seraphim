@@ -39,6 +39,8 @@ private:
     VkSurfaceKHR surface;
 
     std::shared_ptr<window_t> window;
+    u32vec2_t work_group_count;
+    u32vec2_t work_group_size;
  
     std::shared_ptr<camera_t> test_camera;
 

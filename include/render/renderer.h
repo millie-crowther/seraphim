@@ -130,7 +130,8 @@ public:
     renderer_t(
         VmaAllocator allocator, std::shared_ptr<device_t> device,
         VkSurfaceKHR surface, std::shared_ptr<window_t> window,
-        std::shared_ptr<camera_t> test_camera
+        std::shared_ptr<camera_t> test_camera,
+        u32vec2_t work_group_count, u32vec2_t work_group_size
     );
     ~renderer_t();
 
