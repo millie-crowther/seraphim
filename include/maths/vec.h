@@ -31,9 +31,8 @@ public:
     }   
 
     T chebyshev_norm() const {
-        return std::accumulate(this->begin(), this->end(), 0, [](const T & a, const T & b){ 
-            return std::max(a, std::abs(b));
-        });
+        auto f = [](const T & a, const T & b){ return std::max(a, std::abs(b)); };
+        return std::accumulate(this->begin(), this->end(), 0, f);
     }
 
     vec_t<T, N> normalise() const {
@@ -109,15 +108,15 @@ public:
 
     vec_t<T, N> min(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
-        auto m = [](const T & a, const T & b){ return std::min<T>(a, b); };
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), m);
+        auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), f);
         return r;
     }
 
     vec_t<T, N> max(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
-        auto m = [](const T & a, const T & b){ return std::max<T>(a, b); };
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), m);
+        auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), f);
         return r;
     }
 
@@ -140,16 +139,11 @@ public:
 
     // equality and ordering operators
     bool operator<(const vec_t<T, N> & x) const {
-        for (uint8_t i = 0; i < N; i++){
-            if ((*this)[i] != x[i]){
-                return (*this)[i] < x[i];
-            }
-        }
-        return false;
+        return std::lexicographical_compare(this->begin(), this->end(), x.begin(), x.end());
     }
 
     bool operator==(const vec_t<T, N> & x) const {
-        return !(x < *this || *this < x);
+        return std::equal(this->begin(), this->end(), x.begin());
     }
 
     bool operator!=(const vec_t<T, N> & x) const {

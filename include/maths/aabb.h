@@ -28,8 +28,8 @@ public:
     }
 
     void capture_sphere(const vec_t<T, D> & c, const T & r){
-        min = min.min(c - vec_t<T, D>(std::abs(r)));
-        max = max.max(c + vec_t<T, D>(std::abs(r)));
+        min = min.min(c - vec_t<T, D>(r));
+        max = max.max(c + vec_t<T, D>(r));
     }
 
     vec_t<T, D> subdivide(uint32_t i) const {
