@@ -32,22 +32,36 @@ public:
         max = max.max(c + vec_t<T, D>(r));
     }
 
-    vec_t<T, D> subdivide(uint32_t i) const {
+    aabb_t<T, D> subdivide(uint32_t i) const {
         vec_t<T, D> new_min = min;
         for (uint8_t j = 0; j < D; j++){
             if (i & (1 << j) != 0){
                 new_min[j] = min[j] / 2 + max[j] / 2;
             }
         }
-        return vec_t<T, D>(new_min, max);
+        return aabb_t<T, D>(new_min, max);
     }
 
     vec_t<T, D> centre() const {
         return min / 2 + max / 2;
     }
 
-    T diameter() const {
-        return (max - min).norm();
+    vec_t<T, D> get_size() const {
+        return max - min;
+    }
+
+    bool contains_point(const vec_t<T, D> & x) const {
+        for (uint8_t i = 0; i < D; i++){
+            if (x[i] < min[i] || x[i] > max[i]){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool contains_aabb(const aabb_t<T, D> & a) const {
+        return contains_point(a.min) && contains_point(a.max);
     }
 };
 

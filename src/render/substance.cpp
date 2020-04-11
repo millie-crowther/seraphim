@@ -18,7 +18,6 @@ substance_t::get_data() const {
     return data;
 }
 
-
 std::weak_ptr<aabb3_t> 
 substance_t::get_aabb(){
     if (aabb == nullptr){
@@ -32,10 +31,17 @@ substance_t::get_aabb(){
 
 void 
 substance_t::create_aabb(const aabb3_t & space){
-    vec3_t c = space.centre();
-    double phi = sdf->phi(c);
+    auto c = space.centre();
+    auto s = space.get_size();
+    auto phi = sdf->phi(c);
 
     if (phi <= 0){
         aabb->capture_sphere(c, phi);
+    }
+
+    if (s.chebyshev_norm() >= hyper::epsilon && phi * phi < (s / 2).square_norm()){
+        for (uint8_t octant = 0; octant < 8; octant++){
+            create_aabb(space.subdivide(octant));
+        }
     }
 }

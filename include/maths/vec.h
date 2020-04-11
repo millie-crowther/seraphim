@@ -12,7 +12,7 @@ template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
 public:
     // constructors
-    vec_t() : vec_t(T(0)){}
+    vec_t() : vec_t(0){}
 
     vec_t(const T & x){
         this->fill(x); 
