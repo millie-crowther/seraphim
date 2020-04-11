@@ -17,15 +17,18 @@ public:
         data_t();
     };
 
+    substance_t(std::shared_ptr<sdf3_t> sdf);
+
+    std::weak_ptr<aabb3_t> get_aabb();
     std::weak_ptr<sdf3_t> get_sdf() const;
     data_t get_data() const;
-
-    substance_t(std::shared_ptr<sdf3_t> sdf);
 
 private:
     data_t data;
     std::shared_ptr<sdf3_t> sdf;
+    std::shared_ptr<aabb3_t> aabb;
 
+    void create_aabb(const aabb3_t & space);
 };
 
 #endif

@@ -19,3 +19,23 @@ substance_t::get_data() const {
 }
 
 
+std::weak_ptr<aabb3_t> 
+substance_t::get_aabb(){
+    if (aabb == nullptr){
+        aabb = std::make_shared<aabb3_t>();
+        vec3_t s(hyper::kappa);
+        create_aabb(aabb3_t(-s, s));
+    }
+
+    return aabb;
+}
+
+void 
+substance_t::create_aabb(const aabb3_t & space){
+    vec3_t c = space.centre();
+    double phi = sdf->phi(c);
+
+    if (phi <= 0){
+        aabb->capture_sphere(c, phi);
+    }
+}

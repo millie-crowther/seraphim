@@ -8,14 +8,10 @@
 #include <numeric>
 #include <functional>
 
-using namespace std::placeholders;
-
 template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
 public:
-    /*
-        constructors
-    */
+    // constructors
     vec_t() : vec_t(T(0)){}
 
     vec_t(const T & x){
@@ -25,9 +21,7 @@ public:
     template<class... Xs>
     vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : std::array<T, N>({ x, _xs...}) {}
 
-    /*
-       norms
-    */
+    // norms
     T square_norm() const {
         return *this * *this;
     }
@@ -47,9 +41,7 @@ public:
         return *this / (l == T(0) ? T(1) : l);
     }
 
-    /*
-        modifier operators    
-    */
+    // modifier operators    
     void operator+=(const vec_t<T, N> & v){
         std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::plus<T>());
     }
@@ -59,16 +51,14 @@ public:
     }
 
     void operator*=(const T & s){
-        std::transform(this->begin(), this->end(), this->begin(), std::bind(std::multiplies<T>(), s, _1));
+        std::transform(this->begin(), this->end(), this->begin(), std::bind1st(std::multiplies<T>(), s));
     }
 
     void operator/=(const T & s){
-        std::transform(this->begin(), this->end(), this->begin(), std::bind(std::divides<T>(), _1, s));
+        std::transform(this->begin(), this->end(), this->begin(), std::bind2nd(std::divides<T>(), s));
     }
   
-    /*
-        accessors
-    */
+    // accessors
     T operator*(const vec_t<T, N> & x) const {
         // TODO: figure out why this wont work
         // vec_t<T, N> h = hadamard(x);
@@ -101,13 +91,13 @@ public:
 
     vec_t<T, N> operator*(const T & s) const {
         vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind(std::multiplies<T>(), s, _1));
+        std::transform(this->begin(), this->end(), x.begin(), std::bind1st(std::multiplies<T>(), s));
         return x;
     }
 
     vec_t<T, N> operator/(const T & s) const {
         vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind(std::divides<T>(), _1, s));
+        std::transform(this->begin(), this->end(), x.begin(), std::bind2nd(std::divides<T>(), s));
         return x;
     }
 
@@ -119,13 +109,15 @@ public:
 
     vec_t<T, N> min(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::min<T>());
+        auto m = [](const T & a, const T & b){ return std::min<T>(a, b); };
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), m);
         return r;
     }
 
     vec_t<T, N> max(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::max<T>());
+        auto m = [](const T & a, const T & b){ return std::max<T>(a, b); };
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), m);
         return r;
     }
 
@@ -146,9 +138,7 @@ public:
         );
     }
 
-    /*
-        equality and ordering operators
-    */
+    // equality and ordering operators
     bool operator<(const vec_t<T, N> & x) const {
         for (uint8_t i = 0; i < N; i++){
             if ((*this)[i] != x[i]){
@@ -166,9 +156,7 @@ public:
         return !(x == *this);
     }
 
-    /*
-        factories
-    */
+    // factories
     template<class F, class Tx, uint8_t Nx>
     static vec_t<T, N> nabla(const F & f, const vec_t<Tx, Nx> & x, const Tx & delta){
         vec_t<T, N> r;

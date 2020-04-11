@@ -5,13 +5,16 @@
 
 namespace hyper {
     // smallest distance
-    constexpr double   epsilon = 0.0078125;             // 2^-7 metres
+    constexpr double epsilon = 0.0078125;             // 2^-7 metres
 
     // shortest time period 
-    constexpr double   iota    = 60;                // Hertz
+    constexpr double iota    = 60;                // Hertz
 
     // largest distance
-    constexpr double   rho     = 256;                 // metres     
+    constexpr double rho     = 256;                 // metres    
+
+    // largest object
+    constexpr double kappa   = 256; 
 }
 
 #endif
