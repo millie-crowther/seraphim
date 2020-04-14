@@ -31,7 +31,7 @@ public:
     }   
 
     T chebyshev_norm() const {
-        auto f = [](const T & a, const T & b){ return std::max(a, std::abs(b)); };
+        auto f = [](const T & a, const T & b){ return std::max(std::abs(a), std::abs(b)); };
         return std::accumulate(this->begin(), this->end(), 0, f);
     }
 
@@ -85,6 +85,18 @@ public:
     vec_t<T, N> operator-() const {
         vec_t<T, N> x;
         std::transform(this->begin(), this->end(), x.begin(), std::negate<T>());
+        return x;
+    }
+
+    vec_t<T, N> operator+(const T & s) const {
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), std::bind1st(std::plus<T>(), s));
+        return x;
+    }
+
+    vec_t<T, N> operator-(const T & s) const {
+        vec_t<T, N> x;
+        std::transform(this->begin(), this->end(), x.begin(), std::bind2nd(std::minus<T>(), s));
         return x;
     }
 

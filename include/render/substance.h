@@ -28,7 +28,7 @@ private:
     std::shared_ptr<sdf3_t> sdf;
     std::shared_ptr<aabb3_t> aabb;
 
-    void create_aabb(const aabb3_t & space);
+    void create_aabb();
 };
 
 #endif

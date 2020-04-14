@@ -22,26 +22,44 @@ std::weak_ptr<aabb3_t>
 substance_t::get_aabb(){
     if (aabb == nullptr){
         aabb = std::make_shared<aabb3_t>();
-        vec3_t s(hyper::kappa);
-        create_aabb(aabb3_t(-s, s));
+        create_aabb();
     }
 
     return aabb;
 }
 
-void 
-substance_t::create_aabb(const aabb3_t & space){
-    auto c = space.centre();
-    auto s = space.get_size();
-    auto phi = sdf->phi(c);
+void
+substance_t::create_aabb(){
+    aabb->capture_sphere(sdf->normal(vec3_t()) * -sdf->phi(vec3_t()), hyper::epsilon);
 
-    if (phi <= 0){
-        aabb->capture_sphere(c, phi);
-    }
+    bool has_touched_surface = true;
 
-    if (s.chebyshev_norm() >= hyper::epsilon && phi * phi < (s / 2).square_norm()){
-        for (uint8_t octant = 0; octant < 8; octant++){
-            create_aabb(space.subdivide(octant));
-        }
+    for (uint32_t i = 0; i < 32 && has_touched_surface; i++){
+        has_touched_surface = false;
+
+        for (uint32_t face = 0; face < 6; face++){
+            uint8_t ui = face % 3;
+            uint8_t vi = (face + 1) % 3;
+            uint8_t wi = (face + 2) % 3;
+
+            vec3_t min = aabb->get_min() - hyper::epsilon;
+            vec3_t max = aabb->get_max() + hyper::epsilon;
+
+            vec3_t x;
+            x[wi] = face < 3 ? min[wi] : max[wi];
+
+            uint32_t c = 0;
+            for (x[ui] = min[ui]; x[ui] < max[ui]; x[ui] += hyper::epsilon){
+                for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += hyper::epsilon){
+                    auto phi = sdf->phi(x);
+
+                    if (phi < 0){
+                        has_touched_surface = true;
+                    }
+
+                    x[vi] += std::abs(phi);
+                }
+            }
+        }   
     }
 }
