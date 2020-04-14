@@ -327,15 +327,10 @@ renderer_t::create_graphics_pipeline(){
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
     depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil.depthTestEnable = VK_TRUE;
-    depth_stencil.depthWriteEnable = VK_TRUE;
-    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS; 
+    depth_stencil.depthTestEnable = VK_FALSE;
+    depth_stencil.depthWriteEnable = VK_FALSE;
     depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.minDepthBounds = 0.0f; 
-    depth_stencil.maxDepthBounds = 1.0f;
     depth_stencil.stencilTestEnable = VK_FALSE;
-    depth_stencil.front = {};
-    depth_stencil.back = {};
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -355,12 +350,10 @@ renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
 
-    VkResult result = vkCreateGraphicsPipelines(
+    if (vkCreateGraphicsPipelines(
 	    device->get_device(), VK_NULL_HANDLE, 1, 
         &pipeline_info, nullptr, &graphics_pipeline
-    );
-
-    if (result != VK_SUCCESS){
+    ) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
 
@@ -601,13 +594,11 @@ renderer_t::handle_requests(){
 
     for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
         if (requests[i].child != 0){
-            std::vector<octree_node_t> new_node(8);
             if (auto substance = substances[requests[i].objectID].lock()){
-                new_node = octree_node_t::create(requests[i].aabb, substance->get_sdf());
+                std::vector<octree_node_t> new_node = octree_node_t::create(requests[i].aabb, substance->get_sdf());
+                input_buffer->write(new_node, 1024 * sizeof(substance_t::data_t) + requests[i].child * sizeof(octree_node_t));
+                request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
             }
-
-            input_buffer->write(new_node, 1024 * sizeof(substance_t::data_t) + requests[i].child * sizeof(octree_node_t));
-            request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
         }
     }   
 }
