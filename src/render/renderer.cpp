@@ -33,13 +33,16 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
-    sphere = std::make_shared<substance_t>(
+    sphere = std::make_shared<substance_t>(0, 
         std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)
     );
 
-    floor_substance  = std::make_shared<substance_t>(
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -10.0, 0.0), vec3_t(10.0, 5, 10.0))
+    floor_substance  = std::make_shared<substance_t>(8, 
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -5.0, 0.0), vec3_t(25.0, 2.5, 25.0))
     );
+
+    sphere->get_aabb();
+    floor_substance->get_aabb();
 
     substances = { sphere, floor_substance};
 
@@ -628,9 +631,9 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<substance_t::data_t> substance_data(2);
-    substance_data[0].root = 0;
-    substance_data[1].root = 8;
+    std::vector<substance_t::data_t> substance_data = {
+        sphere->get_data(), floor_substance->get_data()
+    };
     input_buffer->write(substance_data, 0);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);

@@ -1,7 +1,8 @@
 #include "render/substance.h"
 
-substance_t::substance_t(std::shared_ptr<sdf3_t> sdf){
+substance_t::substance_t(uint32_t root, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
+    data.root = root;
 }
 
 substance_t::data_t::data_t(){

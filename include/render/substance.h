@@ -17,7 +17,7 @@ public:
         data_t();
     };
 
-    substance_t(std::shared_ptr<sdf3_t> sdf);
+    substance_t(uint32_t root, std::shared_ptr<sdf3_t> sdf);
 
     std::weak_ptr<aabb3_t> get_aabb();
     std::weak_ptr<sdf3_t> get_sdf() const;
