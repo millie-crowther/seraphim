@@ -68,7 +68,7 @@ private:
     std::string vertex_shader_code;
 
     std::shared_ptr<substance_t> sphere;
-    std::shared_ptr<substance_t> plane;
+    std::shared_ptr<substance_t> floor_substance;
     
     std::vector<std::weak_ptr<substance_t>> substances;
 

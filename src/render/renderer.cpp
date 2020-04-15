@@ -37,12 +37,11 @@ renderer_t::renderer_t(
         std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)
     );
 
-    plane  = std::make_shared<substance_t>(
-        std::make_shared<primitive::plane_t<3>>(vec3_t(0.0, 1.0, 0.0), 0)
+    floor_substance  = std::make_shared<substance_t>(
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -10.0, 0.0), vec3_t(10.0, 5, 10.0))
     );
 
-    substances.push_back(sphere);
-    substances.push_back(plane);
+    substances = { sphere, floor_substance};
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 

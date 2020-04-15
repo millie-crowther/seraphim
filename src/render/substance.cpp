@@ -48,7 +48,6 @@ substance_t::create_aabb(){
             vec3_t x;
             x[wi] = face < 3 ? min[wi] : max[wi];
 
-            uint32_t c = 0;
             for (x[ui] = min[ui]; x[ui] < max[ui]; x[ui] += hyper::epsilon){
                 for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += hyper::epsilon){
                     auto phi = sdf->phi(x);

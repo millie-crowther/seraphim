@@ -132,6 +132,12 @@ public:
         return r;
     }
 
+    vec_t<T, N> abs() const {
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), r.begin(), [](const T & a){ return std::abs(a); });
+        return r;
+    }
+
     template<class S>
     vec_t<S, N> cast() const {
         vec_t<S, N> x;

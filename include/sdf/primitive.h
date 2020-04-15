@@ -30,22 +30,22 @@ namespace primitive {
     };  
 
     template<uint8_t D>
-    class plane_t : public sdf_t<D> {
+    class cuboid_t : public sdf_t<D> {
     private:
-        vec_t<double, D> n;
-        double d;
+        vec_t<double, D> c;
+        vec_t<double, D> r;
+
     public:
-        plane_t(const vec_t<double, D> & n, double d){
-            this->n = n;
-            this->d = d;
+        cuboid_t(const vec_t<double, D> & c, const vec_t<double, D> & r){
+            this->c = c;
+            this->r = r;
         }
 
         double phi(const vec_t<double, D> & x) const override {
-            return x * n - d;
-        }
-
-        vec_t<double, D> normal(const vec_t<double, D> & x) const override {
-            return n;
+            vec_t<double, D> q = (x - c).abs() - r;
+            return 
+                q.max(vec_t<double, D>()).norm() +
+                std::min(std::max(q[0], std::max(q[1], q[2])), 0.0);
         }
     };
 }
