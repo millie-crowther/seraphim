@@ -41,10 +41,7 @@ renderer_t::renderer_t(
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -5.0, 0.0), vec3_t(25.0, 2.5, 25.0))
     );
 
-    sphere->get_aabb();
-    floor_substance->get_aabb();
-
-    substances = { sphere, floor_substance};
+    substances = { sphere, floor_substance };
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
