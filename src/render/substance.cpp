@@ -15,7 +15,12 @@ substance_t::get_sdf() const {
 }
 
 substance_t::data_t
-substance_t::get_data() const {
+substance_t::get_data(){
+    get_aabb();
+
+    data.x = (aabb->get_max() + aabb->get_min()).cast<float>() / 2.0f;
+    data.size = (aabb->get_max() - aabb->get_min()).cast<float>() / 2.0f;
+
     return data;
 }
 

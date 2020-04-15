@@ -21,7 +21,7 @@ public:
 
     std::weak_ptr<aabb3_t> get_aabb();
     std::weak_ptr<sdf3_t> get_sdf() const;
-    data_t get_data() const;
+    data_t get_data();
 
 private:
     data_t data;
