@@ -48,10 +48,10 @@ layout( push_constant ) uniform push_constants {
 
 // input buffers
 struct substance_t {
-    vec3 x;
+    vec3 c;
     int root;
 
-    vec3 size;  
+    vec3 r;  
     float _1;  
 };
 
@@ -172,6 +172,21 @@ uint get_bin(vec3 x){
 }
 
 float substance_phi(inout ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
+    substance_t s = substances[substanceID];
+    
+    // check if intersects aabb
+    // TODO: fix this
+    vec3 aabb_i = (s.c - sign(r.d) * s.r - r.x) / r.d;
+    float aabb_d = max(aabb_i.x, max(aabb_i.y, aabb_i.z));
+    vec3 p = r.x + aabb_d * r.d;
+    bool intersects = 
+        (all(greaterThan(s.c - s.r, p))   && all(lessThan(p, s.c + s.r))) ||
+        (all(greaterThan(s.c - s.r, r.x)) && all(lessThan(r.x, s.c + s.r)));
+
+    // if (!intersects){
+    //     return aabb_d;
+    // }
+    
     // lookup octree node
     vec4 aabb;
 

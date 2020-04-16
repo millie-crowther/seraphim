@@ -15,7 +15,8 @@
 #include "render/octree.h"
 
 class renderer_t {
-public:
+private:
+    // types
     struct push_constant_t {
         u32vec2_t window_size;
         float render_distance;
@@ -30,8 +31,21 @@ public:
         f32vec3_t camera_up;
         float dummy4;
     };
+    
+    struct request_t {
+        f32vec4_t aabb;
 
-private:
+        uint32_t child;
+        uint32_t unused2;
+        uint32_t objectID;
+        uint32_t unused3;
+
+        request_t(){
+            child = 0;
+            objectID = 0;
+        }
+    };
+
     // constants
     static constexpr uint8_t frames_in_flight = 2;
 
@@ -79,32 +93,14 @@ private:
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;
 
-    // types
-    struct request_t {
-        f32vec4_t aabb;
-
-        uint32_t child;
-        uint32_t unused2;
-        uint32_t objectID;
-        uint32_t unused3;
-
-        request_t(){
-            child = 0;
-            objectID = 0;
-        }
-    };
-
+    // buffers
     std::vector<std::shared_ptr<buffer_t>> buffers;
-
-    // buffers for gpu input data
     std::shared_ptr<buffer_t> input_buffer;
-    
-    // buffer for gpu to cpu messaging
     std::shared_ptr<buffer_t> request_buffer;
 
     std::vector<request_t> requests;
 
-    // private functions
+    // initialisation functions
     VkShaderModule create_shader_module(std::string code);
     void create_render_pass();
     void create_graphics_pipeline();    
@@ -114,15 +110,14 @@ private:
     void create_descriptor_set_layout();
     void create_descriptor_pool();
     void create_sync();
-    void cleanup_swapchain();
-    void recreate_swapchain();
-
     void create_compute_command_buffers();
-
     void create_buffers();
     void initialise_buffers();
-    void handle_requests();
 
+    // helper functions
+    void recreate_swapchain();
+    void cleanup_swapchain();
+    void handle_requests();
     void present(uint32_t image_index) const;
 
 public:
