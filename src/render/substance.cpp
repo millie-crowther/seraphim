@@ -13,7 +13,6 @@ substance_t::get_sdf() const {
 substance_t::data_t
 substance_t::get_data(){
     if (aabb == nullptr){
-        aabb = std::make_shared<aabb3_t>();
         create_aabb();
     }
 
@@ -28,6 +27,7 @@ substance_t::get_data(){
 
 void
 substance_t::create_aabb(){
+    aabb = std::make_unique<aabb3_t>();
     aabb->capture_sphere(sdf->normal(vec3_t()) * -sdf->phi(vec3_t()), hyper::epsilon);
 
     bool has_touched_surface = true;

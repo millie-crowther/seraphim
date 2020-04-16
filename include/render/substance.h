@@ -23,7 +23,7 @@ public:
 private:
     uint32_t root;
     std::shared_ptr<sdf3_t> sdf;
-    std::shared_ptr<aabb3_t> aabb;
+    std::unique_ptr<aabb3_t> aabb;
 
     void create_aabb();
 };
