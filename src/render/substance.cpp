@@ -1,5 +1,7 @@
 #include "render/substance.h"
 
+#include <iostream>
+
 substance_t::substance_t(uint32_t root, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
     this->root = root;
@@ -32,7 +34,9 @@ substance_t::create_aabb(){
 
     bool has_touched_surface = true;
 
-    for (uint32_t i = 0; i < 32 && has_touched_surface; i++){
+    const double precision = 32.0;
+
+    for (uint32_t i = 0; i < 64 && has_touched_surface; i++){
         has_touched_surface = false;
 
         for (uint32_t face = 0; face < 6; face++){
@@ -46,12 +50,15 @@ substance_t::create_aabb(){
             vec3_t x;
             x[wi] = face < 3 ? min[wi] : max[wi];
 
-            for (x[ui] = min[ui]; x[ui] < max[ui]; x[ui] += hyper::epsilon){
-                for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += hyper::epsilon){
+            double du = std::max((max[ui] - min[ui]) / precision, hyper::epsilon);
+
+            for (x[ui] = min[ui]; x[ui] <= max[ui]; x[ui] += du){
+                for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += du){
                     auto phi = sdf->phi(x);
 
                     if (phi < 0){
                         has_touched_surface = true;
+                        aabb->capture_sphere(x, phi);
                     }
 
                     x[vi] += std::abs(phi);
