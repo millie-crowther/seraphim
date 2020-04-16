@@ -16,6 +16,10 @@ substance_t::data_t
 substance_t::get_data(){
     if (aabb == nullptr){
         create_aabb();
+        // auto c = (aabb->get_max() + aabb->get_min()) / 2.0;
+        // auto s = (aabb->get_max() - aabb->get_min()) / 2.0;
+        // std::cout << "c: " << c[0] << ", " << c[1] << ", " << c[2] << std::endl;
+        // std::cout << "s: " << s[0] << ", " << s[1] << ", " << s[2] << std::endl;
     }
 
     data_t data;
@@ -36,7 +40,7 @@ substance_t::create_aabb(){
 
     const double precision = 32.0;
 
-    for (uint32_t i = 0; i < 64 && has_touched_surface; i++){
+    for (uint32_t i = 0; i < 32 && has_touched_surface; i++){
         has_touched_surface = false;
 
         for (uint32_t face = 0; face < 6; face++){
@@ -52,8 +56,8 @@ substance_t::create_aabb(){
 
             double du = std::max((max[ui] - min[ui]) / precision, hyper::epsilon);
 
-            for (x[ui] = min[ui]; x[ui] <= max[ui]; x[ui] += du){
-                for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += du){
+            for (x[ui] = min[ui]; x[ui] < max[ui]; x[ui] += du){
+                for (x[vi] = min[vi]; x[vi] < max[vi]; x[vi] += hyper::epsilon){
                     auto phi = sdf->phi(x);
 
                     if (phi < 0){

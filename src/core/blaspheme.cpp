@@ -20,7 +20,6 @@ const std::vector<const char *> validation_layers = {
 #endif
 
 blaspheme_t::blaspheme_t(){
-
 #if BLASPHEME_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else 
@@ -37,7 +36,6 @@ blaspheme_t::blaspheme_t(){
     scheduler = std::make_shared<scheduler_t>();
     window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size) * 2, scheduler);
 
-    // initialise vulkan
     create_instance();
 
     uint32_t extension_count = 0;

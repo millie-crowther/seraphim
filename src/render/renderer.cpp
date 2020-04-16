@@ -41,7 +41,7 @@ renderer_t::renderer_t(
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -5.0, 0.0), vec3_t(25.0, 2.5, 25.0))
     );
 
-    substances = { sphere, floor_substance };
+    substances = { sphere };
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -628,9 +628,14 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<substance_t::data_t> substance_data = {
-        sphere->get_data(), floor_substance->get_data()
-    };
+    std::vector<substance_t::data_t> substance_data;
+
+    for (auto sub_ptr : substances){
+        if (auto sub = sub_ptr.lock()){
+            substance_data.push_back(sub->get_data());
+        }
+    }
+
     input_buffer->write(substance_data, 0);
 
     f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
