@@ -2,9 +2,10 @@
 
 #include <iostream>
 
-substance_t::substance_t(uint32_t root, std::shared_ptr<sdf3_t> sdf){
+substance_t::substance_t(uint32_t root, uint32_t id, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
     this->root = root;
+    this->id = id;
 }
 
 std::weak_ptr<sdf3_t>
@@ -16,14 +17,11 @@ substance_t::data_t
 substance_t::get_data(){
     if (aabb == nullptr){
         create_aabb();
-        // auto c = (aabb->get_max() + aabb->get_min()) / 2.0;
-        // auto s = (aabb->get_max() - aabb->get_min()) / 2.0;
-        // std::cout << "c: " << c[0] << ", " << c[1] << ", " << c[2] << std::endl;
-        // std::cout << "s: " << s[0] << ", " << s[1] << ", " << s[2] << std::endl;
     }
 
     data_t data;
 
+    data.id = id;
     data.root = root;
     data.x    = (aabb->get_max() + aabb->get_min()).cast<float>() / 2.0f;
     data.size = (aabb->get_max() - aabb->get_min()).cast<float>() / 2.0f;
@@ -70,4 +68,9 @@ substance_t::create_aabb(){
             }
         }   
     }
+}
+
+uint32_t 
+substance_t::get_id() const {
+    return id;
 }

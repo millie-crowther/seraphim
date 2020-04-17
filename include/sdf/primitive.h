@@ -42,7 +42,7 @@ namespace primitive {
         }
 
         double phi(const vec_t<double, D> & x) const override {
-            vec_t<double, D> q = (x - c).abs() - r;
+            vec_t<double, D> q = (x -c).abs() - r;
             return 
                 q.max(vec_t<double, D>()).norm() +
                 std::min(std::max(q[0], std::max(q[1], q[2])), 0.0);

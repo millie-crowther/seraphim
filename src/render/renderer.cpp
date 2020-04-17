@@ -33,15 +33,16 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
-    sphere = std::make_shared<substance_t>(0, 
+    floor_substance  = std::make_shared<substance_t>(0, 0, 
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -0.1, 0.0), vec3_t(5.0, 0.2, 5.0))
+    );
+
+    sphere = std::make_shared<substance_t>(1, 8,
         std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)
     );
 
-    floor_substance  = std::make_shared<substance_t>(8, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -5.0, 0.0), vec3_t(25.0, 2.5, 25.0))
-    );
-
-    substances = { sphere };
+    substances[sphere->get_id()] = sphere;
+    substances[floor_substance->get_id()] = floor_substance;
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -591,11 +592,15 @@ renderer_t::handle_requests(){
 
     request_buffer->read(requests, 0);
 
-    for (uint32_t i = 0; i < work_group_count[0] * work_group_count[1]; i++){
-        if (requests[i].child != 0){
-            if (auto substance = substances[requests[i].objectID].lock()){
-                std::vector<octree_node_t> new_node = octree_node_t::create(requests[i].aabb, substance->get_sdf());
-                input_buffer->write(new_node, 1024 * sizeof(substance_t::data_t) + requests[i].child * sizeof(octree_node_t));
+    for (uint32_t i = 0; i < requests.size(); i++){
+        auto r = requests[i];
+        if (r.child != 0){
+            std::cout << "objectID: " << r.objectID << std::endl;
+            if (auto substance = substances[r.objectID].lock()){
+                input_buffer->write(
+                    octree_node_t::create(r.aabb, substance->get_sdf()), 
+                    1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
+                );
                 request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
             }
         }
@@ -604,34 +609,32 @@ renderer_t::handle_requests(){
 
 void 
 renderer_t::create_buffers(){
-    uint32_t count = work_group_count[0] * work_group_count[1];
-    uint32_t size = work_group_size[0] * work_group_size[1];
+    uint32_t c = work_group_count[0] * work_group_count[1];
+    uint32_t s = work_group_size[0] * work_group_size[1];
 
     input_buffer = std::make_shared<buffer_t>(
         allocator, 1, device, 
-        sizeof(substance_t::data_t) * 1024 + sizeof(octree_node_t) * count * size, 
+        sizeof(substance_t::data_t) * 1024 + sizeof(octree_node_t) * c * s, 
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
-    requests.resize(count);
+    requests.resize(c);
     request_buffer = std::make_shared<buffer_t>(
-        allocator, 2, device, sizeof(request_t) * count, VMA_MEMORY_USAGE_GPU_TO_CPU
+        allocator, 2, device, sizeof(request_t) * c, VMA_MEMORY_USAGE_GPU_TO_CPU
     );
 
-    buffers = { input_buffer, request_buffer };
-
-    // add persistent GPU state buffer
-    buffers.push_back(std::make_shared<buffer_t>(
-        allocator, 3, device, count * size * 32, VMA_MEMORY_USAGE_GPU_ONLY
-    ));
+    buffers = { 
+        input_buffer, request_buffer, 
+        std::make_shared<buffer_t>(allocator, 3, device, c * 32, VMA_MEMORY_USAGE_GPU_ONLY)
+    };
 }
 
 void
 renderer_t::initialise_buffers(){
     std::vector<substance_t::data_t> substance_data;
 
-    for (auto sub_ptr : substances){
-        if (auto sub = sub_ptr.lock()){
+    for (auto pair : substances){
+        if (auto sub = std::get<1>(pair).lock()){
             substance_data.push_back(sub->get_data());
         }
     }
@@ -643,8 +646,8 @@ renderer_t::initialise_buffers(){
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
 
-    for (auto substance_ptr : substances){
-        if (auto substance = substance_ptr.lock()){
+    for (auto pair : substances){
+        if (auto substance = std::get<1>(pair).lock()){
             std::vector<octree_node_t> root_node = octree_node_t::create(bounds, substance->get_sdf());
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){

@@ -52,7 +52,7 @@ struct substance_t {
     int root;
 
     vec3 r;  
-    float _1;  
+    uint id;
 };
 
 layout (binding = 1) buffer input_buffer { 
@@ -119,17 +119,17 @@ void request_data(uint i, uint substanceID, vec4 aabb){
     }
 }
 
-uvec2 octree_lookup(vec3 x, uint substanceID, out vec4 aabb){
+uvec2 octree_lookup(vec3 x, substance_t substance, out vec4 aabb){
     aabb = vec4(vec3(-pc.render_distance), 2 * pc.render_distance);
 
     uint expected_depth = expected_depth(x);
-    uint i = substances[substanceID].root;
+    uint i = substance.root;
     uvec2 node = uvec2(i & node_child_mask, 0);
 
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, substanceID, aabb);
+                request_data(i, substance.id, aabb);
             }
             break;
         }
@@ -171,25 +171,26 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-float substance_phi(ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
-    substance_t s = substances[substanceID];
-    
+float substance_phi(ray_t r, out bool hit, substance_t s, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // check if intersects aabb
-    vec3 aabb_i = (s.c - sign(r.d) * s.r - r.x) / r.d;
-    float aabb_d = max(aabb_i.x, max(aabb_i.y, aabb_i.z));
-    vec3 p = r.x + aabb_d * r.d;
-    bool intersects = 
-        (all(greaterThan(p,   s.c - s.r - epsilon)) && all(lessThan(p,   s.c + s.r + epsilon))) ||
-        (all(greaterThan(r.x, s.c - s.r)) && all(lessThan(r.x, s.c + s.r)));
+    bool contains = 
+        all(greaterThanEqual(r.x, s.c - s.r - epsilon)) && all(lessThanEqual(r.x, s.c + s.r + epsilon));
 
-    if (!intersects){
-        return aabb_d + epsilon;
+    if (!contains){
+        hit = false;
+        vec3 aabb_i = (s.c - sign(r.d) * s.r - r.x) / r.d;
+        float aabb_d = max(max(aabb_i.x, 0), max(aabb_i.y, aabb_i.z));
+        vec3 p = r.x + aabb_d * r.d;
+        bool intersects = 
+            all(greaterThanEqual(p, s.c - s.r - epsilon)) && all(lessThanEqual(p, s.c + s.r + epsilon));
+
+        return mix(pc.render_distance, aabb_d, intersects) + epsilon;
     }
-    
+
     // lookup octree node
     vec4 aabb;
 
-    node = octree_lookup(r.x, substanceID, aabb);
+    node = octree_lookup(r.x, s, aabb);
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
@@ -201,7 +202,7 @@ float substance_phi(ray_t r, uint substanceID, out uvec2 node, inout vec3 v_min,
     float plane = min(dot(aabb.xyz + aabb.w / 2, n) - plane_phi - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
-    bool hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
+    hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
     return mix(cube, plane, hit);
 }
 
@@ -209,24 +210,22 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     bool hit = false;
     uvec2 hit_node;
 
-    for (int i = 0; !hit && i < max_steps; i++){
+    uint steps = 0;
+    for (; !hit && steps < max_steps; steps++){
         uint bin = get_bin(r.x);
         uint bin_data = substance_bins[bin];
         uint num_substances = bin_data & 0xFFFFFFFF;
         uint substance_index = bin_data >> 16;
 
-        float phi = mix(pc.render_distance, expected_size(r.x), num_substances == 0);
-        for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
-            phi = min(phi, substance_phi(r, substanceID, hit_node, v_min, v_max));
-            hit = phi < epsilon;
+        float phi = mix(pc.render_distance, expected_size(r.x) + epsilon, num_substances == 0);
+        for (uint substanceID = 0; !hit && substanceID < 2 + num_substances; substanceID++){
+            substance_t s = substances[substanceID];
+            phi = min(phi, substance_phi(r, hit, s, hit_node, v_min, v_max));
         }
         r.x += r.d * phi;
     }
 
-    vec3 d = pc.camera_position - r.x;
-    bool is_in_bounds = dot(d, d) < pc.render_distance * pc.render_distance;
-
-    return intersection_t(hit && is_in_bounds, r.x, hit_node);
+    return intersection_t(hit && steps < max_steps, r.x, hit_node);
 }
 
 float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
@@ -298,14 +297,13 @@ void render(){
     intersection_t i = raycast(r, v_min, v_max);
 
     // set visibility bounds 
-    // TODO: avoid using atomics if possible due to performance cost
-    atomicMin(visibility_min.x, floatBitsToInt(v_min.x));
-    atomicMin(visibility_min.y, floatBitsToInt(v_min.y));
-    atomicMin(visibility_min.z, floatBitsToInt(v_min.z));
+    // atomicMin(visibility_min.x, floatBitsToInt(v_min.x));
+    // atomicMin(visibility_min.y, floatBitsToInt(v_min.y));
+    // atomicMin(visibility_min.z, floatBitsToInt(v_min.z));
 
-    atomicMax(visibility_max.x, floatBitsToInt(v_max.x));
-    atomicMax(visibility_max.y, floatBitsToInt(v_max.y));
-    atomicMax(visibility_max.z, floatBitsToInt(v_max.z));
+    // atomicMax(visibility_max.x, floatBitsToInt(v_max.x));
+    // atomicMax(visibility_max.y, floatBitsToInt(v_max.y));
+    // atomicMax(visibility_max.z, floatBitsToInt(v_max.z));
 
     if (i.hit){
         out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.node, v_min, v_max);
@@ -317,8 +315,8 @@ void prerender(uint i){
     // clear shared variables
     vacant_node_index = 0;
     hitmap[i / 8] = false;
-    visibility_min = floatBitsToInt(pc.camera_position);
-    visibility_max = visibility_min;
+    // visibility_min = floatBitsToInt(pc.camera_position);
+    // visibility_max = visibility_min;
     substance_bins[i] = 0;
 
     // load octree from global memory into shared memory
@@ -333,7 +331,7 @@ void prerender(uint i){
     // load substances into shared memory
     substances[i] = input_data.substances[i];
 
-    substance_bins[0] = 1;
+    substance_bins[0] = 2;
 }
 
 void postrender(uint i){
@@ -345,10 +343,10 @@ void postrender(uint i){
     }
 
     // update visiblity aabb
-    if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0){
-        persistent.data[i].v_min = intBitsToFloat(visibility_min);
-        persistent.data[i].v_max = intBitsToFloat(visibility_max);
-    }
+    // if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0){
+    //     persistent.data[i].v_min = intBitsToFloat(visibility_min);
+    //     persistent.data[i].v_max = intBitsToFloat(visibility_max);
+    // }
 }
 
 void main(){
@@ -361,6 +359,4 @@ void main(){
     barrier();
 
     postrender(i);
-    // vec4 out_colour = vec4(substances[0].root == 0, 0, substances[1].root == 8, 1);
-    // imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }

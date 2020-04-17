@@ -5,6 +5,8 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
+#include <map>
+
 #include "core/buffer.h"
 #include "ui/window.h"
 #include "render/camera.h"
@@ -84,7 +86,7 @@ private:
     std::shared_ptr<substance_t> sphere;
     std::shared_ptr<substance_t> floor_substance;
     
-    std::vector<std::weak_ptr<substance_t>> substances;
+    std::map<uint32_t, std::weak_ptr<substance_t>> substances;
 
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
