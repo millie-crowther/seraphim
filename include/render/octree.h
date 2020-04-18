@@ -18,7 +18,7 @@ private:
     uint32_t header;
     uint32_t geometry;
     
-    bool intersects(const vec4_t & aabb, std::shared_ptr<sdf3_t> sdf) const;
+    bool intersects(const vec3_t & c, double r, std::shared_ptr<sdf3_t> sdf) const;
 
 public:
     octree_node_t();
