@@ -121,23 +121,24 @@ void request_data(uint i, uint substanceID, vec3 x, uint depth){
     }
 }
 
-uvec2 octree_lookup(vec3 x, substance_t substance, out vec4 aabb){
-    aabb = vec4(vec3(-pc.render_distance), 2 * pc.render_distance);
-
+uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
     uint expected_depth = expected_depth(x);
     uint i = substance.root;
     uvec2 node = uvec2(i & node_child_mask, 0);
 
+    c = vec3(0);
+    s = vec3(pc.render_distance);
+
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, substance.id, aabb.xyz, depth);
+                request_data(i, substance.id, c - s, depth);
             }
             break;
         }
 
         // find octant
-        uvec3 o = uvec3(greaterThan(x, aabb.xyz + aabb.w / 2));
+        uvec3 o = uvec3(greaterThan(x, c));
         i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
 
         // check for presence of child data
@@ -147,14 +148,12 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec4 aabb){
         node = octree[i];
 
         // refine bounding box
-        aabb.w /= 2;
-        aabb.xyz += o * aabb.w;
+        s /= 2;
+        c += sign(x - c) * s;
 
         // mark hitmap
         hitmap[i / 8] = true;
     }
-
-    aabb.xyz += vec3(greaterThan(x, aabb.xyz + aabb.w)) * aabb.w;
 
     return node;
 }
@@ -175,12 +174,9 @@ uint get_bin(vec3 x){
 
 float substance_phi(ray_t r, out bool hit, substance_t substance, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
-    vec4 aabb;
+    vec3 c, s;
 
-    node = octree_lookup(r.x, substance, aabb);
-
-    vec3 s = vec3(aabb.w) / 2;
-    vec3 c = aabb.xyz + s;
+    node = octree_lookup(r.x, substance, c, s);
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
