@@ -129,14 +129,8 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
     c = vec3(0);
     s = vec3(pc.render_distance);
 
-    for (uint depth = 0; depth <= expected_depth; depth++){
-        if (depth != 0 && (node.x & node_child_mask) == 0){
-            if ((node.x & node_empty_flag) == 0){
-                request_data(i, substance.id, c, depth);
-            }
-            break;
-        }
-
+    uint depth = 0;
+    for (; depth <= expected_depth && (depth == 0 || (node.x & node_child_mask) != 0); depth++){
         // find octant
         i = (node.x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
 
@@ -152,6 +146,10 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
 
         // mark hitmap
         hitmap[i / 8] = true;
+    }
+
+    if (depth > 0 && depth <= expected_depth && (node.x & node_empty_flag) == 0){
+        request_data(i, substance.id, c, depth);
     }
 
     return node;
