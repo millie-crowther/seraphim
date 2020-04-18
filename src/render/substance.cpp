@@ -15,23 +15,22 @@ substance_t::get_sdf() const {
 
 substance_t::data_t
 substance_t::get_data(){
-    if (aabb == nullptr){
-        create_aabb();
-    }
+    // make sure aabb is created
+    get_aabb();
 
     data_t data;
 
-    data.id = id;
+    data.id   = id;
     data.root = root;
-    data.x    = (aabb->get_max() + aabb->get_min()).cast<float>() / 2.0f;
-    data.size = (aabb->get_max() - aabb->get_min()).cast<float>() / 2.0f;
+    data.c    = aabb->get_centre().cast<float>();
+    data.size = aabb->get_size().cast<float>();
 
     return data;
 }
 
 void
 substance_t::create_aabb(){
-    aabb = std::make_unique<aabb3_t>();
+    aabb = std::make_shared<aabb3_t>();
     aabb->capture_sphere(sdf->normal(vec3_t()) * -sdf->phi(vec3_t()), hyper::epsilon);
 
     bool has_touched_surface = true;
@@ -73,4 +72,14 @@ substance_t::create_aabb(){
 uint32_t 
 substance_t::get_id() const {
     return id;
+}
+
+
+std::weak_ptr<aabb3_t> 
+substance_t::get_aabb(){
+    if (aabb == nullptr){
+        create_aabb();
+    }
+
+    return aabb;
 }

@@ -29,6 +29,14 @@ public:
     vec_t<T, D> get_max() const {
         return max;
     }
+
+    vec_t<T, D> get_size() const {
+        return max / 2 - min / 2;
+    }
+
+    vec_t<T, D> get_centre() const {
+        return max / 2 + min / 2;
+    }
 };
 
 typedef aabb_t<double, 3> aabb3_t;

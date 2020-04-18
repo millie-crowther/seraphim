@@ -8,7 +8,7 @@
 class substance_t {
 public:
     struct data_t {
-        f32vec3_t x;
+        f32vec3_t c;
         int32_t root;
 
         f32vec3_t size;
@@ -18,6 +18,7 @@ public:
     substance_t(uint32_t id, uint32_t root, std::shared_ptr<sdf3_t> sdf);
 
     std::weak_ptr<sdf3_t> get_sdf() const;
+    std::weak_ptr<aabb3_t> get_aabb();
     data_t get_data();
     uint32_t get_id() const;
 
@@ -25,7 +26,7 @@ private:
     uint32_t root;
     uint32_t id;
     std::shared_ptr<sdf3_t> sdf;
-    std::unique_ptr<aabb3_t> aabb;
+    std::shared_ptr<aabb3_t> aabb;
 
     void create_aabb();
 };
