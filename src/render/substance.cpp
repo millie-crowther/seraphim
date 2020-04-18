@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-substance_t::substance_t(uint32_t root, uint32_t id, std::shared_ptr<sdf3_t> sdf){
+substance_t::substance_t(uint32_t id, uint32_t root, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
     this->root = root;
     this->id = id;

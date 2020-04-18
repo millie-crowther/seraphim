@@ -62,7 +62,8 @@ layout (binding = 1) buffer input_buffer {
 
 // output buffers
 struct request_t {
-    vec4 aabb;
+    vec3 x;
+    uint depth;
 
     uint child;
     uint unused2;
@@ -106,7 +107,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void request_data(uint i, uint substanceID, vec4 aabb){
+void request_data(uint i, uint substanceID, vec4 aabb, uint depth){
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
@@ -114,7 +115,8 @@ void request_data(uint i, uint substanceID, vec4 aabb){
         input_data.octree[i + work_group_offset()].x |= child_local;
 
         requests.requests[request_id].substanceID = substanceID;
-        requests.requests[request_id].aabb = aabb;
+        requests.requests[request_id].x = aabb.xyz;
+        requests.requests[request_id].depth = depth;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
 }
@@ -129,7 +131,7 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec4 aabb){
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, substance.id, aabb);
+                request_data(i, substance.id, aabb, depth);
             }
             break;
         }
@@ -172,21 +174,6 @@ uint get_bin(vec3 x){
 }
 
 float substance_phi(ray_t r, out bool hit, substance_t s, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
-    // check if intersects aabb
-    bool contains = 
-        all(greaterThanEqual(r.x, s.c - s.r - epsilon)) && all(lessThanEqual(r.x, s.c + s.r + epsilon));
-
-    if (!contains){
-        hit = false;
-        vec3 aabb_i = (s.c - sign(r.d) * s.r - r.x) / r.d;
-        float aabb_d = max(max(aabb_i.x, 0), max(aabb_i.y, aabb_i.z));
-        vec3 p = r.x + aabb_d * r.d;
-        bool intersects = 
-            all(greaterThanEqual(p, s.c - s.r - epsilon)) && all(lessThanEqual(p, s.c + s.r + epsilon));
-
-        return mix(pc.render_distance, aabb_d, intersects) + epsilon;
-    }
-
     // lookup octree node
     vec4 aabb;
 

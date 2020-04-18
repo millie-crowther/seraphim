@@ -595,10 +595,13 @@ renderer_t::handle_requests(){
     for (uint32_t i = 0; i < requests.size(); i++){
         auto r = requests[i];
         if (r.child != 0){
-            std::cout << "objectID: " << r.objectID << std::endl;
             if (auto substance = substances[r.objectID].lock()){
+                f32vec4_t aabb(
+                    r.x[0], r.x[1], r.x[2], 
+                    push_constants.render_distance * 2 / (1 << r.depth)
+                );
                 input_buffer->write(
-                    octree_node_t::create(r.aabb, substance->get_sdf()), 
+                    octree_node_t::create(aabb, substance->get_sdf()), 
                     1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
                 );
                 request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
@@ -631,11 +634,11 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<substance_t::data_t> substance_data;
+    std::vector<substance_t::data_t> substance_data(2);
 
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            substance_data.push_back(sub->get_data());
+            substance_data[std::get<0>(pair)] = sub->get_data();
         }
     }
 
