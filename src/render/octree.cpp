@@ -39,7 +39,7 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::sh
 
     vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
 
-    if (!intersects(c, aabb[3], sdf)){
+    if (!intersects(c, vec3_t(aabb[3]), sdf)){
         header = node_empty_flag;
     }
 
@@ -58,9 +58,9 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::sh
 }
 
 bool
-octree_node_t::intersects(const vec3_t & c, double r, std::shared_ptr<sdf3_t> sdf) const {
-    double lower_radius = 0.5 * r;
-    double upper_radius = constant::sqrt3 * lower_radius;
+octree_node_t::intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
+    double lower_radius = 0.5 * r.chebyshev_norm();
+    double upper_radius = 0.5 * r.norm();
 
     double p = sdf->phi(c);
 

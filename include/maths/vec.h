@@ -32,7 +32,7 @@ public:
 
     T chebyshev_norm() const {
         auto f = [](const T & a, const T & b){ return std::max(std::abs(a), std::abs(b)); };
-        return std::accumulate(this->begin(), this->end(), 0, f);
+        return std::accumulate(this->begin(), this->end(), T(0), f);
     }
 
     vec_t<T, N> normalise() const {
