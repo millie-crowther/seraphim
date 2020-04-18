@@ -596,12 +596,9 @@ renderer_t::handle_requests(){
         auto r = requests[i];
         if (r.child != 0){
             if (auto substance = substances[r.objectID].lock()){
-                f32vec4_t aabb(
-                    r.x[0], r.x[1], r.x[2], 
-                    push_constants.render_distance * 2 / (1 << r.depth)
-                );
+                double ra = push_constants.render_distance / (1 << r.depth);
                 input_buffer->write(
-                    octree_node_t::create(aabb, substance->get_sdf()), 
+                    octree_node_t::create(r.x.cast<double>() + ra, vec3_t(ra), substance->get_sdf()), 
                     1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
                 );
                 request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
@@ -644,14 +641,12 @@ renderer_t::initialise_buffers(){
 
     input_buffer->write(substance_data, 0);
 
-    f32vec4_t bounds = vec4_t(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho).cast<float>();
-
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){
-            std::vector<octree_node_t> root_node = octree_node_t::create(bounds, substance->get_sdf());
+            std::vector<octree_node_t> root_node = octree_node_t::create(vec3_t(), vec3_t(hyper::rho), substance->get_sdf());
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){
                 for (uint32_t k = 0; k < 8; k++){

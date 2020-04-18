@@ -10,11 +10,8 @@ octree_node_t::octree_node_t(){
 }
 
 std::vector<octree_node_t>
-octree_node_t::create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> weak_sdf){
+octree_node_t::create(const vec3_t & c, const vec3_t & r, std::weak_ptr<sdf3_t> weak_sdf){
     std::vector<octree_node_t> children;
-
-    vec3_t r(aabb[3] / 2);
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + r;
 
     if (auto sdf = weak_sdf.lock()){
         for (uint8_t o = 0; o < 8; o++){
