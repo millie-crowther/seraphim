@@ -138,8 +138,7 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
         }
 
         // find octant
-        uvec3 o = uvec3(greaterThan(x, c));
-        i = (node.x & node_child_mask) | o.x | (o.y << 1) | (o.z << 2);
+        i = (node.x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
 
         // check for presence of child data
         if ((octree[i].x & node_unused_flag) != 0){
