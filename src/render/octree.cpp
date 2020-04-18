@@ -13,24 +13,13 @@ std::vector<octree_node_t>
 octree_node_t::create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> weak_sdf){
     std::vector<octree_node_t> children;
 
+    vec3_t r(aabb[3] / 2);
+    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + r;
+
     if (auto sdf = weak_sdf.lock()){
-        for (uint8_t octant = 0; octant < 8; octant++){
-            vec4_t octant_aabb = aabb.cast<double>();
-            octant_aabb[3] /= 2;
-
-            vec3_t vertex(aabb[0], aabb[1], aabb[2]);
-
-            for (uint8_t axis = 0; axis < 3; axis++){
-                if (octant & (1 << axis)){
-                    octant_aabb[axis] += octant_aabb[3];
-                    vertex[axis] += aabb[3];
-                }
-            }
-
-            vec3_t r = vec3_t(octant_aabb[3] / 2);
-            vec3_t c = vec3_t(octant_aabb[0], octant_aabb[1], octant_aabb[2]) + r;
-
-            children.emplace_back(c, r, vertex, sdf);
+        for (uint8_t o = 0; o < 8; o++){
+            vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(r);
+            children.emplace_back(c + d / 2, r / 2, c + d, sdf);
         }
     }
 
