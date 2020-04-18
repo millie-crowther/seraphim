@@ -27,31 +27,31 @@ octree_node_t::create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> weak_sdf){
                 }
             }
 
-            children.emplace_back(octant_aabb, vertex, sdf);
+            vec3_t r = vec3_t(octant_aabb[3] / 2);
+            vec3_t c = vec3_t(octant_aabb[0], octant_aabb[1], octant_aabb[2]) + r;
+
+            children.emplace_back(c, r, vertex, sdf);
         }
     }
 
     return children;
 }
 
-octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::shared_ptr<sdf3_t> sdf){
+octree_node_t::octree_node_t(const vec3_t & c, const vec3_t & r, const vec3_t & vertex, std::shared_ptr<sdf3_t> sdf){
     header = 0;
 
-    vec3_t c = vec3_t(aabb[0], aabb[1], aabb[2]) + vec3_t(aabb[3] / 2);
-
-    if (!intersects(c, vec3_t(aabb[3]), sdf)){
+    if (!intersects(c, r, sdf)){
         header = node_empty_flag;
     }
 
     double p = sdf->phi(c);
-    p /= constant::sqrt3 * aabb[3];
+    p /= r.norm() * 2;
     p += 0.5;
     p *= 255;
     p = std::max(0.0, std::min(p, 255.0)); 
 
-    vec3_t n = sdf->normal(c);
-
-    n = (n / 2 + 0.5) * 255;
+    vec3_t n = (sdf->normal(c) / 2 + 0.5) * 255;
+    
     u8vec4_t normal = vec4_t(n[0], n[1], n[2], p).cast<uint8_t>();
     
     geometry = *reinterpret_cast<uint32_t *>(&normal);
@@ -59,8 +59,8 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::sh
 
 bool
 octree_node_t::intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
-    double lower_radius = 0.5 * r.chebyshev_norm();
-    double upper_radius = 0.5 * r.norm();
+    double lower_radius = r.chebyshev_norm();
+    double upper_radius = r.norm();
 
     double p = sdf->phi(c);
 
