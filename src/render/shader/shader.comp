@@ -173,20 +173,23 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-float substance_phi(ray_t r, out bool hit, substance_t s, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
+float substance_phi(ray_t r, out bool hit, substance_t substance, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
     vec4 aabb;
 
-    node = octree_lookup(r.x, s, aabb);
+    node = octree_lookup(r.x, substance, aabb);
+
+    vec3 s = vec3(aabb.w) / 2;
+    vec3 c = aabb.xyz + s;
 
     // calculate distance to edge of bounding cube
-    vec3 cube_i = (aabb.xyz + sign(max(r.d, 0)) * aabb.w - r.x) / r.d;
+    vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
     float cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
     
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
-    float plane_phi = (float(node.y >> 24) / 255.0 - 0.5) * sqrt3 * aabb.w;
-    float plane = min(dot(aabb.xyz + aabb.w / 2, n) - plane_phi - dot(r.x, n), 0) / dot(r.d, n);
+    float plane_phi = (float(node.y >> 24) / 255.0 - 0.5) * length(s) * 2;
+    float plane = min(dot(c, n) - plane_phi - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
     hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
