@@ -35,7 +35,7 @@ private:
     };
     
     struct request_t {
-        f32vec3_t x;
+        f32vec3_t c;
         uint32_t depth;
 
         uint32_t child;

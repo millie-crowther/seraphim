@@ -62,7 +62,7 @@ layout (binding = 1) buffer input_buffer {
 
 // output buffers
 struct request_t {
-    vec3 x;
+    vec3 c;
     uint depth;
 
     uint child;
@@ -107,7 +107,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-void request_data(uint i, uint substanceID, vec3 x, uint depth){
+void request_data(uint i, uint substanceID, vec3 c, uint depth){
     uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
@@ -115,7 +115,7 @@ void request_data(uint i, uint substanceID, vec3 x, uint depth){
         input_data.octree[i + work_group_offset()].x |= child_local;
 
         requests.requests[request_id].substanceID = substanceID;
-        requests.requests[request_id].x = x;
+        requests.requests[request_id].c = c;
         requests.requests[request_id].depth = depth;
         requests.requests[request_id].child = child_local + work_group_offset();
     }
@@ -132,7 +132,7 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
     for (uint depth = 0; depth <= expected_depth; depth++){
         if (depth != 0 && (node.x & node_child_mask) == 0){
             if ((node.x & node_empty_flag) == 0){
-                request_data(i, substance.id, c - s, depth);
+                request_data(i, substance.id, c, depth);
             }
             break;
         }
