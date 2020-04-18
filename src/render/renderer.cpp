@@ -598,6 +598,12 @@ renderer_t::handle_requests(){
             if (auto substance = substances[r.objectID].lock()){
                 vec3_t ra = push_constants.render_distance / (1 << r.depth);
                 vec3_t c = r.c.cast<double>();
+
+                if (auto aabb = substance->get_aabb().lock()){
+                    // c -= aabb->get_centre();
+                    // ra = aabb->get_size() / (1 << r.depth);
+                }
+
                 input_buffer->write(
                     octree_node_t::create(c, ra, substance->get_sdf()), 
                     1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)

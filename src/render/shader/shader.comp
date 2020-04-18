@@ -121,14 +121,14 @@ void request_data(uint i, uint substanceID, vec3 c, uint depth){
     }
 }
 
-uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
+uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 r){
     c = vec3(0);
-    s = vec3(pc.render_distance);
+    r = vec3(pc.render_distance);
 
     // do 1st iteration of loop
     uint i = substance.root | uint(dot(step(c, x), vec3(1, 2, 4)));
-    s /= 2;
-    c += sign(x - c) * s;
+    r /= 2;
+    c += sign(x - c) * r;
     hitmap[i / 8] = true;
 
     uint expected_depth = expected_depth(x);
@@ -138,8 +138,8 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
         i = (octree[i].x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
 
         // refine bounding box
-        s /= 2;
-        c += sign(x - c) * s;
+        r /= 2;
+        c += sign(x - c) * r;
 
         // mark hitmap
         hitmap[i / 8] = true;
