@@ -13,23 +13,22 @@ std::vector<octree_node_t>
 octree_node_t::create(const f32vec4_t & aabb, std::weak_ptr<sdf3_t> weak_sdf){
     std::vector<octree_node_t> children;
 
-    // TODO: handle case that weak sdf cannot be acquired
-    std::shared_ptr<sdf3_t> sdf = weak_sdf.lock();
-    
-    for (uint8_t octant = 0; octant < 8; octant++){
-        vec4_t octant_aabb = aabb.cast<double>();
-        octant_aabb[3] /= 2;
+    if (auto sdf = weak_sdf.lock()){
+        for (uint8_t octant = 0; octant < 8; octant++){
+            vec4_t octant_aabb = aabb.cast<double>();
+            octant_aabb[3] /= 2;
 
-        vec3_t vertex(aabb[0], aabb[1], aabb[2]);
+            vec3_t vertex(aabb[0], aabb[1], aabb[2]);
 
-        for (uint8_t axis = 0; axis < 3; axis++){
-            if (octant & (1 << axis)){
-                octant_aabb[axis] += octant_aabb[3];
-                vertex[axis] += aabb[3];
+            for (uint8_t axis = 0; axis < 3; axis++){
+                if (octant & (1 << axis)){
+                    octant_aabb[axis] += octant_aabb[3];
+                    vertex[axis] += aabb[3];
+                }
             }
-        }
 
-        children.emplace_back(octant_aabb, vertex, sdf);
+            children.emplace_back(octant_aabb, vertex, sdf);
+        }
     }
 
     return children;
@@ -53,12 +52,9 @@ octree_node_t::octree_node_t(const vec4_t & aabb, const vec3_t & vertex, std::sh
     vec3_t n = sdf->normal(c);
 
     n = (n / 2 + 0.5) * 255;
-    u8vec4_t normal(n[0], n[1], n[2], p);
+    u8vec4_t normal = vec4_t(n[0], n[1], n[2], p).cast<uint8_t>();
     
     geometry = *reinterpret_cast<uint32_t *>(&normal);
-
-    // u8vec4_t colour = painter_t<3>().colour(vertex);
-    // this->colour = *reinterpret_cast<uint32_t *>(&colour);
 }
 
 bool

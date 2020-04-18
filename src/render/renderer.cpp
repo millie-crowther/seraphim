@@ -644,7 +644,7 @@ renderer_t::initialise_buffers(){
 
     input_buffer->write(substance_data, 0);
 
-    f32vec4_t bounds(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho);
+    f32vec4_t bounds = vec4_t(-hyper::rho, -hyper::rho, -hyper::rho, 2 * hyper::rho).cast<float>();
 
     std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
