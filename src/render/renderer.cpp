@@ -602,7 +602,7 @@ renderer_t::handle_requests(){
                     octree_node_t::create(c, ra, substance->get_sdf()), 
                     1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
                 );
-                request_buffer->write(std::vector<request_t>({ request_t() }), i * sizeof(request_t));
+                request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
             }
         }
     }   

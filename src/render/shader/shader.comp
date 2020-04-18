@@ -122,23 +122,20 @@ void request_data(uint i, uint substanceID, vec3 c, uint depth){
 }
 
 uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
-    uint expected_depth = expected_depth(x);
-    uint i = substance.root;
-    uvec2 node = uvec2(i & node_child_mask, 0);
-
     c = vec3(0);
     s = vec3(pc.render_distance);
 
-    uint depth = 0;
-    for (; depth <= expected_depth && (depth == 0 || (node.x & node_child_mask) != 0); depth++){
-        // find octant
-        i = (node.x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
+    // do 1st iteration of loop
+    uint i = substance.root | uint(dot(step(c, x), vec3(1, 2, 4)));
+    s /= 2;
+    c += sign(x - c) * s;
+    hitmap[i / 8] = true;
 
-        // check for presence of child data
-        if ((octree[i].x & node_unused_flag) != 0){
-            break;
-        }   
-        node = octree[i];
+    uint expected_depth = expected_depth(x);
+    uint depth = 1;
+    for (; depth <= expected_depth && (octree[i].x & node_child_mask) != 0; depth++){
+        // find child 
+        i = (octree[i].x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
 
         // refine bounding box
         s /= 2;
@@ -148,11 +145,11 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 s){
         hitmap[i / 8] = true;
     }
 
-    if (depth > 0 && depth <= expected_depth && (node.x & node_empty_flag) == 0){
+    if (depth <= expected_depth && (octree[i].x & node_empty_flag) == 0){
         request_data(i, substance.id, c, depth);
     }
 
-    return node;
+    return octree[i];
 }
 
 vec4 colour(vec3 x){
