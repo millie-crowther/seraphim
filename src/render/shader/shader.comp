@@ -121,29 +121,6 @@ void request_data(uint i, uint substanceID, vec3 c, uint depth){
     }
 }
 
-uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 r){
-    c = vec3(0);
-    r = vec3(pc.render_distance);
-
-    uint expected_depth = expected_depth(x);
-    uint i, depth = 0;
-    uint next = substance.root;
-
-    for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
-        i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
-        r /= 2;
-        c += sign(x - c) * r;
-        hitmap[i / 8] = true;
-        next = octree[i].x & node_child_mask;
-    }
-
-    if (depth <= expected_depth && (octree[i].x & node_empty_flag) == 0){
-        request_data(i, substance.id, c, depth);
-    }
-
-    return octree[i];
-}
-
 vec4 colour(vec3 x){
     return vec4(0.8, 0.4, 0.6, 1.0);
 }
@@ -158,11 +135,28 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-float substance_phi(ray_t r, out bool hit, substance_t substance, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
+float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, inout vec3 v_min, inout vec3 v_max){
     // lookup octree node
-    vec3 c, s;
+    vec3 c = vec3(0);
+    vec3 s = vec3(pc.render_distance);
 
-    node = octree_lookup(r.x, substance, c, s);
+    uint expected_depth = expected_depth(r.x);
+    uint i, depth = 0;
+    uint next = substance.root;
+
+    for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
+        i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
+        s /= 2;
+        c += sign(r.x - c) * s;
+        hitmap[i / 8] = true;
+        next = octree[i].x & node_child_mask;
+    }
+
+    if (depth <= expected_depth && (octree[i].x & node_empty_flag) == 0){
+        request_data(i, substance.id, c, depth);
+    }
+
+    node = octree[i];
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
@@ -170,8 +164,10 @@ float substance_phi(ray_t r, out bool hit, substance_t substance, out uvec2 node
     
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
-    float plane_phi = (float(node.y >> 24) / 255.0 - 0.5) * length(s) * 2;
-    float plane = min(dot(c, n) - plane_phi - dot(r.x, n), 0) / dot(r.d, n);
+    float plane = 
+        min(dot(c, n) 
+        - (float(node.y >> 24) / 255.0 - 0.5) * length(s) * 2 
+        - dot(r.x, n), 0) / dot(r.d, n);
 
     // advance ray appropriately
     hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
@@ -192,7 +188,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
         float phi = mix(pc.render_distance, expected_size(r.x) + epsilon, num_substances == 0);
         for (uint substanceID = 0; !hit && substanceID < 2 + num_substances; substanceID++){
             substance_t s = substances[substanceID];
-            phi = min(phi, substance_phi(r, hit, s, hit_node, v_min, v_max));
+            phi = min(phi, phi_s(r, hit, s, hit_node, v_min, v_max));
         }
         r.x += r.d * phi;
     }
