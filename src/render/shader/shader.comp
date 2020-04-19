@@ -126,10 +126,10 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 r){
     r = vec3(pc.render_distance);
 
     uint expected_depth = expected_depth(x);
-    uint i, depth;
+    uint i, depth = 0;
     uint next = substance.root;
 
-    for (depth = 0; depth <= expected_depth && (depth == 0 || next != 0); depth++){
+    for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
         r /= 2;
         c += sign(x - c) * r;
