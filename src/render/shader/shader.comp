@@ -125,23 +125,15 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 r){
     c = vec3(0);
     r = vec3(pc.render_distance);
 
-    // do 1st iteration of loop
-    uint i = substance.root | uint(dot(step(c, x), vec3(1, 2, 4)));
-    r /= 2;
-    c += sign(x - c) * r;
-    hitmap[i / 8] = true;
-
     uint expected_depth = expected_depth(x);
-    uint depth = 1;
-    for (; depth <= expected_depth && (octree[i].x & node_child_mask) != 0; depth++){
-        // find child 
-        i = (octree[i].x & node_child_mask) | uint(dot(step(c, x), vec3(1, 2, 4)));
+    uint i, depth;
+    uint next = substance.root;
 
-        // refine bounding box
+    for (depth = 0; depth <= expected_depth && (depth == 0 || next != 0); depth++){
+        i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
+        next = octree[i].x & node_child_mask;
         r /= 2;
         c += sign(x - c) * r;
-
-        // mark hitmap
         hitmap[i / 8] = true;
     }
 
