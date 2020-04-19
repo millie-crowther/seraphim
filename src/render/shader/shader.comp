@@ -112,7 +112,7 @@ void request_data(uint i, uint substanceID, vec3 c, uint depth){
     uint child_local = atomicAnd(vacant_node_index, 0); 
 
     if (child_local != 0){
-        input_data.octree[i + work_group_offset()].x |= child_local;
+        input_data.octree[i + work_group_offset()].x = child_local;
 
         requests.requests[request_id].substanceID = substanceID;
         requests.requests[request_id].c = c;
@@ -131,10 +131,10 @@ uvec2 octree_lookup(vec3 x, substance_t substance, out vec3 c, out vec3 r){
 
     for (depth = 0; depth <= expected_depth && (depth == 0 || next != 0); depth++){
         i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
-        next = octree[i].x & node_child_mask;
         r /= 2;
         c += sign(x - c) * r;
         hitmap[i / 8] = true;
+        next = octree[i].x & node_child_mask;
     }
 
     if (depth <= expected_depth && (octree[i].x & node_empty_flag) == 0){
