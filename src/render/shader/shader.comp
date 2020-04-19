@@ -288,11 +288,10 @@ void prerender(uint i){
     substance_bins[i] = 0;
 
     // load octree from global memory into shared memory
-    uvec2 node = input_data.octree[i + work_group_offset()];
-    octree[i] = node;
+    octree[i] = input_data.octree[i + work_group_offset()];
 
     // submit free nodes to request queue
-    if (i % 8 == 0 && (node.x & node_unused_flag) != 0){
+    if (i % 8 == 0 && (octree[i].x & node_unused_flag) != 0){
         vacant_node_index = i;
     }
 
