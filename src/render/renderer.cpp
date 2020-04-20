@@ -600,7 +600,7 @@ renderer_t::handle_requests(){
                 vec3_t c = r.c.cast<double>();
 
                 if (auto aabb = substance->get_aabb().lock()){
-                    // c -= aabb->get_centre();
+                    c -= aabb->get_centre();
                     // ra = aabb->get_size() / (1 << r.depth);
                 }
 

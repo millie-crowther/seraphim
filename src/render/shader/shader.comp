@@ -144,6 +144,8 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node){
     uint i, depth = 0;
     uint next = substance.root;
 
+    r.x += substance.c;
+
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         s /= 2;
