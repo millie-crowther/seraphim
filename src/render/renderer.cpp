@@ -38,7 +38,7 @@ renderer_t::renderer_t(
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(vec3_t(3.6, 0.78, 1.23), 2.3)
+        std::make_shared<primitive::sphere_t<3>>(vec3_t(0.0, 1.0, 0.0), 1.0)
     );
 
     substances[sphere->get_id()] = sphere;

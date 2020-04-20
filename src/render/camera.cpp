@@ -3,8 +3,7 @@
 #include "core/blaspheme.h"
 
 camera_t::camera_t(const blaspheme_t * blaspheme){
-    transform.set_position(vec3_t(0.0, 0.5, 0.0));
-    transform.set_rotation(quat_t::angle_axis(3.14159 / 2, vec3_t::up()));
+    transform.set_position(vec3_t(0.0, 0.5, -3.0));
 
     if (auto scheduler = blaspheme->get_scheduler().lock()){
         frame_start_follower = scheduler->on_frame_start.follow([blaspheme, this](double delta){
