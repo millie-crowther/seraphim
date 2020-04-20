@@ -154,6 +154,10 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node){
 
     node = octree[i];
 
+    if (depth <= expected_depth && (node.x & node_empty_flag) == 0){
+        request_data(i, substance.id, c, depth);
+    }
+
     // calculate distance to edge of bounding cube
     vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
     float cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
@@ -167,10 +171,6 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node){
 
     // advance ray appropriately
     hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
-    
-    if (depth <= expected_depth && hit){
-        request_data(i, substance.id, c, depth);
-    }
     
     return mix(cube, plane, hit);
 }
