@@ -18,14 +18,12 @@ substance_t::get_data(){
     // make sure aabb is created
     get_aabb();
 
-    data_t data;
-
-    data.id   = id;
-    data.root = root;
-    data.c    = aabb->get_centre().cast<float>();
-    data.size = aabb->get_size().cast<float>();
-
-    return data;
+    return {
+        aabb->get_centre().cast<float>(),
+        root,
+        aabb->get_size().cast<float>(),
+        id
+    };
 }
 
 void
