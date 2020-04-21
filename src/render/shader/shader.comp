@@ -141,10 +141,11 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node){
     vec3 s = vec3(pc.render_distance);
 
     uint expected_depth = expected_depth(r.x);
-    uint i, depth = 0;
+    uint i;
+    uint depth = 0;
     uint next = substance.root;
 
-    r.x -= substance.c;
+    // r.x -= substance.c;
 
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
@@ -184,12 +185,11 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     uint steps = 0;
     for (; !hit && steps < max_steps; steps++){
         uint bin = get_bin(r.x);
-        uint bin_data = substance_bins[bin];
-        uint num_substances = bin_data & 0xFFFFFFFF;
-        uint substance_index = bin_data >> 16;
+        uint num_substances = substance_bins[bin] & 0xFFFFFFFF;
+        uint substance_index = substance_bins[bin] >> 16;
 
         float phi = mix(pc.render_distance, expected_size(r.x) + epsilon, num_substances == 0);
-        for (uint substanceID = 0; !hit && substanceID < 2 + num_substances; substanceID++){
+        for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
             substance_t s = substances[substanceID];
             phi = min(phi, phi_s(r, hit, s, hit_node));
         }
