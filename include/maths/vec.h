@@ -59,15 +59,8 @@ public:
   
     // accessors
     T operator*(const vec_t<T, N> & x) const {
-        // TODO: figure out why this wont work
-        // vec_t<T, N> h = hadamard(x);
-        // return std::accumulate(h.begin(), h.end(), 0);
-        
-        T result = 0;
-        for (uint8_t i = 0; i < N; i++){ 
-            result += (*this)[i] * x[i]; 
-        }
-        return result;
+        vec_t<T, N> h = hadamard(x);
+        return std::accumulate(h.begin(), h.end(), T(0));
     }
 
     vec_t<T, N> operator+(const vec_t<T, N> & x) const {
