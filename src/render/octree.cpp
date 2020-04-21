@@ -27,7 +27,7 @@ octree_node_t::octree_node_t(const vec3_t & c, const vec3_t & r, const vec3_t & 
     header = 0;
 
     if (!intersects(c, r, sdf)){
-        header = node_empty_flag;
+        header |= node_empty_flag;
     }
 
     double p = sdf->phi(c);
@@ -35,6 +35,7 @@ octree_node_t::octree_node_t(const vec3_t & c, const vec3_t & r, const vec3_t & 
     p += 0.5;
     p *= 255;
     p = std::max(0.0, std::min(p, 255.0)); 
+
 
     vec3_t n = (sdf->normal(c) / 2 + 0.5) * 255;
     

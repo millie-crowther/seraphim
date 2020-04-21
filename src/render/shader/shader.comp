@@ -144,7 +144,7 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
     uint depth = 0;
     uint next = substance.root;
 
-    // r.x -= substance.c;
+    r.x -= substance.c;
 
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
@@ -164,7 +164,7 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
     vec3 n = normal(node.y);
     float plane = min(0,
         dot(c - r.x, n) - 
-        (float(node.y >> 24) / 127.5 - 1) * length(s)
+        (float(node.y) / 2139095040 - 1) * length(s)
     ) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
