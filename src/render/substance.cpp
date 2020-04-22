@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-substance_t::substance_t(uint32_t id, uint32_t root, std::shared_ptr<sdf3_t> sdf){
+substance_t::substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
     this->root = root;
     this->id = id;
@@ -77,6 +77,12 @@ std::weak_ptr<aabb3_t>
 substance_t::get_aabb(){
     if (aabb == nullptr){
         create_aabb();
+
+        auto c = aabb->get_centre();
+
+        if (id == 1){
+            std::cout << "c: " << c[0] << ", " << c[1] << ", " << c[2] << std::endl;
+        } 
     }
 
     return aabb;

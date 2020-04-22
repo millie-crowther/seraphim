@@ -34,11 +34,11 @@ renderer_t::renderer_t(
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
     floor_substance  = std::make_shared<substance_t>(0, 0, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.0, -0.1, 0.0), vec3_t(5.0, 0.2, 5.0))
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(), vec3_t(5.0, 0.2, 5.0))
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(vec3_t(-1.3, 1.4, 0.56), 1.0)
+        std::make_shared<primitive::sphere_t<3>>(vec3_t(-2.0, 0.5, 1.0), 1.0)
     );
 
     substances[sphere->get_id()] = sphere;
@@ -600,7 +600,7 @@ renderer_t::handle_requests(){
                 vec3_t c = r.c.cast<double>();
 
                 if (auto aabb = substance->get_aabb().lock()){
-                    c += aabb->get_centre();
+                    c -= aabb->get_centre();
                     // ra = aabb->get_size() / (1 << r.depth);
                 }
 
