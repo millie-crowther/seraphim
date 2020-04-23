@@ -21,7 +21,7 @@ substance_t::get_data(){
     return {
         aabb->get_centre().cast<float>(),
         root,
-        aabb->get_size().cast<float>() / 2.0f,
+        aabb->get_size().cast<float>(),
         id
     };
 }
