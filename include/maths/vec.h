@@ -22,6 +22,11 @@ public:
     template<class... Xs>
     vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : std::array<T, N>({ x, _xs...}) {}
 
+    template<class S>
+    vec_t(const vec_t<S, N> & x){
+        std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return T(s); });
+    }
+
     // norms
     T square_norm() const {
         return *this * *this;
@@ -71,6 +76,7 @@ public:
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus<T>());
         return r;
     }
+
 
     template<class S>
     typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
