@@ -21,7 +21,7 @@ substance_t::get_data(){
     return {
         aabb->get_centre().cast<float>(),
         root,
-        aabb->get_size().cast<float>(),
+        aabb->get_size().cast<float>() / 2.0f,
         id
     };
 }
@@ -77,12 +77,6 @@ std::weak_ptr<aabb3_t>
 substance_t::get_aabb(){
     if (aabb == nullptr){
         create_aabb();
-
-        auto c = aabb->get_centre();
-
-        if (id == 1){
-            std::cout << "c: " << c[0] << ", " << c[1] << ", " << c[2] << std::endl;
-        } 
     }
 
     return aabb;

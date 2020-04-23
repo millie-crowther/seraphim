@@ -42,12 +42,13 @@ public:
 
     // modifier operators   
     template<class S> 
-    void operator+=(const vec_t<S, N> & v){
-        std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::plus<T>());
+    void operator+=(const S & x){
+        std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::plus<T>());
     }
 
-    void operator-=(const vec_t<T, N> & v){
-        std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::minus<T>());
+    template<class S>
+    void operator-=(const S & x){
+        std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::minus<T>());
     }
 
     void operator*=(const T & s){
@@ -70,9 +71,11 @@ public:
         return r;
     }
 
-    vec_t<T, N> operator-(const vec_t<T, N> & x) const {
+    template<class S>
+    vec_t<T, N> operator-(const S & x) const {
         vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
+        vec_t<T, N> x1(x);
+        std::transform(this->begin(), this->end(), x1.begin(), r.begin(), std::minus<T>());
         return r;
     } 
 
@@ -85,12 +88,6 @@ public:
     vec_t<T, N> operator+(const T & s) const {
         vec_t<T, N> x;
         std::transform(this->begin(), this->end(), x.begin(), std::bind1st(std::plus<T>(), s));
-        return x;
-    }
-
-    vec_t<T, N> operator-(const T & s) const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind2nd(std::minus<T>(), s));
         return x;
     }
 

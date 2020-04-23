@@ -11,7 +11,7 @@ public:
         f32vec3_t c;
         int32_t root;
 
-        f32vec3_t size;
+        f32vec3_t r;
         uint32_t id;
     };
 

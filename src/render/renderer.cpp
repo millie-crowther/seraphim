@@ -524,10 +524,7 @@ renderer_t::render(){
 
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    substances[1].lock()->set_position(vec3_t(
-        // 1.0, theta, 3.0
-        std::sin(theta), 1.0, std::cos(theta)
-    ));
+    substances[1].lock()->set_position(vec3_t(std::sin(theta), 1.0, std::cos(theta)));
 
     std::vector<substance_t::data_t> substance_data(2);
 
@@ -617,15 +614,10 @@ renderer_t::handle_requests(){
         if (r.child != 0){
             if (auto substance = substances[r.objectID].lock()){
                 vec3_t ra = push_constants.render_distance / (1 << r.depth);
-                vec3_t c = r.c.cast<double>();
-
-                if (auto aabb = substance->get_aabb().lock()){
-                    c -= aabb->get_centre();
-                    // ra = aabb->get_size() / (1 << r.depth);
-                }
+                f32vec3_t c = r.c - substance->get_data().c;
 
                 input_buffer->write(
-                    octree_node_t::create(c, ra, substance->get_sdf()), 
+                    octree_node_t::create(c.cast<double>(), ra, substance->get_sdf()), 
                     1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
                 );
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
