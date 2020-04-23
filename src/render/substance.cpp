@@ -87,3 +87,12 @@ substance_t::get_aabb(){
 
     return aabb;
 }
+
+vec3_t substance_t::get_position() const {
+    return position;
+}
+
+void 
+substance_t::set_position(const vec3_t & x){
+    position = x;
+}

@@ -22,11 +22,15 @@ public:
     data_t get_data();
     uint32_t get_id() const;
 
+    vec3_t get_position() const;
+    void set_position(const vec3_t & x);
+
 private:
     int32_t root;
     uint32_t id;
     std::shared_ptr<sdf3_t> sdf;
     std::shared_ptr<aabb3_t> aabb;
+    vec3_t position;
 
     void create_aabb();
 };

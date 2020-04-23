@@ -520,6 +520,16 @@ renderer_t::render(){
 
     handle_requests();
 
+    std::vector<substance_t::data_t> substance_data(2);
+
+    for (auto pair : substances){
+        if (auto sub = std::get<1>(pair).lock()){
+            substance_data[std::get<0>(pair)] = sub->get_data();
+        }
+    }
+
+    input_buffer->write(substance_data, 0);
+
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
@@ -638,17 +648,7 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<substance_t::data_t> substance_data(2);
-
-    for (auto pair : substances){
-        if (auto sub = std::get<1>(pair).lock()){
-            substance_data[std::get<0>(pair)] = sub->get_data();
-        }
-    }
-
-    input_buffer->write(substance_data, 0);
-
-    std::vector<octree_node_t> initial_octree;
+   std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
 
     for (auto pair : substances){
