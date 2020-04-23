@@ -21,6 +21,8 @@ renderer_t::renderer_t(
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
 
+    start = std::chrono::high_resolution_clock::now();
+
     create_buffers();
 
     current_frame = 0;
@@ -38,7 +40,7 @@ renderer_t::renderer_t(
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(vec3_t(-2.0, 0.5, 1.0), 1.0)
+        std::make_shared<primitive::sphere_t<3>>(vec3_t(0.7, 0.5, 0.75), 1.0)
     );
 
     substances[sphere->get_id()] = sphere;
@@ -520,11 +522,19 @@ renderer_t::render(){
 
     handle_requests();
 
+    auto now = std::chrono::high_resolution_clock::now();
+    double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
+    substances[1].lock()->set_position(vec3_t(
+        // 1.0, theta, 3.0
+        std::sin(theta), 1.0, std::cos(theta)
+    ));
+
     std::vector<substance_t::data_t> substance_data(2);
 
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
             substance_data[std::get<0>(pair)] = sub->get_data();
+            substance_data[std::get<0>(pair)].c += sub->get_position();
         }
     }
 

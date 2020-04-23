@@ -40,8 +40,9 @@ public:
         return *this / (l == T(0) ? T(1) : l);
     }
 
-    // modifier operators    
-    void operator+=(const vec_t<T, N> & v){
+    // modifier operators   
+    template<class S> 
+    void operator+=(const vec_t<S, N> & v){
         std::transform(this->begin(), this->end(), v.begin(), this->begin(), std::plus<T>());
     }
 

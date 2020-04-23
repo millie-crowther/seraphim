@@ -103,6 +103,8 @@ private:
 
     std::vector<request_t> requests;
 
+    std::chrono::high_resolution_clock::time_point start;
+
     // initialisation functions
     VkShaderModule create_shader_module(std::string code);
     void create_render_pass();
