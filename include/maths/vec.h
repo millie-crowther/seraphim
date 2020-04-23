@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iostream>
 #include <numeric>
+#include <type_traits>
 #include <functional>
 
 template<class T, uint8_t N>
@@ -72,10 +73,17 @@ public:
     }
 
     template<class S>
-    vec_t<T, N> operator-(const S & x) const {
+    typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
+    operator-(const S & x) const {
         vec_t<T, N> r;
-        vec_t<T, N> x1(x);
-        std::transform(this->begin(), this->end(), x1.begin(), r.begin(), std::minus<T>());
+        std::transform(this->begin(), this->end(), r.begin(), std::bind2nd(std::minus<T>(), T(x)));
+        return r;
+    }
+
+    template<class S>
+    vec_t<T, N> operator-(const vec_t<S, N> & x) const {
+        vec_t<T, N> r;
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
         return r;
     } 
 
