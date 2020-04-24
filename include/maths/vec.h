@@ -77,7 +77,6 @@ public:
         return r;
     }
 
-
     template<class S>
     typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
     operator-(const S & x) const {
@@ -87,7 +86,8 @@ public:
     }
 
     template<class S>
-    vec_t<T, N> operator-(const vec_t<S, N> & x) const {
+    typename std::enable_if<std::is_constructible<T, typename S::value_type>::value, vec_t<T, N>>::type
+    operator-(const S & x) const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
         return r;
