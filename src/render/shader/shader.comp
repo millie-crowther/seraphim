@@ -168,6 +168,7 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
     ) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
+    // TODO: need to make this bit better. do an intersection, i.e. max(a, b)???
     vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
     float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 

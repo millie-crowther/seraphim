@@ -13,7 +13,7 @@ template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
 public:
     // constructors
-    vec_t() : vec_t(0){}
+    vec_t() : vec_t(T(0)){}
 
     vec_t(const T & x){
         this->fill(x); 
@@ -81,7 +81,7 @@ public:
     typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
     operator-(const S & x) const {
         vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), r.begin(), std::bind2nd(std::minus<T>(), T(x)));
+        std::transform(this->begin(), this->end(), r.begin(), std::bind2nd(std::minus<T>(), static_cast<T>(x)));
         return r;
     }
 
