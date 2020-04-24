@@ -162,19 +162,19 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
 
     // calculate distance to intersect plane
     vec3 n = normal(node.y);
-    float plane = min(0,
+    float phi_plane = min(0,
         dot(c - r.x, n) - 
         (float(node.y) / 2139095040 - 1) * length(s)
     ) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
-    float cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
+    float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 
     // advance ray appropriately
-    hit = (node.x & node_empty_flag) == 0 && plane >= 0 && plane < cube;
+    hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0 && phi_plane < phi_cube;
     
-    return mix(cube, plane, hit);
+    return mix(phi_cube, phi_plane, hit);
 }
 
 intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
