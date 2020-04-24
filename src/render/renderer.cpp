@@ -613,7 +613,7 @@ renderer_t::handle_requests(){
         auto r = requests[i];
         if (r.child != 0){
             if (auto substance = substances[r.objectID].lock()){
-                vec3_t ra = push_constants.render_distance / (1 << r.depth);
+                vec3_t ra = vec3_t(10.0) / (1 << r.depth);
                 vec3_t c = r.c - substance->get_data().c;
 
                 input_buffer->write(
