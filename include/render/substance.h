@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "sdf/sdf.h"
+#include "maths/quat.h"
 
 class substance_t {
 public:
@@ -11,7 +12,9 @@ public:
         f32vec3_t c;
         int32_t root;
 
-        f32vec3_t r;
+        float r;
+        uint32_t _1;
+        uint32_t _2;
         uint32_t id;
     };
 
@@ -30,7 +33,9 @@ private:
     uint32_t id;
     std::shared_ptr<sdf3_t> sdf;
     std::shared_ptr<aabb3_t> aabb;
+
     vec3_t position;
+    quat_t rotation;
 
     void create_aabb();
 };

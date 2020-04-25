@@ -21,7 +21,10 @@ substance_t::get_data(){
     return {
         aabb->get_centre().cast<float>(),
         root,
-        aabb->get_size().cast<float>(),
+        
+        static_cast<float>(aabb->get_size().chebyshev_norm()),
+        0,
+        0,
         id
     };
 }

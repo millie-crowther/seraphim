@@ -51,7 +51,9 @@ struct substance_t {
     vec3 c;
     int root;
 
-    vec3 r;  
+    float r;
+    uint _1;
+    uint _2;
     uint id;
 };
 
@@ -96,7 +98,7 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - pc.camera_position;
-    return max(1, 12 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
+    return max(1, 11 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
 }
 
 float expected_size(vec3 x){
@@ -138,8 +140,7 @@ uint get_bin(vec3 x){
 float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint expected_depth){
     // lookup octree node
     vec3 c = vec3(0);
-    vec3 s = substance.r;
-    s = vec3(max(s.x, max(s.y, s.z)));
+    vec3 s = vec3(substance.r);
 
     uint i;
     uint depth = 0;

@@ -59,3 +59,9 @@ quat_t::operator*(const vec3_t & x) const {
         (xz - wy) * x[0] + (yz - wx) * x[1] + (0.5 - xx - yy) * x[2]
     ) * 2;
 }
+
+uint32_t
+quat_t::pack() const {
+    u8vec4_t q_p = (qs + 1) * 127.5;
+    return *reinterpret_cast<uint32_t *>(&q_p);
+}
