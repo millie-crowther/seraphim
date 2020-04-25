@@ -36,11 +36,11 @@ renderer_t::renderer_t(
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
     floor_substance  = std::make_shared<substance_t>(0, 0, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(), vec3_t(5.0, 0.2, 5.0))
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(vec3_t(0.7, 0.5, 0.75), 1.0)
+        std::make_shared<primitive::sphere_t<3>>(1.0)
     );
 
     substances[sphere->get_id()] = sphere;
@@ -613,7 +613,7 @@ renderer_t::handle_requests(){
         auto r = requests[i];
         if (r.child != 0){
             if (auto substance = substances[r.objectID].lock()){
-                vec3_t ra = vec3_t(10.0) / (1 << r.depth);
+                vec3_t ra = vec3_t(substance->get_data().r.chebyshev_norm()) / (1 << r.depth);
                 vec3_t c = r.c - substance->get_data().c;
 
                 input_buffer->write(

@@ -96,7 +96,7 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - pc.camera_position;
-    return max(1, 14 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
+    return max(1, 12 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
 }
 
 float expected_size(vec3 x){
@@ -138,13 +138,19 @@ uint get_bin(vec3 x){
 float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint expected_depth){
     // lookup octree node
     vec3 c = vec3(0);
-    vec3 s = vec3(10);
+    vec3 s = substance.r;
+    s = vec3(max(s.x, max(s.y, s.z)));
 
     uint i;
     uint depth = 0;
     uint next = substance.root;
 
     r.x -= substance.c;
+
+    // TODO: check against outside bounds of aabb
+    vec3 q = abs(r.x) - s;
+    float phi_aabb = length(max(q, 0)) + min(max(q.x, max(q.y, q.z)), 0) + epsilon;
+    bool outside_aabb = phi_aabb > epsilon;
 
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
@@ -161,21 +167,24 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
     }
 
     // calculate distance to intersect plane
+    vec3 xc = c - r.x;
     vec3 n = normal(node.y);
     float phi_plane = min(0,
-        dot(c - r.x, n) - 
-        (float(node.y) / 2139095040 - 1) * length(s)
+        dot(xc, n) - (float(node.y) / 2139095040 - 1) * length(s)
     ) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
-    // TODO: need to make this bit better. do an intersection, i.e. max(a, b)???
-    vec3 cube_i = (c + sign(r.d) * s - r.x) / r.d;
+    vec3 cube_i = (xc + sign(r.d) * s) / r.d;
     float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 
     // advance ray appropriately
-    hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0 && phi_plane < phi_cube;
+    hit = 
+        (node.x & node_empty_flag) == 0 && 
+        phi_plane >= 0 && 
+        phi_plane < phi_cube &&
+        !outside_aabb;
     
-    return mix(phi_cube, phi_plane, hit);
+    return mix(mix(phi_cube, phi_plane, hit), phi_aabb, outside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
