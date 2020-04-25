@@ -21,9 +21,9 @@ substance_t::get_data(){
     return {
         aabb->get_centre().cast<float>(),
         root,
-        
+
         static_cast<float>(aabb->get_size().chebyshev_norm()),
-        0,
+        rotation.inverse().pack(),
         0,
         id
     };
@@ -75,7 +75,6 @@ substance_t::get_id() const {
     return id;
 }
 
-
 std::weak_ptr<aabb3_t> 
 substance_t::get_aabb(){
     if (aabb == nullptr){
@@ -92,4 +91,9 @@ vec3_t substance_t::get_position() const {
 void 
 substance_t::set_position(const vec3_t & x){
     position = x;
+}
+
+void 
+substance_t::set_rotation(const quat_t & q){
+    rotation = q;
 }

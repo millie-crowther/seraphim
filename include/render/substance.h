@@ -13,7 +13,7 @@ public:
         int32_t root;
 
         float r;
-        uint32_t _1;
+        uint32_t rotation;
         uint32_t _2;
         uint32_t id;
     };
@@ -27,6 +27,8 @@ public:
 
     vec3_t get_position() const;
     void set_position(const vec3_t & x);
+
+    void set_rotation(const quat_t & q);
 
 private:
     int32_t root;

@@ -86,6 +86,7 @@ private:
 
     std::shared_ptr<substance_t> sphere;
     std::shared_ptr<substance_t> floor_substance;
+    std::shared_ptr<substance_t> cube;
     
     std::map<uint32_t, std::weak_ptr<substance_t>> substances;
 

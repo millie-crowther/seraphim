@@ -35,16 +35,23 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
-    floor_substance  = std::make_shared<substance_t>(0, 0, 
+    floor_substance = std::make_shared<substance_t>(0, 0, 
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(1.0)
+        std::make_shared<primitive::sphere_t<3>>(0.5)
     );
+
+    cube = std::make_shared<substance_t>(2, 16, 
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5))
+    );
+
+    cube->set_position(vec3_t(-2.5, 1.0, 0.5));
 
     substances[sphere->get_id()] = sphere;
     substances[floor_substance->get_id()] = floor_substance;
+    substances[cube->get_id()] = cube;
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -524,9 +531,10 @@ renderer_t::render(){
 
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    substances[1].lock()->set_position(vec3_t(std::sin(theta), 1.0, std::cos(theta)));
+    substances[1].lock()->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
+    substances[2].lock()->set_rotation(quat_t::angle_axis(theta / 10, vec3_t::up()));
 
-    std::vector<substance_t::data_t> substance_data(2);
+    std::vector<substance_t::data_t> substance_data(3);
 
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){

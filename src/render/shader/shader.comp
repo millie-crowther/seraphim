@@ -52,7 +52,7 @@ struct substance_t {
     int root;
 
     float r;
-    uint _1;
+    uint q;
     uint _2;
     uint id;
 };
@@ -137,20 +137,47 @@ uint get_bin(vec3 x){
     return 0;
 }
 
-float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint expected_depth){
+vec3 rotate(vec4 q, vec3 x){
+    double wx = q.x * q.y;
+    double wy = q.x * q.z;
+    double wz = q.x * q.w;
+    
+    double xx = q.y * q.y;
+    double xy = q.y * q.z;
+    double xz = q.y * q.w;
+
+    double yy = q.z * q.z;
+    double yz = q.z * q.w;
+
+    double zz = q.w * q.w;
+
+    return vec3(
+        (0.5 - yy - zz) * x.x + (xy - wz) * x.y + (xz + wy) * x.z,
+        (xy + wz) * x.x + (0.5 - xx - zz) * x.y + (yz + wx) * x.z,
+        (xz - wy) * x.x + (yz - wx) * x.y + (0.5 - xx - yy) * x.z
+    ) * 2;
+
+}
+
+float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expected_depth){
     // lookup octree node
     vec3 c = vec3(0);
-    vec3 s = vec3(substance.r);
+    vec3 s = vec3(sub.r);
 
     uint i;
     uint depth = 0;
-    uint next = substance.root;
+    uint next = sub.root;
 
-    r.x -= substance.c;
+    r.x -= sub.c;
 
-    // TODO: check against outside bounds of aabb
-    vec3 q = abs(r.x) - s;
-    float phi_aabb = length(max(q, 0)) + min(max(q.x, max(q.y, q.z)), 0) + epsilon;
+    // vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24);
+    // q -= 127.5;
+    // q /= 127.5;
+    // r.x = rotate(q, r.x);
+
+    // check against outside bounds of aabb
+    vec3 g = abs(r.x) - s;
+    float phi_aabb = length(max(g, 0)) + min(max(g.x, max(g.y, g.z)), 0) + epsilon;
     bool outside_aabb = phi_aabb > epsilon;
 
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
@@ -164,7 +191,7 @@ float phi_s(ray_t r, out bool hit, substance_t substance, out uvec2 node, uint e
     node = octree[i];
 
     if (depth <= expected_depth && (node.x & node_empty_flag) == 0){
-        request_data(i, substance.id, c, depth);
+        request_data(i, sub.id, c, depth);
     }
 
     // calculate distance to intersect plane
@@ -313,7 +340,7 @@ void prerender(uint i){
     // load substances into shared memory
     substances[i] = input_data.substances[i];
 
-    substance_bins[0] = 2;
+    substance_bins[0] = 3;
 }
 
 void postrender(uint i){
