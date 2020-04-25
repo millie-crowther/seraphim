@@ -138,18 +138,18 @@ uint get_bin(vec3 x){
 }
 
 vec3 rotate(vec4 q, vec3 x){
-    double wx = q.x * q.y;
-    double wy = q.x * q.z;
-    double wz = q.x * q.w;
+    float wx = q.x * q.y;
+    float wy = q.x * q.z;
+    float wz = q.x * q.w;
     
-    double xx = q.y * q.y;
-    double xy = q.y * q.z;
-    double xz = q.y * q.w;
+    float xx = q.y * q.y;
+    float xy = q.y * q.z;
+    float xz = q.y * q.w;
 
-    double yy = q.z * q.z;
-    double yz = q.z * q.w;
+    float yy = q.z * q.z;
+    float yz = q.z * q.w;
 
-    double zz = q.w * q.w;
+    float zz = q.w * q.w;
 
     return vec3(
         (0.5 - yy - zz) * x.x + (xy - wz) * x.y + (xz + wy) * x.z,
@@ -170,10 +170,10 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
 
     r.x -= sub.c;
 
-    // vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24);
-    // q -= 127.5;
-    // q /= 127.5;
-    // r.x = rotate(q, r.x);
+    vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24);
+    q -= 127.5;
+    q /= 127.5;
+    r.x = rotate(q, r.x);
 
     // check against outside bounds of aabb
     vec3 g = abs(r.x) - s;
