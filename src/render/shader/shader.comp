@@ -92,9 +92,10 @@ shared ivec3 visibility_max;
 shared uint vacant_node_index;
 
 shared uint substance_bins[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared substance_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
+shared uint request_selector[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - pc.camera_position;
@@ -207,10 +208,8 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
 
     // advance ray appropriately
     hit = 
-        (node.x & node_empty_flag) == 0 && 
-        phi_plane >= 0 && 
-        phi_plane < phi_cube &&
-        !outside_aabb;
+        (node.x & node_empty_flag) == 0 && !outside_aabb &&
+        phi_plane >= 0 && phi_plane < phi_cube;
     
     return mix(mix(phi_cube, phi_plane, hit), phi_aabb, outside_aabb);
 }
@@ -238,7 +237,6 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
 }
 
 float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
-    // return 1.0;
     intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max);
     return float(length(i.x - p) < epsilon * 2);
 }
@@ -338,7 +336,9 @@ void prerender(uint i){
     }
 
     // load substances into shared memory
-    substances[i] = input_data.substances[i];
+    if (i < 32){
+        substances[i] = input_data.substances[i];
+    }
 
     substance_bins[0] = 3;
 }
