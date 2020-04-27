@@ -357,7 +357,9 @@ void main(){
     render(request);
     barrier();
 
-    if (request_selector == i){
+    if (request_selector == i && vacant_node_index != 0){
+        request.child = vacant_node_index + work_group_offset();
+        
         // TODO
     }
 
