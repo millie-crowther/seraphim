@@ -359,8 +359,9 @@ void main(){
 
     if (request_selector == i && vacant_node_index != 0){
         request.child = vacant_node_index + work_group_offset();
-        
-        // TODO
+
+        //input_data.octree[request.parent].x = vacant_node_index;
+        //requests.requests[gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x] = request;
     }
 
     postrender(i);
