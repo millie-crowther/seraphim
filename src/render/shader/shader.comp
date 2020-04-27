@@ -68,7 +68,7 @@ struct request_t {
     uint depth;
 
     uint child;
-    uint _1;
+    uint parent;
     uint substanceID;
     uint _2;
 };
@@ -191,6 +191,11 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
 
     if (depth <= expected_depth && (node.x & node_empty_flag) == 0){
         request_selector = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+
+        request.parent = i + work_group_offset();
+        request.substanceID = sub.id;
+        request.c = c;
+        request.depth = depth;
         request_data(i, sub.id, c, depth);
     }
 
