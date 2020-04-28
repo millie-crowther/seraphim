@@ -304,15 +304,6 @@ void render(){
     ray_t r = ray_t(x0, d);
     intersection_t i = raycast(r, v_min, v_max);
 
-    // set visibility bounds 
-    // atomicMin(visibility_min.x, floatBitsToInt(v_min.x));
-    // atomicMin(visibility_min.y, floatBitsToInt(v_min.y));
-    // atomicMin(visibility_min.z, floatBitsToInt(v_min.z));
-
-    // atomicMax(visibility_max.x, floatBitsToInt(v_max.x));
-    // atomicMax(visibility_max.y, floatBitsToInt(v_max.y));
-    // atomicMax(visibility_max.z, floatBitsToInt(v_max.z));
-
     if (i.hit){
         out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.node, v_min, v_max);
     }
@@ -323,8 +314,6 @@ void prerender(uint i){
     // clear shared variables
     vacant_node_index = 0;
     hitmap[i / 8] = false;
-    // visibility_min = floatBitsToInt(pc.camera_position);
-    // visibility_max = visibility_min;
     substance_bins[i] = 0;
 
     // load octree from global memory into shared memory
@@ -345,16 +334,10 @@ void prerender(uint i){
 
 void postrender(uint i){
     // cull nodes that havent been seen this frame
-    uint c = (octree[i].x & node_child_mask);
-    if (!hitmap[c / 8]){
-        input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
-        input_data.octree[c + work_group_offset()].x |= node_unused_flag;
-    }
-
-    // update visiblity aabb
-    // if (gl_LocalInvocationID.x == 0 && gl_LocalInvocationID.y == 0){
-    //     persistent.data[i].v_min = intBitsToFloat(visibility_min);
-    //     persistent.data[i].v_max = intBitsToFloat(visibility_max);
+    // uint c = (octree[i].x & node_child_mask);
+    // if (!hitmap[c / 8]){
+    //     input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
+    //     input_data.octree[c + work_group_offset()].x |= node_unused_flag;
     // }
 }
 
