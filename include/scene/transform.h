@@ -8,21 +8,11 @@
 
 class transform_t {
 private:
-    // master and servant hierarchy
-    // transform_t * master;
-    // std::vector<std::shared_ptr<transform_t>> servants;
-
     // physical location and orientation
     vec3_t position;
     quat_t rotation;
 
 public:
-    // constructors
-    // transform_t();
-
-    // modifiers
-    // std::weak_ptr<transform_t> create_servant();
-
     void set_position(const vec3_t & x);
     void translate(const vec3_t & x);
 
@@ -32,6 +22,8 @@ public:
     // accessors
     vec3_t get_position() const;
     quat_t get_rotation() const;
+
+    vec3_t to_local_space(const vec3_t & x) const;
 };
 
 #endif

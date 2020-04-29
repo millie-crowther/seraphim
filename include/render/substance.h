@@ -3,8 +3,9 @@
 
 #include <memory>
 
-#include "sdf/sdf.h"
+#include "scene/transform.h"
 #include "maths/quat.h"
+#include "sdf/sdf.h"
 
 class substance_t {
 public:
@@ -30,14 +31,15 @@ public:
 
     void set_rotation(const quat_t & q);
 
+    double phi(const vec3_t & x) const;
+
 private:
     int32_t root;
     uint32_t id;
     std::shared_ptr<sdf3_t> sdf;
     std::shared_ptr<aabb3_t> aabb;
 
-    vec3_t position;
-    quat_t rotation;
+    transform_t transform;
 
     void create_aabb();
 };

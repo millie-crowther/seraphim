@@ -214,7 +214,7 @@ intersection_t raycast(ray_t r){
     uvec2 hit_node;
 
     uint steps = 0;
-    for (; !hit && steps < max_steps; steps++){
+    for (; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
         uint bin = get_bin(r.x);
         uint num_substances = substance_bins[bin] & 0xFFFFFFFF;
         uint substance_index = substance_bins[bin] >> 16;
@@ -293,11 +293,7 @@ void render(){
     
     vec4 out_colour = sky();
 
-    vec3 v_min = pc.camera_position;
-    vec3 v_max = v_min;
-
-    ray_t r = ray_t(x0, d);
-    r.x += pc.phi_initial * r.d;
+    ray_t r = ray_t(x0+ pc.phi_initial * d, d);
     intersection_t i = raycast(r);
 
     if (i.hit){

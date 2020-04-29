@@ -23,7 +23,7 @@ substance_t::get_data(){
         root,
 
         static_cast<float>(aabb->get_size().chebyshev_norm()),
-        rotation.inverse().pack(),
+        transform.get_rotation().inverse().pack(),
         0,
         id
     };
@@ -85,15 +85,20 @@ substance_t::get_aabb(){
 }
 
 vec3_t substance_t::get_position() const {
-    return position;
+    return transform.get_position();
 }
 
 void 
 substance_t::set_position(const vec3_t & x){
-    position = x;
+    transform.set_position(x);
 }
 
 void 
 substance_t::set_rotation(const quat_t & q){
-    rotation = q;
+    transform.set_rotation(q);
+}
+
+double 
+substance_t::phi(const vec3_t & x) const {
+    return sdf->phi(transform.to_local_space(x));
 }
