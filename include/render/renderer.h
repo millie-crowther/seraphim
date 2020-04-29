@@ -26,7 +26,7 @@ private:
         uint32_t current_frame;
 
         f32vec3_t camera_position;
-        float dummy2;            // alignment
+        float phi_initial;           
 
         f32vec3_t camera_right;
         float dummy3;

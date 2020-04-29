@@ -29,6 +29,7 @@ renderer_t::renderer_t(
     push_constants.current_frame = 0;
     push_constants.render_distance = static_cast<float>(hyper::rho);
     push_constants.window_size = window->get_size();
+    push_constants.phi_initial = 0;
 
     set_main_camera(test_camera);
 

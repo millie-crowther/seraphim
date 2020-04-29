@@ -37,7 +37,7 @@ layout( push_constant ) uniform push_constants {
     uint current_frame;
 
     vec3 camera_position;
-    float dummy2;        
+    float phi_initial;        
 
     vec3 camera_right;
     float dummy3;
@@ -297,6 +297,7 @@ void render(){
     vec3 v_max = v_min;
 
     ray_t r = ray_t(x0, d);
+    r.x += pc.phi_initial * r.d;
     intersection_t i = raycast(r);
 
     if (i.hit){
