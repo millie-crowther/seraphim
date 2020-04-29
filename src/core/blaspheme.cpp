@@ -275,7 +275,6 @@ blaspheme_t::run(){
 
         renderer->render();
 
-
         current_frame++;
     }
 }

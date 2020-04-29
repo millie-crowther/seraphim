@@ -48,7 +48,6 @@ set(SOURCES
     ../src/ui/mouse.cpp
 
     ../src/logic/scheduler.cpp
-    ../src/logic/interval_revelator.cpp
 )
 
 add_executable(blaspheme ${SOURCES})

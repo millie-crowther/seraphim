@@ -329,11 +329,11 @@ void prerender(uint i){
 
 void postrender(uint i){
     // cull nodes that havent been seen this frame
-    // uint c = (octree[i].x & node_child_mask);
-    // if (!hitmap[c / 8]){
-    //     input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
-    //     input_data.octree[c + work_group_offset()].x |= node_unused_flag;
-    // }
+    uint c = (octree[i].x & node_child_mask);
+    if (!hitmap[c / 8]){
+        input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
+        input_data.octree[c + work_group_offset()].x |= node_unused_flag;
+    }
 }
 
 void main(){
