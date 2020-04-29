@@ -6,10 +6,11 @@ static void
 window_resize_callback(GLFWwindow * glfw_window, int width, int height){
     void * data = glfwGetWindowUserPointer(glfw_window);
     window_t * window = reinterpret_cast<window_t *>(data);
-    window->on_resize.announce(u32vec2_t((uint32_t) width, (uint32_t) height));
+
+    // TODO: handle resize of window
 }
 
-window_t::window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler){
+window_t::window_t(u32vec2_t size){
     this->size = size;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -25,7 +26,7 @@ window_t::window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler){
     glfwSetWindowSizeCallback(window, window_resize_callback); 
 
     keyboard = std::make_unique<keyboard_t>(*this);
-    mouse = std::make_unique<mouse_t>(*this, scheduler);
+    mouse = std::make_unique<mouse_t>(*this);
 }
 
 window_t::~window_t(){
@@ -54,12 +55,12 @@ window_t::set_title(const std::string & title){
     glfwSetWindowTitle(window, title.c_str());
 }
 
-const keyboard_t &
+keyboard_t &
 window_t::get_keyboard() const {
     return *keyboard;
 }
 
-const mouse_t &
+mouse_t &
 window_t::get_mouse() const {
     return *mouse;
 }

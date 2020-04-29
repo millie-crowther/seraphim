@@ -2,38 +2,8 @@
 
 #include "core/blaspheme.h"
 
-camera_t::camera_t(const blaspheme_t * blaspheme){
+camera_t::camera_t(){
     transform.set_position(vec3_t(0.0, 0.5, -3.0));
-
-    if (auto scheduler = blaspheme->get_scheduler().lock()){
-        frame_start_follower = scheduler->on_frame_start.follow([blaspheme, this](double delta){
-            if (auto window = blaspheme->get_window().lock()){
-                vec3_t forward = transform.get_rotation() * vec3_t::forward();
-
-                if (window->get_keyboard().is_key_pressed(GLFW_KEY_W)){
-                    transform.translate(forward * delta);
-                }
-
-                if (window->get_keyboard().is_key_pressed(GLFW_KEY_S)){
-                    transform.translate(-forward * delta );
-                } 
-
-                if (window->get_keyboard().is_key_pressed(GLFW_KEY_A)){
-                    transform.translate(-get_right() * delta );
-                }
-
-                if (window->get_keyboard().is_key_pressed(GLFW_KEY_D)){
-                    transform.translate(get_right() * delta );
-                }
-                
-                // std::cout << delta * window->get_mouse().get_velocity()[0] / 10000 << std::endl;
-                transform.rotate(quat_t::angle_axis(
-                    delta * window->get_mouse().get_velocity()[0] / 2000, 
-                    vec3_t::up()
-                ));
-            }
-        });
-    }
 }
 
 vec3_t 
@@ -49,4 +19,30 @@ camera_t::get_right() const {
 vec3_t
 camera_t::get_up() const {
     return transform.get_rotation() * vec3_t::up();
+}
+
+void 
+camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
+    vec3_t forward = transform.get_rotation() * vec3_t::forward();
+
+    if (keyboard.is_key_pressed(GLFW_KEY_W)){
+        transform.translate(forward * delta);
+    }
+
+    if (keyboard.is_key_pressed(GLFW_KEY_S)){
+        transform.translate(-forward * delta );
+    } 
+
+    if (keyboard.is_key_pressed(GLFW_KEY_A)){
+        transform.translate(-get_right() * delta );
+    }
+
+    if (keyboard.is_key_pressed(GLFW_KEY_D)){
+        transform.translate(get_right() * delta );
+    }
+    
+    transform.rotate(quat_t::angle_axis(
+        delta * mouse.get_velocity()[0] / 2000, 
+        vec3_t::up()
+    ));
 }

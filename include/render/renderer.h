@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
+#include <chrono>
 #include <map>
 
 #include "core/buffer.h"

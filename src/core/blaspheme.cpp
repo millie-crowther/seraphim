@@ -33,8 +33,7 @@ blaspheme_t::blaspheme_t(){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    scheduler = std::make_shared<scheduler_t>();
-    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size) * 2, scheduler);
+    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size) * 2);
 
     create_instance();
 
@@ -77,7 +76,7 @@ blaspheme_t::blaspheme_t(){
     
     vmaCreateAllocator(&allocator_info, &allocator);
 
-    test_camera = std::make_shared<camera_t>(this);
+    test_camera = std::make_shared<camera_t>();
 
     renderer = std::make_shared<renderer_t>(
         allocator, device, surface, window, test_camera, work_group_count, work_group_size
@@ -119,12 +118,6 @@ blaspheme_t::~blaspheme_t(){
 std::weak_ptr<renderer_t> 
 blaspheme_t::get_renderer() const {
     return renderer;
-}
-
-
-std::weak_ptr<scheduler_t> 
-blaspheme_t::get_scheduler() const {
-    return scheduler;
 }
 
 std::vector<const char *>
@@ -268,17 +261,20 @@ blaspheme_t::run(){
 
     while (!window->should_close()){
 	    glfwPollEvents();
-        scheduler->on_frame_start.tick();
+
+        auto now   = std::chrono::steady_clock::now();
+        double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+        previous = now;
+
+        window->get_mouse().update(delta, *window);
+        test_camera->update(delta, window->get_keyboard(), window->get_mouse());
+
+        if (current_frame % frequency == 0){    
+            std::cout << "FPS: " << 1.0 / delta << std::endl;
+        }
+
         renderer->render();
 
-        // fps monitoring 
-        if (current_frame % frequency == 0){     
-            auto now   = std::chrono::steady_clock::now();
-            double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
-            previous = now;
-
-            std::cout << "FPS: " << frequency / delta << std::endl;
-        }
 
         current_frame++;
     }

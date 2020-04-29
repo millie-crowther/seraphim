@@ -5,7 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
-#include "logic/revelator.h"
 #include "maths/vec.h"
 #include "ui/keyboard.h"
 #include "ui/mouse.h"
@@ -20,12 +19,9 @@ private:
 
 public:
     // constructors and destructors
-    window_t(u32vec2_t size, std::weak_ptr<scheduler_t> scheduler);
+    window_t(u32vec2_t size);
     ~window_t();
 
-    // public fields
-    revelator_t<u32vec2_t> on_resize;
-    
     // modifiers
     void set_title(const std::string & title);
 
@@ -34,8 +30,8 @@ public:
     u32vec2_t get_size() const;
     bool should_close() const;
 
-    const keyboard_t & get_keyboard() const;
-    const mouse_t & get_mouse() const;
+    keyboard_t & get_keyboard() const;
+    mouse_t & get_mouse() const;
 };
 
 #endif

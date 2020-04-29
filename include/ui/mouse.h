@@ -5,7 +5,6 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
-#include "logic/scheduler.h"
 #include "maths/vec.h"
 
 // forward declaration of window
@@ -15,15 +14,13 @@ class mouse_t {
 private:
     vec2_t v;
     vec2_t c;
-    std::weak_ptr<scheduler_t> scheduler;
-
-    interval_revelator_t::follower_ptr_t frame_start_follower;
-    revelator_t<u32vec2_t>::follower_ptr_t window_resize_follower;
 
 public:
-    mouse_t(window_t & window, std::weak_ptr<scheduler_t> scheduler);
+    mouse_t(window_t & window);
 
     vec2_t get_velocity() const;
+
+    void update(double delta, const window_t & window);
 };
 
 #endif

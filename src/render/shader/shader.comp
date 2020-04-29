@@ -96,7 +96,7 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
     vec3 xc = x - pc.camera_position;
-    return max(1, 11 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
+    return max(1, 10 - uint(max(0, 7 + 0.5 * log2(dot(xc, xc)))));
 }
 
 float expected_size(vec3 x){

@@ -9,7 +9,6 @@
 #include <vector>
 #include "render/renderer.h"
 #include "ui/window.h"
-#include "logic/scheduler.h"
 
 class blaspheme_t {
 private:
@@ -30,10 +29,6 @@ private:
 
     std::shared_ptr<renderer_t> renderer;
 
-    interval_revelator_t::follower_ptr_t frame_start_follower;
-
-    std::shared_ptr<scheduler_t> scheduler;
-
 	VmaAllocator allocator;
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -51,7 +46,6 @@ public:
     void run();
 
     std::weak_ptr<renderer_t> get_renderer() const;
-    std::weak_ptr<scheduler_t> get_scheduler() const;
     std::weak_ptr<window_t> get_window() const;
 };
 
