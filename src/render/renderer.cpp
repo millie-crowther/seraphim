@@ -537,7 +537,7 @@ renderer_t::render(){
 
     std::vector<substance_t::data_t> substance_data(3);
 
-    push_constants.phi_initial = 0.0;//push_constants.render_distance;
+    push_constants.phi_initial = push_constants.render_distance;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
             // update substance transforms
@@ -545,10 +545,10 @@ renderer_t::render(){
             substance_data[std::get<0>(pair)].c += sub->get_position();
 
             // update phi initial
-            // push_constants.phi_initial = std::min(
-            //     static_cast<float>(sub->phi(vec3_t())), 
-            //     push_constants.render_distance
-            // );
+            push_constants.phi_initial = std::min(
+                static_cast<float>(sub->phi(main_camera.lock()->get_position())), 
+                push_constants.phi_initial
+            );
         }
     }
 
