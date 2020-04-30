@@ -27,7 +27,7 @@ struct ray_t {
 struct intersection_t {
     bool hit;
     vec3 x;
-    uvec2 node;
+    vec3 normal;
 };
 
 // push constants
@@ -143,7 +143,7 @@ vec3 rotate(vec4 q, vec3 x){
 
 }
 
-float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expected_depth){
+float phi_s(ray_t r, substance_t sub, uint expected_depth, out bool hit, out vec3 out_normal){
     // lookup octree node
     vec3 c = vec3(0);
     vec3 s = vec3(sub.r);
@@ -172,20 +172,17 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
         next = octree[i].x & node_child_mask;
     }
 
-    node = octree[i];
+    uvec2 node = octree[i];
 
     if (depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0){
-        uint request_id = gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x;
+        uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
 
         // TODO: remove this atomic operation. map and reduce?
         uint child_local = atomicAnd(vacant_node_index, 0); 
-
         if (child_local != 0){
             input_data.octree[i + work_group_offset()].x = child_local;
-
             requests.requests[request_id] = request_t(
-                c, depth,
-                child_local + work_group_offset(), 0, sub.id, 0
+                c, depth, child_local + work_group_offset(), 0, sub.id, 0
             );
         }
     }
@@ -193,6 +190,7 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
     // calculate distance to intersect plane
     vec3 xc = c - r.x;
     vec3 n = normal(node.y);
+    out_normal = rotate(vec4(q.x, -q.yzw), n);
     float phi_plane = min(0,
         dot(xc, n) - (float(node.y) / 2139095040 - 1) * length(s)
     ) / dot(r.d, n);
@@ -211,7 +209,7 @@ float phi_s(ray_t r, out bool hit, substance_t sub, out uvec2 node, uint expecte
 
 intersection_t raycast(ray_t r){
     bool hit = false;
-    uvec2 hit_node;
+    vec3 out_normal;
 
     uint steps = 0;
     for (; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
@@ -223,12 +221,12 @@ intersection_t raycast(ray_t r){
         float phi = mix(pc.render_distance, expected_size(r.x) + epsilon, num_substances == 0);
         for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
             substance_t s = substances[substanceID];
-            phi = min(phi, phi_s(r, hit, s, hit_node, expected_depth));
+            phi = min(phi, phi_s(r, s, expected_depth, hit, out_normal));
         }
         r.x += r.d * phi;
     }
 
-    return intersection_t(hit && steps < max_steps, r.x, hit_node);
+    return intersection_t(hit && steps < max_steps, r.x, out_normal);
 }
 
 float shadow(vec3 l, vec3 p){
@@ -236,7 +234,7 @@ float shadow(vec3 l, vec3 p){
     return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, uvec2 node){
+vec4 light(vec3 light_p, vec3 x, vec3 n){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
@@ -254,7 +252,6 @@ vec4 light(vec3 light_p, vec3 x, uvec2 node){
 
     //diffuse
     vec3 l = normalize(light_p - x);
-    vec3 n = normal(node.y);
 
     vec4 d = kd * dot(l, n) * colour;
 
@@ -297,7 +294,7 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.node);
+        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
