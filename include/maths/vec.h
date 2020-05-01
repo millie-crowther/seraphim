@@ -22,7 +22,7 @@ public:
     template<class... Xs>
     vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : std::array<T, N>({ x, _xs...}) {}
 
-    template<class S>
+    template<class S>    
     vec_t(const vec_t<S, N> & x){
         std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return T(s); });
     }
@@ -38,6 +38,11 @@ public:
 
     T chebyshev_norm() const {
         auto f = [](const T & a, const T & b){ return std::max(std::abs(a), std::abs(b)); };
+        return std::accumulate(this->begin(), this->end(), T(0), f);
+    }
+
+    T manhattan_norm() const {
+        auto f = [](const T & a, const T & b){ return std::abs(a) + std::abs(b); };
         return std::accumulate(this->begin(), this->end(), T(0), f);
     }
 
@@ -86,8 +91,8 @@ public:
     }
 
     template<class S>
-    typename std::enable_if<std::is_constructible<T, typename S::value_type>::value, vec_t<T, N>>::type
-    operator-(const S & x) const {
+    typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
+    operator-(const vec_t<S, N> & x) const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
         return r;

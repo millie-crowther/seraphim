@@ -71,7 +71,7 @@ renderer_t::renderer_t(
     create_sync();
 
     render_texture = std::make_unique<texture_t>(
-        10, allocator, device, work_group_count * work_group_size, 
+        10, allocator, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1), 
         VK_IMAGE_USAGE_STORAGE_BIT, VMA_MEMORY_USAGE_GPU_ONLY
     );
 
@@ -374,7 +374,6 @@ renderer_t::create_graphics_pipeline(){
 void
 renderer_t::create_framebuffers(){
     VkExtent2D extents = swapchain->get_extents();
-
     framebuffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){

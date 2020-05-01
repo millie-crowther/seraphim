@@ -7,24 +7,23 @@
 texture_t::texture_t(
     uint32_t binding,
     VmaAllocator allocator, std::shared_ptr<device_t> device,
-    u32vec2_t size, VkImageUsageFlags usage, 
+    u32vec3_t size, VkImageUsageFlags usage, 
     VmaMemoryUsage vma_usage
 ){    
     this->binding = binding;
-    format = VK_FORMAT_R8G8B8A8_UNORM;
-    
     this->allocator = allocator;
     this->device = device;
-    
+
+    format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
     // create image
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.imageType = VK_IMAGE_TYPE_3D;
     image_create_info.extent.width = size[0];
     image_create_info.extent.height = size[1];
-    image_create_info.extent.depth = 1;
+    image_create_info.extent.depth = size[2];
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.format = format;
@@ -34,8 +33,6 @@ texture_t::texture_t(
     image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    // VK_FORMAT_R8G8B8A8_UNORM
-
     check_format_supported(
         device->get_physical_device(),
         format,
@@ -43,29 +40,7 @@ texture_t::texture_t(
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT 
     );
 
-    // VmaAllocationCreateInfo alloc_create_info = {};
-    // alloc_create_info.usage = vma_usage; 
-
-    // VmaAllocation allocation;
-    // VmaAllocationInfo alloc_info;
-
-    // TODO: Use VMA to do the allocation. not sure why below approach doesn't work.
-    //       screen goes black if you try this way
-    //  
-    //
-    // VkResult result = vmaCreateImage(
-    //     allocator, &image_create_info, &alloc_create_info,
-    //     &image, &allocation, &alloc_info
-    // );
-
-    // if (result != VK_SUCCESS){
-	//     throw std::runtime_error("Error: Failed to create image.");
-    // }
-
-    // memory = alloc_info.deviceMemory;
-
-
-    // // allocate memory 
+    // allocate memory 
     VkResult result = vkCreateImage(device->get_device(), &image_create_info, nullptr, &image);
     if (result != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
@@ -98,9 +73,9 @@ texture_t::texture_t(
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     sampler_info.magFilter = VK_FILTER_LINEAR;
     sampler_info.minFilter = VK_FILTER_LINEAR;
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sampler_info.anisotropyEnable = VK_FALSE;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
@@ -141,7 +116,7 @@ texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    view_info.viewType = VK_IMAGE_VIEW_TYPE_3D;
     view_info.format = format;
     view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view_info.subresourceRange.baseMipLevel = 0;
@@ -163,7 +138,6 @@ texture_t::~texture_t(){
     
     vkDestroyImage(device->get_device(), image, nullptr);
     vkFreeMemory(device->get_device(), memory, nullptr);
-    // vmaDestroyImage(allocator, image, allocation);
     vkDestroySampler(device->get_device(), sampler, nullptr);
 }
 
@@ -184,11 +158,6 @@ texture_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properti
     return -1;
 }
 
-VkImage
-texture_t::get_image(){
-    return image;
-}
-
 VkImageView
 texture_t::get_image_view(){
     return image_view;
@@ -200,18 +169,10 @@ texture_t::check_format_supported(
     VkImageTiling tiling, VkFormatFeatureFlags features
 ){
     VkFormatProperties properties;
-
     vkGetPhysicalDeviceFormatProperties(physical_device, candidate, &properties);
 
     if (
-        tiling == VK_IMAGE_TILING_LINEAR &&
-        (properties.linearTilingFeatures & features) != features
-    ){
-        throw std::runtime_error("Error: Unsupported image format.");
-    }
-
-    if (
-        tiling == VK_IMAGE_TILING_OPTIMAL &&
+        (tiling == VK_IMAGE_TILING_OPTIMAL || tiling == VK_IMAGE_TILING_LINEAR) &&
         (properties.optimalTilingFeatures & features) != features
     ){
         throw std::runtime_error("Error: Unsupported image format.");

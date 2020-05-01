@@ -46,7 +46,6 @@ private:
 
         request_t(){
             child = 0;
-            objectID = 0;
         }
     };
 

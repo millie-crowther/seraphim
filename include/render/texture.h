@@ -32,13 +32,12 @@ public:
     texture_t(
         uint32_t binding,
         VmaAllocator allocator, std::shared_ptr<device_t> device,
-        u32vec2_t size, VkImageUsageFlags usage, 
+        u32vec3_t size, VkImageUsageFlags usage, 
         VmaMemoryUsage vma_usage
     );
     ~texture_t();
 
     // getters
-    VkImage get_image();
     VkImageView get_image_view();
     VkFormat get_format();
     VkImageLayout get_image_layout() const;
