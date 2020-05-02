@@ -85,7 +85,7 @@ renderer_t::renderer_t(
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
-        // write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
 
         for (auto buffer : buffers){
             write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
@@ -476,7 +476,13 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.descriptorCount = 1;
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { image_layout };
+    VkDescriptorSetLayoutBinding normal_texture_layout = {};
+    normal_texture_layout.binding = 11;
+    normal_texture_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    normal_texture_layout.descriptorCount = 1;
+    normal_texture_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { image_layout, normal_texture_layout };
     for (auto buffer : buffers){
         layouts.push_back(buffer->get_descriptor_set_layout_binding());
     }
