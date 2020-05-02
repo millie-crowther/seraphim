@@ -37,8 +37,7 @@ texture_t::texture_t(
     );
 
     // allocate memory 
-    VkResult result = vkCreateImage(device->get_device(), &image_create_info, nullptr, &image);
-    if (result != VK_SUCCESS){
+    if (vkCreateImage(device->get_device(), &image_create_info, nullptr, &image) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
     VkMemoryRequirements mem_req;
@@ -49,14 +48,11 @@ texture_t::texture_t(
     mem_alloc_info.allocationSize = mem_req.size;
     mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, memory_property);
 
-    result = vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory);
-    if (result != VK_SUCCESS){
+    if (vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    result = vkBindImageMemory(device->get_device(), image, memory, 0);
-
-    if (result != VK_SUCCESS){
+    if (vkBindImageMemory(device->get_device(), image, memory, 0) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
 
@@ -130,7 +126,6 @@ texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
 
 texture_t::~texture_t(){
     vkDestroyImageView(device->get_device(), image_view, nullptr);
-    
     vkDestroyImage(device->get_device(), image, nullptr);
     vkFreeMemory(device->get_device(), memory, nullptr);
     vkDestroySampler(device->get_device(), sampler, nullptr);
@@ -150,7 +145,7 @@ texture_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properti
         }
     }
 
-    return -1;
+    throw std::runtime_error("Error: Failed to find appropriate memory type.");
 }
 
 VkImageView

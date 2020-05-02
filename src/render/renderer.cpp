@@ -77,8 +77,8 @@ renderer_t::renderer_t(
     );
 
     normal_texture = std::make_unique<texture_t>(
-        11, device, u32vec3_t(1), VK_IMAGE_USAGE_STORAGE_BIT, 
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT
+        11, device, u32vec3_t(1), VK_IMAGE_USAGE_SAMPLED_BIT, 
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
