@@ -5,13 +5,11 @@
 #include "core/blaspheme.h"
 
 texture_t::texture_t(
-    uint32_t binding,
-    VmaAllocator allocator, std::shared_ptr<device_t> device,
-    u32vec3_t size, VkImageUsageFlags usage, 
-    VmaMemoryUsage vma_usage
+    uint32_t binding,std::shared_ptr<device_t> device,
+    u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
+    VkFormatFeatureFlagBits format_feature
 ){    
     this->binding = binding;
-    this->allocator = allocator;
     this->device = device;
 
     format = VK_FORMAT_R8G8B8A8_UNORM;
@@ -34,10 +32,8 @@ texture_t::texture_t(
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     check_format_supported(
-        device->get_physical_device(),
-        format,
-        image_create_info.tiling, 
-        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT 
+        device->get_physical_device(), format,
+        image_create_info.tiling, format_feature 
     );
 
     // allocate memory 
@@ -51,8 +47,7 @@ texture_t::texture_t(
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc_info.allocationSize = mem_req.size;
-    auto properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, properties);
+    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, memory_property);
 
     result = vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory);
     if (result != VK_SUCCESS){

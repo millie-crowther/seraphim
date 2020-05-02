@@ -16,12 +16,10 @@ private:
     VkDeviceMemory memory;
     VkFormat format;
     VkImageLayout layout;
-    VmaAllocation allocation;
     VkSampler sampler;
     VkDescriptorImageInfo image_info;
     uint32_t binding;
 
-    VmaAllocator allocator;
     std::shared_ptr<device_t> device;
 
     // helper methods
@@ -30,10 +28,9 @@ private:
 public:
     // constructors and destructors
     texture_t(
-        uint32_t binding,
-        VmaAllocator allocator, std::shared_ptr<device_t> device,
-        u32vec3_t size, VkImageUsageFlags usage, 
-        VmaMemoryUsage vma_usage
+        uint32_t binding, std::shared_ptr<device_t> device,
+        u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
+        VkFormatFeatureFlagBits format_feature
     );
     ~texture_t();
 
