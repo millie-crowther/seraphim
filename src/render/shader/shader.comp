@@ -230,8 +230,9 @@ intersection_t raycast(ray_t r){
 }
 
 float shadow(vec3 l, vec3 p){
-    intersection_t i = raycast(ray_t(l, normalize(p - l)));
-    return float(length(i.x - p) < epsilon * 2);
+    return 1;
+    // intersection_t i = raycast(ray_t(l, normalize(p - l)));
+    // return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n){

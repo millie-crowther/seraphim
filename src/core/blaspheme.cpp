@@ -163,9 +163,9 @@ blaspheme_t::create_instance(){
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pNext = nullptr;
-    app_info.pApplicationName = "BLASPHEME";
+    app_info.pApplicationName = "Augustine";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.pEngineName = "BLASPHEME";
+    app_info.pEngineName = "Augustine";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
@@ -234,22 +234,11 @@ blaspheme_t::check_validation_layers(){
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-    for (auto layer : validation_layers){
-        bool found = false;
-	
-        for (auto layer_property : available_layers){ 
-            if (layer == std::string(layer_property.layerName)){
-                found = true;
-                break;
-            }
-        }
-
-        if (!found){
-            return false;
-        }
-    }
-
-    return true;
+    return std::all_of(validation_layers.begin(), validation_layers.end(), [available_layers](const auto & layer){
+        return std::any_of(available_layers.begin(), available_layers.end(), [layer](const auto & properties){
+            return layer == std::string(properties.layerName);
+        });
+    });
 }
 #endif
 
