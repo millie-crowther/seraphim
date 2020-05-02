@@ -7,10 +7,11 @@
 texture_t::texture_t(
     uint32_t binding,std::shared_ptr<device_t> device,
     u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
-    VkFormatFeatureFlagBits format_feature
+    VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
 ){    
     this->binding = binding;
     this->device = device;
+    this->descriptor_type = descriptor_type;
 
     format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -116,11 +117,9 @@ texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     view_info.subresourceRange.layerCount = 1;
 
     VkImageView image_view;
-    VkResult result = vkCreateImageView(device, &view_info, nullptr, &image_view);
-    if (result != VK_SUCCESS){
+    if (vkCreateImageView(device, &view_info, nullptr, &image_view) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image view.");
     }
-
     return image_view;
 }
 
@@ -175,7 +174,7 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_write.dstBinding = binding;
     descriptor_write.dstArrayElement = 0;
-    descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    descriptor_write.descriptorType = descriptor_type;
     descriptor_write.descriptorCount = 1;
     descriptor_write.pImageInfo = &image_info;
     descriptor_write.dstSet = desc_set;

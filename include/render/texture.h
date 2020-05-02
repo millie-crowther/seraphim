@@ -18,6 +18,7 @@ private:
     VkImageLayout layout;
     VkSampler sampler;
     VkDescriptorImageInfo image_info;
+    VkDescriptorType descriptor_type;
     uint32_t binding;
 
     std::shared_ptr<device_t> device;
@@ -30,7 +31,7 @@ public:
     texture_t(
         uint32_t binding, std::shared_ptr<device_t> device,
         u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
-        VkFormatFeatureFlagBits format_feature
+        VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
     );
     ~texture_t();
 

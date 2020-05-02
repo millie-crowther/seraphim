@@ -73,17 +73,20 @@ renderer_t::renderer_t(
     render_texture = std::make_unique<texture_t>(
         10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1), 
         VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );
 
     normal_texture = std::make_unique<texture_t>(
-        11, device, u32vec3_t(1), VK_IMAGE_USAGE_SAMPLED_BIT, 
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT
+        11, device, u32vec3_t(1), 
+        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
+        // write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
+
         for (auto buffer : buffers){
             write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
         }
@@ -436,8 +439,9 @@ renderer_t::create_command_buffers(){
 void 
 renderer_t::create_descriptor_pool(){
     std::vector<VkDescriptorPoolSize> pool_sizes = {
-        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size() },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  swapchain->get_size() }
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         swapchain->get_size() },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          swapchain->get_size() },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->get_size() }
     };
 
     VkDescriptorPoolCreateInfo pool_info = {};
