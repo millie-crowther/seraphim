@@ -156,7 +156,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out bool hit, out vec
 
     vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24);
     q -= 127.5;
-    q /= 127.5;
+    q = normalize(q);
     r.x = rotate(q, r.x);
 
     // check against outside bounds of aabb

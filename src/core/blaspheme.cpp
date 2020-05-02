@@ -234,8 +234,8 @@ blaspheme_t::check_validation_layers(){
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-    return std::all_of(validation_layers.begin(), validation_layers.end(), [available_layers](const auto & layer){
-        return std::any_of(available_layers.begin(), available_layers.end(), [layer](const auto & properties){
+    return std::all_of(validation_layers.begin(), validation_layers.end(), [available_layers](auto & layer){
+        return std::any_of(available_layers.begin(), available_layers.end(), [layer](auto & properties){
             return layer == std::string(properties.layerName);
         });
     });
