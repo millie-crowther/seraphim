@@ -93,8 +93,13 @@ public:
     }
 
     template<class F>
-    std::shared_ptr<command_buffer_t> create_command_buffer(VkCommandBufferUsageFlags usage, const F & f) const {
-        return std::make_shared<command_buffer_t>(device, command_pool, queue, usage, f);
+    std::shared_ptr<command_buffer_t> one_time_buffer(const F & f) const {
+        return std::make_shared<command_buffer_t>(device, command_pool, queue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, f);
+    }
+
+    template<class F>
+    std::shared_ptr<command_buffer_t> reusable_buffer(const F & f) const {
+        return std::make_shared<command_buffer_t>(device, command_pool, queue, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, f);
     }
 };
 
