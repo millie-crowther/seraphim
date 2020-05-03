@@ -37,13 +37,14 @@ public:
     ~texture_t();
 
     // getters
+    VkImage get_image() const;
     VkImageView get_image_view();
     VkFormat get_format();
     VkImageLayout get_image_layout() const;
     VkSampler get_sampler() const;
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
-    void transition_image_layout(const command_pool_t & command_pool, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transition_image_layout(const command_pool_t & command_pool, VkImageLayout old_layout, VkImageLayout new_layout);
 
     // static methods
     static void check_format_supported(

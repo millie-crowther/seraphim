@@ -226,4 +226,11 @@ texture_t::transition_image_layout(const command_pool_t & command_pool, VkImageL
     });
 
     command_buffer->submit(VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE);
+
+    layout = new_layout;
+}
+
+VkImage 
+texture_t::get_image() const {
+    return image;
 }

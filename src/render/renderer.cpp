@@ -82,9 +82,6 @@ renderer_t::renderer_t(
         VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
 
-    normal_texture->transition_image_layout(*graphics_command_pool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    normal_texture->transition_image_layout(*graphics_command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));

@@ -56,3 +56,27 @@ buffer_t::get_descriptor_set_layout_binding() const {
     layout_binding.binding = binding;
     return layout_binding;
 }
+
+void 
+buffer_t::copy_to_image(const command_pool_t & command_pool, texture_t & texture, uint32_t width, uint32_t height){
+    texture.transition_image_layout(command_pool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    auto command_buffer = command_pool.one_time_buffer([&](auto command_buffer){
+        VkBufferImageCopy region;
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = { 0, 0, 0 };
+        region.imageExtent = { width, height, 1 };
+
+        vkCmdCopyBufferToImage(command_buffer, buffer, texture.get_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    });
+
+    command_buffer->submit(VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE);
+
+    texture.transition_image_layout(command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
