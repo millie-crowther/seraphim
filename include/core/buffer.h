@@ -21,21 +21,21 @@ private:
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
 
-    template<typename collection_t>
-    void map(const collection_t & c, uint64_t offset, bool is_write){
-        if (c.empty()){
+    template<typename T>
+    void map(const T & x, uint64_t offset, bool is_write){
+        if (x.empty()){
             return;
         }
 
         void * memory_map;
         vkMapMemory(
             device->get_device(), memory, offset, 
-            sizeof(typename collection_t::value_type) * c.size(), 0, &memory_map
+            sizeof(typename T::value_type) * x.size(), 0, &memory_map
         );
 
-        void * from = is_write ? memory_map          : ((void *) c.data());
-        void * to   = is_write ? ((void *) c.data()) : memory_map;
-        std::memcpy(from, to, sizeof(typename collection_t::value_type) * c.size());
+        void * from = is_write ? memory_map          : ((void *) x.data());
+        void * to   = is_write ? ((void *) x.data()) : memory_map;
+        std::memcpy(from, to, sizeof(typename T::value_type) * x.size());
         vkUnmapMemory(device->get_device(), memory);
     }
 
@@ -45,13 +45,13 @@ public:
     ~buffer_t();
 
     // public methods
-    template<typename collection_t>
-    void write(const collection_t & source, uint64_t offset){
+    template<typename T>
+    void write(const T & source, uint64_t offset){
         map(source, offset, true);
     }
 
-    template<class collection_t>
-    void read(const collection_t & destination, uint64_t offset) {
+    template<class T>
+    void read(const T & destination, uint64_t offset) {
         map(destination, offset, false);
     }
 
