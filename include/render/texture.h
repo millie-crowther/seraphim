@@ -6,6 +6,7 @@
 
 #include "vk_mem_alloc.h"
 
+#include "core/command.h"
 #include "core/device.h"
 #include "maths/vec.h"
 
@@ -40,10 +41,12 @@ public:
     VkFormat get_format();
     VkImageLayout get_image_layout() const;
     VkSampler get_sampler() const;
-    VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
+    VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
+
+    void transition_image_layout(const command_pool_t & command_pool, VkImageLayout oldLayout, VkImageLayout newLayout);
 
     // static methods
-    void check_format_supported(
+    static void check_format_supported(
         VkPhysicalDevice physical_device, VkFormat format, 
         VkImageTiling tiling, VkFormatFeatureFlags features 
     );
