@@ -28,6 +28,7 @@ set(SOURCES
     ../src/lib.cpp
   
     ../src/core/blaspheme.cpp
+    ../src/core/buffer.cpp
     ../src/core/command.cpp
     ../src/core/uuid.cpp
     ../src/core/device.cpp
