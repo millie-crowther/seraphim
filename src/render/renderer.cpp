@@ -96,6 +96,9 @@ renderer_t::renderer_t(
 
     initialise_buffers();
     create_command_buffers();
+
+    std::array<uint32_t, 8> data;
+    normal_texture->write(*graphics_command_pool, data);
 }
 
 void

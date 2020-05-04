@@ -109,8 +109,7 @@ uint work_group_offset(){
 }
 
 vec4 colour(vec3 x){
-    vec4 c = texture(normal_texture, vec3(0.5));
-    return vec4(c.xyz, 1.0);
+    return vec4(texture(normal_texture, vec3(0.5)).xyz, 1.0);
 }
 
 vec3 normal(uint n){
