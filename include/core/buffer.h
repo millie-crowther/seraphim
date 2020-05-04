@@ -9,7 +9,6 @@
 #include "core/command.h"
 #include "core/device.h"
 #include "maths/vec.h"
-#include "render/texture.h"
 
 class buffer_t {
 private:
@@ -56,10 +55,10 @@ public:
         map(destination, offset, false);
     }
     
-    void copy_to_image(const command_pool_t & command_pool, texture_t & texture, uint32_t width, uint32_t height);
-
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const;
     VkDescriptorSetLayoutBinding get_descriptor_set_layout_binding() const;
+
+    VkBuffer get_buffer() const;
 };
 
 #endif
