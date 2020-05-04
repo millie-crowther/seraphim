@@ -30,7 +30,7 @@ private:
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
     
-    void transition_image_layout(const command_pool_t & command_pool, VkImageLayout old_layout, VkImageLayout new_layout);
+    void transition_image_layout(const command_pool_t & command_pool, bool is_pre_transfer);
 
 public:
     // constructors and destructors

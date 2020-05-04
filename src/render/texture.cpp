@@ -188,12 +188,12 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
 }
 
 void 
-texture_t::transition_image_layout(const command_pool_t & command_pool, VkImageLayout old_layout, VkImageLayout new_layout){
+texture_t::transition_image_layout(const command_pool_t & command_pool, bool is_pre_transfer){
+    VkImageLayout new_layout = is_pre_transfer ? VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     auto command_buffer = command_pool.one_time_buffer([&](auto command_buffer){
         VkImageMemoryBarrier barrier;
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        barrier.oldLayout = old_layout;
-        barrier.newLayout = new_layout;
         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         barrier.image = image;
@@ -203,26 +203,13 @@ texture_t::transition_image_layout(const command_pool_t & command_pool, VkImageL
         barrier.subresourceRange.baseArrayLayer = 0;
         barrier.subresourceRange.layerCount = 1;
 
-        VkPipelineStageFlags source_stage;
-        VkPipelineStageFlags destination_stage;
+        barrier.oldLayout     = is_pre_transfer ? VK_IMAGE_LAYOUT_UNDEFINED : VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier.newLayout     = new_layout;
+        barrier.srcAccessMask = is_pre_transfer ? 0 : VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = is_pre_transfer ? VK_ACCESS_TRANSFER_WRITE_BIT : VK_ACCESS_SHADER_READ_BIT;
 
-        if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-            barrier.srcAccessMask = 0;
-            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-            source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-            destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-        } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-            source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-            destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-        } else {
-            throw std::runtime_error("Error: Unsupported layout transition.");
-        }
+        VkPipelineStageFlags source_stage = is_pre_transfer ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_TRANSFER_BIT;
+        VkPipelineStageFlags destination_stage = is_pre_transfer ? VK_PIPELINE_STAGE_TRANSFER_BIT : VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 
         vkCmdPipelineBarrier(
             command_buffer, source_stage, destination_stage,
@@ -244,7 +231,7 @@ void
 texture_t::write(const command_pool_t & command_pool, const std::array<uint32_t, 8> & x){
     staging_buffer->write(x, 0);
 
-    transition_image_layout(command_pool, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    transition_image_layout(command_pool, true);
 
     auto command_buffer = command_pool.one_time_buffer([&](auto command_buffer){
         VkBufferImageCopy region;
@@ -263,5 +250,5 @@ texture_t::write(const command_pool_t & command_pool, const std::array<uint32_t,
 
     command_buffer->submit(VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE);
 
-    transition_image_layout(command_pool, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    transition_image_layout(command_pool, false);
 }
