@@ -584,7 +584,7 @@ renderer_t::render(){
         VK_NULL_HANDLE, &image_index
     );
 
-    auto compute_command_buffer = compute_command_pool->one_time_buffer([&](auto command_buffer){
+    compute_command_pool->one_time_buffer([&](auto command_buffer){
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
             0, sizeof(push_constant_t), &push_constants
@@ -596,9 +596,8 @@ renderer_t::render(){
             0, 1, &desc_sets[image_index], 0, nullptr
         );
         vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
-    });
 
-    compute_command_buffer->submit(
+    })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
         in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
     );
