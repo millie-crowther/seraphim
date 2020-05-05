@@ -83,9 +83,8 @@ renderer_t::renderer_t(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
     
-    uint32_t green = 0xFF00;
     std::array<uint32_t, 8> data;
-    data.fill(green);
+    data.fill(0x9966CC);
     normal_texture->write(*graphics_command_pool, data);
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
