@@ -194,7 +194,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
     vec3 n = normal(node.y);
     out_normal = rotate(vec4(q.x, -q.yzw), n);
     float phi_plane = min(0,
-        dot(xc, n) - (float(node.y) / 2139095040 - 1) * length(s)
+        dot(xc, n) - (float(node.y) / 2139095040 - 1) * sqrt3 * s.x
     ) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
@@ -203,7 +203,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
 
     // advance ray appropriately
     bool hit = 
-        (node.x & node_empty_flag) == 0 && !outside_aabb &&
+        (node.x & node_empty_flag) == 0 &&
         phi_plane >= 0 && phi_plane < phi_cube;
     
     return mix(mix(phi_cube, phi_plane, hit), phi_aabb, outside_aabb);
