@@ -183,22 +183,21 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     }
 
     // calculate distance to intersect plane
-    vec3 xc = c - r.x;
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
     normal = rotate(vec4(q.x, -q.yzw), n);
-    float e = dot(xc, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
+    float e = dot(c - r.x, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
     float phi_plane = min(0, e) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
-    vec3 cube_i = (xc + sign(r.d) * s) / r.d;
+    vec3 cube_i = (c - r.x + sign(r.d) * s) / r.d;
     float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 
-    // advance ray appropriately
-    bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;
-
+    // calculate texture coordinate
     t = (r.x - c + s) / (s * 2);
     t.z = (t.z + i) / (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
     
+    // return distance value appropriate for case
+    bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;
     return mix(mix(phi_cube, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
