@@ -146,6 +146,10 @@ public:
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
+    } 
+
+    T volume() const {
+        return std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>());
     }
 
     template<class S>
