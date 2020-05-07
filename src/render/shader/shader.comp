@@ -172,13 +172,10 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     if (depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0){
         uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
 
-        uint child_local = atomicAnd(vacant_node_index, 0); 
-        if (child_local != 0){
-            input_data.octree[i + work_group_offset()].x |= child_local;
-
-            requests.requests[request_id] = request_t(
-                c, depth, child_local + work_group_offset(), 0, sub.id, 0
-            );
+        uint child = atomicAnd(vacant_node_index, 0); 
+        if (child != 0){
+            input_data.octree[i + work_group_offset()].x |= child;
+            requests.requests[request_id] = request_t(c, depth, child, 0, sub.id, 0);
         }
     }
 
@@ -194,7 +191,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
 
     // calculate texture coordinate
     t = (r.x - c + s) / (s * 2);
-    t.z = (t.z + i) / (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+    t.z = (t.z + i) / float(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
     
     // return distance value appropriate for case
     bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;

@@ -193,7 +193,7 @@ texture_t::get_image() const {
 }
 
 void 
-texture_t::write(const command_pool_t & command_pool, const std::array<uint32_t, 8> & x){
+texture_t::write(const command_pool_t & command_pool, uint32_t i, const std::array<uint32_t, 8> & x){
     staging_buffer->write(x, 0);
 
     command_pool.one_time_buffer([&](auto command_buffer){
@@ -205,7 +205,7 @@ texture_t::write(const command_pool_t & command_pool, const std::array<uint32_t,
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
-        region.imageOffset = { 0, 0, 0 };
+        region.imageOffset = { 0, 0, static_cast<int>(i) };
         region.imageExtent = { 2, 2, 2 };
 
         vkCmdCopyBufferToImage(command_buffer, staging_buffer->get_buffer(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

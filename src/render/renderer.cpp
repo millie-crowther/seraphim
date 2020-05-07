@@ -546,8 +546,8 @@ renderer_t::render(){
 
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    substances[1].lock()->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
-    substances[2].lock()->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
+    sphere->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
+    cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
 
     std::vector<substance_t::data_t> substance_data(3);
 
@@ -646,7 +646,7 @@ renderer_t::handle_requests(){
 
                 input_buffer->write(
                     octree_node_t::create(c, ra, substance->get_sdf()), 
-                    1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t)
+                    1024 * sizeof(substance_t::data_t) + (r.child + i * work_group_size.volume()) * sizeof(octree_node_t)
                 );
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
             }
