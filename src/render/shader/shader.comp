@@ -29,6 +29,7 @@ struct intersection_t {
     bool hit;
     vec3 x;
     vec3 normal;
+    vec3 texture_coord;
 };
 
 // push constants
@@ -138,8 +139,7 @@ vec3 rotate(vec4 q, vec3 x){
 
 }
 
-float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
-    // lookup octree node
+float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out vec3 t){
     vec3 c = vec3(0);
     vec3 s = vec3(sub.r);
 
@@ -147,17 +147,17 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
     uint depth = 0;
     uint next = sub.root;
 
-    r.x -= sub.c;
-
     vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24) - 127.5;
     q = normalize(q);
+
+    r.x -= sub.c;
     r.x = rotate(q, r.x);
 
     // check against outside bounds of aabb
-    vec3 g = abs(r.x) - s;
-    float phi_aabb = length(max(g, 0)) + min(max(g.x, max(g.y, g.z)), 0) + epsilon;
-    bool outside_aabb = phi_aabb > epsilon;
+    vec3 y = abs(r.x) - s;
+    float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
 
+    // perform octree lookup for relevant node
     for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
@@ -167,10 +167,11 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
 
     uvec2 node = octree[i];
 
+    // if necessary, request more data from CPU
+    // TODO: move this to postrender(), remove atomic operation
     if (depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0){
         uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
 
-        // TODO: remove this atomic operation. map and reduce?
         uint child_local = atomicAnd(vacant_node_index, 0); 
         if (child_local != 0){
             input_data.octree[i + work_group_offset()].x |= child_local;
@@ -184,10 +185,9 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
     // calculate distance to intersect plane
     vec3 xc = c - r.x;
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
-    out_normal = rotate(vec4(q.x, -q.yzw), n);
-    float phi_plane = min(0,
-        dot(xc, n) - (float(node.y) / 2139095040 - 1) * sqrt3 * s.x
-    ) / dot(r.d, n);
+    normal = rotate(vec4(q.x, -q.yzw), n);
+    float e = dot(xc, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
+    float phi_plane = min(0, e) / dot(r.d, n);
 
     // calculate distance to edge of bounding cube
     vec3 cube_i = (xc + sign(r.d) * s) / r.d;
@@ -197,13 +197,17 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 out_normal){
     bool hit = 
         (node.x & node_empty_flag) == 0 &&
         phi_plane >= 0 && phi_plane < phi_cube;
+
+
+    t = (r.x - c + s) / (s * 2);
+    t.z = (t.z + i) / (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
     
-    return mix(mix(phi_cube, phi_plane, hit), phi_aabb, outside_aabb);
+    return mix(mix(phi_cube, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
 intersection_t raycast(ray_t r){
     bool hit = false;
-    vec3 out_normal;
+    vec3 normal, texture_coord;
 
     uint steps = 0;
     for (; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
@@ -215,13 +219,13 @@ intersection_t raycast(ray_t r){
         float phi = mix(pc.render_distance, expected_size(r.x) + epsilon, num_substances == 0);
         for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
             substance_t s = substances[substanceID];
-            phi = min(phi, phi_s(r, s, expected_depth, out_normal));
+            phi = min(phi, phi_s(r, s, expected_depth, normal, texture_coord));
             hit = phi < epsilon;
         }
         r.x += r.d * phi;
     }
 
-    return intersection_t(hit && steps < max_steps, r.x, out_normal);
+    return intersection_t(hit && steps < max_steps, r.x, normal, texture_coord);
 }
 
 float shadow(vec3 l, vec3 p){
