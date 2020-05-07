@@ -644,10 +644,10 @@ renderer_t::handle_requests(){
                 vec3_t ra = vec3_t(substance->get_data().r) / (1 << r.depth);
                 vec3_t c = r.c - substance->get_data().c;
 
-                input_buffer->write(
-                    octree_node_t::create(c, ra, substance->get_sdf()), 
-                    1024 * sizeof(substance_t::data_t) + (r.child + i * work_group_size.volume()) * sizeof(octree_node_t)
-                );
+                std::vector<octree_node_t> new_node = octree_node_t::create(c, ra, substance->get_sdf());
+                uint32_t child_index = 1024 * sizeof(substance_t::data_t) + (r.child + i * work_group_size.volume()) * sizeof(octree_node_t);
+                
+                input_buffer->write(new_node, child_index);
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
             }
         }
