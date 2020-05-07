@@ -194,10 +194,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 
     // advance ray appropriately
-    bool hit = 
-        (node.x & node_empty_flag) == 0 &&
-        phi_plane >= 0 && phi_plane < phi_cube;
-
+    bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;
 
     t = (r.x - c + s) / (s * 2);
     t.z = (t.z + i) / (gl_WorkGroupSize.x * gl_WorkGroupSize.y);
