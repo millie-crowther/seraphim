@@ -83,6 +83,16 @@ renderer_t::renderer_t(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
 
+    for (auto pair : substances){
+        if (auto substance = std::get<1>(pair).lock()){
+            std::array<uint32_t, 8> normals = octree_node_t::get_normals(
+                substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
+            );
+
+            normal_texture->write(*graphics_command_pool, substance->get_data().root, normals);
+        }
+    }
+
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
