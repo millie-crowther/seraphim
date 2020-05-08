@@ -77,7 +77,8 @@ renderer_t::renderer_t(
     );
 
     normal_texture = std::make_unique<texture_t>(
-        allocator, 11, device, u32vec3_t(2, 2, 2 * work_group_size.volume()), 
+        allocator, 11, device, 
+        u32vec3_t(work_group_count[0] * work_group_size[0], work_group_count[1] * work_group_size[1], 1) * 2, 
         VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
@@ -89,7 +90,7 @@ renderer_t::renderer_t(
                 substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
             );
 
-            normal_texture->write(*graphics_command_pool, substance->get_data().root, normals);
+            // normal_texture->write(*graphics_command_pool, substance->get_data().root, normals);
         }
     }
 

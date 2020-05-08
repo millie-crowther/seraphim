@@ -65,6 +65,7 @@ blaspheme_t::blaspheme_t(){
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
+    std::cout << "\tMaximum image size: " << properties.limits.maxImageDimension3D << std::endl;
 #else   
     device = std::make_shared<device_t>(instance, surface, {});
 #endif

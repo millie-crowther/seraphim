@@ -48,7 +48,7 @@ public:
     VkSampler get_sampler() const;
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
-    void write(const command_pool_t & command_pool, uint32_t i, const std::array<uint32_t, 8> & x);
+    void write(const command_pool_t & command_pool, u32vec2_t p, const std::array<uint32_t, 8> & x);
 
     // static methods
     static void check_format_supported(
