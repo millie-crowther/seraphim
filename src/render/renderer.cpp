@@ -665,6 +665,17 @@ renderer_t::handle_requests(){
                 
                 input_buffer->write(new_node, child_index);
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
+
+                std::array<uint32_t, 8> normals = octree_node_t::get_normals(
+                    c, ra, substance->get_sdf()
+                );
+
+                u32vec2_t p(
+                    substance->get_data().root % work_group_size[0],
+                    substance->get_data().root / work_group_size[0]
+                );
+
+                normal_texture->write(*graphics_command_pool, p, normals);
             }
         }
     }   

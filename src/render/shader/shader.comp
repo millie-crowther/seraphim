@@ -228,11 +228,13 @@ float shadow(vec3 l, vec3 p){
     // return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, vec3 n){
+vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
     float shininess = 32;
+
+    n = texture(normal_texture, t).xyz;
 
     // attenuation
     float dist = length(light_p - x);
@@ -288,7 +290,7 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal);
+        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
