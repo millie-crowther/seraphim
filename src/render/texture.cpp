@@ -205,7 +205,7 @@ texture_t::write(const command_pool_t & command_pool, u32vec2_t p, const std::ar
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
-        region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), 0 };
+        region.imageOffset = { static_cast<int>(p[0] * 2), static_cast<int>(p[1] * 2), 0 };
         region.imageExtent = { 2, 2, 2 };
 
         vkCmdCopyBufferToImage(command_buffer, staging_buffer->get_buffer(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

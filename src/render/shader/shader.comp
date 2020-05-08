@@ -191,7 +191,8 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
 
     // calculate texture coordinate
     t = (r.x - c + s) / (s * 2);
-    t.z = (t.z + i) / float(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+    t += vec3(gl_GlobalInvocationID.xy, 0);
+    t /= vec3(gl_WorkGroupSize.xy * work_group_count, 1);
     
     // return distance value appropriate for case
     bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;

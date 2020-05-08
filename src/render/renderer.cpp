@@ -90,7 +90,12 @@ renderer_t::renderer_t(
                 substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
             );
 
-            // normal_texture->write(*graphics_command_pool, substance->get_data().root, normals);
+            u32vec2_t p(
+                substance->get_data().root % work_group_size[0],
+                substance->get_data().root / work_group_size[0]
+            );
+
+            normal_texture->write(*graphics_command_pool, p, normals);
         }
     }
 
