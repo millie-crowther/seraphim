@@ -88,8 +88,10 @@ octree_node_t::get_normals(const vec3_t & c, const vec3_t & r, std::weak_ptr<sdf
     if (auto sdf = weak_sdf.lock()){
         for (uint8_t o = 0; o < 8; o++){
             vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(r);
-            u8vec3_t n = sdf->normal(c + d).cast<uint8_t>();
-            normals[o] = *reinterpret_cast<uint32_t *>(&n);
+            vec3_t n = (sdf->normal(c + d) + 1) / 2.0 * 255.0;
+            u8vec4_t n8(n[0], n[1], n[2], 0);
+            
+            normals[o] = *reinterpret_cast<uint32_t *>(&n8);
         }
     }
 
