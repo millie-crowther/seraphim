@@ -227,6 +227,8 @@ typedef vec_t<uint32_t, 2> u32vec2_t;
 typedef vec_t<uint32_t, 3> u32vec3_t;
 typedef vec_t<uint32_t, 4> u32vec4_t;
 
+typedef vec_t<int32_t, 3> i32vec3_t;
+
 typedef vec_t<float, 2> f32vec2_t;
 typedef vec_t<float, 3> f32vec3_t;
 typedef vec_t<float, 4> f32vec4_t;

@@ -13,6 +13,7 @@ texture_t::texture_t(
     this->binding = binding;
     this->device = device;
     this->descriptor_type = descriptor_type;
+    extents = { size[0], size[1], size[2] };
 
     format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -21,9 +22,7 @@ texture_t::texture_t(
     VkImageCreateInfo image_create_info = {};
     image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_create_info.imageType = VK_IMAGE_TYPE_3D;
-    image_create_info.extent.width = size[0];
-    image_create_info.extent.height = size[1];
-    image_create_info.extent.depth = size[2];
+    image_create_info.extent = extents;
     image_create_info.mipLevels = 1;
     image_create_info.arrayLayers = 1;
     image_create_info.format = format;
@@ -193,7 +192,11 @@ texture_t::get_image() const {
 }
 
 void 
-texture_t::write(const command_pool_t & command_pool, u32vec2_t p, const std::array<uint32_t, 8> & x){
+texture_t::write(const command_pool_t & command_pool, u32vec3_t p, const std::array<uint32_t, 8> & x){
+    if (p[0] >= extents.width - 1 || p[1] >= extents.height - 1 || p[2] >= extents.depth - 1){
+        throw std::runtime_error("Error: Invalid image write at (" + std::to_string(p[0]) + ", " + std::to_string(p[1]) + ")");
+    }
+
     staging_buffer->write(x, 0);
 
     command_pool.one_time_buffer([&](auto command_buffer){
@@ -205,7 +208,7 @@ texture_t::write(const command_pool_t & command_pool, u32vec2_t p, const std::ar
         region.imageSubresource.mipLevel = 0;
         region.imageSubresource.baseArrayLayer = 0;
         region.imageSubresource.layerCount = 1;
-        region.imageOffset = { static_cast<int>(p[0] * 2), static_cast<int>(p[1] * 2), 0 };
+        region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), static_cast<int>(p[2]) };
         region.imageExtent = { 2, 2, 2 };
 
         vkCmdCopyBufferToImage(command_buffer, staging_buffer->get_buffer(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);

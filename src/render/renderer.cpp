@@ -71,14 +71,14 @@ renderer_t::renderer_t(
     create_sync();
 
     render_texture = std::make_unique<texture_t>(
-        allocator, 10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1), 
+        allocator, 10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1u), 
         VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );
 
     normal_texture = std::make_unique<texture_t>(
         allocator, 11, device, 
-        u32vec3_t(work_group_count[0] * work_group_size[0], work_group_count[1] * work_group_size[1], 1) * 2, 
+        u32vec3_t(work_group_count[0] * work_group_size[0], work_group_count[1] * work_group_size[1], 1u) * 2, 
         VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
@@ -90,10 +90,11 @@ renderer_t::renderer_t(
                 substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
             );
 
-            u32vec2_t p(
+            u32vec3_t p = u32vec3_t(
                 substance->get_data().root % work_group_size[0],
-                substance->get_data().root / work_group_size[0]
-            );
+                substance->get_data().root / work_group_size[0], 
+                0u
+            ) * 2;
 
             normal_texture->write(*graphics_command_pool, p, normals);
         }
@@ -661,7 +662,7 @@ renderer_t::handle_requests(){
                 vec3_t c = r.c - substance->get_data().c;
 
                 std::vector<octree_node_t> new_node = octree_node_t::create(c, ra, substance->get_sdf());
-                uint32_t child_index = 1024 * sizeof(substance_t::data_t) + (r.child + i * work_group_size.volume()) * sizeof(octree_node_t);
+                uint32_t child_index = 1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t);
                 
                 input_buffer->write(new_node, child_index);
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
@@ -670,10 +671,11 @@ renderer_t::handle_requests(){
                     c, ra, substance->get_sdf()
                 );
 
-                u32vec2_t p(
-                    substance->get_data().root % work_group_size[0],
-                    substance->get_data().root / work_group_size[0]
-                );
+                u32vec3_t p = u32vec3_t(
+                    r.child % (work_group_size[0] * work_group_count[0]),
+                    r.child / (work_group_size[0] * work_group_count[0]),
+                    0u
+                ) * 2;
 
                 normal_texture->write(*graphics_command_pool, p, normals);
             }

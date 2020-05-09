@@ -175,7 +175,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
         uint child = atomicAnd(vacant_node_index, 0); 
         if (child != 0){
             input_data.octree[i + work_group_offset()].x |= child;
-            requests.requests[request_id] = request_t(c, depth, child, 0, sub.id, 0);
+            requests.requests[request_id] = request_t(c, depth, child + work_group_offset(), 0, sub.id, 0);
         }
     }
 
@@ -234,7 +234,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
     float ks = 0.76;
     float shininess = 32;
 
-    n = (texture(normal_texture, t).xyz - 1) / 2;
+    // n = (texture(normal_texture, t).xyz - 1) / 2;
 
     // attenuation
     float dist = length(light_p - x);
@@ -291,6 +291,7 @@ void render(){
 
     if (i.hit){
         out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord);
+        // out_colour = texture(normal_texture, i.texture_coord);//vec4(i.texture_coord, 1);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
