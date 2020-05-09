@@ -290,8 +290,9 @@ void render(){
     intersection_t i = raycast(r);
 
     if (i.hit){
-        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord);
-        // out_colour = texture(normal_texture, i.texture_coord);//vec4(i.texture_coord, 1);
+        // out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord);
+        out_colour = texture(normal_texture, i.texture_coord);
+        // out_colour = vec4(i.texture_coord, 1);
     }
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
 }
