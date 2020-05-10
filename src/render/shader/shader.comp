@@ -192,10 +192,12 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
 
     // calculate texture coordinate
-    t = (r.x - c_prev + s) / (s * 2);
+    t = (r.x - c_prev + s * 4) / (s * 8);
+
+    uint global_i = i + work_group_offset();
     t += vec3(
-        (i % gl_WorkGroupSize.x + gl_WorkGroupID.x * gl_WorkGroupSize.x) / 8,
-        i / gl_WorkGroupSize.x + gl_WorkGroupID.x * gl_WorkGroupSize.x,
+        (global_i % (gl_WorkGroupSize.x * work_group_count.x)) / 8,
+        global_i / (gl_WorkGroupSize.y * work_group_count.y),
         0
     );
     t /= vec3(
