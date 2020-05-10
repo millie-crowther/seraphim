@@ -712,7 +712,7 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-   std::vector<octree_node_t> initial_octree;
+    std::vector<octree_node_t> initial_octree;
     initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
 
     for (auto pair : substances){
