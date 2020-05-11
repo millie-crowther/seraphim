@@ -16,7 +16,9 @@ command_buffer_t::submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence
     submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
     submit_info.pSignalSemaphores = &signal_sema;
 
-    vkQueueSubmit(queue, 1, &submit_info, fence);
+    if (vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS){
+        throw std::runtime_error("Error: Failed to submit command buffer to queue.");
+    }
 }
 
 command_pool_t::command_pool_t(VkDevice device, uint32_t queue_family){

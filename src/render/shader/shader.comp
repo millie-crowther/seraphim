@@ -136,7 +136,6 @@ vec3 rotate(vec4 q, vec3 x){
         (xy + wz) * x.x + (0.5 - xx - zz) * x.y + (yz + wx) * x.z,
         (xz - wy) * x.x + (yz - wx) * x.y + (0.5 - xx - yy) * x.z
     ) * 2;
-
 }
 
 float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out vec3 t){
@@ -234,9 +233,8 @@ intersection_t raycast(ray_t r){
 }
 
 float shadow(vec3 l, vec3 p){
-    return 1;
-    // intersection_t i = raycast(ray_t(l, normalize(p - l)));
-    // return float(length(i.x - p) < epsilon * 2);
+    intersection_t i = raycast(ray_t(l, normalize(p - l)));
+    return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
