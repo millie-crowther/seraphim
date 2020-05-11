@@ -605,6 +605,11 @@ renderer_t::render(){
     );
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
+        vkCmdCopyBufferToImage(
+            command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture_updates.size(), texture_updates.data()
+        );
+
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
             0, sizeof(push_constant_t), &push_constants
@@ -660,7 +665,7 @@ renderer_t::handle_requests(){
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
     texture_updates.clear();
-    
+
     request_buffer->read(requests, 0);
 
     for (uint32_t i = 0; i < requests.size(); i++){
@@ -686,7 +691,9 @@ renderer_t::handle_requests(){
                     0u
                 ) * 2;
 
-                normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals);
+                texture_updates.push_back(
+                    normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals)
+                );
             }
         }
     }   

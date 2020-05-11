@@ -205,12 +205,5 @@ texture_t::write(const command_pool_t & command_pool, std::shared_ptr<buffer_t> 
     region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), static_cast<int>(p[2]) };
     region.imageExtent = { 2, 2, 2 };
     
-    command_pool.one_time_buffer([&](auto command_buffer){
-        vkCmdCopyBufferToImage(command_buffer, buffer->get_buffer(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-    })->submit(
-        VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE
-    );
-
     return region;
 }
