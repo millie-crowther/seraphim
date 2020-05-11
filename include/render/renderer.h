@@ -103,6 +103,7 @@ private:
     std::vector<std::shared_ptr<buffer_t>> buffers;
     std::shared_ptr<buffer_t> input_buffer;
     std::shared_ptr<buffer_t> request_buffer;
+    std::shared_ptr<buffer_t> texture_staging_buffer;
 
     std::vector<request_t> requests;
 

@@ -708,6 +708,11 @@ renderer_t::create_buffers(){
         input_buffer, request_buffer, 
         std::make_shared<buffer_t>(allocator, 3, device, c * 32, VMA_MEMORY_USAGE_GPU_ONLY)
     };
+
+    texture_staging_buffer = std::make_shared<buffer_t>(
+        allocator, ~0, device, 
+        c * sizeof(uint32_t) * 8, VMA_MEMORY_USAGE_CPU_ONLY
+    );
 }
 
 void
