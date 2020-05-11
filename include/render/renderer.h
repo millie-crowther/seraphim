@@ -106,6 +106,7 @@ private:
     std::shared_ptr<buffer_t> texture_staging_buffer;
 
     std::vector<request_t> requests;
+    std::vector<VkBufferImageCopy> texture_updates;
 
     std::chrono::high_resolution_clock::time_point start;
 

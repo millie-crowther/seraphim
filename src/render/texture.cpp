@@ -187,29 +187,30 @@ texture_t::get_image() const {
     return image;
 }
 
-void 
+VkBufferImageCopy 
 texture_t::write(const command_pool_t & command_pool, std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
     if (p[0] >= extents.width - 1 || p[1] >= extents.height - 1 || p[2] >= extents.depth - 1){
         throw std::runtime_error("Error: Invalid image write at (" + std::to_string(p[0]) + ", " + std::to_string(p[1]) + ")");
     }
 
     buffer->write(x, i * sizeof(uint32_t) * 8);
-
+    VkBufferImageCopy region;
+    region.bufferOffset = i * sizeof(uint32_t) * 8;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), static_cast<int>(p[2]) };
+    region.imageExtent = { 2, 2, 2 };
+    
     command_pool.one_time_buffer([&](auto command_buffer){
-        VkBufferImageCopy region;
-        region.bufferOffset = i * sizeof(uint32_t) * 8;
-        region.bufferRowLength = 0;
-        region.bufferImageHeight = 0;
-        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        region.imageSubresource.mipLevel = 0;
-        region.imageSubresource.baseArrayLayer = 0;
-        region.imageSubresource.layerCount = 1;
-        region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), static_cast<int>(p[2]) };
-        region.imageExtent = { 2, 2, 2 };
-
         vkCmdCopyBufferToImage(command_buffer, buffer->get_buffer(), image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
     })->submit(
         VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE
     );
+
+    return region;
 }
