@@ -188,12 +188,13 @@ texture_t::get_image() const {
 }
 
 VkBufferImageCopy 
-texture_t::write(const command_pool_t & command_pool, std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
+texture_t::write(std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
     if (p[0] >= extents.width - 1 || p[1] >= extents.height - 1 || p[2] >= extents.depth - 1){
         throw std::runtime_error("Error: Invalid image write at (" + std::to_string(p[0]) + ", " + std::to_string(p[1]) + ")");
     }
 
     buffer->write(x, i * sizeof(uint32_t) * 8);
+    
     VkBufferImageCopy region;
     region.bufferOffset = i * sizeof(uint32_t) * 8;
     region.bufferRowLength = 0;

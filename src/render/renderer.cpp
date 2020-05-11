@@ -692,7 +692,7 @@ renderer_t::handle_requests(){
                 ) * 2;
 
                 texture_updates.push_back(
-                    normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals)
+                    normal_texture->write(texture_staging_buffer, i, p, normals)
                 );
             }
         }

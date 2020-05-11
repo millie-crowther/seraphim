@@ -47,7 +47,7 @@ public:
     VkSampler get_sampler() const;
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
-    VkBufferImageCopy write(const command_pool_t & command_pool, std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x);
+    VkBufferImageCopy write(std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x);
 
     // static methods
     static void check_format_supported(
