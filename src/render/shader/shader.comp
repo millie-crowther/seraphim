@@ -97,8 +97,10 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 uint expected_depth(vec3 x){
-    vec3 xc = x - pc.camera_position;
-    return max(1, 10 - uint(max(0, 7 + 0.6 * log2(dot(xc, xc)))));
+    // TODO: make this sensible
+    // 1. dependent on distance from camera
+    // 2. dependent on closeness to centre of screen
+    return 3;
 }
 
 float expected_size(vec3 x){
@@ -192,12 +194,8 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
         (i + work_group_offset()) / (gl_WorkGroupSize.y * work_group_count.y),
         0
     );
-    t /= vec3(
-        gl_WorkGroupSize.x * work_group_count.x / 8, 
-        gl_WorkGroupSize.y * work_group_count.y, 
-        1
-    );
-    
+    t /= vec3(gl_WorkGroupSize.xy * work_group_count / vec2(8, 1), 1);
+
     normal = rotate(vec4(q.x, -q.yzw), normalize(texture(normal_texture, t).xyz - 0.5));
     
     // return distance value appropriate for case
@@ -229,8 +227,9 @@ intersection_t raycast(ray_t r){
 }
 
 float shadow(vec3 l, vec3 p){
-    intersection_t i = raycast(ray_t(l, normalize(p - l)));
-    return float(length(i.x - p) < epsilon * 2);
+    return 1;
+    // intersection_t i = raycast(ray_t(l, normalize(p - l)));
+    // return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
