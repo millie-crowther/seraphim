@@ -89,19 +89,21 @@ renderer_t::renderer_t(
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
 
-    for (auto pair : substances){
-        if (auto substance = std::get<1>(pair).lock()){
-            std::array<uint32_t, 8> normals = octree_node_t::get_normals(
-                substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
-            );
+    for (uint32_t i = 0; i < work_group_count.volume(); i++){
+        for (auto pair : substances){
+            if (auto substance = std::get<1>(pair).lock()){
+                std::array<uint32_t, 8> normals = octree_node_t::get_normals(
+                    substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
+                );
 
-            u32vec3_t p = u32vec3_t(
-                (substance->get_data().root % (work_group_size[0] * work_group_count[0])) / 8,
-                substance->get_data().root / (work_group_size[0] * work_group_count[0]), 
-                0u
-            ) * 2;
+                u32vec3_t p = u32vec3_t(
+                    (substance->get_data().root % (work_group_size[0] * work_group_count[0])) / 8,
+                    substance->get_data().root / (work_group_size[0] * work_group_count[0]), 
+                    0u
+                ) * 2;
 
-            normal_texture->write(*graphics_command_pool, texture_staging_buffer, 0, p, normals);
+                normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals);
+            }
         }
     }
 
