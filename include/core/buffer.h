@@ -21,38 +21,42 @@ private:
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
 
-    template<typename T>
-    void map(const T & x, uint64_t offset, bool is_write){
-        if (x.empty()){
-            return;
-        }
-
-        void * memory_map;
-        vkMapMemory(
-            device->get_device(), memory, offset, 
-            sizeof(typename T::value_type) * x.size(), 0, &memory_map
-        );
-
-        void * from = is_write ? memory_map          : ((void *) x.data());
-        void * to   = is_write ? ((void *) x.data()) : memory_map;
-        std::memcpy(from, to, sizeof(typename T::value_type) * x.size());
-        vkUnmapMemory(device->get_device(), memory);
-    }
-
 public:
     // constructors and destructors
     buffer_t(VmaAllocator allocator, uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage);
     ~buffer_t();
 
     // public methods
-    template<typename T>
-    void write(const T & source, uint64_t offset){
-        map(source, offset, true);
+    template<class F>
+    void map(uint64_t offset, uint64_t size, const F & f){
+        void * memory_map;
+        vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
+        f(memory_map);
+        vkUnmapMemory(device->get_device(), memory);
     }
 
     template<class T>
-    void read(const T & destination, uint64_t offset) {
-        map(destination, offset, false);
+    void write(const T & source, uint64_t offset){
+        if (source.empty()){
+            return;
+        }
+
+        uint32_t size = sizeof(typename T::value_type) * source.size();
+        map(offset, size, [&](void * memory_map){
+            std::memcpy(memory_map, source.data(), size);
+        });
+    }
+
+    template<class T>
+    void read(T & destination, uint64_t offset) {
+        if (destination.empty()){
+            return;
+        }
+
+        uint32_t size = sizeof(typename T::value_type) * destination.size();
+        map(offset, size, [&](void * memory_map){
+            std::memcpy(destination.data(), memory_map, size);
+        });
     }
     
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const;
