@@ -185,16 +185,11 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     float e = dot(c - r.x, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
     float phi_plane = min(0, e) / dot(r.d, n);
 
-    // calculate distance to edge of bounding cube
-    vec3 cube_i = (c - r.x + sign(r.d) * s) / r.d;
-    float phi_cube = min(cube_i.x, min(cube_i.y, cube_i.z)) + epsilon;
-
     // calculate texture coordinate
     t = (r.x - c_prev + s * 4) / (s * 8);
-    uint global_i = i + work_group_offset();
     t += vec3(
-        (global_i % (gl_WorkGroupSize.x * work_group_count.x)) / 8,
-        global_i / (gl_WorkGroupSize.y * work_group_count.y),
+        ((i + work_group_offset()) % (gl_WorkGroupSize.x * work_group_count.x)) / 8,
+        (i + work_group_offset()) / (gl_WorkGroupSize.y * work_group_count.y),
         0
     );
     t /= vec3(
@@ -202,11 +197,12 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
         gl_WorkGroupSize.y * work_group_count.y, 
         1
     );
+    
     normal = rotate(vec4(q.x, -q.yzw), normalize(texture(normal_texture, t).xyz - 0.5));
     
     // return distance value appropriate for case
-    bool hit = (node.x & node_empty_flag) == 0 && min(phi_cube, phi_plane) >= 0;
-    return mix(mix(phi_cube, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
+    bool hit = (node.x & node_empty_flag) == 0 && min(phi_plane, s.x) >= 0;
+    return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
 intersection_t raycast(ray_t r){
