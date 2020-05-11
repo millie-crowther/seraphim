@@ -26,8 +26,6 @@ private:
 
     std::shared_ptr<device_t> device;
 
-    std::unique_ptr<buffer_t> staging_buffer;
-
     // helper methods
     int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
@@ -49,7 +47,7 @@ public:
     VkSampler get_sampler() const;
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
-    void write(const command_pool_t & command_pool, u32vec3_t p, const std::array<uint32_t, 8> & x);
+    void write(const command_pool_t & command_pool, std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x);
 
     // static methods
     static void check_format_supported(

@@ -101,7 +101,7 @@ renderer_t::renderer_t(
                 0u
             ) * 2;
 
-            normal_texture->write(*graphics_command_pool, p, normals);
+            normal_texture->write(*graphics_command_pool, texture_staging_buffer, 0, p, normals);
         }
     }
 
@@ -682,7 +682,7 @@ renderer_t::handle_requests(){
                     0u
                 ) * 2;
 
-                normal_texture->write(*graphics_command_pool, p, normals);
+                normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals);
             }
         }
     }   
