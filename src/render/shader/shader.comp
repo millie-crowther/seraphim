@@ -285,17 +285,14 @@ void render(){
     // create ray direction vector. remove zero components for efficiency later on
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
     d += vec3(equal(d, vec3(0))) * epsilon;
-    
-    vec4 out_colour = sky();
 
     intersection_t i = raycast(ray_t(x0 + pc.phi_initial * d, d));
 
-    if (i.hit){
-        out_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord);
-        // out_colour = texture(normal_texture, i.texture_coord);
-        // out_colour = vec4(i.texture_coord, 1);
-    }
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), out_colour);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(
+        sky(),
+        colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord),
+        i.hit
+    ));
 }
 
 void prerender(uint i){
