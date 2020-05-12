@@ -95,6 +95,7 @@ shared uint substance_bins[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
+shared vec3 scratch_space[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     // TODO: make this sensible
@@ -172,14 +173,12 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
 
     // if necessary, request more data from CPU
     // TODO: move this to postrender(), remove atomic operation
-    if (depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0){
-        uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
-
-        uint child = atomicAnd(vacant_node_index, 0); 
-        if (child != 0){
-            input_data.octree[i + work_group_offset()].x |= child;
-            requests.requests[request_id] = request_t(c, depth, child + work_group_offset(), 0, sub.id, 0);
-        }
+    bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0;
+    uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
+    uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
+    if (child != 0 && should_request){
+        input_data.octree[i + work_group_offset()].x |= child;
+        requests.requests[request_id] = request_t(c, depth, child + work_group_offset(), 0, sub.id, 0);
     }
 
     // calculate distance to intersect plane
@@ -203,12 +202,15 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
-intersection_t raycast(ray_t r){
+intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     bool hit = false;
     vec3 normal, texture_coord;
+    uint steps;
 
-    uint steps = 0;
-    for (; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
+    v_min = min(r.x, v_min);
+    v_max = max(r.x, v_max);
+
+    for (steps = 0; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
         uint bin = get_bin(r.x);
         uint num_substances = substance_bins[bin] & 0xFFFFFFFF;
         uint substance_index = substance_bins[bin] >> 16;
@@ -223,16 +225,19 @@ intersection_t raycast(ray_t r){
         r.x += r.d * phi;
     }
 
+    v_min = min(r.x, v_min);
+    v_max = max(r.x, v_max);
+
     return intersection_t(hit && steps < max_steps, r.x, normal, texture_coord);
 }
 
-float shadow(vec3 l, vec3 p){
-    return 1;
-    // intersection_t i = raycast(ray_t(l, normalize(p - l)));
-    // return float(length(i.x - p) < epsilon * 2);
+float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
+    // return 1;
+    intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max);
+    return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
+vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_max){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
@@ -246,7 +251,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t){
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    float shadow = shadow(light_p, x);
+    float shadow = shadow(light_p, x, v_min, v_max);
 
     //diffuse
     vec3 l = normalize(light_p - x);
@@ -278,19 +283,23 @@ void render(){
     
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
-    vec3 x0 = pc.camera_position;
-
     vec3 forward = cross(right, up);
+
+    vec3 x0 = pc.camera_position;
 
     // create ray direction vector. remove zero components for efficiency later on
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
     d += vec3(equal(d, vec3(0))) * epsilon;
 
-    intersection_t i = raycast(ray_t(x0 + pc.phi_initial * d, d));
+    vec3 v_min = pc.camera_position;
+    vec3 v_max = pc.camera_position;
+
+    ray_t r = ray_t(x0 + pc.phi_initial * d, d);
+    intersection_t i = raycast(r, v_min, v_max);
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(
         sky(),
-        colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord),
+        colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max),
         i.hit
     ));
 }
