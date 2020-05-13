@@ -284,21 +284,13 @@ void render(inout vec3 v_min, inout vec3 v_max){
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
     vec3 forward = cross(right, up);
-
-    vec3 x0 = pc.camera_position;
-
-    // create ray direction vector. remove zero components for efficiency later on
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
-    d += vec3(equal(d, vec3(0))) * epsilon;
 
-    ray_t r = ray_t(x0 + pc.phi_initial * d, d);
+    ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
     intersection_t i = raycast(r, v_min, v_max);
 
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(
-        sky(),
-        colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max),
-        i.hit
-    ));
+    vec4 hit_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
 }
 
 void prerender(uint i){
