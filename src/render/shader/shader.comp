@@ -95,7 +95,7 @@ shared uint substance_bins[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
-shared vec3 scratch_space[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared vec3 working_memory[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     // TODO: make this sensible
@@ -276,7 +276,7 @@ vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
-void render(){
+void render(inout vec3 v_min, inout vec3 v_max){
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
     uv.y *= -1;
@@ -290,9 +290,6 @@ void render(){
     // create ray direction vector. remove zero components for efficiency later on
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
     d += vec3(equal(d, vec3(0))) * epsilon;
-
-    vec3 v_min = pc.camera_position;
-    vec3 v_max = pc.camera_position;
 
     ray_t r = ray_t(x0 + pc.phi_initial * d, d);
     intersection_t i = raycast(r, v_min, v_max);
@@ -326,23 +323,52 @@ void prerender(uint i){
     substance_bins[0] = 3;
 }
 
-void postrender(uint i){
+void postrender(uint i, vec3 v_min, vec3 v_max){
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c / 8]){
         input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
         input_data.octree[c + work_group_offset()].x |= node_unused_flag;
     }
+
+    // fold over min and max aabb values and store
+    uint work_group_id = gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y;
+
+    working_memory[i] = v_min;
+    if ((i & 0x001) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   1]);
+    if ((i & 0x003) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   2]);
+    if ((i & 0x007) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   4]);
+    if ((i & 0x00F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   8]);
+    if ((i & 0x01F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  16]);
+    if ((i & 0x03F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  32]);
+    if ((i & 0x07F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  64]);
+    if ((i & 0x0FF) == 0) working_memory[i] = min(working_memory[i], working_memory[i + 128]);
+    if ((i & 0x1FF) == 0) working_memory[i] = min(working_memory[i], working_memory[i + 256]);
+    persistent.data[work_group_id].v_min = min(working_memory[0], working_memory[512]);
+
+    working_memory[i] = v_max;
+    if ((i & 0x001) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   1]);
+    if ((i & 0x003) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   2]);
+    if ((i & 0x007) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   4]);
+    if ((i & 0x00F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   8]);
+    if ((i & 0x01F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  16]);
+    if ((i & 0x03F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  32]);
+    if ((i & 0x07F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  64]);
+    if ((i & 0x0FF) == 0) working_memory[i] = max(working_memory[i], working_memory[i + 128]);
+    if ((i & 0x1FF) == 0) working_memory[i] = max(working_memory[i], working_memory[i + 256]);
+    persistent.data[work_group_id].v_max = max(working_memory[0], working_memory[512]);
 }
 
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    vec3 v_min = pc.camera_position;
+    vec3 v_max = pc.camera_position;
 
     prerender(i);
 
     barrier();
-    render();
+    render(v_min, v_max);
     barrier();
 
-    postrender(i);
+    postrender(i, v_min, v_max);
 }
