@@ -16,7 +16,7 @@ const uint max_depth = 16;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
-const int max_steps = 64;
+const int max_steps = 32;
 const float epsilon = 1.0 / 256.0;
 
 // types 
@@ -95,7 +95,9 @@ shared uint substance_bins[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
-shared vec3 working_memory[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+
+shared uint visible_substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y/ 2];
+shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
     // TODO: make this sensible
@@ -326,29 +328,29 @@ void postrender(uint i, vec3 v_min, vec3 v_max){
     // fold over min and max aabb values and store
     uint work_group_id = gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y;
 
-    working_memory[i] = v_min;
-    if ((i & 0x001) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   1]);
-    if ((i & 0x003) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   2]);
-    if ((i & 0x007) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   4]);
-    if ((i & 0x00F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +   8]);
-    if ((i & 0x01F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  16]);
-    if ((i & 0x03F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  32]);
-    if ((i & 0x07F) == 0) working_memory[i] = min(working_memory[i], working_memory[i +  64]);
-    if ((i & 0x0FF) == 0) working_memory[i] = min(working_memory[i], working_memory[i + 128]);
-    if ((i & 0x1FF) == 0) working_memory[i] = min(working_memory[i], working_memory[i + 256]);
-    if (i == 0) persistent.data[work_group_id].v_min = min(working_memory[0], working_memory[512]);
+    visibility[i] = v_min;
+    if ((i & 0x001) == 0) visibility[i] = min(visibility[i], visibility[i +   1]);
+    if ((i & 0x003) == 0) visibility[i] = min(visibility[i], visibility[i +   2]);
+    if ((i & 0x007) == 0) visibility[i] = min(visibility[i], visibility[i +   4]);
+    if ((i & 0x00F) == 0) visibility[i] = min(visibility[i], visibility[i +   8]);
+    if ((i & 0x01F) == 0) visibility[i] = min(visibility[i], visibility[i +  16]);
+    if ((i & 0x03F) == 0) visibility[i] = min(visibility[i], visibility[i +  32]);
+    if ((i & 0x07F) == 0) visibility[i] = min(visibility[i], visibility[i +  64]);
+    if ((i & 0x0FF) == 0) visibility[i] = min(visibility[i], visibility[i + 128]);
+    if ((i & 0x1FF) == 0) visibility[i] = min(visibility[i], visibility[i + 256]);
+    if (i == 0) persistent.data[work_group_id].v_min = min(visibility[0], visibility[512]);
 
-    working_memory[i] = v_max;
-    if ((i & 0x001) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   1]);
-    if ((i & 0x003) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   2]);
-    if ((i & 0x007) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   4]);
-    if ((i & 0x00F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +   8]);
-    if ((i & 0x01F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  16]);
-    if ((i & 0x03F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  32]);
-    if ((i & 0x07F) == 0) working_memory[i] = max(working_memory[i], working_memory[i +  64]);
-    if ((i & 0x0FF) == 0) working_memory[i] = max(working_memory[i], working_memory[i + 128]);
-    if ((i & 0x1FF) == 0) working_memory[i] = max(working_memory[i], working_memory[i + 256]);
-    if (i == 0) persistent.data[work_group_id].v_max = max(working_memory[0], working_memory[512]);
+    visibility[i] = v_max;
+    if ((i & 0x001) == 0) visibility[i] = max(visibility[i], visibility[i +   1]);
+    if ((i & 0x003) == 0) visibility[i] = max(visibility[i], visibility[i +   2]);
+    if ((i & 0x007) == 0) visibility[i] = max(visibility[i], visibility[i +   4]);
+    if ((i & 0x00F) == 0) visibility[i] = max(visibility[i], visibility[i +   8]);
+    if ((i & 0x01F) == 0) visibility[i] = max(visibility[i], visibility[i +  16]);
+    if ((i & 0x03F) == 0) visibility[i] = max(visibility[i], visibility[i +  32]);
+    if ((i & 0x07F) == 0) visibility[i] = max(visibility[i], visibility[i +  64]);
+    if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
+    if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
+    if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
 }
 
 void main(){
