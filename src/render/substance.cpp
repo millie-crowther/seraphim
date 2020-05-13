@@ -2,6 +2,10 @@
 
 #include <iostream>
 
+substance_t::substance_t(){
+    this->id = ~0;
+}
+
 substance_t::substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
     this->root = root;

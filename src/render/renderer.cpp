@@ -676,7 +676,7 @@ renderer_t::handle_requests(){
                 vec3_t c = r.c - substance->get_data().c;
 
                 std::vector<octree_node_t> new_node = octree_node_t::create(c, ra, substance->get_sdf());
-                uint32_t child_index = 1024 * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t);
+                uint32_t child_index = work_group_size.volume() * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t);
                 
                 input_buffer->write(new_node, child_index);
                 request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
@@ -701,12 +701,12 @@ renderer_t::handle_requests(){
 
 void 
 renderer_t::create_buffers(){
-    uint32_t c = work_group_count[0] * work_group_count[1];
-    uint32_t s = work_group_size[0] * work_group_size[1];
+    uint32_t c = work_group_count.volume();
+    uint32_t s = work_group_size.volume();
 
     input_buffer = std::make_shared<buffer_t>(
         allocator, 1, device, 
-        sizeof(substance_t::data_t) * 1024 + sizeof(octree_node_t) * c * s, 
+        sizeof(substance_t::data_t) * s + sizeof(octree_node_t) * c * s, 
         VMA_MEMORY_USAGE_CPU_TO_GPU
     );
 
@@ -743,5 +743,5 @@ renderer_t::initialise_buffers(){
         }
     }
     
-    input_buffer->write(initial_octree, 1024 * sizeof(substance_t::data_t));
+    input_buffer->write(initial_octree, work_group_size.volume() * sizeof(substance_t::data_t));
 }

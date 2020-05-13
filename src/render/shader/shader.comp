@@ -16,7 +16,7 @@ const uint max_depth = 16;
 
 // these ones could be push constants hypothetically
 const float f = 1.0;
-const int max_steps = 32;
+const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 // types 
@@ -96,7 +96,7 @@ shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
-shared uint visible_substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y/ 2];
+shared uint visible_substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
@@ -191,11 +191,11 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     // calculate texture coordinate
     t = (r.x - c_prev + s * 4) / (s * 8);
     t += vec3(
-        ((i + work_group_offset()) % (gl_WorkGroupSize.x * work_group_count.x)) / 8,
+        (i + work_group_offset()) % (gl_WorkGroupSize.x * work_group_count.x) / 8,
         (i + work_group_offset()) / (gl_WorkGroupSize.y * work_group_count.y),
         0
     );
-    t /= vec3(gl_WorkGroupSize.xy * work_group_count / vec2(8, 1), 1);
+    t /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
     normal = rotate(vec4(q.x, -q.yzw), normalize(texture(normal_texture, t).xyz - 0.5));
     
@@ -295,6 +295,10 @@ void render(inout vec3 v_min, inout vec3 v_max){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
 }
 
+bool is_visible(substance_t substance){
+    return true;
+}
+
 void prerender(uint i){
     // clear shared variables
     vacant_node_index = 0;
@@ -306,12 +310,16 @@ void prerender(uint i){
 
     // submit free nodes to request queue
     if (i % 8 == 0 && (octree[i].x & node_unused_flag) != 0){
-        vacant_node_index = i;
+        vacant_node_index = i; 
     }
+
+    // visibility check on substances
+    substance_t s = input_data.substances[i];
+    visible_substances[i] = mix(~0, s.id, is_visible(s));
 
     // load substances into shared memory
     if (i < 32){
-        substances[i] = input_data.substances[i];
+        substances[i] = s;
     }
 
     substance_bins[0] = 3;

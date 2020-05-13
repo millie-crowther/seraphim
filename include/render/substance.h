@@ -19,6 +19,7 @@ public:
         uint32_t id;
     };
 
+    substance_t();
     substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf);
 
     std::weak_ptr<sdf3_t> get_sdf() const;
