@@ -210,7 +210,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     v_min = min(r.x, v_min);
     v_max = max(r.x, v_max);
 
-    for (steps = 0; !hit && steps < max_steps && length(r.x) < pc.render_distance; steps++){
+    for (steps = 0; !hit && steps < max_steps; steps++){
         uint bin = get_bin(r.x);
         uint num_substances = substance_bins[bin] & 0xFFFFFFFF;
         uint substance_index = substance_bins[bin] >> 16;
@@ -220,7 +220,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
         for (uint substanceID = substance_index; !hit && substanceID < substance_index + num_substances; substanceID++){
             substance_t s = substances[substanceID];
             phi = min(phi, phi_s(r, s, expected_depth, normal, texture_coord));
-            hit = phi < epsilon;
+            hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;
     }
@@ -232,9 +232,9 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
 }
 
 float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
-    // return 1;
-    intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max);
-    return float(length(i.x - p) < epsilon * 2);
+    return 1;
+    // intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max);
+    // return float(length(i.x - p) < epsilon * 2);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_max){
