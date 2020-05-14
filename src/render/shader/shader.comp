@@ -60,7 +60,7 @@ struct substance_t {
 };
 
 layout (binding = 1) buffer input_buffer { 
-    substance_t substances[1024];
+    substance_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
     uvec2 octree[]; 
 } input_data;
 
@@ -96,6 +96,7 @@ shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
+shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uint visible_substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
@@ -200,7 +201,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     normal = rotate(vec4(q.x, -q.yzw), normalize(texture(normal_texture, t).xyz - 0.5));
     
     // return distance value appropriate for case
-    bool hit = (node.x & node_empty_flag) == 0 && min(phi_plane, s.x) >= 0;
+    bool hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0;
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
@@ -317,9 +318,20 @@ void prerender(uint i){
     substance_t s = input_data.substances[i];
     visible_substances[i] = mix(~0, s.id, is_visible(s));
 
+    substance_counter[i] = uint(visible_substances[i] != ~0);
+    for (uint width = 2; width < 1024; width *= 2){
+        if (i % width >= width / 2){
+            visible_substances[i + substance_counter[i - i % width] - width / 2] = visible_substances[i];
+        }
+
+        if (i % width == 0){
+            substance_counter[i] += substance_counter[i + width / 2];
+        }
+    }
+
     // load substances into shared memory
     if (i < 32){
-        substances[i] = s;
+        substances[i] = s;//input_data.substances[visible_substances[i]];
     }
 
     substance_bins[0] = 3;

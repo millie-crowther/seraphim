@@ -742,6 +742,10 @@ renderer_t::initialise_buffers(){
             }
         }
     }
-    
+
     input_buffer->write(initial_octree, work_group_size.volume() * sizeof(substance_t::data_t));
+
+    std::vector<substance_t> initial_substances(work_group_size.volume());
+    // input_buffer->write(initial_substances, 0);
+    
 }
