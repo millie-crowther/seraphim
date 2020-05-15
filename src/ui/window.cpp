@@ -16,7 +16,7 @@ window_t::window_t(u32vec2_t size){
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
-    window = glfwCreateWindow(size[0], size[1], "Augustine", nullptr, nullptr);
+    window = glfwCreateWindow(size[0], size[1], "Seraphim", nullptr, nullptr);
 
     if (window == nullptr){
         throw std::runtime_error("Error: Failed to create main window.");
