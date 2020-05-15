@@ -62,6 +62,27 @@ renderer_t::renderer_t(
     swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
 
     create_render_pass();
+
+    u32vec3_t size = u32vec3_t(
+        work_group_count[0] * work_group_size[0] / 8, 
+        work_group_count[1] * work_group_size[1], 
+        1u
+    ) * 2;
+
+    normal_texture = std::make_unique<texture_t>(
+        allocator, 11, device, size, 
+        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    );
+
+    colour_texture = std::make_unique<texture_t>(
+        allocator, 12, device, size, 
+        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+    );
+
     create_descriptor_set_layout();
     create_graphics_pipeline();
     create_compute_pipeline();
@@ -79,18 +100,6 @@ renderer_t::renderer_t(
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );
 
-    u32vec3_t size = u32vec3_t(
-        work_group_count[0] * work_group_size[0] / 8, 
-        work_group_count[1] * work_group_size[1], 
-        1u
-    ) * 2;
-
-    normal_texture = std::make_unique<texture_t>(
-        allocator, 11, device, size, 
-        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
-        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-    );
 
     // for (uint32_t i = 0; i < work_group_count.volume(); i++){
     //     for (auto pair : substances){
@@ -502,13 +511,12 @@ renderer_t::create_descriptor_set_layout(){
     image_layout.descriptorCount = 1;
     image_layout.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
-    VkDescriptorSetLayoutBinding normal_texture_layout = {};
-    normal_texture_layout.binding = 11;
-    normal_texture_layout.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    normal_texture_layout.descriptorCount = 1;
-    normal_texture_layout.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    std::vector<VkDescriptorSetLayoutBinding> layouts = { 
+        image_layout, 
+        normal_texture->get_descriptor_layout_binding(),
+        colour_texture->get_descriptor_layout_binding()
+    };
 
-    std::vector<VkDescriptorSetLayoutBinding> layouts = { image_layout, normal_texture_layout };
     for (auto buffer : buffers){
         layouts.push_back(buffer->get_descriptor_set_layout_binding());
     }

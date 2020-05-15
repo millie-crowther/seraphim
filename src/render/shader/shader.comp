@@ -4,6 +4,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 
 layout (binding = 10) uniform writeonly image2D render_texture;
 layout (binding = 11) uniform sampler3D normal_texture;
+layout (binding = 12) uniform sampler3D colour_texture;
 
 // constants
 const uint node_empty_flag = 1 << 24;

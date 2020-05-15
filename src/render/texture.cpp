@@ -208,3 +208,13 @@ texture_t::write(std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, cons
     
     return region;
 }
+
+VkDescriptorSetLayoutBinding 
+texture_t::get_descriptor_layout_binding() const {
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.binding = binding;
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    return layout_binding;
+}

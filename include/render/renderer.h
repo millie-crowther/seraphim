@@ -95,6 +95,7 @@ private:
 
     std::unique_ptr<texture_t> render_texture; 
     std::unique_ptr<texture_t> normal_texture;
+    std::unique_ptr<texture_t> colour_texture;
     
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;

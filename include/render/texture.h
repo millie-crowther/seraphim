@@ -48,6 +48,7 @@ public:
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
     VkBufferImageCopy write(std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x);
+    VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
     static void check_format_supported(
