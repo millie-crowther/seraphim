@@ -164,9 +164,9 @@ blaspheme_t::create_instance(){
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pNext = nullptr;
-    app_info.pApplicationName = "Augustine";
+    app_info.pApplicationName = "Seraphim";
     app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    app_info.pEngineName = "Augustine";
+    app_info.pEngineName = "Seraphim";
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_MAKE_VERSION(1, 0, 0);
 
