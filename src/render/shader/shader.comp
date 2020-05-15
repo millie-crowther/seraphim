@@ -320,13 +320,8 @@ void prerender(uint i){
 
     substance_counter[i] = uint(visible_substances[i] != ~0);
     for (uint width = 2; width <= 1024; width *= 2){
-        if (i % width >= width / 2){
-            visible_substances[i + substance_counter[i - i % width] - width / 2] = visible_substances[i];
-        }
-
-        if (i % width == 0){
-            substance_counter[i] += substance_counter[i + width / 2];
-        }
+        if (i % width >= width / 2) visible_substances[i + substance_counter[i - i % width] - width / 2] = visible_substances[i];
+        if ((i & (width - 1)) == 0) substance_counter[i] += substance_counter[i + width / 2];
     }
 
     // load substances into shared memory
