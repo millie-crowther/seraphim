@@ -1,6 +1,6 @@
-# blaspheme
+# seraphim
 
-lightweight game engine based around signed distance fields. implemented in vulkan.
+lightweight, lazy raycaster. implemented in vulkan.
 
 ## install
 `./install.sh`
