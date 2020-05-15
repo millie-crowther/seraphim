@@ -577,7 +577,6 @@ void
 renderer_t::render(){
     push_constants.current_frame++;
 
-    handle_requests();
 
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
@@ -618,7 +617,12 @@ renderer_t::render(){
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, texture_updates.size(), texture_updates.data()
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, normal_texture_updates.size(), normal_texture_updates.data()
+        );
+
+        vkCmdCopyBufferToImage(
+            command_buffer, texture_staging_buffer->get_buffer(), colour_texture->get_image(), 
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, colour_texture_updates.size(), colour_texture_updates.data()
         );
 
         vkCmdPushConstants(
@@ -644,6 +648,8 @@ renderer_t::render(){
     );
 
     present(image_index);
+
+    handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
@@ -675,7 +681,8 @@ void
 renderer_t::handle_requests(){
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
-    texture_updates.clear();
+    normal_texture_updates.clear();
+    colour_texture_updates.clear();
 
     request_buffer->read(requests, 0);
 
@@ -697,14 +704,12 @@ renderer_t::handle_requests(){
                 );
 
                 std::array<uint32_t, 8> colours;
-                if (auto sdf = substance->get_sdf().lock()){
-                    for (uint8_t o = 0; o < 8; o++){
-                        vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(ra);
-                        vec3_t n = (substance->get_matter().lock()->get_colour(c + d) + 1) / 2.0 * 255.0;
-                        u8vec4_t n8(n[0], n[1], n[2], 0);
+                for (uint8_t o = 0; o < 8; o++){
+                    vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(ra);
+                    vec3_t c = (substance->get_matter().lock()->get_colour(c + d) + 1) / 2.0 * 255.0;
+                    u8vec4_t c8(c[0], c[1], c[2], 0);
 
-                        colours[o] = *reinterpret_cast<uint32_t *>(&n8);
-                    }
+                    colours[o] = *reinterpret_cast<uint32_t *>(&c8);
                 }
 
                 u32vec3_t p = u32vec3_t(
@@ -713,8 +718,12 @@ renderer_t::handle_requests(){
                     0u
                 ) * 2;
 
-                texture_updates.push_back(
-                    normal_texture->write(texture_staging_buffer, i, p, normals)
+                normal_texture_updates.push_back(
+                    normal_texture->write(texture_staging_buffer, i * 2, p, normals)
+                );
+
+                colour_texture_updates.push_back(
+                    colour_texture->write(texture_staging_buffer, i * 2 + 1, p, colours)
                 );
             }
         }
@@ -744,7 +753,7 @@ renderer_t::create_buffers(){
 
     texture_staging_buffer = std::make_shared<buffer_t>(
         allocator, ~0, device, 
-        c * sizeof(uint32_t) * 8, VMA_MEMORY_USAGE_CPU_ONLY
+        c * sizeof(uint32_t) * 8 * 2, VMA_MEMORY_USAGE_CPU_ONLY
     );
 }
 
