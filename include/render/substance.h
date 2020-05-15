@@ -4,8 +4,8 @@
 #include <memory>
 
 #include "scene/transform.h"
-#include "maths/quat.h"
 #include "sdf/sdf.h"
+#include "render/matter.h"
 
 class substance_t {
 public:
@@ -17,10 +17,12 @@ public:
         uint32_t rotation;
         uint32_t _2;
         uint32_t id;
+
+        data_t();
+        data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id);
     };
 
-    substance_t();
-    substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf);
+    substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf, std::shared_ptr<matter_t> matter);
 
     std::weak_ptr<sdf3_t> get_sdf() const;
     std::weak_ptr<aabb3_t> get_aabb();
@@ -39,6 +41,7 @@ private:
     uint32_t id;
     std::shared_ptr<sdf3_t> sdf;
     std::shared_ptr<aabb3_t> aabb;
+    std::shared_ptr<matter_t> matter;
 
     transform_t transform;
 

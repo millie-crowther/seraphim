@@ -2,14 +2,23 @@
 
 #include <iostream>
 
-substance_t::substance_t(){
-    this->id = ~0;
+substance_t::data_t::data_t(){
+    id = ~0;
 }
 
-substance_t::substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf){
+substance_t::data_t::data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id){
+    this->c = c;
+    this->root = root;
+    this->r = r;
+    this->rotation = rotation;
+    this->id = id;
+}
+
+substance_t::substance_t(uint32_t id, int32_t root, std::shared_ptr<sdf3_t> sdf, std::shared_ptr<matter_t> matter){
     this->sdf = sdf;
     this->root = root;
     this->id = id;
+    this->matter = matter;
 }
 
 std::weak_ptr<sdf3_t>
@@ -22,15 +31,14 @@ substance_t::get_data(){
     // make sure aabb is created
     get_aabb();
 
-    return {
+    return data_t(
         aabb->get_centre().cast<float>(),
         root,
 
         static_cast<float>(aabb->get_size().chebyshev_norm()),
         transform.get_rotation().inverse().pack(),
-        0,
         id
-    };
+    );
 }
 
 void

@@ -37,15 +37,18 @@ renderer_t::renderer_t(
     vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
 
     floor_substance = std::make_shared<substance_t>(0, 0, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0)),
+        std::make_shared<matter_t>(vec3_t(0.9, 0.3, 0.3))
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(0.5)
+        std::make_shared<primitive::sphere_t<3>>(0.5),
+        std::make_shared<matter_t>(vec3_t(0.3, 0.9, 0.3))
     );
 
     cube = std::make_shared<substance_t>(2, 16, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5))
+        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5)),
+        std::make_shared<matter_t>(vec3_t(0.3, 0.3, 0.9))
     );
 
     cube->set_position(vec3_t(-2.5, 1.0, 0.5));
@@ -745,7 +748,7 @@ renderer_t::initialise_buffers(){
 
     input_buffer->write(initial_octree, work_group_size.volume() * sizeof(substance_t::data_t));
 
-    std::vector<substance_t> initial_substances(work_group_size.volume());
-    // input_buffer->write(initial_substances, 0);
+    std::vector<substance_t::data_t> initial_substances(work_group_size.volume());
+    input_buffer->write(initial_substances, 0);
     
 }
