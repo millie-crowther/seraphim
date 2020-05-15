@@ -316,10 +316,10 @@ void prerender(uint i){
 
     // visibility check on substances
     substance_t s = input_data.substances[i];
-    visible_substances[i] = mix(~0, s.id, is_visible(s));
+    visible_substances[i] = mix(~0, i, s.id != ~0 && is_visible(s));
 
     substance_counter[i] = uint(visible_substances[i] != ~0);
-    for (uint width = 2; width < 1024; width *= 2){
+    for (uint width = 2; width <= 1024; width *= 2){
         if (i % width >= width / 2){
             visible_substances[i + substance_counter[i - i % width] - width / 2] = visible_substances[i];
         }
@@ -331,7 +331,7 @@ void prerender(uint i){
 
     // load substances into shared memory
     if (i < 32){
-        substances[i] = s;//input_data.substances[visible_substances[i]];
+        substances[i] = input_data.substances[visible_substances[i]];
     }
 
     substance_bins[0] = 3;
