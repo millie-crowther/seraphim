@@ -1,7 +1,6 @@
 #include "render/octree.h"
 
 #include "core/constant.h"
-#include "render/painter.h"
 #include "sdf/compose.h"
 #include "sdf/primitive.h"
 

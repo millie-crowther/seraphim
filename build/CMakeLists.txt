@@ -39,6 +39,7 @@ set(SOURCES
     ../src/render/swapchain.cpp
     ../src/render/octree.cpp
     ../src/render/substance.cpp
+    ../src/render/matter.cpp
     
     ../src/maths/quat.cpp
     
