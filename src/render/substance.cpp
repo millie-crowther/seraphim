@@ -114,3 +114,8 @@ double
 substance_t::phi(const vec3_t & x) const {
     return sdf->phi(transform.to_local_space(x));
 }
+
+std::weak_ptr<matter_t> 
+substance_t::get_matter() const {
+    return matter;
+}

@@ -26,6 +26,7 @@ public:
 
     std::weak_ptr<sdf3_t> get_sdf() const;
     std::weak_ptr<aabb3_t> get_aabb();
+    std::weak_ptr<matter_t> get_matter() const;
     data_t get_data();
     uint32_t get_id() const;
 
