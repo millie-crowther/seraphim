@@ -116,7 +116,8 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-vec4 colour(vec3 x){
+vec4 colour(vec3 t){
+    // return vec4(texture(colour_texture, t).xyz, 1.0);
     return vec4(0.9, 0.4, 0.6, 1.0);
 }
 
@@ -293,7 +294,7 @@ void render(inout vec3 v_min, inout vec3 v_max){
     ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
     intersection_t i = raycast(r, v_min, v_max);
 
-    vec4 hit_colour = colour(i.x) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max);
+    vec4 hit_colour = colour(i.texture_coord) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
 }
 
