@@ -320,7 +320,7 @@ void prerender(uint i){
     if ((i & 256) != 0) substance_counter[i] += substance_counter[(i & ~256) | 255];    
     if ((i & 512) != 0) substance_counter[i] += substance_counter[(i & ~512) | 511];    
  
-    if (visible_substance){
+    if (visible_substance && substance_counter[i] <= 32){
         substances[substance_counter[i] - 1] = s;
     }
 }
