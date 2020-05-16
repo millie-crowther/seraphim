@@ -2,8 +2,6 @@
 
 #include <stdexcept>
 
-#include "core/blaspheme.h"
-
 texture_t::texture_t(
     uint32_t binding, std::shared_ptr<device_t> device,
     u32vec3_t size, VkImageUsageFlags usage,

@@ -1,7 +1,5 @@
 #include "render/camera.h"
 
-#include "core/blaspheme.h"
-
 camera_t::camera_t(){
     transform.set_position(vec3_t(0.0, 0.5, -3.0));
 }

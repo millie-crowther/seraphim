@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 set (CMAKE_CXX_STANDARD 17)
-project (blaspheme)
+project (seraphim)
 
 SET(COMPILER_FLAGS "-pedantic -Wall")
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}")
@@ -17,8 +17,6 @@ add_subdirectory("glfw")
 
 set(INCLUDE_DIR
     ../include
-    ../build/stb
-    VulkanMemoryAllocator/src
 )
 
 include_directories(${INCLUDE_DIR})
@@ -26,7 +24,7 @@ include_directories(${INCLUDE_DIR})
 set(SOURCES
     ../src/main.cpp
   
-    ../src/core/blaspheme.cpp
+    ../src/core/seraphim.cpp
     ../src/core/buffer.cpp
     ../src/core/command.cpp
     ../src/core/uuid.cpp
@@ -52,6 +50,6 @@ set(SOURCES
     ../src/logic/scheduler.cpp
 )
 
-add_executable(blaspheme ${SOURCES})
-target_link_libraries(blaspheme Vulkan::Vulkan)
-target_link_libraries(blaspheme glfw)
+add_executable(seraphim ${SOURCES})
+target_link_libraries(seraphim Vulkan::Vulkan)
+target_link_libraries(seraphim glfw)

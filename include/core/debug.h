@@ -1,1 +1,1 @@
-#define BLASPHEME_DEBUG true
+#define SERAPHIM_DEBUG true

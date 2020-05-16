@@ -1,5 +1,5 @@
-#ifndef BLASPHEME_H
-#define BLASPHEME_H
+#ifndef SERAPHIM_H
+#define SERAPHIM_H
 
 #include "core/debug.h"
 
@@ -8,18 +8,16 @@
 #include "render/renderer.h"
 #include "ui/window.h"
 
-class blaspheme_t {
+class seraphim_t {
 private:
-    /*
-      initialisation functions
-    */
+    // initialisation functions
     void create_instance();
     std::vector<const char *> get_required_extensions();
 
 	std::shared_ptr<device_t> device;
 
     // debug fields
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     VkDebugReportCallbackEXT callback;
     bool check_validation_layers();
     bool setup_debug_callback();
@@ -37,8 +35,8 @@ private:
     std::shared_ptr<camera_t> test_camera;
 
 public:
-    blaspheme_t();
-    ~blaspheme_t();
+    seraphim_t();
+    ~seraphim_t();
 
     void run();
 

@@ -1,4 +1,4 @@
-#include "core/blaspheme.h"
+#include "core/seraphim.h"
 
 #include <cmath>
 #include <iostream>
@@ -13,14 +13,14 @@
 
 #include "logic/scheduler.h"
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
 const std::vector<const char *> validation_layers = {
     "VK_LAYER_LUNARG_standard_validation"
 };
 #endif
 
-blaspheme_t::blaspheme_t(){
-#if BLASPHEME_DEBUG
+seraphim_t::seraphim_t(){
+#if SERAPHIM_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else 
     std::cout << "Running in release mode." << std::endl;
@@ -47,7 +47,7 @@ blaspheme_t::blaspheme_t(){
 	    std::cout << "\t" << extension.extensionName << std::endl;
     }
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     if (!setup_debug_callback()){
         throw std::runtime_error("Error: Failed to setup debug callback.");
     }
@@ -57,7 +57,7 @@ blaspheme_t::blaspheme_t(){
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     device = std::make_shared<device_t>(instance, surface, validation_layers);
 
     VkPhysicalDeviceProperties properties = {};
@@ -77,7 +77,7 @@ blaspheme_t::blaspheme_t(){
     );
 }
 
-blaspheme_t::~blaspheme_t(){
+seraphim_t::~seraphim_t(){
     vkDeviceWaitIdle(device->get_device());
 
     // delete renderer early to release resources at appropriate time
@@ -87,7 +87,7 @@ blaspheme_t::~blaspheme_t(){
     device.reset();
 
     // destroy debug callback
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
         instance, "vkDestroyDebugReportCallbackEXT"
     );
@@ -108,18 +108,18 @@ blaspheme_t::~blaspheme_t(){
 }
 
 std::weak_ptr<renderer_t> 
-blaspheme_t::get_renderer() const {
+seraphim_t::get_renderer() const {
     return renderer;
 }
 
 std::vector<const char *>
-blaspheme_t::get_required_extensions(){
+seraphim_t::get_required_extensions(){
     uint32_t      extension_count = 0;
     const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
     std::vector<const char *> required_extensions(glfw_extensions, glfw_extensions + extension_count);
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     required_extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
 #endif
 
@@ -127,8 +127,8 @@ blaspheme_t::get_required_extensions(){
 }
 
 void
-blaspheme_t::create_instance(){
-#if BLASPHEME_DEBUG
+seraphim_t::create_instance(){
+#if SERAPHIM_DEBUG
     if (!check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
     }
@@ -173,7 +173,7 @@ blaspheme_t::create_instance(){
         std::cout << "\t" << create_info.ppEnabledExtensionNames[i] << std::endl;
     }
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
     create_info.ppEnabledLayerNames = validation_layers.data();
     create_info.enabledLayerCount   = validation_layers.size();
 #else
@@ -191,7 +191,7 @@ blaspheme_t::create_instance(){
     }
 }
 
-#if BLASPHEME_DEBUG
+#if SERAPHIM_DEBUG
 static VKAPI_ATTR VkBool32 VKAPI_CALL 
 debug_callback(
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
@@ -203,7 +203,7 @@ debug_callback(
 }
 
 bool
-blaspheme_t::setup_debug_callback(){
+seraphim_t::setup_debug_callback(){
     VkDebugReportCallbackCreateInfoEXT create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT 
@@ -219,7 +219,7 @@ blaspheme_t::setup_debug_callback(){
 }
 
 bool
-blaspheme_t::check_validation_layers(){
+seraphim_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -235,7 +235,7 @@ blaspheme_t::check_validation_layers(){
 #endif
 
 void
-blaspheme_t::run(){
+seraphim_t::run(){
     uint32_t current_frame = 0;
     uint32_t frequency = 50;
     auto   previous   = std::chrono::steady_clock::now();
@@ -261,6 +261,6 @@ blaspheme_t::run(){
 }
 
 std::weak_ptr<window_t> 
-blaspheme_t::get_window() const {
+seraphim_t::get_window() const {
     return window;
 }

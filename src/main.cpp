@@ -1,3 +1,3 @@
-#include "core/blaspheme.h"
+#include "core/seraphim.h"
 
-int main(){ blaspheme_t().run(); }
+int main(){ seraphim_t().run(); }
