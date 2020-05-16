@@ -28,14 +28,11 @@ substance_t::get_sdf() const {
 
 substance_t::data_t
 substance_t::get_data(){
-    // make sure aabb is created
-    get_aabb();
-
     return data_t(
-        aabb->get_centre().cast<float>(),
+        get_aabb().lock()->get_centre().cast<float>(),
         root,
 
-        static_cast<float>(aabb->get_size().chebyshev_norm()),
+        static_cast<float>(get_aabb().lock()->get_size().chebyshev_norm()),
         transform.get_rotation().inverse().pack(),
         id
     );
