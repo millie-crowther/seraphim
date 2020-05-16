@@ -320,16 +320,16 @@ void prerender(uint i){
     bool visible_substance = s.id != ~0 && is_visible(s);
     substance_counter[i] = uint(visible_substance);
     
-    if ((i &   1) != 0) substance_counter[i] += substance_counter[(i &    ~1)      ];    
-    if ((i &   2) != 0) substance_counter[i] += substance_counter[(i &    ~3) |   1];    
-    if ((i &   4) != 0) substance_counter[i] += substance_counter[(i &    ~7) |   3];    
-    if ((i &   8) != 0) substance_counter[i] += substance_counter[(i &   ~15) |   7];    
-    if ((i &  16) != 0) substance_counter[i] += substance_counter[(i &   ~31) |  15];    
-    if ((i &  32) != 0) substance_counter[i] += substance_counter[(i &   ~63) |  31];    
-    if ((i &  64) != 0) substance_counter[i] += substance_counter[(i &  ~127) |  63];    
-    if ((i & 128) != 0) substance_counter[i] += substance_counter[(i &  ~255) | 127];    
-    if ((i & 256) != 0) substance_counter[i] += substance_counter[(i &  ~511) | 255];    
-    if ((i & 512) != 0) substance_counter[i] += substance_counter[(i & ~1023) | 511];    
+    if ((i &   1) != 0) substance_counter[i] += substance_counter[(i &   ~1)      ];    
+    if ((i &   2) != 0) substance_counter[i] += substance_counter[(i &   ~2) |   1];    
+    if ((i &   4) != 0) substance_counter[i] += substance_counter[(i &   ~4) |   3];    
+    if ((i &   8) != 0) substance_counter[i] += substance_counter[(i &   ~8) |   7];    
+    if ((i &  16) != 0) substance_counter[i] += substance_counter[(i &  ~16) |  15];    
+    if ((i &  32) != 0) substance_counter[i] += substance_counter[(i &  ~32) |  31];    
+    if ((i &  64) != 0) substance_counter[i] += substance_counter[(i &  ~64) |  63];    
+    if ((i & 128) != 0) substance_counter[i] += substance_counter[(i & ~128) | 127];    
+    if ((i & 256) != 0) substance_counter[i] += substance_counter[(i & ~256) | 255];    
+    if ((i & 512) != 0) substance_counter[i] += substance_counter[(i & ~512) | 511];    
  
     // load substances into shared memory
     if (visible_substance){
