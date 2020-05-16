@@ -4,8 +4,6 @@
 #include <vector>
 #include <memory>
 
-#include "vk_mem_alloc.h"
-
 #include "core/buffer.h"
 #include "core/command.h"
 #include "core/device.h"
@@ -32,9 +30,8 @@ private:
 public:
     // constructors and destructors
     texture_t(
-        VmaAllocator allocator,
         uint32_t binding, std::shared_ptr<device_t> device,
-        u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
+        u32vec3_t size, VkImageUsageFlags usage,
         VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
     );
     ~texture_t();

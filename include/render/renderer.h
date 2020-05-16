@@ -56,7 +56,6 @@ private:
     u32vec2_t work_group_count;
     u32vec2_t work_group_size;
     push_constant_t push_constants;
-    VmaAllocator allocator;
     std::shared_ptr<device_t> device;
     std::vector<VkFramebuffer> framebuffers;
     VkSurfaceKHR surface;
@@ -135,7 +134,7 @@ private:
 public:
     // constructors and destructors
     renderer_t(
-        VmaAllocator allocator, std::shared_ptr<device_t> device,
+        std::shared_ptr<device_t> device,
         VkSurfaceKHR surface, std::shared_ptr<window_t> window,
         std::shared_ptr<camera_t> test_camera,
         u32vec2_t work_group_count, u32vec2_t work_group_size

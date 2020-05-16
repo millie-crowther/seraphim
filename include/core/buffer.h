@@ -1,8 +1,6 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "vk_mem_alloc.h"
-
 #include <cstring>
 #include <memory>
 
@@ -12,9 +10,7 @@
 
 class buffer_t {
 private:
-    VmaAllocator allocator;
     std::shared_ptr<device_t> device;
-    VmaAllocation allocation;
     VkBuffer buffer;
     VkDeviceMemory memory;
     uint32_t size;
@@ -22,8 +18,12 @@ private:
     VkDescriptorBufferInfo desc_buffer_info;
 
 public:
+    enum usage_t {
+        device_local, host_to_device, device_to_host, host_local
+    };
+
     // constructors and destructors
-    buffer_t(VmaAllocator allocator, uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, VmaMemoryUsage vma_usage);
+    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, usage_t usage);
     ~buffer_t();
 
     // public methods
@@ -63,6 +63,8 @@ public:
     VkDescriptorSetLayoutBinding get_descriptor_set_layout_binding() const;
 
     VkBuffer get_buffer() const;
+
+    uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags prop) const;
 };
 
 #endif

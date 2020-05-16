@@ -9,12 +9,11 @@
 #include <stdexcept>
 
 renderer_t::renderer_t(
-    VmaAllocator allocator, std::shared_ptr<device_t> device,
+    std::shared_ptr<device_t> device,
     VkSurfaceKHR surface, std::shared_ptr<window_t> window,
     std::shared_ptr<camera_t> test_camera,
     u32vec2_t work_group_count, u32vec2_t work_group_size
 ){
-    this->allocator = allocator;
     this->device = device;
     this->surface = surface;
 
@@ -70,15 +69,15 @@ renderer_t::renderer_t(
     ) * 2;
 
     normal_texture = std::make_unique<texture_t>(
-        allocator, 11, device, size, 
-        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        11, device, size, 
+        VK_IMAGE_USAGE_SAMPLED_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
 
     colour_texture = std::make_unique<texture_t>(
-        allocator, 12, device, size, 
-        VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 
+        12, device, size, 
+        VK_IMAGE_USAGE_SAMPLED_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
         VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
     );
@@ -95,8 +94,8 @@ renderer_t::renderer_t(
     create_sync();
 
     render_texture = std::make_unique<texture_t>(
-        allocator, 10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1u), 
-        VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1u), 
+        VK_IMAGE_USAGE_STORAGE_BIT,
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );
 
@@ -736,24 +735,24 @@ renderer_t::create_buffers(){
     uint32_t s = work_group_size.volume();
 
     input_buffer = std::make_shared<buffer_t>(
-        allocator, 1, device, 
+        1, device, 
         sizeof(substance_t::data_t) * s + sizeof(octree_node_t) * c * s, 
-        VMA_MEMORY_USAGE_CPU_TO_GPU
+        buffer_t::usage_t::host_to_device
     );
 
     requests.resize(c);
     request_buffer = std::make_shared<buffer_t>(
-        allocator, 2, device, sizeof(request_t) * c, VMA_MEMORY_USAGE_GPU_TO_CPU
+        2, device, sizeof(request_t) * c, buffer_t::usage_t::device_to_host
     );
 
     buffers = { 
         input_buffer, request_buffer, 
-        std::make_shared<buffer_t>(allocator, 3, device, c * 32, VMA_MEMORY_USAGE_GPU_ONLY)
+        std::make_shared<buffer_t>(3, device, c * 32, buffer_t::usage_t::device_local)
     };
 
     texture_staging_buffer = std::make_shared<buffer_t>(
-        allocator, ~0, device, 
-        c * sizeof(uint32_t) * 8 * 2, VMA_MEMORY_USAGE_CPU_ONLY
+        ~0, device, 
+        c * sizeof(uint32_t) * 8 * 2, buffer_t::usage_t::host_local
     );
 }
 

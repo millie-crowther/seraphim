@@ -25,7 +25,6 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     ../src/main.cpp
-    ../src/lib.cpp
   
     ../src/core/blaspheme.cpp
     ../src/core/buffer.cpp

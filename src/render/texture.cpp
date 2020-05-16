@@ -5,9 +5,8 @@
 #include "core/blaspheme.h"
 
 texture_t::texture_t(
-    VmaAllocator allocator,
     uint32_t binding, std::shared_ptr<device_t> device,
-    u32vec3_t size, VkImageUsageFlags usage, VkMemoryPropertyFlagBits memory_property,
+    u32vec3_t size, VkImageUsageFlags usage,
     VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
 ){    
     this->binding = binding;
@@ -47,7 +46,7 @@ texture_t::texture_t(
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc_info.allocationSize = mem_req.size;
-    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, memory_property);
+    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     if (vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");

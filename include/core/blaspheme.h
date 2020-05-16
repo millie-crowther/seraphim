@@ -3,8 +3,6 @@
 
 #include "core/debug.h"
 
-#include "vk_mem_alloc.h"
-
 #include <string>
 #include <vector>
 #include "render/renderer.h"
@@ -29,7 +27,6 @@ private:
 
     std::shared_ptr<renderer_t> renderer;
 
-	VmaAllocator allocator;
     VkInstance instance;
     VkSurfaceKHR surface;
 

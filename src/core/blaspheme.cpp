@@ -70,17 +70,10 @@ blaspheme_t::blaspheme_t(){
     device = std::make_shared<device_t>(instance, surface, {});
 #endif
 
-    // initialise vulkan memory allocator
-    VmaAllocatorCreateInfo allocator_info = {};
-    allocator_info.physicalDevice = device->get_physical_device();
-    allocator_info.device = device->get_device();
-    
-    vmaCreateAllocator(&allocator_info, &allocator);
-
     test_camera = std::make_shared<camera_t>();
 
     renderer = std::make_shared<renderer_t>(
-        allocator, device, surface, window, test_camera, work_group_count, work_group_size
+        device, surface, window, test_camera, work_group_count, work_group_size
     );
 }
 
@@ -89,8 +82,6 @@ blaspheme_t::~blaspheme_t(){
 
     // delete renderer early to release resources at appropriate time
     renderer.reset();
-
-    vmaDestroyAllocator(allocator);
 
     // destroy device
     device.reset();
