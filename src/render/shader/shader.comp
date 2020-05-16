@@ -319,45 +319,29 @@ void prerender(uint i){
     // visibility check on substances
     substance_t s = input_data.substances[i];
     visible_substances[i] = mix(~0, i, s.id != ~0 && is_visible(s));
-
     substance_counter[i] = uint(visible_substances[i] != ~0);
+    
+    // barrier needed here to synchronize following reduction
+    barrier(); 
 
     if ((i & 1) != 0) visible_substances[i + substance_counter[i & ~1] - 1] = visible_substances[i];
     if ((i & 1) == 0) substance_counter[i] += substance_counter[i + 1];
-    barrier();
-
     if ((i & 2) != 0) visible_substances[i + substance_counter[i & ~3] - 2] = visible_substances[i];
     if ((i & 3) == 0) substance_counter[i] += substance_counter[i + 2];
-    barrier();
-
     if ((i & 4) != 0) visible_substances[i + substance_counter[i & ~7] - 4] = visible_substances[i];
     if ((i & 7) == 0) substance_counter[i] += substance_counter[i + 4];
-    barrier();
-
     if ((i & 8) != 0) visible_substances[i + substance_counter[i & ~15] - 8] = visible_substances[i];
     if ((i & 15) == 0) substance_counter[i] += substance_counter[i + 8];
-    barrier();
-
     if ((i & 16) != 0) visible_substances[i + substance_counter[i & ~31] - 16] = visible_substances[i];
     if ((i & 31) == 0) substance_counter[i] += substance_counter[i + 16];
-    barrier();
-
     if ((i & 32) != 0) visible_substances[i + substance_counter[i & ~63] - 32] = visible_substances[i];
     if ((i & 63) == 0) substance_counter[i] += substance_counter[i + 32];
-    barrier();
-
     if ((i & 64) != 0) visible_substances[i + substance_counter[i & ~127] - 64] = visible_substances[i];
     if ((i & 127) == 0) substance_counter[i] += substance_counter[i + 64];
-    barrier();
-
     if ((i & 128) != 0) visible_substances[i + substance_counter[i & ~255] - 128] = visible_substances[i];
     if ((i & 255) == 0) substance_counter[i] += substance_counter[i + 128];
-    barrier();
-
     if ((i & 256) != 0) visible_substances[i + substance_counter[i & ~511] - 256] = visible_substances[i];
     if ((i & 511) == 0) substance_counter[i] += substance_counter[i + 256];
-    barrier();
-
     if ((i & 512) != 0) visible_substances[i + substance_counter[0] - 512] = visible_substances[i];
     if (i == 0) substance_counter[0] += substance_counter[512];
  
