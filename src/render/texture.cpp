@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "core/buffer.h"
+
 texture_t::texture_t(
     uint32_t binding, std::shared_ptr<device_t> device,
     u32vec3_t size, VkImageUsageFlags usage,
@@ -44,7 +46,7 @@ texture_t::texture_t(
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc_info.allocationSize = mem_req.size;
-    mem_alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    mem_alloc_info.memoryTypeIndex = buffer_t::find_memory_type(device, mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     if (vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
@@ -125,23 +127,6 @@ texture_t::~texture_t(){
     vkDestroyImage(device->get_device(), image, nullptr);
     vkFreeMemory(device->get_device(), memory, nullptr);
     vkDestroySampler(device->get_device(), sampler, nullptr);
-}
-
-int
-texture_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties){
-    VkPhysicalDeviceMemoryProperties memory_prop;
-    vkGetPhysicalDeviceMemoryProperties(device->get_physical_device(), &memory_prop);
-
-    for (uint32_t i = 0; i < memory_prop.memoryTypeCount; i++){
-        if (
-            (type_filter & (1 << i)) &&
-            (memory_prop.memoryTypes[i].propertyFlags & properties) == properties
-        ){
-            return i;
-        }
-    }
-
-    throw std::runtime_error("Error: Failed to find appropriate memory type.");
 }
 
 VkImageView

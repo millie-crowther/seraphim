@@ -64,7 +64,7 @@ public:
 
     VkBuffer get_buffer() const;
 
-    uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags prop) const;
+    static uint32_t find_memory_type(std::shared_ptr<device_t> device, uint32_t type_filter, VkMemoryPropertyFlags prop);
 };
 
 #endif

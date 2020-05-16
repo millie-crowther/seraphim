@@ -36,7 +36,7 @@ buffer_t::buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t 
     VkMemoryAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = mem_req.size;
-    alloc_info.memoryTypeIndex = find_memory_type(mem_req.memoryTypeBits, memory_property);
+    alloc_info.memoryTypeIndex = find_memory_type(device, mem_req.memoryTypeBits, memory_property);
 
     if (vkAllocateMemory(device->get_device(), &alloc_info, nullptr, &memory) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to allocate buffer memory.");
@@ -88,7 +88,7 @@ buffer_t::get_buffer() const {
 }
 
 uint32_t 
-buffer_t::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags prop) const {
+buffer_t::find_memory_type(std::shared_ptr<device_t> device, uint32_t type_filter, VkMemoryPropertyFlags prop){
     VkPhysicalDeviceMemoryProperties mem_prop;
     vkGetPhysicalDeviceMemoryProperties(device->get_physical_device(), &mem_prop);
 

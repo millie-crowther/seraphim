@@ -21,11 +21,7 @@ private:
     VkDescriptorType descriptor_type;
     uint32_t binding;
     VkExtent3D extents;
-
     std::shared_ptr<device_t> device;
-
-    // helper methods
-    int find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
 public:
     // constructors and destructors
