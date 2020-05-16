@@ -718,11 +718,11 @@ renderer_t::handle_requests(){
                 ) * 2;
 
                 normal_texture_updates.push_back(
-                    normal_texture->write(texture_staging_buffer, i * 2, p, normals)
+                    normal_texture->write(texture_staging_buffer, i, p, normals)
                 );
 
                 colour_texture_updates.push_back(
-                    colour_texture->write(texture_staging_buffer, i * 2 + 1, p, colours)
+                    colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, colours)
                 );
             }
         }
