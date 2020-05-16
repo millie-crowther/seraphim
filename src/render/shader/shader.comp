@@ -98,7 +98,6 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared uint visible_substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
@@ -318,36 +317,21 @@ void prerender(uint i){
 
     // visibility check on substances
     substance_t s = input_data.substances[i];
-    visible_substances[i] = mix(~0, i, s.id != ~0 && is_visible(s));
-    substance_counter[i] = uint(visible_substances[i] != ~0);
+    bool visible_substance = s.id != ~0 && is_visible(s);
+    substance_counter[i] = uint(visible_substance);
     
     // barrier needed here to synchronize following reduction
-    barrier(); 
+    // barrier(); 
 
-    if ((i & 1) != 0) visible_substances[i + substance_counter[i & ~1] - 1] = visible_substances[i];
-    if ((i & 1) == 0) substance_counter[i] += substance_counter[i + 1];
-    if ((i & 2) != 0) visible_substances[i + substance_counter[i & ~3] - 2] = visible_substances[i];
-    if ((i & 3) == 0) substance_counter[i] += substance_counter[i + 2];
-    if ((i & 4) != 0) visible_substances[i + substance_counter[i & ~7] - 4] = visible_substances[i];
-    if ((i & 7) == 0) substance_counter[i] += substance_counter[i + 4];
-    if ((i & 8) != 0) visible_substances[i + substance_counter[i & ~15] - 8] = visible_substances[i];
-    if ((i & 15) == 0) substance_counter[i] += substance_counter[i + 8];
-    if ((i & 16) != 0) visible_substances[i + substance_counter[i & ~31] - 16] = visible_substances[i];
-    if ((i & 31) == 0) substance_counter[i] += substance_counter[i + 16];
-    if ((i & 32) != 0) visible_substances[i + substance_counter[i & ~63] - 32] = visible_substances[i];
-    if ((i & 63) == 0) substance_counter[i] += substance_counter[i + 32];
-    if ((i & 64) != 0) visible_substances[i + substance_counter[i & ~127] - 64] = visible_substances[i];
-    if ((i & 127) == 0) substance_counter[i] += substance_counter[i + 64];
-    if ((i & 128) != 0) visible_substances[i + substance_counter[i & ~255] - 128] = visible_substances[i];
-    if ((i & 255) == 0) substance_counter[i] += substance_counter[i + 128];
-    if ((i & 256) != 0) visible_substances[i + substance_counter[i & ~511] - 256] = visible_substances[i];
-    if ((i & 511) == 0) substance_counter[i] += substance_counter[i + 256];
-    if ((i & 512) != 0) visible_substances[i + substance_counter[0] - 512] = visible_substances[i];
-    if (i == 0) substance_counter[0] += substance_counter[512];
+    for (uint width = 2; width <= 1024; width *= 2){
+        if ((i & (width / 2)) != 0){
+            substance_counter[i] += substance_counter[(i & ~(width - 1)) | (width / 2 - 1)];    
+        }
+    }
  
     // load substances into shared memory
-    if (i < 32){
-        substances[i] = input_data.substances[visible_substances[i]];
+    if (visible_substance){
+        substances[substance_counter[i] - 1] = s;
     }
 
     substance_bins[0] = 3;
