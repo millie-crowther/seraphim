@@ -67,7 +67,7 @@ seraphim_t::seraphim_t(){
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
     std::cout << "\tMaximum image size: " << properties.limits.maxImageDimension3D << std::endl;
 #else   
-    device = std::make_shared<device_t>(instance, surface, {});
+    device = std::make_shared<device_t>(instance, surface, std::vector<const char *>());
 #endif
 
     test_camera = std::make_shared<camera_t>();
@@ -105,6 +105,8 @@ seraphim_t::~seraphim_t(){
     window.reset();
 
     glfwTerminate();
+
+    std::cout << "Seraphim engine exiting gracefully." << std::endl;
 }
 
 std::weak_ptr<renderer_t> 
