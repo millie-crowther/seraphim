@@ -11,7 +11,6 @@ const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
 
-const uvec2 work_group_count = uvec2(12);
 const float sqrt3 = 1.73205080757;
 const uint max_depth = 16;
 
@@ -111,7 +110,7 @@ float expected_size(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * work_group_count.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
 vec4 colour(vec3 t){
@@ -173,7 +172,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     // if necessary, request more data from CPU
     // TODO: move this to postrender(), remove atomic operation
     bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0;
-    uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, work_group_count.x)));
+    uint request_id = uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)));
     uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
     if (child != 0 && should_request){
         input_data.octree[i + work_group_offset()].x |= child;
@@ -188,8 +187,8 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     // calculate texture coordinate
     t = (r.x - c_prev + s * 4) / (s * 8);
     t += vec3(
-        (i + work_group_offset()) % (gl_WorkGroupSize.x * work_group_count.x) / 8,
-        (i + work_group_offset()) / (gl_WorkGroupSize.y * work_group_count.y),
+        (i + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
+        (i + work_group_offset()) / (gl_WorkGroupSize.y * gl_NumWorkGroups.y),
         0
     );
     t /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
