@@ -24,16 +24,18 @@ public:
 
 class response_t {
 private:
-    std::array<octree_node_t, 8> nodes;
+    std::array<u32vec2_t, 8> nodes;
     std::array<uint32_t, 8> normals;
     std::array<uint32_t, 8> colours;
+
+    uint32_t squash(const vec4_t & x) const;    
 
 public:
     response_t(const call_t & call, std::weak_ptr<substance_t> substance);
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    const std::array<octree_node_t, 8> & get_nodes() const;
+    std::array<octree_node_t, 8> get_nodes() const;
 };
 
 #endif
