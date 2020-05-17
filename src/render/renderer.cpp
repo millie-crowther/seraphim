@@ -683,48 +683,32 @@ renderer_t::handle_requests(){
     normal_texture_updates.clear();
     colour_texture_updates.clear();
 
-    request_buffer->read(requests, 0);
+    call_buffer->read(calls, 0);
 
-    for (uint32_t i = 0; i < requests.size(); i++){
-        auto r = requests[i];
-        if (r.child != 0){
-            if (auto substance = substances[r.objectID].lock()){
-                vec3_t ra = vec3_t(substance->get_data().r) / (1 << r.depth);
-                vec3_t c = r.c - substance->get_data().c;
-
-                std::vector<octree_node_t> new_node = octree_node_t::create(c, ra, substance->get_sdf());
-                uint32_t child_index = work_group_size.volume() * sizeof(substance_t::data_t) + r.child * sizeof(octree_node_t);
+    for (uint32_t i = 0; i < work_group_count.volume(); i++){
+        if (calls[i].child != 0){
+            response_t response(calls[i], substances[calls[i].get_substance_ID()]);
                 
-                input_buffer->write(new_node, child_index);
-                request_buffer->write(std::vector<request_t>(1), i * sizeof(request_t));
+            input_buffer->write(
+                response.get_nodes(), 
+                work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(octree_node_t)
+            );
 
-                std::array<uint32_t, 8> normals = octree_node_t::get_normals(
-                    c, ra, substance->get_sdf()
-                );
+            call_buffer->write(std::vector<call_t>(1), i * sizeof(call_t));
 
-                std::array<uint32_t, 8> colours;
-                for (uint8_t o = 0; o < 8; o++){
-                    vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(ra);
-                    vec3_t c = (substance->get_matter().lock()->get_colour(c + d) + 1) / 2.0 * 255.0;
-                    u8vec4_t c8(c[0], c[1], c[2], 0);
+            u32vec3_t p = u32vec3_t(
+                (calls[i].child % (work_group_size[0] * work_group_count[0])) / 8,
+                calls[i].child / (work_group_size[0] * work_group_count[0]),
+                0u
+            ) * 2;
 
-                    colours[o] = *reinterpret_cast<uint32_t *>(&c8);
-                }
+            normal_texture_updates.push_back(
+                normal_texture->write(texture_staging_buffer, i, p, response.get_normals())
+            );
 
-                u32vec3_t p = u32vec3_t(
-                    (r.child % (work_group_size[0] * work_group_count[0])) / 8,
-                    r.child / (work_group_size[0] * work_group_count[0]),
-                    0u
-                ) * 2;
-
-                normal_texture_updates.push_back(
-                    normal_texture->write(texture_staging_buffer, i, p, normals)
-                );
-
-                colour_texture_updates.push_back(
-                    colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, colours)
-                );
-            }
+            colour_texture_updates.push_back(
+                colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours())
+            );
         }
     }   
 }
@@ -740,13 +724,13 @@ renderer_t::create_buffers(){
         buffer_t::usage_t::host_to_device
     );
 
-    requests.resize(c);
-    request_buffer = std::make_shared<buffer_t>(
-        2, device, sizeof(request_t) * c, buffer_t::usage_t::device_to_host
+    calls.resize(c);
+    call_buffer = std::make_shared<buffer_t>(
+        2, device, sizeof(call_t) * c, buffer_t::usage_t::device_to_host
     );
 
     buffers = { 
-        input_buffer, request_buffer, 
+        input_buffer, call_buffer, 
         std::make_shared<buffer_t>(3, device, c * 32, buffer_t::usage_t::device_local)
     };
 
@@ -763,7 +747,10 @@ renderer_t::initialise_buffers(){
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){
-            std::vector<octree_node_t> root_node = octree_node_t::create(vec3_t(), vec3_t(hyper::rho), substance->get_sdf());
+            call_t call;
+            call.c = vec3_t();
+            call.depth = 0;
+            std::vector<octree_node_t> root_node = response_t(call, substance).get_nodes();
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){
                 for (uint32_t k = 0; k < 8; k++){

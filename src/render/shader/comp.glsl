@@ -70,9 +70,9 @@ struct request_t {
     uint depth;
 
     uint child;
-    uint _1;
+    uint unused;
     uint substanceID;
-    uint _2;
+    uint status;
 };
 
 layout (binding = 2) buffer request_buffer { request_t requests[]; } requests;
@@ -173,7 +173,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     // TODO: move this to postrender(), remove atomic operation
     bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0;
     uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
-    request_t request = request_t(c, depth, 0, 0, sub.id, 0);
+    request_t request = request_t(c, depth, 0, 0, sub.id, 1);
     if (should_request && child != 0){
         input_data.octree[i + work_group_offset()].x |= child;
         request.child = child + work_group_offset();

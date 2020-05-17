@@ -8,20 +8,6 @@ octree_node_t::octree_node_t(){
     header = node_unused_flag;
 }
 
-std::vector<octree_node_t>
-octree_node_t::create(const vec3_t & c, const vec3_t & r, std::weak_ptr<sdf3_t> weak_sdf){
-    std::vector<octree_node_t> children;
-
-    if (auto sdf = weak_sdf.lock()){
-        for (uint8_t o = 0; o < 8; o++){
-            vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(r);
-            children.emplace_back(c + d / 2, r / 2, c + d, sdf);
-        }
-    }
-
-    return children;
-}
-
 octree_node_t::octree_node_t(const vec3_t & c, const vec3_t & r, const vec3_t & vertex, std::shared_ptr<sdf3_t> sdf){
     header = 0;
 
@@ -78,21 +64,4 @@ octree_node_t::intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sd
 
     // 6. default case
     return false;
-}
-
-std::array<uint32_t, 8>
-octree_node_t::get_normals(const vec3_t & c, const vec3_t & r, std::weak_ptr<sdf3_t> weak_sdf){
-    std::array<uint32_t, 8> normals;
-
-    if (auto sdf = weak_sdf.lock()){
-        for (uint8_t o = 0; o < 8; o++){
-            vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1) - 1).hadamard(r);
-            vec3_t n = (sdf->normal(c + d) + 1) / 2.0 * 255.0;
-            u8vec4_t n8(n[0], n[1], n[2], 0);
-
-            normals[o] = *reinterpret_cast<uint32_t *>(&n8);
-        }
-    }
-
-    return normals;
 }

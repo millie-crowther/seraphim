@@ -16,6 +16,7 @@
 #include "core/command.h"
 #include "render/substance.h"
 #include "render/octree.h"
+#include "render/call_and_response.h"
 
 class renderer_t {
 private:
@@ -33,20 +34,6 @@ private:
 
         f32vec3_t camera_up;
         float dummy4;
-    };
-    
-    struct request_t {
-        f32vec3_t c;
-        uint32_t depth;
-
-        uint32_t child;
-        uint32_t unused2;
-        uint32_t objectID;
-        uint32_t unused3;
-
-        request_t(){
-            child = 0;
-        }
     };
 
     // constants
@@ -102,10 +89,10 @@ private:
     // buffers
     std::vector<std::shared_ptr<buffer_t>> buffers;
     std::shared_ptr<buffer_t> input_buffer;
-    std::shared_ptr<buffer_t> request_buffer;
+    std::shared_ptr<buffer_t> call_buffer;
     std::shared_ptr<buffer_t> texture_staging_buffer;
 
-    std::vector<request_t> requests;
+    std::vector<call_t> calls;
     std::vector<VkBufferImageCopy> normal_texture_updates;
     std::vector<VkBufferImageCopy> colour_texture_updates;
 
