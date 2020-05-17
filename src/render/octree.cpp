@@ -4,6 +4,8 @@
 #include "sdf/compose.h"
 #include "sdf/primitive.h"
 
+uint32_t octree_node_t::node_unused_flag = 1 << 25;
+
 octree_node_t::octree_node_t(){
     header = node_unused_flag;
 }

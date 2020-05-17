@@ -35,7 +35,7 @@ public:
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    std::array<octree_node_t, 8> get_nodes() const;
+    const std::array<u32vec2_t, 8> & get_nodes() const;
 };
 
 #endif

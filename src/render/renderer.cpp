@@ -3,6 +3,7 @@
 #include "sdf/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
+#include "render/octree.h"
 
 #include <chrono>
 #include <ctime>
@@ -742,8 +743,10 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<octree_node_t> initial_octree;
-    initial_octree.resize(work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1]);
+    std::vector<u32vec2_t> initial_octree(
+        work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
+        u32vec2_t(octree_node_t::node_unused_flag)
+    );
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){

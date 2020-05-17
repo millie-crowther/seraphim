@@ -46,14 +46,9 @@ response_t::get_colours() const {
     return colours;
 }
 
-std::array<octree_node_t, 8>
+const std::array<u32vec2_t, 8> &
 response_t::get_nodes() const {
-    std::array<octree_node_t, 8> r;
-    for (int i = 0; i < 8; i++){
-        r[i].header = nodes[i][0];
-        r[i].geometry = nodes[i][1];
-    }
-    return r;
+    return nodes;
 }
 
 uint32_t
