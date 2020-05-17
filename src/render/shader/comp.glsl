@@ -213,8 +213,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
         uint expected_depth = expected_depth(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !hit && substanceID < 3; substanceID++){
-            substance_t s = substances[substanceID];
-            phi = min(phi, phi_s(r, s, expected_depth, normal, texture_coord));
+            phi = min(phi, phi_s(r, substances[substanceID], expected_depth, normal, texture_coord));
             hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;

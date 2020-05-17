@@ -32,8 +32,8 @@ renderer_t::renderer_t(
 
     set_main_camera(test_camera);
 
-    fragment_shader_code = resources::load_file("../src/render/shader/shader.frag");
-    vertex_shader_code   = resources::load_file("../src/render/shader/shader.vert");
+    fragment_shader_code = resources::load_file("../src/render/shader/frag.glsl");
+    vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
 
     floor_substance = std::make_shared<substance_t>(0, 0, 
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0)),
@@ -185,7 +185,7 @@ renderer_t::create_compute_pipeline(){
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
-    std::string compute_shader_code = resources::load_file("../src/render/shader/shader.comp");
+    std::string compute_shader_code = resources::load_file("../src/render/shader/comp.glsl");
 
     VkShaderModule module = create_shader_module(compute_shader_code);
 
