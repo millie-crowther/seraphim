@@ -24,7 +24,7 @@ public:
 
 class response_t {
 private:
-    std::vector<octree_node_t> nodes;
+    std::array<octree_node_t, 8> nodes;
     std::array<uint32_t, 8> normals;
     std::array<uint32_t, 8> colours;
 
@@ -33,7 +33,7 @@ public:
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    const std::vector<octree_node_t> & get_nodes() const;
+    const std::array<octree_node_t, 8> & get_nodes() const;
 };
 
 #endif

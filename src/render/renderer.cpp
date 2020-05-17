@@ -750,7 +750,7 @@ renderer_t::initialise_buffers(){
             call_t call;
             call.c = vec3_t();
             call.depth = 0;
-            std::vector<octree_node_t> root_node = response_t(call, substance).get_nodes();
+            auto root_node = response_t(call, substance).get_nodes();
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){
                 for (uint32_t k = 0; k < 8; k++){

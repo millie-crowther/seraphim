@@ -25,7 +25,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
                 normals[o] = *reinterpret_cast<uint32_t *>(&n8);
             
                 // create octree node
-                nodes.emplace_back(c + d / 2, r / 2, c + d, sdf);
+                nodes[o] = octree_node_t(c + d / 2, r / 2, c + d, sdf);
             }
 
             if (auto matter = substance->get_matter().lock()){
@@ -47,7 +47,7 @@ response_t::get_colours() const {
     return colours;
 }
 
-const std::vector<octree_node_t> &
+const std::array<octree_node_t, 8> &
 response_t::get_nodes() const {
     return nodes;
 }
