@@ -17,13 +17,24 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
 
 constexpr uint32_t response_t::node_unused_flag;
 
+vec3_t vertices[] = {
+    vec3_t(-1.0, -1.0, -1.0),
+    vec3_t( 1.0, -1.0, -1.0),
+    vec3_t(-1.0,  1.0, -1.0),
+    vec3_t( 1.0,  1.0, -1.0),
+    vec3_t(-1.0, -1.0,  1.0),
+    vec3_t( 1.0, -1.0,  1.0),
+    vec3_t(-1.0,  1.0,  1.0),
+    vec3_t( 1.0,  1.0,  1.0)
+};
+
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
         vec3_t c = call.c - substance->get_data().c;
         vec3_t r = substance->get_data().r / (1 << call.depth);
 
         for (int o = 0; o < 8; o++){
-            vec3_t d = (vec3_t((o & 1) << 1, o & 2, (o & 4) >> 1)  - 1).hadamard(r);
+            vec3_t d = vertices[o].hadamard(r);
                 
             if (auto sdf = substance->get_sdf().lock()){
                 // create normals
