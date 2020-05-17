@@ -46,7 +46,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             }
 
             if (auto matter = substance->get_matter().lock()){
-                vec3_t c = matter->get_colour(c + d) * 255.0;
+                vec3_t c = matter->get_colour(c + d);
                 colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
             }
         }
