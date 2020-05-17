@@ -687,7 +687,7 @@ renderer_t::handle_requests(){
 
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
         if (calls[i].child != 0){
-            response_t response(calls[i], substances[calls[i].get_substance_ID()]);
+            auto response = get_response(calls[i], substances[calls[i].get_substance_ID()]);
                 
             input_buffer->write(
                 response.get_nodes(), 
@@ -767,4 +767,9 @@ renderer_t::initialise_buffers(){
     std::vector<substance_t::data_t> initial_substances(work_group_size.volume());
     input_buffer->write(initial_substances, 0);
     
+}
+
+response_t
+renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
+    return response_t(call, substance);
 }

@@ -10,6 +10,11 @@ call_t::get_substance_ID() const {
     return substanceID;
 }
 
+bool
+call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
+    return false; // TODO 
+}
+
 constexpr uint32_t response_t::node_unused_flag;
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){

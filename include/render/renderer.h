@@ -91,6 +91,7 @@ private:
     std::shared_ptr<buffer_t> call_buffer;
     std::shared_ptr<buffer_t> texture_staging_buffer;
 
+    std::map<call_t, response_t, call_t::comparator_t> response_cache;
     std::vector<call_t> calls;
     std::vector<VkBufferImageCopy> normal_texture_updates;
     std::vector<VkBufferImageCopy> colour_texture_updates;
@@ -116,6 +117,7 @@ private:
     void cleanup_swapchain();
     void handle_requests();
     void present(uint32_t image_index) const;
+    response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);    
 
 public:
     // constructors and destructors

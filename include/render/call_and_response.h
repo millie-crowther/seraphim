@@ -16,6 +16,10 @@ public:
     uint32_t status;
 
 public:
+    struct comparator_t {
+        bool operator()(const call_t & a, const call_t & b) const;
+    };
+
     call_t();
 
     uint32_t get_substance_ID() const;

@@ -11,4 +11,3 @@ lightweight, lazy raycaster. implemented in vulkan.
 ## dependencies
 * vulkan
 * glfw
-* vulkan memory allocator 
