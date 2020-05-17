@@ -15,7 +15,6 @@
 #include "render/texture.h"
 #include "core/command.h"
 #include "render/substance.h"
-#include "render/octree.h"
 #include "render/call_and_response.h"
 
 class renderer_t {

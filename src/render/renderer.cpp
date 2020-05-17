@@ -3,7 +3,6 @@
 #include "sdf/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
-#include "render/octree.h"
 
 #include <chrono>
 #include <ctime>
@@ -692,7 +691,7 @@ renderer_t::handle_requests(){
                 
             input_buffer->write(
                 response.get_nodes(), 
-                work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(octree_node_t)
+                work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t)
             );
 
             call_buffer->write(std::vector<call_t>(1), i * sizeof(call_t));
@@ -721,7 +720,7 @@ renderer_t::create_buffers(){
 
     input_buffer = std::make_shared<buffer_t>(
         1, device, 
-        sizeof(substance_t::data_t) * s + sizeof(octree_node_t) * c * s, 
+        sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s, 
         buffer_t::usage_t::host_to_device
     );
 
@@ -745,7 +744,7 @@ void
 renderer_t::initialise_buffers(){
     std::vector<u32vec2_t> initial_octree(
         work_group_count[0] * work_group_count[1] * work_group_size[0] * work_group_size[1],
-        u32vec2_t(octree_node_t::node_unused_flag)
+        u32vec2_t(response_t::node_unused_flag)
     );
 
     for (auto pair : substances){

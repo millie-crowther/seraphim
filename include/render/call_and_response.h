@@ -3,7 +3,6 @@
 
 #include "maths/aabb.h"
 #include "maths/vec.h"
-#include "render/octree.h"
 #include "render/substance.h"
 
 class call_t {
@@ -29,8 +28,13 @@ private:
     std::array<uint32_t, 8> colours;
 
     uint32_t squash(const vec4_t & x) const;    
+    bool intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const;
+    u32vec2_t create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const;
 
 public:
+    static constexpr uint32_t node_empty_flag = 1 << 24;
+    static constexpr uint32_t node_unused_flag = 1 << 25;
+
     response_t(const call_t & call, std::weak_ptr<substance_t> substance);
 
     const std::array<uint32_t, 8> & get_normals() const;

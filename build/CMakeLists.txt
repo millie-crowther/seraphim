@@ -34,7 +34,6 @@ set(SOURCES
     ../src/render/texture.cpp
     ../src/render/camera.cpp
     ../src/render/swapchain.cpp
-    ../src/render/octree.cpp
     ../src/render/substance.cpp
     ../src/render/matter.cpp
     ../src/render/call_and_response.cpp
