@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <chrono>
+#include <list>
 #include <map>
 
 #include "core/buffer.h"
@@ -91,7 +92,9 @@ private:
     std::shared_ptr<buffer_t> call_buffer;
     std::shared_ptr<buffer_t> texture_staging_buffer;
 
+    static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
+    std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
     std::vector<call_t> calls;
     std::vector<VkBufferImageCopy> normal_texture_updates;
     std::vector<VkBufferImageCopy> colour_texture_updates;

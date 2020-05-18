@@ -771,5 +771,17 @@ renderer_t::initialise_buffers(){
 
 response_t
 renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
-    return response_t(call, substance);
+    if (response_cache.size() > max_cache_size){
+        response_cache.erase(*prev_calls.begin());
+        prev_calls.pop_front();     
+    } 
+
+    if (response_cache.count(call) == 0){
+        auto result = response_cache.emplace(call, response_t(call, substance));
+        if (std::get<1>(result)){
+            prev_calls.push_back(std::get<0>(result));
+        }
+    }    
+
+    return response_cache[call];
 }

@@ -149,7 +149,7 @@ public:
     } 
 
     T volume() const {
-        return std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>());
+        return std::abs(std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>()));
     }
 
     template<class S>

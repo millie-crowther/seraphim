@@ -12,7 +12,19 @@ call_t::get_substance_ID() const {
 
 bool
 call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
-    return false; // TODO 
+    if (a.substanceID != b.substanceID){
+        return a.substanceID < b.substanceID;
+    }
+    
+    if (a.depth != b.depth){
+        return a.depth < b.depth;
+    }
+
+    if ((a.c - b.c).chebyshev_norm() > hyper::epsilon){
+        return a.c < b.c;
+    } 
+   
+    return false;  
 }
 
 constexpr uint32_t response_t::node_unused_flag;
@@ -27,6 +39,10 @@ vec3_t vertices[] = {
     vec3_t(-1.0,  1.0,  1.0),
     vec3_t( 1.0,  1.0,  1.0)
 };
+
+response_t::response_t(){
+
+}
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
