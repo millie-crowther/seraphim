@@ -267,7 +267,7 @@ vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
-void render(inout vec3 v_min, inout vec3 v_max){
+request_t render(inout vec3 v_min, inout vec3 v_max){
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
     uv.y *= -1;
@@ -278,12 +278,15 @@ void render(inout vec3 v_min, inout vec3 v_max){
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
 
     request_t request;
+    request.status = 0;
 
     ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
     intersection_t i = raycast(r, v_min, v_max, request);
 
     vec4 hit_colour = colour(i.texture_coord) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
+
+    return request;
 }
 
 bool is_visible(substance_t substance){
@@ -324,7 +327,7 @@ void prerender(uint i){
     }
 }
 
-void postrender(uint i, vec3 v_min, vec3 v_max){
+void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c / 8]){
@@ -368,8 +371,8 @@ void main(){
     prerender(i);
 
     barrier();
-    render(v_min, v_max);
+    request_t request = render(v_min, v_max);
     barrier();
 
-    postrender(i, v_min, v_max);
+    postrender(i, v_min, v_max, request);
 }
