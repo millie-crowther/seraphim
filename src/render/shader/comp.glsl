@@ -89,7 +89,8 @@ struct persistent_t {
 layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persistent;
 
 // shared memory
-shared uint vacant_node_index;
+shared uint vacant_node;
+shared uint chosen_request;
 
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -98,12 +99,8 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
-uint expected_depth(vec3 x){
-    return uint(3 * exp(-0.03 * length(x - pc.camera_position)) + 1);
-}
-
 float expected_size(vec3 x){
-    return pc.render_distance / (1 << expected_depth(x)) / 4;
+    return 0.075 * (1 + length(x - pc.camera_position) / 10);
 }
 
 uint work_group_offset(){
@@ -136,7 +133,7 @@ vec3 rotate(vec4 q, vec3 x){
     ) * 2;
 }
 
-float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out vec3 t, inout request_t request){
+float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out vec3 t, inout request_t request){
     vec3 c = vec3(0);
     vec3 c_prev = c;
     vec3 s = vec3(sub.r);
@@ -156,7 +153,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
 
     // perform octree lookup for relevant node
-    for (; depth <= expected_depth && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
+    for (; s.x >= expected_size && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
@@ -168,7 +165,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
 
     // if necessary, request more data from CPU
     // TODO: move this to postrender(), remove atomic operation
-    bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
+    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
     if (should_request) request = request_t(c, depth, 0, i, sub.id, 1);
     
 
@@ -202,10 +199,10 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max, inout reques
     v_max = max(r.x, v_max);
 
     for (steps = 0; !hit && steps < max_steps; steps++){
-        uint expected_depth = expected_depth(r.x);
+        float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !hit && substanceID < 3; substanceID++){
-            phi = min(phi, phi_s(r, substances[substanceID], expected_depth, normal, texture_coord, request));
+            phi = min(phi, phi_s(r, substances[substanceID], expected_size, normal, texture_coord, request));
             hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;
@@ -290,7 +287,8 @@ bool is_visible(substance_t substance){
 
 void prerender(uint i){
     // clear shared variables
-    vacant_node_index = 0;
+    vacant_node = 0;
+    chosen_request = ~0;
     hitmap[i / 8] = false;
 
     // load octree from global memory into shared memory
@@ -298,7 +296,7 @@ void prerender(uint i){
 
     // submit free nodes to request queue
     if ((i & 7) == 0 && (octree[i].x & node_unused_flag) != 0){
-        vacant_node_index = i; 
+        vacant_node = i; 
     }
 
     // visibility check on substances and load into shared memory
@@ -356,8 +354,8 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
     if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
     if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
     if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
-    
-    uint child = atomicAnd(vacant_node_index, mix(~0, 0, request.status != 0)); 
+   
+    uint child = atomicAnd(vacant_node, mix(~0, 0, request.status != 0)); 
     if (request.status != 0 && child != 0){
         input_data.octree[request.parent + work_group_offset()].x |= child;
         request.child = child + work_group_offset();
