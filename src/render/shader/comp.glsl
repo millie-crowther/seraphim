@@ -70,7 +70,7 @@ struct request_t {
     uint depth;
 
     uint child;
-    uint unused;
+    uint parent;
     uint substanceID;
     uint status;
 };
@@ -168,14 +168,9 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
 
     // if necessary, request more data from CPU
     // TODO: move this to postrender(), remove atomic operation
-    bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0;
-    uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
-    request = request_t(c, depth, 0, 0, sub.id, 1);
-    if (should_request && child != 0){
-        input_data.octree[i + work_group_offset()].x |= child;
-        request.child = child + work_group_offset();
-        requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
-    }
+    bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
+    if (should_request) request = request_t(c, depth, 0, i, sub.id, 1);
+    
 
     // calculate distance to intersect plane
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
@@ -361,6 +356,13 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
     if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
     if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
     if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
+    
+    uint child = atomicAnd(vacant_node_index, mix(~0, 0, request.status != 0)); 
+    if (request.status != 0 && child != 0){
+        input_data.octree[request.parent + work_group_offset()].x |= child;
+        request.child = child + work_group_offset();
+        requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
+    }
 }
 
 void main(){
