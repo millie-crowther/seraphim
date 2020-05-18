@@ -136,7 +136,7 @@ vec3 rotate(vec4 q, vec3 x){
     ) * 2;
 }
 
-float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out vec3 t){
+float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out vec3 t, inout request_t request){
     vec3 c = vec3(0);
     vec3 c_prev = c;
     vec3 s = vec3(sub.r);
@@ -170,7 +170,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     // TODO: move this to postrender(), remove atomic operation
     bool should_request = depth <= expected_depth && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0;
     uint child = atomicAnd(vacant_node_index, mix(~0, 0, should_request)); 
-    request_t request = request_t(c, depth, 0, 0, sub.id, 1);
+    request = request_t(c, depth, 0, 0, sub.id, 1);
     if (should_request && child != 0){
         input_data.octree[i + work_group_offset()].x |= child;
         request.child = child + work_group_offset();
@@ -198,7 +198,7 @@ float phi_s(ray_t r, substance_t sub, uint expected_depth, out vec3 normal, out 
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
-intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
+intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max, inout request_t request){
     bool hit = false;
     vec3 normal, texture_coord;
     uint steps;
@@ -210,7 +210,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
         uint expected_depth = expected_depth(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !hit && substanceID < 3; substanceID++){
-            phi = min(phi, phi_s(r, substances[substanceID], expected_depth, normal, texture_coord));
+            phi = min(phi, phi_s(r, substances[substanceID], expected_depth, normal, texture_coord, request));
             hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;
@@ -222,13 +222,13 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max){
     return intersection_t(hit && steps < max_steps, r.x, normal, texture_coord);
 }
 
-float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max){
+float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max, inout request_t request){
     return 1;
-    // intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max);
+    // intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max, request);
     // return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_max){
+vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_max, inout request_t request){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
@@ -242,7 +242,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    float shadow = shadow(light_p, x, v_min, v_max);
+    float shadow = shadow(light_p, x, v_min, v_max, request);
 
     //diffuse
     vec3 l = normalize(light_p - x);
@@ -277,10 +277,12 @@ void render(inout vec3 v_min, inout vec3 v_max){
     vec3 forward = cross(right, up);
     vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
 
-    ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
-    intersection_t i = raycast(r, v_min, v_max);
+    request_t request;
 
-    vec4 hit_colour = colour(i.texture_coord) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max);
+    ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
+    intersection_t i = raycast(r, v_min, v_max, request);
+
+    vec4 hit_colour = colour(i.texture_coord) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
 }
 
