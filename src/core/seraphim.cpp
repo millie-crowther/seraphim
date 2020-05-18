@@ -239,7 +239,7 @@ seraphim_t::check_validation_layers(){
 void
 seraphim_t::run(){
     uint32_t current_frame = 0;
-    uint32_t frequency = 50;
+    uint32_t frequency = 100;
     auto   previous   = std::chrono::steady_clock::now();
 
     while (!window->should_close()){

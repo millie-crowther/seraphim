@@ -99,10 +99,7 @@ shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 uint expected_depth(vec3 x){
-    // TODO: make this sensible
-    // 1. dependent on distance from camera
-    // 2. dependent on closeness to centre of screen
-    return 3;
+    return uint(round(3 * exp(-0.05 * length(x - pc.camera_position)) + 1));
 }
 
 float expected_size(vec3 x){
