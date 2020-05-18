@@ -122,6 +122,7 @@ renderer_t::renderer_t(
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(colour_texture->get_descriptor_write(descriptor_set));
 
         for (auto buffer : buffers){
             write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));

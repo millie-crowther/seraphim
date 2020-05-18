@@ -108,8 +108,8 @@ uint work_group_offset(){
 }
 
 vec4 colour(vec3 t){
-    // return vec4(texture(colour_texture, t).xyz, 1.0);
-    return vec4(0.9, 0.4, 0.6, 1.0);
+    return vec4(texture(colour_texture, t).xyz, 1.0);
+    //return vec4(0.9, 0.4, 0.6, 1.0);
 }
 
 vec3 rotate(vec4 q, vec3 x){
