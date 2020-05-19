@@ -9,6 +9,11 @@
 #include "maths/vec.h"
 
 class buffer_t {
+public:
+    enum usage_t {
+        device_local, host_to_device, device_to_host, host_local
+    };
+
 private:
     std::shared_ptr<device_t> device;
     VkBuffer buffer;
@@ -16,12 +21,11 @@ private:
     uint32_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
+    std::unique_ptr<buffer_t> staging_buffer;
+    usage_t usage;
+    std::vector<VkBufferCopy> updates;
 
 public:
-    enum usage_t {
-        device_local, host_to_device, device_to_host, host_local
-    };
-
     // constructors and destructors
     buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, usage_t usage);
     ~buffer_t();
@@ -42,9 +46,28 @@ public:
         }
 
         uint32_t size = sizeof(typename T::value_type) * source.size();
-        map(offset, size, [&](void * memory_map){
-            std::memcpy(memory_map, source.data(), size);
-        });
+
+        if (usage != device_local){
+            map(offset, size, [&](void * memory_map){
+                std::memcpy(memory_map, source.data(), size);
+            });
+        } else {
+            staging_buffer->write(source, offset);
+
+            VkBufferCopy buffer_copy;
+            buffer_copy.srcOffset = offset;
+            buffer_copy.dstOffset = offset;
+            buffer_copy.size = size;
+            updates.push_back(buffer_copy);
+        }
+    }
+
+    void transfer(VkCommandBuffer command_buffer) const { 
+        vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer, updates.size(), updates.data());
+    }
+
+    void flush(){
+        updates.clear();
     }
 
     template<class T>

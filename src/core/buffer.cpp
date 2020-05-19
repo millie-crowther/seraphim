@@ -4,6 +4,7 @@ buffer_t::buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t 
     this->device = device;
     this->size = size;
     this->binding = binding;
+    this->usage = usage;
 
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
