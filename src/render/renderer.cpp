@@ -37,17 +37,17 @@ renderer_t::renderer_t(
 
     floor_substance = std::make_shared<substance_t>(0, 0, 
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0)),
-        std::make_shared<matter_t>(vec3_t(0.9, 0.3, 0.3))
+        std::make_shared<matter_t>(vec3_t(0.4, 0.3, 0.6))
     );
 
     sphere = std::make_shared<substance_t>(1, 8,
         std::make_shared<primitive::sphere_t<3>>(0.5),
-        std::make_shared<matter_t>(vec3_t(0.3, 0.9, 0.3))
+        std::make_shared<matter_t>(vec3_t(0.8, 0.3, 0.4))
     );
 
     cube = std::make_shared<substance_t>(2, 16, 
         std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5)),
-        std::make_shared<matter_t>(vec3_t(0.3, 0.3, 0.9))
+        std::make_shared<matter_t>(vec3_t(0.7, 0.3, 0.8))
     );
 
     cube->set_position(vec3_t(-2.5, 1.0, 0.5));
@@ -601,7 +601,8 @@ renderer_t::render(){
     }
 
     input_buffer->write(substance_data, 0);
-
+    handle_requests();
+    
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
         push_constants.camera_right = camera->get_right().cast<float>();
@@ -649,7 +650,6 @@ renderer_t::render(){
 
     present(image_index);
 
-    handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
