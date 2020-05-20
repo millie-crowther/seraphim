@@ -26,12 +26,6 @@ private:
     std::vector<VkBufferCopy> updates;
     VkBufferCopy read_buffer_copy;
 
-public:
-    // constructors and destructors
-    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, usage_t usage);
-    ~buffer_t();
-
-    // public methods
     template<class F>
     void map(uint64_t offset, uint64_t size, const F & f){
         void * memory_map;
@@ -40,6 +34,12 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
+public:
+    // constructors and destructors
+    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, usage_t usage);
+    ~buffer_t();
+
+    // public methods
     template<class T>
     void write(const T & source, uint64_t offset){
         if (source.empty()){

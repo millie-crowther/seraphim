@@ -99,8 +99,18 @@ shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
+vec2 uv(){
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    uv = uv * 2.0 - 1.0;
+    uv.y *= -1;
+    return uv;
+}
+
 float expected_size(vec3 x){
-    return 0.075 * (1 + length(x - pc.camera_position) / 10);
+    return 0.075 * (1 + length(
+        (x - pc.camera_position) / 10 + 
+        vec3(uv(), 0) / 2 
+    ));
 }
 
 uint work_group_offset(){
@@ -260,10 +270,7 @@ vec4 sky(){
 }
 
 request_t render(inout vec3 v_min, inout vec3 v_max){
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
-    uv = uv * 2.0 - 1.0;
-    uv.y *= -1;
-    
+    vec2 uv = uv();
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
     vec3 forward = cross(right, up);
