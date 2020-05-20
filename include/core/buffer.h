@@ -24,6 +24,7 @@ private:
     std::unique_ptr<buffer_t> staging_buffer;
     usage_t usage;
     std::vector<VkBufferCopy> updates;
+    VkBufferCopy read_buffer_copy;
 
 public:
     // constructors and destructors
@@ -62,7 +63,7 @@ public:
         }
     }
 
-    void transfer(VkCommandBuffer command_buffer) const { 
+    void record_write(VkCommandBuffer command_buffer) const { 
         vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer, updates.size(), updates.data());
     }
 

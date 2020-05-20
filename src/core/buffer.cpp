@@ -50,6 +50,10 @@ buffer_t::buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t 
     if (usage != host_local){
         staging_buffer = std::make_unique<buffer_t>(~0, device, size, host_local);
     }
+
+    read_buffer_copy.srcOffset = 0;
+    read_buffer_copy.dstOffset = 0;
+    read_buffer_copy.size = size;
 }
 
 buffer_t::~buffer_t(){

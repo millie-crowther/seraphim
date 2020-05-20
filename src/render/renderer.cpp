@@ -601,7 +601,6 @@ renderer_t::render(){
     }
 
     input_buffer->write(substance_data, 0);
-    handle_requests();
     
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
@@ -616,7 +615,7 @@ renderer_t::render(){
     );
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
-        input_buffer->transfer(command_buffer);
+        input_buffer->record_write(command_buffer);
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
@@ -653,6 +652,7 @@ renderer_t::render(){
     present(image_index);
 
     input_buffer->flush();
+    handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
