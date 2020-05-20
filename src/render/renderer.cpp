@@ -616,6 +616,8 @@ renderer_t::render(){
     );
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
+        input_buffer->transfer(command_buffer);
+
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, normal_texture_updates.size(), normal_texture_updates.data()
@@ -650,6 +652,7 @@ renderer_t::render(){
 
     present(image_index);
 
+    input_buffer->flush();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
@@ -767,7 +770,6 @@ renderer_t::initialise_buffers(){
 
     std::vector<substance_t::data_t> initial_substances(work_group_size.volume());
     input_buffer->write(initial_substances, 0);
-    
 }
 
 response_t

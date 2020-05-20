@@ -47,7 +47,7 @@ public:
 
         uint32_t size = sizeof(typename T::value_type) * source.size();
 
-        if (usage != device_local){
+        if (usage == host_local){
             map(offset, size, [&](void * memory_map){
                 std::memcpy(memory_map, source.data(), size);
             });

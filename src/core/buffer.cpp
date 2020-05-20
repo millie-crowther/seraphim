@@ -49,6 +49,10 @@ buffer_t::buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t 
     desc_buffer_info.buffer = buffer;
     desc_buffer_info.offset = 0;
     desc_buffer_info.range  = size;
+
+    if (usage != host_local){
+        staging_buffer = std::make_unique<buffer_t>(~0, device, size, host_local);
+    }
 }
 
 buffer_t::~buffer_t(){
