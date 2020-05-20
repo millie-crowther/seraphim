@@ -725,7 +725,7 @@ renderer_t::create_buffers(){
     input_buffer = std::make_shared<buffer_t>(
         1, device, 
         sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s, 
-        buffer_t::usage_t::host_to_device
+        buffer_t::usage_t::device_local
     );
 
     calls.resize(c);

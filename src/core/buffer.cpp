@@ -16,9 +16,6 @@ buffer_t::buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t 
     if (usage == device_local){
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         memory_property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    } else if (usage == host_to_device){
-        buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        memory_property = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
     } else if (usage == device_to_host){
         buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         memory_property = static_cast<VkMemoryPropertyFlagBits>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);

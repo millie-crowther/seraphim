@@ -11,7 +11,7 @@
 class buffer_t {
 public:
     enum usage_t {
-        device_local, host_to_device, device_to_host, host_local
+        device_local, device_to_host, host_local
     };
 
 private:
