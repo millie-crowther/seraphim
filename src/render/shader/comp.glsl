@@ -96,7 +96,7 @@ shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
-shared uint substance_counter[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
@@ -119,7 +119,6 @@ uint work_group_offset(){
 
 vec4 colour(vec3 t){
     return vec4(texture(colour_texture, t).xyz, 1.0);
-    //return vec4(0.9, 0.4, 0.6, 1.0);
 }
 
 vec3 rotate(vec4 q, vec3 x){
@@ -309,25 +308,43 @@ void prerender(uint i){
     // visibility check on substances and load into shared memory
     substance_t s = input_data.substances[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
-    substance_counter[i] = uint(visible_substance);
+    workspace[i] = uint(visible_substance);
     
-    if ((i &   1) != 0) substance_counter[i] += substance_counter[i &   ~1      ];    
-    if ((i &   2) != 0) substance_counter[i] += substance_counter[i &   ~2 |   1];    
-    if ((i &   4) != 0) substance_counter[i] += substance_counter[i &   ~4 |   3];    
-    if ((i &   8) != 0) substance_counter[i] += substance_counter[i &   ~8 |   7];    
-    if ((i &  16) != 0) substance_counter[i] += substance_counter[i &  ~16 |  15];    
-    if ((i &  32) != 0) substance_counter[i] += substance_counter[i &  ~32 |  31];    
-    if ((i &  64) != 0) substance_counter[i] += substance_counter[i &  ~64 |  63];    
-    if ((i & 128) != 0) substance_counter[i] += substance_counter[i & ~128 | 127];    
-    if ((i & 256) != 0) substance_counter[i] += substance_counter[i & ~256 | 255];    
-    if ((i & 512) != 0) substance_counter[i] += substance_counter[           511];    
+    if ((i &   1) != 0) workspace[i] += workspace[i &   ~1      ];    
+    if ((i &   2) != 0) workspace[i] += workspace[i &   ~2 |   1];    
+    if ((i &   4) != 0) workspace[i] += workspace[i &   ~4 |   3];    
+    if ((i &   8) != 0) workspace[i] += workspace[i &   ~8 |   7];    
+    if ((i &  16) != 0) workspace[i] += workspace[i &  ~16 |  15];    
+    if ((i &  32) != 0) workspace[i] += workspace[i &  ~32 |  31];    
+    if ((i &  64) != 0) workspace[i] += workspace[i &  ~64 |  63];    
+    if ((i & 128) != 0) workspace[i] += workspace[i & ~128 | 127];    
+    if ((i & 256) != 0) workspace[i] += workspace[i & ~256 | 255];    
+    if ((i & 512) != 0) workspace[i] += workspace[           511];    
  
-    if (visible_substance && substance_counter[i] <= 32){
-        substances[substance_counter[i] - 1] = s;
+    if (visible_substance && workspace[i] <= 32){
+        substances[workspace[i] - 1] = s;
     }
 }
 
 void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
+    // arbitrate and submit request
+    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
+    if (i           == 0) workspace[i] = min(workspace[0], workspace[    512]);
+
+    if (workspace[0] == i){
+        input_data.octree[request.parent + work_group_offset()].x |= vacant_node;
+        request.child = vacant_node + work_group_offset();
+        requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
+    }
+
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c / 8]){
@@ -361,13 +378,6 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
     if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
     if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
     if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
-   
-    uint child = atomicAnd(vacant_node, mix(~0, 0, request.status != 0)); 
-    if (request.status != 0 && child != 0){
-        input_data.octree[request.parent + work_group_offset()].x |= child;
-        request.child = child + work_group_offset();
-        requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
-    }
 }
 
 void main(){
@@ -379,6 +389,7 @@ void main(){
 
     barrier();
     request_t request = render(v_min, v_max);
+    workspace[i] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
     postrender(i, v_min, v_max, request);
