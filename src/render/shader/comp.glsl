@@ -312,14 +312,19 @@ void prerender(uint i){
     workspace[i] = uint(visible_substance);
     
     if ((i &   1) != 0) workspace[i] = workspace[i] + workspace[i &   ~1      ];    
+    barrier();
     if ((i &   2) != 0) workspace[i] = workspace[i] + workspace[i &   ~2 |   1];    
+    barrier();
     if ((i &   4) != 0) workspace[i] = workspace[i] + workspace[i &   ~4 |   3];    
+    barrier();
     if ((i &   8) != 0) workspace[i] = workspace[i] + workspace[i &   ~8 |   7];    
+    barrier();
     if ((i &  16) != 0) workspace[i] = workspace[i] + workspace[i &  ~16 |  15];    
     barrier();
     if ((i &  32) != 0) workspace[i] = workspace[i] + workspace[i &  ~32 |  31];    
     barrier();
     if ((i &  64) != 0) workspace[i] = workspace[i] + workspace[i &  ~64 |  63];    
+    barrier();
     if ((i & 128) != 0) workspace[i] = workspace[i] + workspace[i & ~128 | 127];    
     barrier();
     if ((i & 256) != 0) workspace[i] = workspace[i] + workspace[i & ~256 | 255];    
