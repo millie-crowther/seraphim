@@ -35,7 +35,7 @@ public:
 
         VkMemoryPropertyFlagBits memory_property;
 
-        if (is_device_local){
+        if constexpr (is_device_local){
             buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             memory_property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
         } else {
@@ -66,7 +66,7 @@ public:
         desc_buffer_info.offset = 0;
         desc_buffer_info.range  = size;
 
-        if (is_device_local){
+        if constexpr (is_device_local){
             staging_buffer = std::make_unique<buffer_t<false>>(~0, device, size);
         }
 
