@@ -291,21 +291,18 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 }
 
 bool is_visible(substance_t sub){
-    vec3 p = sub.c - (
-        volume_min * vec3(lessThan   (sub.c, volume_min)) + 
-        volume_max * vec3(greaterThan(sub.c, volume_max))
-    );
-    float dist_squared = dot(vec3(sub.r), vec3(sub.r)) - dot(p * p, vec3(1)); 
-    // /* assume C1 and C2 are element-wise sorted, if not, do that now */
-    // if (S.X < C1.X) dist_squared -= squared(S.X - C1.X);
-    // else if (S.X > C2.X) dist_squared -= squared(S.X - C2.X);
-    // if (S.Y < C1.Y) dist_squared -= squared(S.Y - C1.Y);
-    // else if (S.Y > C2.Y) dist_squared -= squared(S.Y - C2.Y);
-    // if (S.Z < C1.Z) dist_squared -= squared(S.Z - C1.Z);
-    // else if (S.Z > C2.Z) dist_squared -= squared(S.Z - C2.Z);
-    // return dist_squared > 0;
+    // TODO: problem when eye is close to the substance
+    float p = length(vec3(sub.r));
 
-    return true;
+    vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
+    float ltd = dot(lt, vec3(1));
+    
+    vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
+    float gtd = dot(gt, vec3(1));
+
+    p -= ltd + gtd;
+
+    return p > 0;
 }
 
 void prerender(uint i, uint work_group_id){
@@ -381,7 +378,7 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
 
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
-    if (!hitmap[c / 8]){
+    if (!hitmap[c >> 3]){
         input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
         input_data.octree[c + work_group_offset()].x |= node_unused_flag;
     }
