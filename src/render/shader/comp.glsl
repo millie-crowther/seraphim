@@ -92,6 +92,8 @@ layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persisten
 shared uint vacant_node;
 shared uint chosen_request;
 shared uint substances_visible;
+shared vec3 volume_min;
+shared vec3 volume_max;
 
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -288,14 +290,33 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
     return request;
 }
 
-bool is_visible(substance_t substance){
-    return substance.id != 1; 
+bool is_visible(substance_t sub){
+    vec3 p = sub.c - (
+        volume_min * vec3(lessThan   (sub.c, volume_min)) + 
+        volume_max * vec3(greaterThan(sub.c, volume_max))
+    );
+    float dist_squared = dot(vec3(sub.r), vec3(sub.r)) - dot(p * p, vec3(1)); 
+    // /* assume C1 and C2 are element-wise sorted, if not, do that now */
+    // if (S.X < C1.X) dist_squared -= squared(S.X - C1.X);
+    // else if (S.X > C2.X) dist_squared -= squared(S.X - C2.X);
+    // if (S.Y < C1.Y) dist_squared -= squared(S.Y - C1.Y);
+    // else if (S.Y > C2.Y) dist_squared -= squared(S.Y - C2.Y);
+    // if (S.Z < C1.Z) dist_squared -= squared(S.Z - C1.Z);
+    // else if (S.Z > C2.Z) dist_squared -= squared(S.Z - C2.Z);
+    // return dist_squared > 0;
+
+    return true;
 }
 
-void prerender(uint i){
+void prerender(uint i, uint work_group_id){
     // clear shared variables
-    vacant_node = 0;
-    chosen_request = ~0;
+    if (i == 0){
+        vacant_node = 0;
+        chosen_request = ~0;
+        
+        volume_min = persistent.data[work_group_id].v_min;
+        volume_max = persistent.data[work_group_id].v_max;
+    }
     hitmap[i / 8] = false;
 
     // load octree from global memory into shared memory
@@ -307,6 +328,7 @@ void prerender(uint i){
     }
 
     // visibility check on substances and load into shared memory
+    barrier();
     substance_t s = input_data.substances[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
     workspace[i] = uint(visible_substance);
@@ -338,7 +360,7 @@ void prerender(uint i){
     substances_visible = min(workspace[1023], gl_WorkGroupSize.x);
 }
 
-void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
+void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
     // arbitrate and submit request
     if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
     if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
@@ -363,9 +385,6 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
         input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
         input_data.octree[c + work_group_offset()].x |= node_unused_flag;
     }
-
-    // fold over min and max aabb values and store
-    uint work_group_id = gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y;
 
     visibility[i] = v_min;
     if ((i & 0x001) == 0) visibility[i] = min(visibility[i], visibility[i +   1]);
@@ -393,11 +412,12 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
 }
 
 void main(){
+    uint work_group_id = gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     vec3 v_min = pc.camera_position;
     vec3 v_max = pc.camera_position;
 
-    prerender(i);
+    prerender(i, work_group_id);
 
     barrier();
     request_t request = render(v_min, v_max);
@@ -406,5 +426,5 @@ void main(){
     workspace[i] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
-    postrender(i, v_min, v_max, request);
+    postrender(i, work_group_id, v_min, v_max, request);
 }
