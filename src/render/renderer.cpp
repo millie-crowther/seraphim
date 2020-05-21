@@ -652,7 +652,6 @@ renderer_t::render(){
 
     present(image_index);
 
-    input_buffer->flush(); 
     handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 

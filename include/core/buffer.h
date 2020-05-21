@@ -112,16 +112,13 @@ public:
         }
     }
 
-    void record_write(VkCommandBuffer command_buffer) const { 
+    void record_write(VkCommandBuffer command_buffer){ 
         vkCmdCopyBuffer(command_buffer, staging_buffer->get_buffer(), buffer, updates.size(), updates.data());
+        updates.clear();
     }
 
     void record_read(VkCommandBuffer command_buffer) const { 
         vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &read_buffer_copy);
-    }
-
-    void flush(){
-        updates.clear();
     }
 
     template<class T>
