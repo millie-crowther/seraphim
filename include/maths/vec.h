@@ -142,14 +142,16 @@ public:
         return r;
     }
 
-    vec_t<T, N> abs() const {
+    template<class S = vec_t<T, N>>
+    typename std::enable_if<!std::is_unsigned<T>::value, S>::type 
+    abs() const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
     } 
 
     T volume() const {
-        if constexpr (std::is_unsigned<T>()){
+        if constexpr (std::is_unsigned<T>::value){
             return std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>());
         } else {
             return std::abs(std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>()));
