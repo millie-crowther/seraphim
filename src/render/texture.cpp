@@ -46,7 +46,7 @@ texture_t::texture_t(
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc_info.allocationSize = mem_req.size;
-    mem_alloc_info.memoryTypeIndex = buffer_t::find_memory_type(device, mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    mem_alloc_info.memoryTypeIndex = host_buffer_t::find_memory_type(device, mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     if (vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
@@ -170,7 +170,7 @@ texture_t::get_image() const {
 }
 
 VkBufferImageCopy 
-texture_t::write(std::shared_ptr<buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
+texture_t::write(std::shared_ptr<host_buffer_t> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
     if (p[0] >= extents.width - 1 || p[1] >= extents.height - 1 || p[2] >= extents.depth - 1){
         throw std::runtime_error("Error: Invalid image write at (" + std::to_string(p[0]) + ", " + std::to_string(p[1]) + ")");
     }

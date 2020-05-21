@@ -723,25 +723,21 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    input_buffer = std::make_shared<buffer_t>(
+    input_buffer = std::make_shared<device_buffer_t>(
         1, device, 
-        sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s, 
-        buffer_t::usage_t::device_local
+        sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s
     );
 
     calls.resize(c);
-    call_buffer = std::make_shared<buffer_t>(
-        2, device, sizeof(call_t) * c, buffer_t::usage_t::device_local
-    );
+    call_buffer = std::make_shared<device_buffer_t>(2, device, sizeof(call_t) * c);
 
     buffers = { 
         input_buffer, call_buffer, 
-        std::make_shared<buffer_t>(3, device, c * 32, buffer_t::usage_t::device_local)
+        std::make_shared<device_buffer_t>(3, device, c * 32)
     };
 
-    texture_staging_buffer = std::make_shared<buffer_t>(
-        ~0, device, 
-        c * sizeof(uint32_t) * 8 * 2, buffer_t::usage_t::host_local
+    texture_staging_buffer = std::make_shared<host_buffer_t>(
+        ~0, device, c * sizeof(uint32_t) * 8 * 2
     );
 }
 

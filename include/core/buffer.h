@@ -8,12 +8,8 @@
 #include "core/device.h"
 #include "maths/vec.h"
 
+template<bool is_device_local>
 class buffer_t {
-public:
-    enum usage_t {
-        device_local, host_local
-    };
-
 private:
     std::shared_ptr<device_t> device;
     VkBuffer buffer;
@@ -21,26 +17,16 @@ private:
     uint32_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
-    std::unique_ptr<buffer_t> staging_buffer;
-    usage_t usage;
+    std::unique_ptr<buffer_t<false>> staging_buffer;
     std::vector<VkBufferCopy> updates;
     VkBufferCopy read_buffer_copy;
 
-    template<class F>
-    void map(uint64_t offset, uint64_t size, const F & f){
-        void * memory_map;
-        vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
-        f(memory_map);
-        vkUnmapMemory(device->get_device(), memory);
-    }
-
 public:
     // constructors and destructors
-    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size, usage_t usage){
+    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size){
         this->device = device;
         this->size = size;
         this->binding = binding;
-        this->usage = usage;
 
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -49,10 +35,10 @@ public:
 
         VkMemoryPropertyFlagBits memory_property;
 
-        if (usage == device_local){
+        if (is_device_local){
             buffer_info.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             memory_property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        } else if (usage == host_local){
+        } else {
             buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             memory_property = static_cast<VkMemoryPropertyFlagBits>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         }
@@ -80,8 +66,8 @@ public:
         desc_buffer_info.offset = 0;
         desc_buffer_info.range  = size;
 
-        if (usage != host_local){
-            staging_buffer = std::make_unique<buffer_t>(~0, device, size, host_local);
+        if (is_device_local){
+            staging_buffer = std::make_unique<buffer_t<false>>(~0, device, size);
         }
 
         read_buffer_copy.srcOffset = 0;
@@ -92,6 +78,14 @@ public:
     ~buffer_t(){
         vkDestroyBuffer(device->get_device(), buffer, nullptr);
         vkFreeMemory(device->get_device(), memory, nullptr);
+    }    
+    
+    template<class F>
+    void map(uint64_t offset, uint64_t size, const F & f){
+        void * memory_map;
+        vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
+        f(memory_map);
+        vkUnmapMemory(device->get_device(), memory);
     }
 
     // public methods
@@ -103,11 +97,7 @@ public:
 
         uint32_t size = sizeof(typename T::value_type) * source.size();
 
-        if (usage == host_local){
-            map(offset, size, [&](void * memory_map){
-                std::memcpy(memory_map, source.data(), size);
-            });
-        } else {
+        if (is_device_local){
             staging_buffer->write(source, offset);
 
             VkBufferCopy buffer_copy;
@@ -115,15 +105,19 @@ public:
             buffer_copy.dstOffset = offset;
             buffer_copy.size = size;
             updates.push_back(buffer_copy);
+        } else {
+            map(offset, size, [&](void * memory_map){
+                std::memcpy(memory_map, source.data(), size);
+            });
         }
     }
 
     void record_write(VkCommandBuffer command_buffer) const { 
-        vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer, updates.size(), updates.data());
+        vkCmdCopyBuffer(command_buffer, staging_buffer->get_buffer(), buffer, updates.size(), updates.data());
     }
 
     void record_read(VkCommandBuffer command_buffer) const { 
-        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->buffer, 1, &read_buffer_copy);
+        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &read_buffer_copy);
     }
 
     void flush(){
@@ -184,5 +178,8 @@ public:
         throw std::runtime_error("failed to find suitable memory type!");
     }
 };
+
+typedef buffer_t<false> host_buffer_t;
+typedef buffer_t<true> device_buffer_t;
 
 #endif
