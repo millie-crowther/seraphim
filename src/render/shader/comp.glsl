@@ -337,7 +337,7 @@ void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
     if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
-    if (i           == 0) workspace[i] = min(workspace[0], workspace[    512]);
+    if (i           == 0) workspace[0] = min(workspace[0], workspace[    512]);
 
     if (workspace[0] == i){
         input_data.octree[request.parent + work_group_offset()].x |= vacant_node;
@@ -389,6 +389,8 @@ void main(){
 
     barrier();
     request_t request = render(v_min, v_max);
+
+    // submit request before barrier so that arbitration can start immediately afterwards
     workspace[i] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 

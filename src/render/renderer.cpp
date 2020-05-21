@@ -639,6 +639,7 @@ renderer_t::render(){
         );
         vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
 
+        call_buffer->record_read(command_buffer);
     })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
         in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
@@ -651,12 +652,12 @@ renderer_t::render(){
 
     present(image_index);
 
-    input_buffer->flush();
+    input_buffer->flush(); 
     handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);    
+    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
 }
 
 VkShaderModule
@@ -730,7 +731,7 @@ renderer_t::create_buffers(){
 
     calls.resize(c);
     call_buffer = std::make_shared<buffer_t>(
-        2, device, sizeof(call_t) * c, buffer_t::usage_t::device_to_host
+        2, device, sizeof(call_t) * c, buffer_t::usage_t::device_local
     );
 
     buffers = { 

@@ -11,7 +11,7 @@
 class buffer_t {
 public:
     enum usage_t {
-        device_local, device_to_host, host_local
+        device_local, host_local
     };
 
 private:
@@ -67,6 +67,10 @@ public:
         vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer, updates.size(), updates.data());
     }
 
+    void record_read(VkCommandBuffer command_buffer) const { 
+        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->buffer, 1, &read_buffer_copy);
+    }
+
     void flush(){
         updates.clear();
     }
@@ -78,7 +82,7 @@ public:
         }
 
         uint32_t size = sizeof(typename T::value_type) * destination.size();
-        map(offset, size, [&](void * memory_map){
+        staging_buffer->map(offset, size, [&](void * memory_map){
             std::memcpy(destination.data(), memory_map, size);
         });
     }
