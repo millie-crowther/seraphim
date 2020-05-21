@@ -91,6 +91,7 @@ layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persisten
 // shared memory
 shared uint vacant_node;
 shared uint chosen_request;
+shared uint substances_visible;
 
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -210,7 +211,7 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max, inout reques
     for (steps = 0; !hit && steps < max_steps; steps++){
         float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
-        for (uint substanceID = 0; !hit && substanceID < 3; substanceID++){
+        for (uint substanceID = 0; !hit && substanceID < substances_visible; substanceID++){
             phi = min(phi, phi_s(r, substances[substanceID], expected_size, normal, texture_coord, request));
             hit = hit || phi < epsilon;
         }
@@ -288,7 +289,7 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 }
 
 bool is_visible(substance_t substance){
-    return true;
+    return true;//substance.id == 1; 
 }
 
 void prerender(uint i){
@@ -321,9 +322,11 @@ void prerender(uint i){
     if ((i & 256) != 0) workspace[i] += workspace[i & ~256 | 255];    
     if ((i & 512) != 0) workspace[i] += workspace[           511];    
  
-    if (visible_substance && workspace[i] <= 32){
+    if (visible_substance && workspace[i] <= gl_WorkGroupSize.x){
         substances[workspace[i] - 1] = s;
     }
+
+    substances_visible = 3;//min(workspace[1023], gl_WorkGroupSize.x);
 }
 
 void postrender(uint i, vec3 v_min, vec3 v_max, request_t request){
