@@ -149,7 +149,11 @@ public:
     } 
 
     T volume() const {
-        return std::abs(std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>()));
+        if constexpr (std::is_unsigned<T>()){
+            return std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>());
+        } else {
+            return std::abs(std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>()));
+        }
     }
 
     template<class S>

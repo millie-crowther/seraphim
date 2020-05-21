@@ -97,7 +97,7 @@ public:
 
         uint32_t size = sizeof(typename T::value_type) * source.size();
 
-        if (is_device_local){
+        if constexpr (is_device_local){
             staging_buffer->write(source, offset);
 
             VkBufferCopy buffer_copy;
