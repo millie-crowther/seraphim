@@ -26,14 +26,14 @@ seraphim_t::seraphim_t(){
     std::cout << "Running in release mode." << std::endl;
 #endif
 
-    work_group_count = u32vec2_t(16);
-    work_group_size = u32vec2_t(32);
+    work_group_count = u32vec2_t(40u, 22u);
+    work_group_size = u32vec2_t(32u);
 
     if (!glfwInit()){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size) * 2);
+    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size));
 
     create_instance();
 

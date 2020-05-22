@@ -190,7 +190,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     t = (r.x - c_prev + s * 4) / (s * 8);
     t += vec3(
         (i + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
-        (i + work_group_offset()) / (gl_WorkGroupSize.y * gl_NumWorkGroups.y),
+        (i + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x),
         0
     );
     t /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
@@ -292,17 +292,18 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 
 bool is_visible(substance_t sub){
     // TODO: problem when eye is close to the substance
-    float p = length(vec3(sub.r));
+    // float p = length(vec3(sub.r));
 
-    vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
-    float ltd = dot(lt, vec3(1));
+    // vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
+    // float ltd = dot(lt, vec3(1));
     
-    vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
-    float gtd = dot(gt, vec3(1));
+    // vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
+    // float gtd = dot(gt, vec3(1));
 
-    p -= ltd + gtd;
+    // p -= ltd + gtd;
 
-    return p > 0;
+    // return p > -epsilon;
+    return true;
 }
 
 void prerender(uint i, uint work_group_id){
