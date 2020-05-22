@@ -95,7 +95,6 @@ shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
-shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
@@ -332,22 +331,21 @@ void prerender(uint i, uint work_group_id){
     }
 
     barrier();
-    if ((i &   1) != 0) workspace[i] += workspace[i &   ~1      ].w;    
+    if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
     barrier();
-    if ((i &   2) != 0) workspace[i] += workspace[i &   ~2 |   1].w;    
+    if ((i &   2) != 0) workspace[i] += workspace[i &  ~2 |   1].w;    
     barrier();
-    if ((i &   4) != 0) workspace[i] += workspace[i &   ~4 |   3].w;    
+    if ((i &   4) != 0) workspace[i] += workspace[i &  ~4 |   3].w;    
     barrier();
-    if ((i &   8) != 0) workspace[i] += workspace[i &   ~8 |   7].w;    
+    if ((i &   8) != 0) workspace[i] += workspace[i &  ~8 |   7].w;    
     barrier();
-    if ((i &  16) != 0) workspace[i] += workspace[i &  ~16 |  15].w;    
+    if ((i &  16) != 0) workspace[i] += workspace[i & ~16 |  15].w;    
     barrier();
-    if ((i &  32) != 0) workspace[i] += workspace[i &  ~32 |  31].w;    
+    if ((i &  32) != 0) workspace[i] += workspace[i & ~32 |  31].w;    
     barrier();
-    if ((i &  64) != 0) workspace[i] += workspace[i &  ~64 |  63].w;    
+    if ((i &  64) != 0) workspace[i] += workspace[i & ~64 |  63].w;    
     barrier();
-    if ((i & 128) != 0) workspace[i] += workspace[           127].w;    
-    barrier();
+    if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
 
     if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         substances[workspace[i / 4][i % 4] - 1] = s;
