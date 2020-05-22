@@ -103,9 +103,10 @@ shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
+    float aspect_ratio = float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
-    uv.y *= -1;
+    uv.y *= -aspect_ratio;
     return uv;
 }
 
@@ -292,18 +293,17 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 
 bool is_visible(substance_t sub){
     // TODO: problem when eye is close to the substance
-    // float p = length(vec3(sub.r));
+    float p = length(vec3(sub.r));
 
-    // vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
-    // float ltd = dot(lt, vec3(1));
+    vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
+    float ltd = dot(lt, vec3(1));
     
-    // vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
-    // float gtd = dot(gt, vec3(1));
+    vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
+    float gtd = dot(gt, vec3(1));
 
-    // p -= ltd + gtd;
+    p -= ltd + gtd;
 
-    // return p > -epsilon;
-    return true;
+    return p > -epsilon;
 }
 
 void prerender(uint i, uint work_group_id){
@@ -410,7 +410,7 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
 }
 
 void main(){
-    uint work_group_id = gl_WorkGroupID.x * gl_NumWorkGroups.x + gl_WorkGroupID.y;
+    uint work_group_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     vec3 v_min = pc.camera_position;
     vec3 v_max = pc.camera_position;
