@@ -96,7 +96,7 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared uvec4 uworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
@@ -324,48 +324,49 @@ void prerender(uint i, uint work_group_id){
     barrier();
     substance_t s = input_data.substances[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
-    uworkspace[i / 4][i % 4] = uint(visible_substance);
+    workspace[i / 4][i % 4] = uint(visible_substance);
 
     if ((i & 3) == 0){
-        uvec4 x = uworkspace[i >> 2];
-        uworkspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
-    }
-    barrier();
-    
-    if ((i &   1) != 0) uworkspace[i] += uworkspace[i &   ~1      ].w;    
-    barrier();
-    if ((i &   2) != 0) uworkspace[i] += uworkspace[i &   ~2 |   1].w;    
-    barrier();
-    if ((i &   4) != 0) uworkspace[i] += uworkspace[i &   ~4 |   3].w;    
-    barrier();
-    if ((i &   8) != 0) uworkspace[i] += uworkspace[i &   ~8 |   7].w;    
-    barrier();
-    if ((i &  16) != 0) uworkspace[i] += uworkspace[i &  ~16 |  15].w;    
-    barrier();
-    if ((i &  32) != 0) uworkspace[i] += uworkspace[i &  ~32 |  31].w;    
-    barrier();
-    if ((i &  64) != 0) uworkspace[i] += uworkspace[i &  ~64 |  63].w;    
-    barrier();
-    if ((i & 128) != 0) uworkspace[i] += uworkspace[           127].w;    
-
-    if (visible_substance && uworkspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
-        substances[uworkspace[i / 4][i % 4] - 1] = s;
+        uvec4 x = workspace[i >> 2];
+        workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
     }
 
-    substances_visible = min(uworkspace[255].w, gl_WorkGroupSize.x);
+    barrier();
+    if ((i &   1) != 0) workspace[i] += workspace[i &   ~1      ].w;    
+    barrier();
+    if ((i &   2) != 0) workspace[i] += workspace[i &   ~2 |   1].w;    
+    barrier();
+    if ((i &   4) != 0) workspace[i] += workspace[i &   ~4 |   3].w;    
+    barrier();
+    if ((i &   8) != 0) workspace[i] += workspace[i &   ~8 |   7].w;    
+    barrier();
+    if ((i &  16) != 0) workspace[i] += workspace[i &  ~16 |  15].w;    
+    barrier();
+    if ((i &  32) != 0) workspace[i] += workspace[i &  ~32 |  31].w;    
+    barrier();
+    if ((i &  64) != 0) workspace[i] += workspace[i &  ~64 |  63].w;    
+    barrier();
+    if ((i & 128) != 0) workspace[i] += workspace[           127].w;    
+    barrier();
+
+    if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
+        substances[workspace[i / 4][i % 4] - 1] = s;
+    }
+
+    substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
 }
 
 void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
     // arbitrate and submit request
-    if ((i & 0x001) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   1]);
-    if ((i & 0x003) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   2]);
-    if ((i & 0x007) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   4]);
-    if ((i & 0x00F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   8]);
-    if ((i & 0x01F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  16]);
-    if ((i & 0x03F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  32]);
-    if ((i & 0x07F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  64]);
+    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     
-    uvec4 m = min(uworkspace[0], uworkspace[128]);
+    uvec4 m = min(workspace[0], workspace[128]);
     if (i == min(min(m.x, m.y), min(m.z, m.w))){
         input_data.octree[request.parent + work_group_offset()].x |= vacant_node;
         request.child = vacant_node + work_group_offset();
@@ -416,7 +417,7 @@ void main(){
     request_t request = render(v_min, v_max);
 
     // submit request before barrier so that arbitration can start immediately afterwards
-    uworkspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
+    workspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
     postrender(i, work_group_id, v_min, v_max, request);
