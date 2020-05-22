@@ -99,7 +99,7 @@ shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
     uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     return uv;
@@ -298,7 +298,8 @@ bool is_visible(substance_t sub){
 
     p -= ltd + gtd;
 
-    return p > -epsilon;
+    // return p > -epsilon;
+    return true;
 }
 
 void prerender(uint i, uint work_group_id){

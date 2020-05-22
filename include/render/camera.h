@@ -20,6 +20,7 @@ public:
     vec3_t get_position() const;
     vec3_t get_right() const;
     vec3_t get_up() const;
+    vec3_t get_forward() const;
 };
 
 #endif

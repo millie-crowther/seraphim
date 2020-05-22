@@ -795,5 +795,17 @@ renderer_t::phi_global(const vec3_t & x){
 double 
 renderer_t::phi_lower_bound(){
     vec3_t x = main_camera.lock()->get_position();
-    return phi_global(x);
+    double phi = phi_global(x);
+    vec3_t dir = main_camera.lock()->get_forward();
+
+    double aspect_ratio = double(work_group_count[1]) / work_group_count[0];
+    double s = vec2_t(1.0, aspect_ratio).norm() / push_constants.focal_depth;
+
+    double phi_i;
+    do {
+        phi_i = phi_global(x + dir * phi) - s * phi;
+        phi += std::max(0.0, phi_i);
+    } while (phi_i > 0.0);
+
+    return phi;
 }

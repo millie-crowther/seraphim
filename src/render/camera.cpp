@@ -19,6 +19,12 @@ camera_t::get_up() const {
     return transform.get_rotation() * vec3_t::up();
 }
 
+vec3_t 
+camera_t::get_forward() const {
+    return transform.get_rotation() * vec3_t::forward();
+}
+
+
 void 
 camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
     vec3_t forward = transform.get_rotation() * vec3_t::forward();
