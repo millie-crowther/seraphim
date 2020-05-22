@@ -239,7 +239,7 @@ seraphim_t::check_validation_layers(){
 void
 seraphim_t::run(){
     uint32_t current_frame = 0;
-    uint32_t frequency = 100;
+    uint32_t frequency = 15;
     auto   previous   = std::chrono::steady_clock::now();
 
     while (!window->should_close()){
@@ -252,7 +252,7 @@ seraphim_t::run(){
         window->get_mouse().update(delta, *window);
         test_camera->update(delta, window->get_keyboard(), window->get_mouse());
 
-        if (current_frame % frequency == 0){    
+        if (current_frame % frequency == frequency - 1){    
             std::cout << "FPS: " << 1.0 / delta << std::endl;
         }
 

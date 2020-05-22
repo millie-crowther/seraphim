@@ -30,7 +30,7 @@ private:
         float phi_initial;           
 
         f32vec3_t camera_right;
-        float dummy3;
+        float focal_depth;
 
         f32vec3_t camera_up;
         float dummy4;
@@ -121,6 +121,9 @@ private:
     void handle_requests();
     void present(uint32_t image_index) const;
     response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);    
+    
+    double phi_global(const vec3_t & x);
+    double phi_lower_bound();
 
 public:
     // constructors and destructors

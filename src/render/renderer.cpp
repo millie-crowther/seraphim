@@ -29,6 +29,7 @@ renderer_t::renderer_t(
     push_constants.render_distance = static_cast<float>(hyper::rho);
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
+    push_constants.focal_depth = 1.0;
 
     set_main_camera(test_camera);
 
@@ -585,18 +586,12 @@ renderer_t::render(){
 
     std::vector<substance_t::data_t> substance_data(3);
 
-    push_constants.phi_initial = push_constants.render_distance;
+    push_constants.phi_initial = phi_lower_bound();
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
             // update substance transforms
             substance_data[std::get<0>(pair)] = sub->get_data();
             substance_data[std::get<0>(pair)].c += sub->get_position();
-
-            // update phi initial
-            push_constants.phi_initial = std::min(
-                static_cast<float>(sub->phi(main_camera.lock()->get_position())), 
-                push_constants.phi_initial
-            );
         }
     }
 
@@ -783,4 +778,22 @@ renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substan
     }    
 
     return response_cache[call];
+}
+
+double 
+renderer_t::phi_global(const vec3_t & x){
+    double phi_initial = push_constants.render_distance;
+    for (auto pair : substances){
+        if (auto sub = std::get<1>(pair).lock()){
+            phi_initial = std::min(sub->get_sdf().lock()->phi(x), phi_initial);
+        }
+    }
+    return phi_initial;
+}
+
+
+double 
+renderer_t::phi_lower_bound(){
+    vec3_t x = main_camera.lock()->get_position();
+    return phi_global(x);
 }

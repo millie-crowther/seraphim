@@ -12,10 +12,6 @@ const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
 
 const float sqrt3 = 1.73205080757;
-const uint max_depth = 16;
-
-// these ones could be push constants hypothetically
-const float f = 1.0;
 const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
@@ -42,7 +38,7 @@ layout( push_constant ) uniform push_constants {
     float phi_initial;        
 
     vec3 camera_right;
-    float dummy3;
+    float focal_depth;
 
     vec3 camera_up;
     float dummy4;
@@ -103,17 +99,16 @@ shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
-    float aspect_ratio = float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
-    uv.y *= -aspect_ratio;
+    uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     return uv;
 }
 
 float expected_size(vec3 x){
     return 0.075 * (1 + length(
         (x - pc.camera_position) / 10 + 
-        vec3(uv(), 0) / 2 
+        vec3(uv(), 0) / 2
     ));
 }
 
@@ -277,7 +272,7 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
     vec3 forward = cross(right, up);
-    vec3 d = normalize(forward * f + right * uv.x + up * uv.y);
+    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 
     request_t request;
     request.status = 0;
