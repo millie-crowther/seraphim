@@ -96,7 +96,7 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared uvec4 uworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 4];
+shared uvec4 uworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
@@ -177,7 +177,6 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
     if (should_request) request = request_t(c, depth, 0, i, sub.id, 1);
     
-
     // calculate distance to intersect plane
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
     float e = dot(c - r.x, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
@@ -255,7 +254,6 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_
     vec3 right = pc.camera_right;
     vec3 u = pc.camera_up;
 
-    // TODO: not sure about order of cross product here??
     v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
     v = normalize(v);
 
@@ -334,21 +332,21 @@ void prerender(uint i, uint work_group_id){
     }
     barrier();
     
-    if ((i &   1) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~1      ];    
+    if ((i &   1) != 0) uworkspace[i] += uworkspace[i &   ~1      ].w;    
     barrier();
-    if ((i &   2) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~2 |   1];    
+    if ((i &   2) != 0) uworkspace[i] += uworkspace[i &   ~2 |   1].w;    
     barrier();
-    if ((i &   4) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~4 |   3];    
+    if ((i &   4) != 0) uworkspace[i] += uworkspace[i &   ~4 |   3].w;    
     barrier();
-    if ((i &   8) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~8 |   7];    
+    if ((i &   8) != 0) uworkspace[i] += uworkspace[i &   ~8 |   7].w;    
     barrier();
-    if ((i &  16) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~16 |  15];    
+    if ((i &  16) != 0) uworkspace[i] += uworkspace[i &  ~16 |  15].w;    
     barrier();
-    if ((i &  32) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~32 |  31];    
+    if ((i &  32) != 0) uworkspace[i] += uworkspace[i &  ~32 |  31].w;    
     barrier();
-    if ((i &  64) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~64 |  63];    
+    if ((i &  64) != 0) uworkspace[i] += uworkspace[i &  ~64 |  63].w;    
     barrier();
-    if ((i & 128) != 0) uworkspace[i] = uworkspace[i] + uworkspace[           127];    
+    if ((i & 128) != 0) uworkspace[i] += uworkspace[           127].w;    
 
     if (visible_substance && uworkspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         substances[uworkspace[i / 4][i % 4] - 1] = s;
