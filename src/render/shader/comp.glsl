@@ -96,6 +96,7 @@ shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 
 shared uint workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uvec4 uworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 4];
 shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
@@ -356,18 +357,16 @@ void prerender(uint i, uint work_group_id){
 
 void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
     // arbitrate and submit request
-    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
-    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
-    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
-    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
-    if (i           == 0) workspace[0] = min(workspace[0], workspace[    512]);
-
-    if (workspace[0] == i){
+    if ((i & 0x001) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   1]);
+    if ((i & 0x003) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   2]);
+    if ((i & 0x007) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   4]);
+    if ((i & 0x00F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +   8]);
+    if ((i & 0x01F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  16]);
+    if ((i & 0x03F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  32]);
+    if ((i & 0x07F) == 0) uworkspace[i] = min(uworkspace[i], uworkspace[i +  64]);
+    
+    uvec4 m = min(uworkspace[0], uworkspace[128]);
+    if (i == min(min(m.x, m.y), min(m.z, m.w))){
         input_data.octree[request.parent + work_group_offset()].x |= vacant_node;
         request.child = vacant_node + work_group_offset();
         requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
@@ -417,7 +416,7 @@ void main(){
     request_t request = render(v_min, v_max);
 
     // submit request before barrier so that arbitration can start immediately afterwards
-    workspace[i] = mix(~0, i, request.status != 0 && vacant_node != 0);
+    uworkspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
     postrender(i, work_group_id, v_min, v_max, request);
