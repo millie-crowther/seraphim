@@ -326,33 +326,35 @@ void prerender(uint i, uint work_group_id){
     barrier();
     substance_t s = input_data.substances[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
-    workspace[i] = uint(visible_substance);
+    uworkspace[i / 4][i % 4] = uint(visible_substance);
+
+    if ((i & 3) == 0){
+        uvec4 x = uworkspace[i >> 2];
+        uworkspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
+    }
+    barrier();
     
-    if ((i &   1) != 0) workspace[i] = workspace[i] + workspace[i &   ~1      ];    
+    if ((i &   1) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~1      ];    
     barrier();
-    if ((i &   2) != 0) workspace[i] = workspace[i] + workspace[i &   ~2 |   1];    
+    if ((i &   2) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~2 |   1];    
     barrier();
-    if ((i &   4) != 0) workspace[i] = workspace[i] + workspace[i &   ~4 |   3];    
+    if ((i &   4) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~4 |   3];    
     barrier();
-    if ((i &   8) != 0) workspace[i] = workspace[i] + workspace[i &   ~8 |   7];    
+    if ((i &   8) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &   ~8 |   7];    
     barrier();
-    if ((i &  16) != 0) workspace[i] = workspace[i] + workspace[i &  ~16 |  15];    
+    if ((i &  16) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~16 |  15];    
     barrier();
-    if ((i &  32) != 0) workspace[i] = workspace[i] + workspace[i &  ~32 |  31];    
+    if ((i &  32) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~32 |  31];    
     barrier();
-    if ((i &  64) != 0) workspace[i] = workspace[i] + workspace[i &  ~64 |  63];    
+    if ((i &  64) != 0) uworkspace[i] = uworkspace[i] + uworkspace[i &  ~64 |  63];    
     barrier();
-    if ((i & 128) != 0) workspace[i] = workspace[i] + workspace[i & ~128 | 127];    
-    barrier();
-    if ((i & 256) != 0) workspace[i] = workspace[i] + workspace[i & ~256 | 255];    
-    barrier();
-    if ((i & 512) != 0) workspace[i] = workspace[i] + workspace[           511];    
- 
-    if (visible_substance && workspace[i] <= gl_WorkGroupSize.x){
-        substances[workspace[i] - 1] = s;
+    if ((i & 128) != 0) uworkspace[i] = uworkspace[i] + uworkspace[           127];    
+
+    if (visible_substance && uworkspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
+        substances[uworkspace[i / 4][i % 4] - 1] = s;
     }
 
-    substances_visible = min(workspace[1023], gl_WorkGroupSize.x);
+    substances_visible = min(uworkspace[255].w, gl_WorkGroupSize.x);
 }
 
 void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
