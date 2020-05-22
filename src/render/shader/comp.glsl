@@ -45,7 +45,7 @@ layout( push_constant ) uniform push_constants {
 } pc;
 
 // input buffers
-struct substance_t {
+struct substance_data_t {
     vec3 c;
     int root;
 
@@ -55,8 +55,19 @@ struct substance_t {
     uint id;
 };
 
+struct substance_t {
+    vec3 c;
+    int root;
+
+    float r;
+    uint id;
+
+    mat3 rotation;
+    mat3 inverse;
+};
+
 layout (binding = 1) buffer input_buffer { 
-    substance_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+    substance_data_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
     uvec2 octree[]; 
 } input_data;
 
@@ -120,7 +131,7 @@ vec4 colour(vec3 t){
     return vec4(texture(colour_texture, t).xyz, 1.0);
 }
 
-vec3 rotate(vec4 q, vec3 x){
+mat3 get_mat(vec4 q){
     float wx = q.x * q.y;
     float wy = q.x * q.z;
     float wz = q.x * q.w;
@@ -134,11 +145,25 @@ vec3 rotate(vec4 q, vec3 x){
 
     float zz = q.w * q.w;
 
-    return vec3(
-        (0.5 - yy - zz) * x.x + (xy - wz) * x.y + (xz + wy) * x.z,
-        (xy + wz) * x.x + (0.5 - xx - zz) * x.y + (yz + wx) * x.z,
-        (xz - wy) * x.x + (yz - wx) * x.y + (0.5 - xx - yy) * x.z
-    ) * 2;
+    vec3 a = vec3(
+        0.5 - yy - zz,
+        xy - wz,
+        xz + wy
+    );
+
+    vec3 b = vec3(
+        xy + wz,
+        0.5 - xx - zz,
+        yz + wx
+    );
+
+    vec3 c = vec3(
+        xz - wy,
+        yz - wx,
+        0.5 - xx - yy
+    );
+
+    return mat3(a, b, c) * 2;
 }
 
 float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out vec3 t, inout request_t request){
@@ -150,11 +175,8 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     uint depth = 0;
     uint next = sub.root;
 
-    vec4 q = vec4(sub.q & 0xFF, (sub.q >> 8) & 0xFF, (sub.q >> 16) & 0xFF, sub.q >> 24) - 127.5;
-    q = normalize(q);
-
     r.x -= sub.c;
-    r.x = rotate(q, r.x);
+    r.x = sub.rotation * r.x;
 
     // check against outside bounds of aabb
     vec3 y = abs(r.x) - s;
@@ -190,7 +212,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     );
     t /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
-    normal = rotate(vec4(q.x, -q.yzw), normalize(texture(normal_texture, t).xyz - 0.5));
+    normal = sub.inverse * normalize(texture(normal_texture, t).xyz - 0.5);
     
     // return distance value appropriate for case
     bool hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0;
@@ -284,7 +306,7 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
     return request;
 }
 
-bool is_visible(substance_t sub){
+bool is_visible(substance_data_t sub){
     // TODO: problem when eye is close to the substance
     float p = length(vec3(sub.r));
 
@@ -321,14 +343,12 @@ void prerender(uint i, uint work_group_id){
 
     // visibility check on substances and load into shared memory
     barrier();
-    substance_t s = input_data.substances[i];
+    substance_data_t s = input_data.substances[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
     workspace[i / 4][i % 4] = uint(visible_substance);
 
-    if ((i & 3) == 0){
-        uvec4 x = workspace[i >> 2];
-        workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
-    }
+    uvec4 x = workspace[i >> 2];
+    workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
 
     barrier();
     if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
@@ -348,7 +368,11 @@ void prerender(uint i, uint work_group_id){
     if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
 
     if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
-        substances[workspace[i / 4][i % 4] - 1] = s;
+        vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
+        q = normalize(q);
+        substances[workspace[i / 4][i % 4] - 1] = substance_t(
+            s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
+        );
     }
 
     substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
