@@ -673,7 +673,6 @@ renderer_t::render(){
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
     
-
     current_frame = (current_frame + 1) % frames_in_flight; 
 }
 
@@ -702,7 +701,7 @@ void
 renderer_t::handle_requests(uint32_t frame){
     uint32_t last_frame = (frame + frames_in_flight - 1) % frames_in_flight;
 
-    vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
+    vkDeviceWaitIdle(device->get_device()); 
 
     std::vector<call_t> empty_calls(work_group_count.volume());
     std::vector<call_t> calls(work_group_count.volume());
@@ -713,20 +712,9 @@ renderer_t::handle_requests(uint32_t frame){
         std::memcpy(memory_map, empty_calls.data(), s);
     });
 
-    VkBufferCopy buffer_copy;
-    buffer_copy.size = sizeof(u32vec2_t) * 8;
-
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
         if (calls[i].child != 0){
             auto response = get_response(calls[i], substances[calls[i].get_substance_ID()]);
-                
-            buffer_copy.srcOffset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t);
-            buffer_copy.dstOffset = buffer_copy.srcOffset;
-            input_staging_buffer->map(buffer_copy.srcOffset, buffer_copy.size, [&](auto mem_map){
-                std::memcpy(mem_map, response.get_nodes().data(), buffer_copy.size);
-            });
-
-            input_buffer_updates[frame].push_back(buffer_copy);
 
             u32vec3_t p = u32vec3_t(
                 (calls[i].child % (work_group_size[0] * work_group_count[0])) / 8,
@@ -734,13 +722,15 @@ renderer_t::handle_requests(uint32_t frame){
                 0u
             ) * 2;
 
-            normal_texture_updates[frame].push_back(
-                normal_texture->write(texture_staging_buffer, i, p, response.get_normals())
-            );
+            uint64_t offset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t);
 
-            colour_texture_updates[frame].push_back(
-                colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours())
-            );
+            auto octree_update = input_staging_buffer->write(response.get_nodes(), offset);
+            auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
+            auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
+
+            normal_texture_updates[frame].push_back(normal_update);
+            colour_texture_updates[frame].push_back(colour_update);
+            input_buffer_updates[frame].push_back(octree_update);
         }
     }   
 }
