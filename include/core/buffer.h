@@ -88,6 +88,20 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
+    template<class T, class S = VkBufferCopy>
+    typename std::enable_if<!is_device_local, S>::type  
+    write(const T & source, uint64_t offset){
+        VkBufferCopy buffer_copy = {};
+        buffer_copy.srcOffset = offset;
+        buffer_copy.dstOffset = offset;
+        buffer_copy.size = sizeof(typename T::value_type) * source.size();
+
+        map(offset, buffer_copy.size, [&](auto mem_map){
+            std::memcpy(mem_map, source.data(), buffer_copy.size);
+        });
+
+        return buffer_copy;
+    }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
         VkWriteDescriptorSet write_desc_set = {};

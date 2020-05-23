@@ -578,7 +578,6 @@ void
 renderer_t::render(){
     push_constants.current_frame++;
 
-
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
     sphere->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
@@ -595,13 +594,7 @@ renderer_t::render(){
         }
     }
 
-    input_staging_buffer->map(0, substance_data.size() * sizeof(substance_t::data_t), [&](auto mem_map){
-        std::memcpy(mem_map, substance_data.data(), substance_data.size() * sizeof(substance_t::data_t));
-    });
-    VkBufferCopy buffer_copy = {};
-    buffer_copy.srcOffset = 0;
-    buffer_copy.dstOffset = 0;
-    buffer_copy.size = substance_data.size() * sizeof(substance_t::data_t);
+    VkBufferCopy substances_upload = input_staging_buffer->write(substance_data, 0);
     
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
@@ -619,7 +612,7 @@ renderer_t::render(){
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         vkCmdCopyBuffer(
             command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
-            1, &buffer_copy
+            1, &substances_upload
         );
 
         vkCmdCopyBuffer(
@@ -806,31 +799,11 @@ renderer_t::initialise_buffers(){
 
     std::vector<substance_t::data_t> initial_substances(work_group_size.volume());
 
-    uint32_t substances_size = work_group_size.volume() * sizeof(substance_t::data_t);
-    uint32_t octree_size = initial_octree.size() * sizeof(u32vec2_t);
+    auto upload_octree = input_staging_buffer->write(initial_octree, work_group_size.volume() * sizeof(substance_t::data_t));
+    auto clear_substances = input_staging_buffer->write(initial_substances, 0);
 
-    // input_buffer->write(initial_octree, substances_size);
-    // input_buffer->write(initial_substances, 0);
-
-    input_staging_buffer->map(substances_size,  octree_size, [&](auto mem_map){
-        std::memcpy(mem_map, initial_octree.data(), octree_size);
-    });
-
-    VkBufferCopy buffer_copy = {};
-    buffer_copy.dstOffset = substances_size;
-    buffer_copy.srcOffset = substances_size;
-    buffer_copy.size = octree_size;
-    input_buffer_updates[frames_in_flight - 1].push_back(buffer_copy);
-
-    input_staging_buffer->map(0, substances_size, [&](auto mem_map){
-        std::memcpy(mem_map, initial_substances.data(), substances_size);
-    });
-
-    buffer_copy.dstOffset = 0;
-    buffer_copy.srcOffset = 0;
-    buffer_copy.size = substances_size;
-    input_buffer_updates[frames_in_flight - 1].push_back(buffer_copy);
-
+    input_buffer_updates[frames_in_flight - 1].push_back(upload_octree);
+    input_buffer_updates[frames_in_flight - 1].push_back(clear_substances);
 }
 
 response_t
