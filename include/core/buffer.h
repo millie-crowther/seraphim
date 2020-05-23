@@ -14,7 +14,7 @@ private:
     std::shared_ptr<device_t> device;
     VkBuffer buffer;
     VkDeviceMemory memory;
-    uint32_t size;
+    uint64_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
     std::unique_ptr<buffer_t<false>> staging_buffer;
@@ -117,22 +117,6 @@ public:
         updates.clear();
     }
 
-    void record_read(VkCommandBuffer command_buffer) const { 
-        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &read_buffer_copy);
-    }
-
-    template<class T>
-    void read(T & destination, uint64_t offset) {
-        if (destination.empty()){
-            return;
-        }
-
-        uint32_t size = sizeof(typename T::value_type) * destination.size();
-        staging_buffer->map(offset, size, [&](void * memory_map){
-            std::memcpy(destination.data(), memory_map, size);
-        });
-    }
-    
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
         VkWriteDescriptorSet write_desc_set = {};
         write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -160,6 +144,10 @@ public:
 
     VkBuffer get_buffer() const {
         return buffer;
+    }
+
+    uint64_t get_size() const {
+        return size;
     }
 
     static uint32_t find_memory_type(std::shared_ptr<device_t> device, uint32_t type_filter, VkMemoryPropertyFlags prop){

@@ -634,7 +634,16 @@ renderer_t::render(){
         );
         vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
 
-        call_buffer->record_read(command_buffer);
+        VkBufferCopy region;
+        region.srcOffset = 0;
+        region.dstOffset = 0;
+        region.size = call_buffer->get_size();
+        vkCmdCopyBuffer(command_buffer, call_buffer->get_buffer(), call_staging_buffers[current_frame]->get_buffer(), 1, &region);
+
+        vkCmdFillBuffer(
+            command_buffer, call_buffer->get_buffer(), 0, call_buffer->get_size(), 0
+        );
+        
     })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
         in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
@@ -682,7 +691,13 @@ renderer_t::handle_requests(){
     normal_texture_updates.clear();
     colour_texture_updates.clear();
 
-    call_buffer->read(calls, 0);
+    std::vector<call_t> empty_calls(calls.size());
+
+    uint64_t s = sizeof(call_t) * calls.size();
+    call_staging_buffers[current_frame]->map(0, s, [&](void * memory_map){
+        std::memcpy(calls.data(), memory_map, s);
+        std::memcpy(memory_map, empty_calls.data(), s);
+    });
 
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
         if (calls[i].child != 0){
@@ -692,8 +707,6 @@ renderer_t::handle_requests(){
                 response.get_nodes(), 
                 work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t)
             );
-
-            call_buffer->write(std::vector<call_t>(1), i * sizeof(call_t));
 
             u32vec3_t p = u32vec3_t(
                 (calls[i].child % (work_group_size[0] * work_group_count[0])) / 8,
@@ -733,6 +746,12 @@ renderer_t::create_buffers(){
     texture_staging_buffer = std::make_shared<host_buffer_t>(
         ~0, device, c * sizeof(uint32_t) * 8 * 2
     );
+
+    for (uint32_t i = 0; i < frames_in_flight; i++){
+        call_staging_buffers.push_back(std::make_unique<host_buffer_t>(
+            ~0, device, sizeof(call_t) * c
+        ));
+    }
 }
 
 void
