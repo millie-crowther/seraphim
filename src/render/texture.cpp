@@ -175,7 +175,9 @@ texture_t::write(std::shared_ptr<host_buffer_t> buffer, uint32_t i, u32vec3_t p,
         throw std::runtime_error("Error: Invalid image write at (" + std::to_string(p[0]) + ", " + std::to_string(p[1]) + ")");
     }
 
-    buffer->write(x, i * sizeof(uint32_t) * 8);
+    buffer->map(i * sizeof(uint32_t) * 8, x.size() * sizeof(uint32_t), [&](auto mem_map){
+        std::memcpy(mem_map, x.data(), sizeof(uint32_t) * 8);
+    });
     
     VkBufferImageCopy region;
     region.bufferOffset = i * sizeof(uint32_t) * 8;

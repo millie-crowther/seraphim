@@ -88,34 +88,6 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
-    // public methods
-    template<class T>
-    void write(const T & source, uint64_t offset){
-        if (source.empty()){
-            return;
-        }
-
-        uint32_t size = sizeof(typename T::value_type) * source.size();
-
-        if constexpr (is_device_local){
-            staging_buffer->write(source, offset);
-
-            VkBufferCopy buffer_copy;
-            buffer_copy.srcOffset = offset;
-            buffer_copy.dstOffset = offset;
-            buffer_copy.size = size;
-            updates.push_back(buffer_copy);
-        } else {
-            map(offset, size, [&](void * memory_map){
-                std::memcpy(memory_map, source.data(), size);
-            });
-        }
-    }
-
-    void record_write(VkCommandBuffer command_buffer){ 
-        vkCmdCopyBuffer(command_buffer, staging_buffer->get_buffer(), buffer, updates.size(), updates.data());
-        updates.clear();
-    }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
         VkWriteDescriptorSet write_desc_set = {};
