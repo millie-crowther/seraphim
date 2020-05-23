@@ -643,7 +643,7 @@ renderer_t::render(){
         vkCmdFillBuffer(
             command_buffer, call_buffer->get_buffer(), 0, call_buffer->get_size(), 0
         );
-        
+
     })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
         in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
@@ -656,11 +656,14 @@ renderer_t::render(){
 
     present(image_index);
 
+    vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
+    
+    normal_texture_updates.clear();
+    colour_texture_updates.clear();
     handle_requests();
 
     current_frame = (current_frame + 1) % frames_in_flight; 
-    vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
 }
 
 VkShaderModule
@@ -687,9 +690,6 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 void 
 renderer_t::handle_requests(){
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
-
-    normal_texture_updates.clear();
-    colour_texture_updates.clear();
 
     std::vector<call_t> empty_calls(calls.size());
 
