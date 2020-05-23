@@ -608,7 +608,8 @@ renderer_t::render(){
         VK_NULL_HANDLE, &image_index
     );
 
-    uint32_t last_frame = (current_frame + frames_in_flight - 1) % frames_in_flight;
+    handle_requests(current_frame);
+
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         vkCmdCopyBuffer(
             command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
@@ -617,23 +618,23 @@ renderer_t::render(){
 
         vkCmdCopyBuffer(
             command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
-            input_buffer_updates[last_frame].size(), input_buffer_updates[last_frame].data()
+            input_buffer_updates[current_frame].size(), input_buffer_updates[current_frame].data()
         );
-        input_buffer_updates[last_frame].clear();
+        input_buffer_updates[current_frame].clear();
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            normal_texture_updates[last_frame].size(), normal_texture_updates[last_frame].data()
+            normal_texture_updates[current_frame].size(), normal_texture_updates[current_frame].data()
         );
-        normal_texture_updates[last_frame].clear();
+        normal_texture_updates[current_frame].clear();
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), colour_texture->get_image(), 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            colour_texture_updates[last_frame].size(), colour_texture_updates[last_frame].data()
+            colour_texture_updates[current_frame].size(), colour_texture_updates[current_frame].data()
         );
-        colour_texture_updates[last_frame].clear();
+        colour_texture_updates[current_frame].clear();
 
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
@@ -672,7 +673,6 @@ renderer_t::render(){
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
     
-    handle_requests(current_frame);
 
     current_frame = (current_frame + 1) % frames_in_flight; 
 }
@@ -700,13 +700,15 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 
 void 
 renderer_t::handle_requests(uint32_t frame){
+    uint32_t last_frame = (frame + frames_in_flight - 1) % frames_in_flight;
+
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
     std::vector<call_t> empty_calls(work_group_count.volume());
     std::vector<call_t> calls(work_group_count.volume());
 
     uint64_t s = sizeof(call_t) * calls.size();
-    call_staging_buffers[frame]->map(0, s, [&](void * memory_map){
+    call_staging_buffers[last_frame]->map(0, s, [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, s);
         std::memcpy(memory_map, empty_calls.data(), s);
     });
