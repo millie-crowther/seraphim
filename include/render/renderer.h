@@ -97,8 +97,10 @@ private:
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
     std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
     std::vector<call_t> calls;
-    std::vector<VkBufferImageCopy> normal_texture_updates;
-    std::vector<VkBufferImageCopy> colour_texture_updates;
+    std::array<std::vector<VkBufferImageCopy>, frames_in_flight> normal_texture_updates;
+    std::array<std::vector<VkBufferImageCopy>, frames_in_flight> colour_texture_updates;
+    std::array<std::vector<VkBufferCopy>, frames_in_flight> input_buffer_updates;
+    std::unique_ptr<host_buffer_t> input_staging_buffer;
 
     std::chrono::high_resolution_clock::time_point start;
 
@@ -119,7 +121,7 @@ private:
     // helper functions
     void recreate_swapchain();
     void cleanup_swapchain();
-    void handle_requests();
+    void handle_requests(uint32_t frame);
     void present(uint32_t image_index) const;
     response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);    
     

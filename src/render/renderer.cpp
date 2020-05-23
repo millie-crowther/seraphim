@@ -609,18 +609,29 @@ renderer_t::render(){
         VK_NULL_HANDLE, &image_index
     );
 
+    uint32_t last_frame = (current_frame + frames_in_flight - 1) % frames_in_flight;
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         input_buffer->record_write(command_buffer);
 
+        vkCmdCopyBuffer(
+            command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
+            input_buffer_updates[last_frame].size(), input_buffer_updates[last_frame].data()
+        );
+        input_buffer_updates[last_frame].clear();
+
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, normal_texture_updates.size(), normal_texture_updates.data()
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            normal_texture_updates[last_frame].size(), normal_texture_updates[last_frame].data()
         );
+        normal_texture_updates[last_frame].clear();
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), colour_texture->get_image(), 
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, colour_texture_updates.size(), colour_texture_updates.data()
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+            colour_texture_updates[last_frame].size(), colour_texture_updates[last_frame].data()
         );
+        colour_texture_updates[last_frame].clear();
 
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
@@ -659,9 +670,7 @@ renderer_t::render(){
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
     
-    normal_texture_updates.clear();
-    colour_texture_updates.clear();
-    handle_requests();
+    handle_requests(current_frame);
 
     current_frame = (current_frame + 1) % frames_in_flight; 
 }
@@ -688,25 +697,31 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 }
 
 void 
-renderer_t::handle_requests(){
+renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
     std::vector<call_t> empty_calls(calls.size());
 
     uint64_t s = sizeof(call_t) * calls.size();
-    call_staging_buffers[current_frame]->map(0, s, [&](void * memory_map){
+    call_staging_buffers[frame]->map(0, s, [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, s);
         std::memcpy(memory_map, empty_calls.data(), s);
     });
+
+    VkBufferCopy buffer_copy;
+    buffer_copy.size = sizeof(u32vec2_t) * 8;
 
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
         if (calls[i].child != 0){
             auto response = get_response(calls[i], substances[calls[i].get_substance_ID()]);
                 
-            input_buffer->write(
-                response.get_nodes(), 
-                work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t)
-            );
+            buffer_copy.srcOffset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t);
+            buffer_copy.dstOffset = buffer_copy.srcOffset;
+            input_staging_buffer->map(buffer_copy.srcOffset, buffer_copy.size, [&](auto mem_map){
+                std::memcpy(mem_map, response.get_nodes().data(), buffer_copy.size);
+            });
+
+            input_buffer_updates[frame].push_back(buffer_copy);
 
             u32vec3_t p = u32vec3_t(
                 (calls[i].child % (work_group_size[0] * work_group_count[0])) / 8,
@@ -714,11 +729,11 @@ renderer_t::handle_requests(){
                 0u
             ) * 2;
 
-            normal_texture_updates.push_back(
+            normal_texture_updates[frame].push_back(
                 normal_texture->write(texture_staging_buffer, i, p, response.get_normals())
             );
 
-            colour_texture_updates.push_back(
+            colour_texture_updates[frame].push_back(
                 colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours())
             );
         }
@@ -745,6 +760,10 @@ renderer_t::create_buffers(){
 
     texture_staging_buffer = std::make_shared<host_buffer_t>(
         ~0, device, c * sizeof(uint32_t) * 8 * 2
+    );
+
+    input_staging_buffer = std::make_unique<host_buffer_t>(
+        ~0, device, sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s
     );
 
     for (uint32_t i = 0; i < frames_in_flight; i++){
