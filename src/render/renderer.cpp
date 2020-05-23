@@ -100,25 +100,6 @@ renderer_t::renderer_t(
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );
 
-
-    // for (uint32_t i = 0; i < work_group_count.volume(); i++){
-    //     for (auto pair : substances){
-    //         if (auto substance = std::get<1>(pair).lock()){
-    //             std::array<uint32_t, 8> normals = octree_node_t::get_normals(
-    //                 substance->get_data().c, vec3_t(substance->get_data().r), substance->get_sdf()
-    //             );
-
-    //             u32vec3_t p = u32vec3_t(
-    //                 (substance->get_data().root % (work_group_size[0] * work_group_count[0])) / 8,
-    //                 substance->get_data().root / (work_group_size[0] * work_group_count[0]), 
-    //                 0u
-    //             ) * 2;
-
-    //             normal_texture->write(*graphics_command_pool, texture_staging_buffer, i, p, normals);
-    //         }
-    //     }
-    // }
-
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets){
         write_desc_sets.push_back(render_texture->get_descriptor_write(descriptor_set));
@@ -779,12 +760,27 @@ renderer_t::initialise_buffers(){
             call_t call;
             call.c = vec3_t();
             call.depth = 0;
-            auto root_node = response_t(call, substance).get_nodes();
+            response_t response(call, substance);
+            auto root_node = response.get_nodes();
 
-            for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size[0] * work_group_size[1]){
+            for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size.volume()){
                 for (uint32_t k = 0; k < 8; k++){
                     initial_octree[i + substance->get_data().root + k] = root_node[k];
                 }
+
+                auto j = i + substance->get_data().root; 
+                u32vec3_t p = u32vec3_t(
+                    (j % (work_group_size[0] * work_group_count[0])) / 8,
+                    j / (work_group_size[0] * work_group_count[0]),
+                    0u
+                ) * 2;
+
+                auto m = i / work_group_size.volume();
+                auto normal_update = normal_texture->write(texture_staging_buffer, m, p, response.get_normals());
+                auto colour_update = colour_texture->write(texture_staging_buffer, m + work_group_count.volume(), p, response.get_colours());
+
+                normal_texture_updates[frames_in_flight - 1].push_back(normal_update);
+                colour_texture_updates[frames_in_flight - 1].push_back(colour_update);
             }
         }
     }
