@@ -702,7 +702,8 @@ void
 renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); //TODO: remove this by baking in buffer updates
 
-    std::vector<call_t> empty_calls(calls.size());
+    std::vector<call_t> empty_calls(work_group_count.volume());
+    std::vector<call_t> calls(work_group_count.volume());
 
     uint64_t s = sizeof(call_t) * calls.size();
     call_staging_buffers[frame]->map(0, s, [&](void * memory_map){
@@ -752,7 +753,6 @@ renderer_t::create_buffers(){
         sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s
     );
 
-    calls.resize(c);
     call_buffer = std::make_shared<device_buffer_t>(2, device, sizeof(call_t) * c);
 
     buffers = { 

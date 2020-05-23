@@ -96,7 +96,6 @@ private:
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
     std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
-    std::vector<call_t> calls;
     std::array<std::vector<VkBufferImageCopy>, frames_in_flight> normal_texture_updates;
     std::array<std::vector<VkBufferImageCopy>, frames_in_flight> colour_texture_updates;
     std::array<std::vector<VkBufferCopy>, frames_in_flight> input_buffer_updates;

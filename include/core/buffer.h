@@ -17,9 +17,6 @@ private:
     uint64_t size;
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
-    std::unique_ptr<buffer_t<false>> staging_buffer;
-    std::vector<VkBufferCopy> updates;
-    VkBufferCopy read_buffer_copy;
 
 public:
     // constructors and destructors
@@ -65,14 +62,6 @@ public:
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
         desc_buffer_info.range  = size;
-
-        if constexpr (is_device_local){
-            staging_buffer = std::make_unique<buffer_t<false>>(~0, device, size);
-        }
-
-        read_buffer_copy.srcOffset = 0;
-        read_buffer_copy.dstOffset = 0;
-        read_buffer_copy.size = size;
     }
     
     ~buffer_t(){
