@@ -85,6 +85,10 @@ public:
         buffer_copy.dstOffset = offset;
         buffer_copy.size = sizeof(typename T::value_type) * source.size();
 
+        if (buffer_copy.srcOffset + buffer_copy.size > size){
+            throw std::runtime_error("Error: Invalid buffer write.");
+        }
+
         map(offset, buffer_copy.size, [&](auto mem_map){
             std::memcpy(mem_map, source.data(), buffer_copy.size);
         });
