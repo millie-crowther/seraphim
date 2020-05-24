@@ -594,8 +594,8 @@ renderer_t::render(){
     handle_requests(current_frame);
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
-        substance_buffer->transfer(command_buffer);
-        octree_buffer->transfer(command_buffer);
+        substance_buffer->record_write(command_buffer);
+        octree_buffer->record_write(command_buffer);
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
@@ -623,16 +623,7 @@ renderer_t::render(){
         );
         vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1], 1);
 
-        VkBufferCopy region;
-        region.srcOffset = 0;
-        region.dstOffset = 0;
-        region.size = call_buffer->get_size();
-        vkCmdCopyBuffer(command_buffer, call_buffer->get_buffer(), call_staging_buffers->get_buffer(), 1, &region);
-
-        vkCmdFillBuffer(
-            command_buffer, call_buffer->get_buffer(), 0, call_buffer->get_size(), 0
-        );
-
+        call_buffer->record_read(command_buffer);
 
     })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
@@ -680,7 +671,7 @@ renderer_t::handle_requests(uint32_t frame){
     std::vector<call_t> empty_calls(work_group_count.volume());
     std::vector<call_t> calls(work_group_count.volume());
 
-    call_staging_buffers->map(0, calls.size(), [&](void * memory_map){
+    call_buffer->map(0, calls.size(), [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
         std::memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
     });
@@ -716,7 +707,6 @@ renderer_t::create_buffers(){
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
 
     texture_staging_buffer = std::make_shared<host_buffer_t<uint32_t>>(~0, device, c * 8 * 2);
-    call_staging_buffers = std::make_unique<host_buffer_t<call_t>>(~0, device, c);
 }
 
 void

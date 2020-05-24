@@ -80,40 +80,50 @@ public:
     
     template<class F>
     void map(uint64_t offset, uint64_t size, const F & f){
-        void * memory_map;
-        vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
-        f(memory_map);
-        vkUnmapMemory(device->get_device(), memory);
+        if constexpr (is_device_local){
+            staging_buffer->map(offset, size, f);
+        } else {
+            void * memory_map;
+            vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
+            f(memory_map);
+            vkUnmapMemory(device->get_device(), memory);
+        }
     }
 
     template<class Ts>
     void write(const Ts & source, uint64_t offset){
         if (sizeof(T) * (offset + source.size()) > size){
-            std::cout << this->size << ", " << offset << ", " << source.size() << ", " << sizeof(T) << std::endl;
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
-        if constexpr (is_device_local){
-            staging_buffer->write(source, offset);
+        map(sizeof(T) * offset, sizeof(T) * source.size(), [&](auto mem_map){
+            std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
+        });
 
+        if constexpr (is_device_local){
             VkBufferCopy buffer_copy = {};
             buffer_copy.srcOffset = sizeof(T) * offset;
             buffer_copy.dstOffset = sizeof(T) * offset;
             buffer_copy.size = sizeof(T) * source.size();
             updates.push_back(buffer_copy);
-        } else {
-            map(sizeof(T) * offset, sizeof(T) * source.size(), [&](auto mem_map){
-                std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
-            });
-        }
+        } 
     }
 
-    void transfer(VkCommandBuffer command_buffer){
+    void record_write(VkCommandBuffer command_buffer){
         vkCmdCopyBuffer(
             command_buffer, staging_buffer->get_buffer(), buffer, 
             updates.size(), updates.data()
         );
         updates.clear();
+    }
+
+    void record_read(VkCommandBuffer command_buffer) const {
+        VkBufferCopy region;
+        region.srcOffset = 0;
+        region.dstOffset = 0;
+        region.size = size;
+        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &region);
+        vkCmdFillBuffer(command_buffer, buffer, 0, size, 0);
     }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {

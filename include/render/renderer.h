@@ -92,7 +92,6 @@ private:
     std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
 
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;
-    std::unique_ptr<host_buffer_t<call_t>> call_staging_buffers;
 
     std::unique_ptr<device_buffer_t<float>> persistent_buffer;
 
