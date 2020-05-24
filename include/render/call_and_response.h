@@ -3,7 +3,7 @@
 
 #include "maths/aabb.h"
 #include "maths/vec.h"
-#include "render/substance.h"
+#include "substance/substance.h"
 
 class call_t {
 public:

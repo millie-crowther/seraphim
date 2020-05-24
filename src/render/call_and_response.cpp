@@ -52,19 +52,17 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         for (int o = 0; o < 8; o++){
             vec3_t d = vertices[o].hadamard(r);
                 
-            if (auto sdf = substance->get_sdf().lock()){
-                // create normals
-                vec3_t n = sdf->normal(c + d) / 2 + 0.5;
-                normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
-                
-                // create octree node
-                nodes[o] = create_node(c + d / 2, r / 2, sdf);
-            }
+            auto sdf = substance->get_form()->get_sdf();
+            // create normals
+            vec3_t n = sdf->normal(c + d) / 2 + 0.5;
+            normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
+            
+            // create octree node
+            nodes[o] = create_node(c + d / 2, r / 2, sdf);
+            
 
-            if (auto matter = substance->get_matter().lock()){
-                vec3_t c = matter->get_colour(c + d);
-                colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
-            }
+            vec3_t c = substance->get_matter()->get_colour(c + d);
+            colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
     }
 }

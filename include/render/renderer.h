@@ -15,7 +15,7 @@
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "core/command.h"
-#include "render/substance.h"
+#include "substance/substance.h"
 #include "render/call_and_response.h"
 
 class renderer_t {

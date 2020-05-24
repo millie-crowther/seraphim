@@ -1,4 +1,4 @@
-#include "render/matter.h"
+#include "substance/matter/matter.h"
 
 matter_t::matter_t(const vec3_t & colour){
     this->colour = colour;

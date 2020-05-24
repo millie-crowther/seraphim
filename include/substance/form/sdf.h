@@ -24,7 +24,6 @@ public:
     }
 };
 
-typedef sdf_t<2> sdf2_t;
 typedef sdf_t<3> sdf3_t;
 
 #endif

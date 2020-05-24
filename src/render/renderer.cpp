@@ -1,6 +1,6 @@
 #include "render/renderer.h"
 
-#include "sdf/primitive.h"
+#include "substance/form/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
 
@@ -36,18 +36,18 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/frag.glsl");
     vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
 
-    floor_substance = std::make_shared<substance_t>(0, 0, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0)),
+    floor_substance = std::make_shared<substance_t>(0, 
+        std::make_shared<form_t>(0, std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))),
         std::make_shared<matter_t>(vec3_t(0.4, 0.3, 0.6))
     );
 
-    sphere = std::make_shared<substance_t>(1, 8,
-        std::make_shared<primitive::sphere_t<3>>(0.5),
+    sphere = std::make_shared<substance_t>(1, 
+        std::make_shared<form_t>(8, std::make_shared<primitive::sphere_t<3>>(0.5)),
         std::make_shared<matter_t>(vec3_t(0.8, 0.3, 0.4))
     );
 
-    cube = std::make_shared<substance_t>(2, 16, 
-        std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5)),
+    cube = std::make_shared<substance_t>(2, 
+        std::make_shared<form_t>(16, std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5))),
         std::make_shared<matter_t>(vec3_t(0.7, 0.3, 0.8))
     );
 
@@ -816,7 +816,7 @@ renderer_t::phi_global(const vec3_t & x){
     double phi_initial = push_constants.render_distance;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            phi_initial = std::min(sub->get_sdf().lock()->phi(x), phi_initial);
+            phi_initial = std::min(sub->get_form()->get_sdf()->phi(x), phi_initial);
         }
     }
     return phi_initial;

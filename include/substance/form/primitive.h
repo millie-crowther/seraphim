@@ -3,10 +3,7 @@
 
 #include <memory>
 
-#include "sdf/sdf.h"
-
-// TODO: remove 'centre' param from all SDFs
-//       translation operation should be performed by transform_t class
+#include "sdf.h"
 
 namespace primitive {
     template<uint8_t D>

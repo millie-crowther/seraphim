@@ -33,9 +33,11 @@ set(SOURCES
     ../src/render/texture.cpp
     ../src/render/camera.cpp
     ../src/render/swapchain.cpp
-    ../src/render/substance.cpp
-    ../src/render/matter.cpp
     ../src/render/call_and_response.cpp
+
+    ../src/substance/substance.cpp
+    ../src/substance/form/form.cpp
+    ../src/substance/matter/matter.cpp
     
     ../src/maths/quat.cpp
     
