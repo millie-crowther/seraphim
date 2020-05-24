@@ -106,9 +106,10 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(colour_texture->get_descriptor_write(descriptor_set));
 
-        for (auto buffer : buffers){
-            write_desc_sets.push_back(buffer->get_write_descriptor_set(descriptor_set));
-        }
+        write_desc_sets.push_back(octree_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(persistent_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -496,12 +497,13 @@ renderer_t::create_descriptor_set_layout(){
     std::vector<VkDescriptorSetLayoutBinding> layouts = { 
         image_layout, 
         normal_texture->get_descriptor_layout_binding(),
-        colour_texture->get_descriptor_layout_binding()
-    };
+        colour_texture->get_descriptor_layout_binding(),
 
-    for (auto buffer : buffers){
-        layouts.push_back(buffer->get_descriptor_set_layout_binding());
-    }
+        octree_buffer->get_descriptor_set_layout_binding(),
+        substance_buffer->get_descriptor_set_layout_binding(),
+        persistent_buffer->get_descriptor_set_layout_binding(),
+        call_buffer->get_descriptor_set_layout_binding(),
+    };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -631,6 +633,7 @@ renderer_t::render(){
             command_buffer, call_buffer->get_buffer(), 0, call_buffer->get_size(), 0
         );
 
+
     })->submit(
         image_available_semas[current_frame], compute_done_semas[current_frame], 
         in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
@@ -677,10 +680,9 @@ renderer_t::handle_requests(uint32_t frame){
     std::vector<call_t> empty_calls(work_group_count.volume());
     std::vector<call_t> calls(work_group_count.volume());
 
-    uint64_t s = sizeof(call_t) * calls.size();
-    call_staging_buffers->map(0, s, [&](void * memory_map){
-        std::memcpy(calls.data(), memory_map, s);
-        std::memcpy(memory_map, empty_calls.data(), s);
+    call_staging_buffers->map(0, calls.size(), [&](void * memory_map){
+        std::memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
+        std::memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
     });
 
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
@@ -693,7 +695,7 @@ renderer_t::handle_requests(uint32_t frame){
                 0u
             ) * 2;
 
-            octree_buffer->write(response.get_nodes(), calls[i].get_child() * sizeof(u32vec2_t));
+            octree_buffer->write(response.get_nodes(), calls[i].get_child());
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
             auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
 
@@ -708,29 +710,13 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    octree_buffer = std::make_shared<device_buffer_t>(
-        1, device, 
-        sizeof(u32vec2_t) * c * s
-    );
+    octree_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, c * s);
+    call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c);
+    persistent_buffer = std::make_unique<device_buffer_t<float>>(3, device, c * 8);
+    substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
 
-    substance_buffer = std::make_shared<device_buffer_t>(
-        4, device, sizeof(substance_t::data_t) * s
-    );
-
-    call_buffer = std::make_shared<device_buffer_t>(2, device, sizeof(call_t) * c);
-
-    buffers = { 
-        octree_buffer, call_buffer, substance_buffer,
-        std::make_shared<device_buffer_t>(3, device, c * 32)
-    };
-
-    texture_staging_buffer = std::make_shared<host_buffer_t>(
-        ~0, device, c * sizeof(uint32_t) * 8 * 2
-    );
-
-    call_staging_buffers = std::make_unique<host_buffer_t>(
-        ~0, device, sizeof(call_t) * c
-    );
+    texture_staging_buffer = std::make_shared<host_buffer_t<uint32_t>>(~0, device, c * 8 * 2);
+    call_staging_buffers = std::make_unique<host_buffer_t<call_t>>(~0, device, c);
 }
 
 void

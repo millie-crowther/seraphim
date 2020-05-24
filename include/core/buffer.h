@@ -8,7 +8,7 @@
 #include "core/device.h"
 #include "maths/vec.h"
 
-template<bool is_device_local>
+template<bool is_device_local, class T>
 class buffer_t {
 private:
     std::shared_ptr<device_t> device;
@@ -18,19 +18,19 @@ private:
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
 
-    std::unique_ptr<buffer_t<false>> staging_buffer;
+    std::unique_ptr<buffer_t<false, T>> staging_buffer;
     std::vector<VkBufferCopy> updates;
 
 public:
     // constructors and destructors
     buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size){
         this->device = device;
-        this->size = size;
+        this->size = sizeof(T) * size;
         this->binding = binding;
 
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_info.size = size;
+        buffer_info.size = this->size;
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkMemoryPropertyFlagBits memory_property;
@@ -64,10 +64,10 @@ public:
         desc_buffer_info = {};
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
-        desc_buffer_info.range  = size;
+        desc_buffer_info.range  = this->size;
 
         if constexpr (is_device_local){
-            staging_buffer = std::make_unique<buffer_t<false>>(
+            staging_buffer = std::make_unique<buffer_t<false, T>>(
                 ~0, device, size
             );
         }
@@ -86,9 +86,10 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
-    template<class T>
-    void write(const T & source, uint64_t offset){
-        if (offset + sizeof(typename T::value_type) * source.size() > size){
+    template<class Ts>
+    void write(const Ts & source, uint64_t offset){
+        if (sizeof(T) * (offset + source.size()) > size){
+            std::cout << this->size << ", " << offset << ", " << source.size() << ", " << sizeof(T) << std::endl;
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
@@ -96,13 +97,13 @@ public:
             staging_buffer->write(source, offset);
 
             VkBufferCopy buffer_copy = {};
-            buffer_copy.srcOffset = offset;
-            buffer_copy.dstOffset = offset;
-            buffer_copy.size = sizeof(typename T::value_type) * source.size();
+            buffer_copy.srcOffset = sizeof(T) * offset;
+            buffer_copy.dstOffset = sizeof(T) * offset;
+            buffer_copy.size = sizeof(T) * source.size();
             updates.push_back(buffer_copy);
         } else {
-            map(offset, sizeof(typename T::value_type) * source.size(), [&](auto mem_map){
-                std::memcpy(mem_map, source.data(), sizeof(typename T::value_type) * source.size());
+            map(sizeof(T) * offset, sizeof(T) * source.size(), [&](auto mem_map){
+                std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
             });
         }
     }
@@ -162,7 +163,10 @@ public:
     }
 };
 
-typedef buffer_t<false> host_buffer_t;
-typedef buffer_t<true> device_buffer_t;
+template<class T>
+using host_buffer_t = buffer_t<false, T>;
+
+template<class T>
+using device_buffer_t = buffer_t<true, T>;
 
 #endif

@@ -82,19 +82,19 @@ private:
     std::unique_ptr<texture_t> render_texture; 
     std::unique_ptr<texture_t> colour_texture;
     std::unique_ptr<texture_t> normal_texture;
-    std::shared_ptr<host_buffer_t> texture_staging_buffer;
+    std::shared_ptr<host_buffer_t<uint32_t>> texture_staging_buffer;
     
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;
 
     // buffers
-    std::vector<std::shared_ptr<device_buffer_t>> buffers;
+    std::unique_ptr<device_buffer_t<u32vec2_t>> octree_buffer;
+    std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
 
-    std::shared_ptr<device_buffer_t> octree_buffer;
-    std::shared_ptr<device_buffer_t> substance_buffer;
+    std::unique_ptr<device_buffer_t<call_t>> call_buffer;
+    std::unique_ptr<host_buffer_t<call_t>> call_staging_buffers;
 
-    std::shared_ptr<device_buffer_t> call_buffer;
-    std::unique_ptr<host_buffer_t> call_staging_buffers;
+    std::unique_ptr<device_buffer_t<float>> persistent_buffer;
 
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
