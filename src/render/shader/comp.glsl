@@ -87,10 +87,10 @@ struct persistent_t {
     float _2;
 };
 
-layout (binding = 1) buffer octree_buffer { uvec2 data[]; } octree_global;
-layout (binding = 2) buffer request_buffer { request_t requests[]; } requests;
-layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persistent;
-layout (binding = 4) buffer input_buffer { substance_data_t data[]; } substance;
+layout (binding = 1) buffer octree_buffer     { uvec2            data[]; } octree_global;
+layout (binding = 2) buffer request_buffer    { request_t        data[]; } requests;
+layout (binding = 3) buffer persistent_buffer { persistent_t     data[]; } persistent;
+layout (binding = 4) buffer input_buffer      { substance_data_t data[]; } substance;
 
 // shared memory
 shared uint vacant_node;
@@ -304,18 +304,11 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 }
 
 bool is_visible(substance_data_t sub){
-    // TODO: problem when eye is close to the substance
-    float p = length(vec3(sub.r));
+    vec3 c = (volume_max + volume_min) / 2;
+    vec3 r = (volume_max - volume_min) / 2;
+    vec3 d = max(abs(sub.c - c) - r, 0);
 
-    vec3 lt = vec3(lessThanEqual(sub.c, volume_min)) * abs(sub.c - volume_min);
-    float ltd = dot(lt, vec3(1));
-    
-    vec3 gt = vec3(greaterThanEqual(sub.c, volume_max)) * abs(sub.c - volume_max);
-    float gtd = dot(gt, vec3(1));
-
-    p -= ltd + gtd;
-
-    // return p > -epsilon;
+    // return sqrt3 * sub.r - dot(d, vec3(1)) > 0;
     return true;
 }
 
@@ -389,7 +382,7 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
     if (i == min(min(m.x, m.y), min(m.z, m.w))){
         octree_global.data[request.parent + work_group_offset()].x |= vacant_node;
         request.child = vacant_node + work_group_offset();
-        requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
+        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
     }
 
     // cull nodes that havent been seen this frame

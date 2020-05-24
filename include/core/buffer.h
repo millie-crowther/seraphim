@@ -84,7 +84,7 @@ public:
             staging_buffer->map(offset, size, f);
         } else {
             void * memory_map;
-            vkMapMemory(device->get_device(), memory, offset, size, 0, &memory_map);
+            vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * size, 0, &memory_map);
             f(memory_map);
             vkUnmapMemory(device->get_device(), memory);
         }
@@ -96,7 +96,7 @@ public:
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
-        map(sizeof(T) * offset, sizeof(T) * source.size(), [&](auto mem_map){
+        map(offset, source.size(), [&](auto mem_map){
             std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
         });
 
