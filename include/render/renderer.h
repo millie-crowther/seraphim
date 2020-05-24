@@ -82,15 +82,21 @@ private:
     std::unique_ptr<texture_t> render_texture; 
     std::unique_ptr<texture_t> colour_texture;
     std::unique_ptr<texture_t> normal_texture;
+    std::shared_ptr<host_buffer_t> texture_staging_buffer;
     
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;
 
     // buffers
     std::vector<std::shared_ptr<device_buffer_t>> buffers;
-    std::shared_ptr<device_buffer_t> input_buffer;
+
+    std::shared_ptr<device_buffer_t> octree_buffer;
+    std::unique_ptr<host_buffer_t> octree_staging_buffer;
+
+    std::shared_ptr<device_buffer_t> substance_buffer;
+    std::shared_ptr<host_buffer_t> substance_staging_buffer;
+
     std::shared_ptr<device_buffer_t> call_buffer;
-    std::shared_ptr<host_buffer_t> texture_staging_buffer;
     std::vector<std::unique_ptr<host_buffer_t>> call_staging_buffers;
 
     static constexpr uint32_t max_cache_size = 1000;    
@@ -99,7 +105,6 @@ private:
     std::array<std::vector<VkBufferImageCopy>, frames_in_flight> normal_texture_updates;
     std::array<std::vector<VkBufferImageCopy>, frames_in_flight> colour_texture_updates;
     std::array<std::vector<VkBufferCopy>, frames_in_flight> input_buffer_updates;
-    std::unique_ptr<host_buffer_t> input_staging_buffer;
 
     std::chrono::high_resolution_clock::time_point start;
 

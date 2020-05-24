@@ -564,7 +564,7 @@ renderer_t::render(){
     sphere->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
     cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
 
-    std::vector<substance_t::data_t> substance_data(3);
+    std::vector<substance_t::data_t> substance_data(work_group_size.volume());
 
     push_constants.phi_initial = phi_lower_bound();
     for (auto pair : substances){
@@ -575,7 +575,7 @@ renderer_t::render(){
         }
     }
 
-    VkBufferCopy substances_upload = input_staging_buffer->write(substance_data, 0);
+    VkBufferCopy substances_upload = substance_staging_buffer->write(substance_data, 0);
     
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
@@ -593,12 +593,12 @@ renderer_t::render(){
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         vkCmdCopyBuffer(
-            command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
+            command_buffer, substance_staging_buffer->get_buffer(), substance_buffer->get_buffer(), 
             1, &substances_upload
         );
 
         vkCmdCopyBuffer(
-            command_buffer, input_staging_buffer->get_buffer(), input_buffer->get_buffer(), 
+            command_buffer, octree_staging_buffer->get_buffer(), octree_buffer->get_buffer(), 
             input_buffer_updates[current_frame].size(), input_buffer_updates[current_frame].data()
         );
         input_buffer_updates[current_frame].clear();
@@ -703,9 +703,9 @@ renderer_t::handle_requests(uint32_t frame){
                 0u
             ) * 2;
 
-            uint64_t offset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].get_child() * sizeof(u32vec2_t);
+            uint64_t offset = calls[i].get_child() * sizeof(u32vec2_t);
 
-            auto octree_update = input_staging_buffer->write(response.get_nodes(), offset);
+            auto octree_update = octree_staging_buffer->write(response.get_nodes(), offset);
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
             auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
 
@@ -721,15 +721,19 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    input_buffer = std::make_shared<device_buffer_t>(
+    octree_buffer = std::make_shared<device_buffer_t>(
         1, device, 
-        sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s
+        sizeof(u32vec2_t) * c * s
+    );
+
+    substance_buffer = std::make_shared<device_buffer_t>(
+        4, device, sizeof(substance_t::data_t) * s
     );
 
     call_buffer = std::make_shared<device_buffer_t>(2, device, sizeof(call_t) * c);
 
     buffers = { 
-        input_buffer, call_buffer, 
+        octree_buffer, call_buffer, substance_buffer,
         std::make_shared<device_buffer_t>(3, device, c * 32)
     };
 
@@ -737,8 +741,12 @@ renderer_t::create_buffers(){
         ~0, device, c * sizeof(uint32_t) * 8 * 2
     );
 
-    input_staging_buffer = std::make_unique<host_buffer_t>(
-        ~0, device, sizeof(substance_t::data_t) * s + sizeof(u32vec2_t) * c * s
+    octree_staging_buffer = std::make_unique<host_buffer_t>(
+        ~0, device, sizeof(u32vec2_t) * c * s
+    );
+
+    substance_staging_buffer = std::make_shared<host_buffer_t>(
+        ~0, device, sizeof(substance_t::data_t) * s
     );
 
     for (uint32_t i = 0; i < frames_in_flight; i++){
@@ -786,13 +794,8 @@ renderer_t::initialise_buffers(){
         }
     }
 
-    std::vector<substance_t::data_t> initial_substances(work_group_size.volume());
-
-    auto upload_octree = input_staging_buffer->write(initial_octree, work_group_size.volume() * sizeof(substance_t::data_t));
-    auto clear_substances = input_staging_buffer->write(initial_substances, 0);
-
+    auto upload_octree = octree_staging_buffer->write(initial_octree, 0);
     input_buffer_updates[frames_in_flight - 1].push_back(upload_octree);
-    input_buffer_updates[frames_in_flight - 1].push_back(clear_substances);
 }
 
 response_t

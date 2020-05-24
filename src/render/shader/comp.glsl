@@ -66,11 +66,6 @@ struct substance_t {
     mat3 inverse;
 };
 
-layout (binding = 1) buffer input_buffer { 
-    substance_data_t substances[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-    uvec2 octree[]; 
-} input_data;
-
 // output buffers
 struct request_t {
     vec3 c;
@@ -82,7 +77,6 @@ struct request_t {
     uint status;
 };
 
-layout (binding = 2) buffer request_buffer { request_t requests[]; } requests;
 
 // work group data that is persistent between frames
 struct persistent_t {
@@ -93,7 +87,10 @@ struct persistent_t {
     float _2;
 };
 
+layout (binding = 1) buffer octree_buffer { uvec2 data[]; } octree_global;
+layout (binding = 2) buffer request_buffer { request_t requests[]; } requests;
 layout (binding = 3) buffer persistent_buffer { persistent_t data[]; } persistent;
+layout (binding = 4) buffer input_buffer { substance_data_t data[]; } substance;
 
 // shared memory
 shared uint vacant_node;
@@ -334,7 +331,7 @@ void prerender(uint i, uint work_group_id){
     hitmap[i / 8] = false;
 
     // load octree from global memory into shared memory
-    octree[i] = input_data.octree[i + work_group_offset()];
+    octree[i] = octree_global.data[i + work_group_offset()];
 
     // submit free nodes to request queue
     if ((i & 7) == 0 && (octree[i].x & node_unused_flag) != 0){
@@ -343,7 +340,7 @@ void prerender(uint i, uint work_group_id){
 
     // visibility check on substances and load into shared memory
     barrier();
-    substance_data_t s = input_data.substances[i];
+    substance_data_t s = substance.data[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
     workspace[i / 4][i % 4] = uint(visible_substance);
 
@@ -390,7 +387,7 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
     
     uvec4 m = min(workspace[0], workspace[128]);
     if (i == min(min(m.x, m.y), min(m.z, m.w))){
-        input_data.octree[request.parent + work_group_offset()].x |= vacant_node;
+        octree_global.data[request.parent + work_group_offset()].x |= vacant_node;
         request.child = vacant_node + work_group_offset();
         requests.requests[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
     }
@@ -398,8 +395,8 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (!hitmap[c >> 3]){
-        input_data.octree[i + work_group_offset()].x &= ~node_child_mask;
-        input_data.octree[c + work_group_offset()].x |= node_unused_flag;
+        octree_global.data[i + work_group_offset()].x &= ~node_child_mask;
+        octree_global.data[c + work_group_offset()].x |= node_unused_flag;
     }
 
     visibility[i] = v_min;
