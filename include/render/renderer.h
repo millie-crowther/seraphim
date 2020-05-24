@@ -91,10 +91,7 @@ private:
     std::vector<std::shared_ptr<device_buffer_t>> buffers;
 
     std::shared_ptr<device_buffer_t> octree_buffer;
-    std::unique_ptr<host_buffer_t> octree_staging_buffer;
-
     std::shared_ptr<device_buffer_t> substance_buffer;
-    std::shared_ptr<host_buffer_t> substance_staging_buffer;
 
     std::shared_ptr<device_buffer_t> call_buffer;
     std::unique_ptr<host_buffer_t> call_staging_buffers;
@@ -104,7 +101,6 @@ private:
     std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
     std::vector<VkBufferImageCopy> normal_texture_updates;
     std::vector<VkBufferImageCopy> colour_texture_updates;
-    std::vector<VkBufferCopy> input_buffer_updates;
 
     std::chrono::high_resolution_clock::time_point start;
 

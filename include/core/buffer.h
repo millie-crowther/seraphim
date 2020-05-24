@@ -18,6 +18,9 @@ private:
     uint32_t binding;
     VkDescriptorBufferInfo desc_buffer_info;
 
+    std::unique_ptr<buffer_t<false>> staging_buffer;
+    std::vector<VkBufferCopy> updates;
+
 public:
     // constructors and destructors
     buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size){
@@ -62,6 +65,12 @@ public:
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
         desc_buffer_info.range  = size;
+
+        if constexpr (is_device_local){
+            staging_buffer = std::make_unique<buffer_t<false>>(
+                ~0, device, size
+            );
+        }
     }
     
     ~buffer_t(){
@@ -77,23 +86,33 @@ public:
         vkUnmapMemory(device->get_device(), memory);
     }
 
-    template<class T, class S = VkBufferCopy>
-    typename std::enable_if<!is_device_local, S>::type  
-    write(const T & source, uint64_t offset){
-        VkBufferCopy buffer_copy = {};
-        buffer_copy.srcOffset = offset;
-        buffer_copy.dstOffset = offset;
-        buffer_copy.size = sizeof(typename T::value_type) * source.size();
-
-        if (buffer_copy.srcOffset + buffer_copy.size > size){
+    template<class T>
+    void write(const T & source, uint64_t offset){
+        if (offset + sizeof(typename T::value_type) * source.size() > size){
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
-        map(offset, buffer_copy.size, [&](auto mem_map){
-            std::memcpy(mem_map, source.data(), buffer_copy.size);
-        });
+        if constexpr (is_device_local){
+            staging_buffer->write(source, offset);
 
-        return buffer_copy;
+            VkBufferCopy buffer_copy = {};
+            buffer_copy.srcOffset = offset;
+            buffer_copy.dstOffset = offset;
+            buffer_copy.size = sizeof(typename T::value_type) * source.size();
+            updates.push_back(buffer_copy);
+        } else {
+            map(offset, sizeof(typename T::value_type) * source.size(), [&](auto mem_map){
+                std::memcpy(mem_map, source.data(), sizeof(typename T::value_type) * source.size());
+            });
+        }
+    }
+
+    void transfer(VkCommandBuffer command_buffer){
+        vkCmdCopyBuffer(
+            command_buffer, staging_buffer->get_buffer(), buffer, 
+            updates.size(), updates.data()
+        );
+        updates.clear();
     }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {

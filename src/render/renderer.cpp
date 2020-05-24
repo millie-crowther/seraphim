@@ -575,7 +575,7 @@ renderer_t::render(){
         }
     }
 
-    VkBufferCopy substances_upload = substance_staging_buffer->write(substance_data, 0);
+    substance_buffer->write(substance_data, 0);
     
     if (auto camera = main_camera.lock()){
         push_constants.camera_position = camera->get_position().cast<float>();
@@ -592,16 +592,8 @@ renderer_t::render(){
     handle_requests(current_frame);
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
-        vkCmdCopyBuffer(
-            command_buffer, substance_staging_buffer->get_buffer(), substance_buffer->get_buffer(), 
-            1, &substances_upload
-        );
-
-        vkCmdCopyBuffer(
-            command_buffer, octree_staging_buffer->get_buffer(), octree_buffer->get_buffer(), 
-            input_buffer_updates.size(), input_buffer_updates.data()
-        );
-        input_buffer_updates.clear();
+        substance_buffer->transfer(command_buffer);
+        octree_buffer->transfer(command_buffer);
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
@@ -701,15 +693,12 @@ renderer_t::handle_requests(uint32_t frame){
                 0u
             ) * 2;
 
-            uint64_t offset = calls[i].get_child() * sizeof(u32vec2_t);
-
-            auto octree_update = octree_staging_buffer->write(response.get_nodes(), offset);
+            octree_buffer->write(response.get_nodes(), calls[i].get_child() * sizeof(u32vec2_t));
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
             auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
 
             normal_texture_updates.push_back(normal_update);
             colour_texture_updates.push_back(colour_update);
-            input_buffer_updates.push_back(octree_update);
         }
     }   
 }
@@ -737,14 +726,6 @@ renderer_t::create_buffers(){
 
     texture_staging_buffer = std::make_shared<host_buffer_t>(
         ~0, device, c * sizeof(uint32_t) * 8 * 2
-    );
-
-    octree_staging_buffer = std::make_unique<host_buffer_t>(
-        ~0, device, sizeof(u32vec2_t) * c * s
-    );
-
-    substance_staging_buffer = std::make_shared<host_buffer_t>(
-        ~0, device, sizeof(substance_t::data_t) * s
     );
 
     call_staging_buffers = std::make_unique<host_buffer_t>(
@@ -790,8 +771,7 @@ renderer_t::initialise_buffers(){
         }
     }
 
-    auto upload_octree = octree_staging_buffer->write(initial_octree, 0);
-    input_buffer_updates.push_back(upload_octree);
+    octree_buffer->write(initial_octree, 0);
 }
 
 response_t
