@@ -599,23 +599,23 @@ renderer_t::render(){
 
         vkCmdCopyBuffer(
             command_buffer, octree_staging_buffer->get_buffer(), octree_buffer->get_buffer(), 
-            input_buffer_updates[current_frame].size(), input_buffer_updates[current_frame].data()
+            input_buffer_updates.size(), input_buffer_updates.data()
         );
-        input_buffer_updates[current_frame].clear();
+        input_buffer_updates.clear();
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            normal_texture_updates[current_frame].size(), normal_texture_updates[current_frame].data()
+            normal_texture_updates.size(), normal_texture_updates.data()
         );
-        normal_texture_updates[current_frame].clear();
+        normal_texture_updates.clear();
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), colour_texture->get_image(), 
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            colour_texture_updates[current_frame].size(), colour_texture_updates[current_frame].data()
+            colour_texture_updates.size(), colour_texture_updates.data()
         );
-        colour_texture_updates[current_frame].clear();
+        colour_texture_updates.clear();
 
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
@@ -709,9 +709,9 @@ renderer_t::handle_requests(uint32_t frame){
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
             auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
 
-            normal_texture_updates[frame].push_back(normal_update);
-            colour_texture_updates[frame].push_back(colour_update);
-            input_buffer_updates[frame].push_back(octree_update);
+            normal_texture_updates.push_back(normal_update);
+            colour_texture_updates.push_back(colour_update);
+            input_buffer_updates.push_back(octree_update);
         }
     }   
 }
@@ -788,14 +788,14 @@ renderer_t::initialise_buffers(){
                 auto normal_update = normal_texture->write(texture_staging_buffer, m, p, response.get_normals());
                 auto colour_update = colour_texture->write(texture_staging_buffer, m + work_group_count.volume(), p, response.get_colours());
 
-                normal_texture_updates[frames_in_flight - 1].push_back(normal_update);
-                colour_texture_updates[frames_in_flight - 1].push_back(colour_update);
+                normal_texture_updates.push_back(normal_update);
+                colour_texture_updates.push_back(colour_update);
             }
         }
     }
 
     auto upload_octree = octree_staging_buffer->write(initial_octree, 0);
-    input_buffer_updates[frames_in_flight - 1].push_back(upload_octree);
+    input_buffer_updates.push_back(upload_octree);
 }
 
 response_t
