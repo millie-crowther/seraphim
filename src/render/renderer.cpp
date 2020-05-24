@@ -759,12 +759,13 @@ renderer_t::initialise_buffers(){
         if (auto substance = std::get<1>(pair).lock()){
             call_t call(vec3_t(), 0);
             response_t response(call, substance);
+            auto nodes = response.get_nodes();
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size.volume()){
                 auto j = i + substance->get_data().root; 
 
                 for (uint32_t k = 0; k < 8; k++){
-                    initial_octree[j + k] = response.get_nodes()[k];
+                    initial_octree[j + k] = nodes[k];
                 }
 
                 u32vec3_t p = u32vec3_t(
@@ -773,7 +774,7 @@ renderer_t::initialise_buffers(){
                     0u
                 ) * 2;
 
-                auto m = i / work_group_size.volume();
+                auto m = substance->get_data().root;
                 auto normal_update = normal_texture->write(texture_staging_buffer, m, p, response.get_normals());
                 auto colour_update = colour_texture->write(texture_staging_buffer, m + work_group_count.volume(), p, response.get_colours());
 
