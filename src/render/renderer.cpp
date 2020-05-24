@@ -633,7 +633,7 @@ renderer_t::render(){
         region.srcOffset = 0;
         region.dstOffset = 0;
         region.size = call_buffer->get_size();
-        vkCmdCopyBuffer(command_buffer, call_buffer->get_buffer(), call_staging_buffers[current_frame]->get_buffer(), 1, &region);
+        vkCmdCopyBuffer(command_buffer, call_buffer->get_buffer(), call_staging_buffers->get_buffer(), 1, &region);
 
         vkCmdFillBuffer(
             command_buffer, call_buffer->get_buffer(), 0, call_buffer->get_size(), 0
@@ -680,15 +680,13 @@ renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 
 void 
 renderer_t::handle_requests(uint32_t frame){
-    uint32_t last_frame = (frame + frames_in_flight - 1) % frames_in_flight;
-
     vkDeviceWaitIdle(device->get_device()); 
 
     std::vector<call_t> empty_calls(work_group_count.volume());
     std::vector<call_t> calls(work_group_count.volume());
 
     uint64_t s = sizeof(call_t) * calls.size();
-    call_staging_buffers[last_frame]->map(0, s, [&](void * memory_map){
+    call_staging_buffers->map(0, s, [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, s);
         std::memcpy(memory_map, empty_calls.data(), s);
     });
@@ -749,11 +747,9 @@ renderer_t::create_buffers(){
         ~0, device, sizeof(substance_t::data_t) * s
     );
 
-    for (uint32_t i = 0; i < frames_in_flight; i++){
-        call_staging_buffers.push_back(std::make_unique<host_buffer_t>(
-            ~0, device, sizeof(call_t) * c
-        ));
-    }
+    call_staging_buffers = std::make_unique<host_buffer_t>(
+        ~0, device, sizeof(call_t) * c
+    );
 }
 
 void

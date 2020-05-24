@@ -97,7 +97,7 @@ private:
     std::shared_ptr<host_buffer_t> substance_staging_buffer;
 
     std::shared_ptr<device_buffer_t> call_buffer;
-    std::vector<std::unique_ptr<host_buffer_t>> call_staging_buffers;
+    std::unique_ptr<host_buffer_t> call_staging_buffers;
 
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
