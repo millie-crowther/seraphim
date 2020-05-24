@@ -694,16 +694,16 @@ renderer_t::handle_requests(uint32_t frame){
     });
 
     for (uint32_t i = 0; i < work_group_count.volume(); i++){
-        if (calls[i].child != 0){
+        if (calls[i].get_child() != 0){
             auto response = get_response(calls[i], substances[calls[i].get_substance_ID()]);
 
             u32vec3_t p = u32vec3_t(
-                (calls[i].child % (work_group_size[0] * work_group_count[0])) / 8,
-                calls[i].child / (work_group_size[0] * work_group_count[0]),
+                (calls[i].get_child() % (work_group_size[0] * work_group_count[0])) / 8,
+                calls[i].get_child() / (work_group_size[0] * work_group_count[0]),
                 0u
             ) * 2;
 
-            uint64_t offset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].child * sizeof(u32vec2_t);
+            uint64_t offset = work_group_size.volume() * sizeof(substance_t::data_t) + calls[i].get_child() * sizeof(u32vec2_t);
 
             auto octree_update = input_staging_buffer->write(response.get_nodes(), offset);
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
@@ -757,18 +757,16 @@ renderer_t::initialise_buffers(){
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){
-            call_t call;
-            call.c = vec3_t();
-            call.depth = 0;
+            call_t call(vec3_t(), 0);
             response_t response(call, substance);
-            auto root_node = response.get_nodes();
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size.volume()){
+                auto j = i + substance->get_data().root; 
+
                 for (uint32_t k = 0; k < 8; k++){
-                    initial_octree[i + substance->get_data().root + k] = root_node[k];
+                    initial_octree[j + k] = response.get_nodes()[k];
                 }
 
-                auto j = i + substance->get_data().root; 
                 u32vec3_t p = u32vec3_t(
                     (j % (work_group_size[0] * work_group_count[0])) / 8,
                     j / (work_group_size[0] * work_group_count[0]),

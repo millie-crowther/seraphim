@@ -6,7 +6,7 @@
 #include "substance/substance.h"
 
 class call_t {
-public:
+private:
     f32vec3_t c;
     uint32_t depth;
 
@@ -21,8 +21,12 @@ public:
     };
 
     call_t();
+    call_t(const f32vec3_t & c, uint32_t depth);
 
     uint32_t get_substance_ID() const;
+    f32vec3_t get_centre() const;
+    uint32_t get_depth() const;
+    uint32_t get_child() const;
 };
 
 class response_t {

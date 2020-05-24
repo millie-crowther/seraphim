@@ -5,6 +5,27 @@ call_t::call_t(){
     status = 0;
 }
 
+call_t::call_t(const f32vec3_t & c, uint32_t depth){
+    this->c = c;
+    this->depth = depth;
+}
+
+f32vec3_t 
+call_t::get_centre() const {
+    return c;
+}
+
+uint32_t
+call_t::get_depth() const {
+    return depth;
+}
+
+uint32_t 
+call_t::get_child() const {
+    return child;
+}
+
+
 uint32_t
 call_t::get_substance_ID() const {
     return substanceID;
@@ -46,8 +67,8 @@ response_t::response_t(){
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
-        vec3_t c = call.c - substance->get_data().c;
-        vec3_t r = substance->get_data().r / (1 << call.depth);
+        vec3_t c = call.get_centre() - substance->get_data().c;
+        vec3_t r = substance->get_data().r / (1 << call.get_depth());
 
         for (int o = 0; o < 8; o++){
             vec3_t d = vertices[o].hadamard(r);
@@ -59,7 +80,6 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             
             // create octree node
             nodes[o] = create_node(c + d / 2, r / 2, sdf);
-            
 
             vec3_t c = substance->get_matter()->get_colour(c + d);
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
