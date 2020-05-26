@@ -114,10 +114,7 @@ vec2 uv(){
 }
 
 float expected_size(vec3 x){
-    return 0.075 * (1 + length(
-        (x - pc.camera_position) / 10 + 
-        vec3(uv(), 0) / 2
-    ));
+    return 0.075 * (1 + length((x - pc.camera_position) / 10) + length(uv() / 2));
 }
 
 uint work_group_offset(){
@@ -304,11 +301,20 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 }
 
 bool is_visible(substance_data_t sub){
-    vec3 c = (volume_max + volume_min) / 2;
-    vec3 r = (volume_max - volume_min) / 2;
-    vec3 d = max(abs(sub.c - c) - r, 0);
+    vec2 uv = (vec2(gl_WorkGroupID.xy) + 0.5) / gl_NumWorkGroups.xy;
+    uv = uv * 2.0 - 1.0;
+    uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
 
-    // return sqrt3 * sub.r - dot(d, vec3(1)) > 0;
+    vec3 up = pc.camera_up;
+    vec3 right = pc.camera_right;
+    vec3 forward = cross(right, up);
+    vec3 dir = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+
+    float d = dot(sub.c, dir);
+    vec3 x = pc.camera_position + d * dir;
+
+    float r = 2.0 / length(gl_NumWorkGroups.xy) * d / pc.focal_depth ;
+    // return length(x - sub.c) < length(vec3(r)) + length(vec3(sub.r));
     return true;
 }
 
@@ -336,6 +342,7 @@ void prerender(uint i, uint work_group_id){
     substance_data_t s = substance.data[i];
     bool visible_substance = s.id != ~0 && is_visible(s);
     workspace[i / 4][i % 4] = uint(visible_substance);
+    barrier();
 
     uvec4 x = workspace[i >> 2];
     workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
@@ -356,6 +363,7 @@ void prerender(uint i, uint work_group_id){
     if ((i &  64) != 0) workspace[i] += workspace[i & ~64 |  63].w;    
     barrier();
     if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
+    barrier();
 
     if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
