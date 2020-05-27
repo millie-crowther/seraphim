@@ -87,24 +87,20 @@ struct persistent_t {
     float _2;
 };
 
-layout (binding = 1) buffer octree_buffer     { uvec2            data[]; } octree_global;
-layout (binding = 2) buffer request_buffer    { request_t        data[]; } requests;
-layout (binding = 3) buffer persistent_buffer { persistent_t     data[]; } persistent;
-layout (binding = 4) buffer input_buffer      { substance_data_t data[]; } substance;
+layout (binding = 1) buffer octree_buffer    { uvec2            data[]; } octree_global;
+layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
+layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
+layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
 
 // shared memory
 shared uint vacant_node;
 shared uint chosen_request;
 shared uint substances_visible;
-shared vec3 volume_min;
-shared vec3 volume_max;
 
 shared substance_t substances[32];
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
-
 shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared vec3 visibility[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
@@ -332,9 +328,6 @@ void prerender(uint i, uint work_group_id){
     if (i == 0){
         vacant_node = 0;
         chosen_request = ~0;
-        
-        volume_min = persistent.data[work_group_id].v_min;
-        volume_max = persistent.data[work_group_id].v_max;
     }
     hitmap[i / 8] = false;
 
@@ -385,45 +378,6 @@ void prerender(uint i, uint work_group_id){
     substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
 }
 
-void shleem(substance_t sub){
-    /*
-
-    vec3 x = sub.c - pc.camera_position;
-        
-    vec3 up = pc.camera_up;
-    vec3 right = pc.camera_right;
-    vec3 forward = cross(right, up);
-
-    float d = dot(x, forward);
-
-    float u = dot(x, right);
-    float v = dot(x, up);
-
-    vec2 t = vec2(u, v) / d * pc.focal_depth;
-    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
-
-    ivec2 image_x = 
-        ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
-
-    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-
-    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
-    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
-    bool hit = length(diff) < r;
-    
-
-    int p = 9;
-    for (int i = -p; i <= p; i++){
-        for (int j = -p; j <= p; j++){
-            imageStore(render_texture, image_x + ivec2(i, j), vec4(0, 1, 0, 1));
-            imageStore(render_texture, image_x + ivec2(i+r, j), vec4(0, 1, 0, 1));
-            imageStore(render_texture, image_x + ivec2(i-r, j), vec4(0, 1, 0, 1));
-            imageStore(render_texture, image_x + ivec2(i, j+r), vec4(0, 1, 0, 1));
-            imageStore(render_texture, image_x + ivec2(i, j-r), vec4(0, 1, 0, 1));
-        }
-    }*/
-}
-
 void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
     // arbitrate and submit request
     if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
@@ -446,34 +400,6 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
     if (!hitmap[c >> 3]){
         octree_global.data[i + work_group_offset()].x &= ~node_child_mask;
         octree_global.data[c + work_group_offset()].x |= node_unused_flag;
-    }
-
-    visibility[i] = v_min;
-    if ((i & 0x001) == 0) visibility[i] = min(visibility[i], visibility[i +   1]);
-    if ((i & 0x003) == 0) visibility[i] = min(visibility[i], visibility[i +   2]);
-    if ((i & 0x007) == 0) visibility[i] = min(visibility[i], visibility[i +   4]);
-    if ((i & 0x00F) == 0) visibility[i] = min(visibility[i], visibility[i +   8]);
-    if ((i & 0x01F) == 0) visibility[i] = min(visibility[i], visibility[i +  16]);
-    if ((i & 0x03F) == 0) visibility[i] = min(visibility[i], visibility[i +  32]);
-    if ((i & 0x07F) == 0) visibility[i] = min(visibility[i], visibility[i +  64]);
-    if ((i & 0x0FF) == 0) visibility[i] = min(visibility[i], visibility[i + 128]);
-    if ((i & 0x1FF) == 0) visibility[i] = min(visibility[i], visibility[i + 256]);
-    if (i == 0) persistent.data[work_group_id].v_min = min(visibility[0], visibility[512]);
-
-    visibility[i] = v_max;
-    if ((i & 0x001) == 0) visibility[i] = max(visibility[i], visibility[i +   1]);
-    if ((i & 0x003) == 0) visibility[i] = max(visibility[i], visibility[i +   2]);
-    if ((i & 0x007) == 0) visibility[i] = max(visibility[i], visibility[i +   4]);
-    if ((i & 0x00F) == 0) visibility[i] = max(visibility[i], visibility[i +   8]);
-    if ((i & 0x01F) == 0) visibility[i] = max(visibility[i], visibility[i +  16]);
-    if ((i & 0x03F) == 0) visibility[i] = max(visibility[i], visibility[i +  32]);
-    if ((i & 0x07F) == 0) visibility[i] = max(visibility[i], visibility[i +  64]);
-    if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
-    if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
-    if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
-
-    if (i < 32 && substances[i].id != ~0){
-        shleem(substances[i]);
     }
 }
 

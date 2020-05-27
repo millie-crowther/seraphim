@@ -109,7 +109,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(octree_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
-        write_desc_sets.push_back(persistent_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(depth_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -501,7 +501,7 @@ renderer_t::create_descriptor_set_layout(){
 
         octree_buffer->get_descriptor_set_layout_binding(),
         substance_buffer->get_descriptor_set_layout_binding(),
-        persistent_buffer->get_descriptor_set_layout_binding(),
+        depth_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
     };
 
@@ -703,7 +703,7 @@ renderer_t::create_buffers(){
 
     octree_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, c * s);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c);
-    persistent_buffer = std::make_unique<device_buffer_t<float>>(3, device, c * 8);
+    depth_buffer = std::make_unique<device_buffer_t<float>>(3, device, c * s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
 
     texture_staging_buffer = std::make_shared<host_buffer_t<uint32_t>>(~0, device, c * 8 * 2);

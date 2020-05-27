@@ -93,7 +93,7 @@ private:
 
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;
 
-    std::unique_ptr<device_buffer_t<float>> persistent_buffer;
+    std::unique_ptr<device_buffer_t<float>> depth_buffer;
 
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
