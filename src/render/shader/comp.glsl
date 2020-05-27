@@ -301,21 +301,30 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
 }
 
 bool is_visible(substance_data_t sub){
-    vec2 uv = (vec2(gl_WorkGroupID.xy) + 0.5) / gl_NumWorkGroups.xy;
-    uv = uv * 2.0 - 1.0;
-    uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
-
+    vec3 x = sub.c - pc.camera_position;
+        
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
     vec3 forward = cross(right, up);
-    vec3 dir = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 
-    float d = dot(sub.c, dir);
-    vec3 x = pc.camera_position + d * dir;
+    float d = dot(x, forward);
 
-    float r = 2.0 / length(gl_NumWorkGroups.xy) * d / pc.focal_depth ;
-    // return length(x - sub.c) < length(vec3(r)) + length(vec3(sub.r));
-    return true;
+    float u = dot(x, right);
+    float v = dot(x, up);
+
+    vec2 t = vec2(u, v) / d * pc.focal_depth;
+    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
+
+    ivec2 image_x = 
+        ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
+
+    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+
+    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
+    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
+    
+
+    return length(diff) < r;
 }
 
 void prerender(uint i, uint work_group_id){
@@ -376,6 +385,45 @@ void prerender(uint i, uint work_group_id){
     substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
 }
 
+void shleem(substance_t sub){
+    /*
+
+    vec3 x = sub.c - pc.camera_position;
+        
+    vec3 up = pc.camera_up;
+    vec3 right = pc.camera_right;
+    vec3 forward = cross(right, up);
+
+    float d = dot(x, forward);
+
+    float u = dot(x, right);
+    float v = dot(x, up);
+
+    vec2 t = vec2(u, v) / d * pc.focal_depth;
+    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
+
+    ivec2 image_x = 
+        ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
+
+    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+
+    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
+    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
+    bool hit = length(diff) < r;
+    
+
+    int p = 9;
+    for (int i = -p; i <= p; i++){
+        for (int j = -p; j <= p; j++){
+            imageStore(render_texture, image_x + ivec2(i, j), vec4(0, 1, 0, 1));
+            imageStore(render_texture, image_x + ivec2(i+r, j), vec4(0, 1, 0, 1));
+            imageStore(render_texture, image_x + ivec2(i-r, j), vec4(0, 1, 0, 1));
+            imageStore(render_texture, image_x + ivec2(i, j+r), vec4(0, 1, 0, 1));
+            imageStore(render_texture, image_x + ivec2(i, j-r), vec4(0, 1, 0, 1));
+        }
+    }*/
+}
+
 void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
     // arbitrate and submit request
     if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
@@ -423,6 +471,10 @@ void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t re
     if ((i & 0x0FF) == 0) visibility[i] = max(visibility[i], visibility[i + 128]);
     if ((i & 0x1FF) == 0) visibility[i] = max(visibility[i], visibility[i + 256]);
     if (i == 0) persistent.data[work_group_id].v_max = max(visibility[0], visibility[512]);
+
+    if (i < 32 && substances[i].id != ~0){
+        shleem(substances[i]);
+    }
 }
 
 void main(){
