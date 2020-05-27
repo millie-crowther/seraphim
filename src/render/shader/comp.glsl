@@ -77,16 +77,6 @@ struct request_t {
     uint status;
 };
 
-
-// work group data that is persistent between frames
-struct persistent_t {
-    vec3 v_min;
-    float _1;
-
-    vec3 v_max;
-    float _2;
-};
-
 layout (binding = 1) buffer octree_buffer    { uvec2            data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
@@ -209,13 +199,10 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
-intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max, inout request_t request){
+intersection_t raycast(ray_t r, inout request_t request){
     bool hit = false;
     vec3 normal, texture_coord;
     uint steps;
-
-    v_min = min(r.x, v_min);
-    v_max = max(r.x, v_max);
 
     for (steps = 0; !hit && steps < max_steps; steps++){
         float expected_size = expected_size(r.x);
@@ -227,19 +214,17 @@ intersection_t raycast(ray_t r, inout vec3 v_min, inout vec3 v_max, inout reques
         r.x += r.d * phi;
     }
 
-    v_min = min(r.x, v_min);
-    v_max = max(r.x, v_max);
 
     return intersection_t(hit && steps < max_steps, r.x, normal, texture_coord);
 }
 
-float shadow(vec3 l, vec3 p, inout vec3 v_min, inout vec3 v_max, inout request_t request){
+float shadow(vec3 l, vec3 p, inout request_t request){
     return 1;
     // intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max, request);
     // return float(length(i.x - p) < epsilon * 2);
 }
 
-vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_max, inout request_t request){
+vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
     vec4 colour = vec4(50);
     float kd = 0.5;
     float ks = 0.76;
@@ -253,7 +238,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout vec3 v_min, inout vec3 v_
     vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
 
     //shadows
-    float shadow = shadow(light_p, x, v_min, v_max, request);
+    float shadow = shadow(light_p, x, request);
 
     //diffuse
     vec3 l = normalize(light_p - x);
@@ -277,7 +262,7 @@ vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
-request_t render(inout vec3 v_min, inout vec3 v_max){
+request_t render(uint i){
     vec2 uv = uv();
     vec3 up = pc.camera_up;
     vec3 right = pc.camera_right;
@@ -288,10 +273,11 @@ request_t render(inout vec3 v_min, inout vec3 v_max){
     request.status = 0;
 
     ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
-    intersection_t i = raycast(r, v_min, v_max, request);
+    intersection_t intersection = raycast(r, request);
+    
 
-    vec4 hit_colour = colour(i.texture_coord) * light(vec3(-3, 3, -3), i.x, i.normal, i.texture_coord, v_min, v_max, request);
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, i.hit));
+    vec4 hit_colour = colour(intersection.texture_coord) * light(vec3(-3, 3, -3), intersection.x, intersection.normal, intersection.texture_coord, request);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
 
     return request;
 }
@@ -412,7 +398,7 @@ void main(){
     prerender(i, work_group_id);
 
     barrier();
-    request_t request = render(v_min, v_max);
+    request_t request = render(i);
 
     // submit request before barrier so that arbitration can start immediately afterwards
     workspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
