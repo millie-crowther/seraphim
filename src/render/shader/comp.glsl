@@ -26,6 +26,7 @@ struct intersection_t {
     vec3 x;
     vec3 normal;
     vec3 texture_coord;
+    float distance;
 };
 
 // push constants
@@ -201,21 +202,24 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
 
 intersection_t raycast(ray_t r, inout request_t request){
     bool hit = false;
-    vec3 normal, texture_coord;
     uint steps;
+    intersection_t i;
+    i.hit = false;
+    i.distance = 0;
 
-    for (steps = 0; !hit && steps < max_steps; steps++){
+    for (steps = 0; !i.hit && steps < max_steps; steps++){
         float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
-        for (uint substanceID = 0; !hit && substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(r, substances[substanceID], expected_size, normal, texture_coord, request));
-            hit = hit || phi < epsilon;
+        for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
+            phi = min(phi, phi_s(r, substances[substanceID], expected_size, i.normal, i.texture_coord, request));
+            i.hit = i.hit || phi < epsilon;
         }
         r.x += r.d * phi;
+        i.distance += phi;
     }
 
-
-    return intersection_t(hit && steps < max_steps, r.x, normal, texture_coord);
+    i.x = r.x;
+    return i;
 }
 
 float shadow(vec3 l, vec3 p, inout request_t request){
@@ -274,7 +278,7 @@ request_t render(uint i){
 
     ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
     intersection_t intersection = raycast(r, request);
-    
+    depth.data[i + work_group_offset()] = intersection.distance;
 
     vec4 hit_colour = colour(intersection.texture_coord) * light(vec3(-3, 3, -3), intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
@@ -290,7 +294,6 @@ bool is_visible(substance_data_t sub){
     vec3 forward = cross(right, up);
 
     float d = dot(x, forward);
-
     float u = dot(x, right);
     float v = dot(x, up);
 
@@ -304,7 +307,6 @@ bool is_visible(substance_data_t sub){
 
     ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
     ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
-    
 
     return length(diff) < r;
 }
@@ -364,7 +366,7 @@ void prerender(uint i, uint work_group_id){
     substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
 }
 
-void postrender(uint i, uint work_group_id, vec3 v_min, vec3 v_max, request_t request){
+void postrender(uint i, request_t request){
     // arbitrate and submit request
     if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
     if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
@@ -404,5 +406,5 @@ void main(){
     workspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
-    postrender(i, work_group_id, v_min, v_max, request);
+    postrender(i, request);
 }
