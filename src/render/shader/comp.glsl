@@ -163,7 +163,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
 
     // perform octree lookup for relevant node
-    while (s.x >= expected_size && (i == ~0 || next != 0) && (octree[next].x & node_unused_flag) == 0){
+    while (s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
@@ -174,8 +174,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     uvec2 node = octree[i];
 
     // if necessary, request more data from CPU
-    // TODO: move this to postrender(), remove atomic operation
-    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
+    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && next == node_child_mask && request.status == 0;
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
     
     // calculate distance to intersect plane
@@ -365,15 +364,16 @@ void postrender(uint i, request_t request){
     
     uvec4 m = min(workspace[0], workspace[128]);
     if (i == min(min(m.x, m.y), min(m.z, m.w))){
-        octree_global.data[request.parent + work_group_offset()].x |= vacant_node;
+        octree_global.data[request.parent + work_group_offset()].x &= ~node_child_mask | vacant_node;
+
         request.child = vacant_node + work_group_offset();
         requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
     }
 
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
-    if (!hitmap[c >> 3]){
-        octree_global.data[i + work_group_offset()].x &= ~node_child_mask;
+    if (c != node_child_mask && !hitmap[c >> 3]){
+        octree_global.data[i + work_group_offset()].x |= node_child_mask;
         octree_global.data[c + work_group_offset()].x |= node_unused_flag;
     }
 }

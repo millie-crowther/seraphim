@@ -157,7 +157,7 @@ response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3
     u8vec4_t normal = vec4_t(n[0], n[1], n[2], p).cast<uint8_t>();
     
     return u32vec2_t(
-        intersects(c, r, sdf) ? 0 : node_empty_flag,
+        node_child_mask | (intersects(c, r, sdf) ? 0 : node_empty_flag),
         *reinterpret_cast<uint32_t *>(&normal)
     );
 }

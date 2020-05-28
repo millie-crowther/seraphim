@@ -42,6 +42,7 @@ private:
 public:
     static constexpr uint32_t node_empty_flag = 1 << 24;
     static constexpr uint32_t node_unused_flag = 1 << 25;
+    static constexpr uint32_t node_child_mask = 0xFFFF;
 
     response_t();
     response_t(const call_t & call, std::weak_ptr<substance_t> substance);
