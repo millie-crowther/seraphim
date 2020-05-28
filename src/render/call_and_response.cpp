@@ -5,9 +5,9 @@ call_t::call_t(){
     status = 0;
 }
 
-call_t::call_t(const f32vec3_t & c, uint32_t depth){
+call_t::call_t(const f32vec3_t & c, float size){
     this->c = c;
-    this->depth = depth;
+    this->size = size;
 }
 
 f32vec3_t 
@@ -15,9 +15,9 @@ call_t::get_centre() const {
     return c;
 }
 
-uint32_t
-call_t::get_depth() const {
-    return depth;
+float
+call_t::get_size() const {
+    return size;
 }
 
 uint32_t 
@@ -37,8 +37,8 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
         return a.substanceID < b.substanceID;
     }
     
-    if (a.depth != b.depth){
-        return a.depth < b.depth;
+    if (a.size != b.size){
+        return a.size < b.size;
     }
 
     if ((a.c - b.c).chebyshev_norm() > hyper::epsilon){
@@ -68,7 +68,7 @@ response_t::response_t(){
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
         vec3_t c = call.get_centre() - substance->get_data().c;
-        vec3_t r = substance->get_data().r / (1 << call.get_depth());
+        vec3_t r(call.get_size());
 
         for (int o = 0; o < 8; o++){
             vec3_t d = vertices[o].hadamard(r);

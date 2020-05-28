@@ -8,7 +8,7 @@
 class call_t {
 private:
     f32vec3_t c;
-    uint32_t depth;
+    float size;
 
     uint32_t child;
     uint32_t unused;
@@ -21,11 +21,11 @@ public:
     };
 
     call_t();
-    call_t(const f32vec3_t & c, uint32_t depth);
+    call_t(const f32vec3_t & c, float size);
 
     uint32_t get_substance_ID() const;
     f32vec3_t get_centre() const;
-    uint32_t get_depth() const;
+    float get_size() const;
     uint32_t get_child() const;
 };
 

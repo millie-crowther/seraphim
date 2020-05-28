@@ -38,10 +38,10 @@ layout( push_constant ) uniform push_constants {
     vec3 camera_position;
     float phi_initial;        
 
-    vec3 camera_right;
+    vec3 eye_right;
     float focal_depth;
 
-    vec3 camera_up;
+    vec3 eye_up;
     float dummy4;
 } pc;
 
@@ -70,7 +70,7 @@ struct substance_t {
 // output buffers
 struct request_t {
     vec3 c;
-    uint depth;
+    float size;
 
     uint child;
     uint parent;
@@ -152,8 +152,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     vec3 c_prev = c;
     vec3 s = vec3(sub.r);
 
-    uint i;
-    uint depth = 0;
+    uint i = ~0;
     uint next = sub.root;
 
     r.x -= sub.c;
@@ -164,7 +163,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
 
     // perform octree lookup for relevant node
-    for (; s.x >= expected_size && (depth == 0 || next != 0) && (octree[next].x & node_unused_flag) == 0; depth++){
+    while (s.x >= expected_size && (i == ~0 || next != 0) && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
@@ -177,7 +176,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     // if necessary, request more data from CPU
     // TODO: move this to postrender(), remove atomic operation
     bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && (node.x & node_child_mask) == 0 && request.status == 0;
-    if (should_request) request = request_t(c, depth, 0, i, sub.id, 1);
+    if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
     
     // calculate distance to intersect plane
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
@@ -251,8 +250,8 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
 
     //specular
     vec3 v = x - pc.camera_position;
-    vec3 right = pc.camera_right;
-    vec3 u = pc.camera_up;
+    vec3 right = pc.eye_right;
+    vec3 u = pc.eye_up;
 
     v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
     v = normalize(v);
@@ -268,8 +267,8 @@ vec4 sky(){
 
 request_t render(uint i){
     vec2 uv = uv();
-    vec3 up = pc.camera_up;
-    vec3 right = pc.camera_right;
+    vec3 up = pc.eye_up;
+    vec3 right = pc.eye_right;
     vec3 forward = cross(right, up);
     vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 
@@ -287,8 +286,8 @@ request_t render(uint i){
 
 bool is_visible(substance_data_t sub){
     vec3 x = sub.c - pc.camera_position;
-    float d = dot(x, cross(pc.camera_right, pc.camera_up));
-    vec2 t = vec2(dot(x, pc.camera_right), dot(x, pc.camera_up)) / d * pc.focal_depth;
+    float d = dot(x, cross(pc.eye_right, pc.eye_up));
+    vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
     ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;

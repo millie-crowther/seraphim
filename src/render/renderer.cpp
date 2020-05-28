@@ -718,7 +718,7 @@ renderer_t::initialise_buffers(){
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){
-            call_t call(vec3_t(), 0);
+            call_t call(vec3_t(), substance->get_data().r);
             response_t response(call, substance);
             auto nodes = response.get_nodes();
 
