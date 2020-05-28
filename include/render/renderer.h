@@ -8,6 +8,7 @@
 #include <chrono>
 #include <list>
 #include <map>
+#include <set>
 
 #include "core/buffer.h"
 #include "ui/window.h"
@@ -124,9 +125,6 @@ private:
     void present(uint32_t image_index) const;
     response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);    
     
-    double phi_global(const vec3_t & x);
-    double phi_lower_bound();
-
 public:
     // constructors and destructors
     renderer_t(

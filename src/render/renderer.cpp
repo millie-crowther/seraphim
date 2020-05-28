@@ -36,17 +36,17 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/frag.glsl");
     vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
 
-    floor_substance = std::make_shared<substance_t>(0, 
+    floor_substance = std::make_shared<substance_t>( 
         std::make_shared<form_t>(0, std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))),
         std::make_shared<matter_t>(vec3_t(0.4, 0.3, 0.6))
     );
 
-    sphere = std::make_shared<substance_t>(1, 
+    sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(8, std::make_shared<primitive::sphere_t<3>>(0.5)),
         std::make_shared<matter_t>(vec3_t(0.8, 0.3, 0.4))
     );
 
-    cube = std::make_shared<substance_t>(2, 
+    cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(16, std::make_shared<primitive::cuboid_t<3>>(vec3_t(0.5))),
         std::make_shared<matter_t>(vec3_t(0.7, 0.3, 0.8))
     );
@@ -568,13 +568,14 @@ renderer_t::render(){
 
     std::vector<substance_t::data_t> substance_data(work_group_size.volume());
 
-    push_constants.phi_initial = phi_lower_bound();
+    uint32_t i = 0;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
             // update substance transforms
-            substance_data[std::get<0>(pair)] = sub->get_data();
-            substance_data[std::get<0>(pair)].c += sub->get_position();
+            substance_data[i] = sub->get_data();
+            substance_data[i].c += sub->get_position();
         }
+        i++;
     }
 
     substance_buffer->write(substance_data, 0);
@@ -767,32 +768,3 @@ renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substan
     return response_cache[call];
 }
 
-double 
-renderer_t::phi_global(const vec3_t & x){
-    double phi_initial = push_constants.render_distance;
-    for (auto pair : substances){
-        if (auto sub = std::get<1>(pair).lock()){
-            phi_initial = std::min(sub->get_form()->get_sdf()->phi(x), phi_initial);
-        }
-    }
-    return phi_initial;
-}
-
-
-double 
-renderer_t::phi_lower_bound(){
-    vec3_t x = main_camera.lock()->get_position();
-    double phi = phi_global(x);
-    vec3_t dir = main_camera.lock()->get_forward();
-
-    double aspect_ratio = double(work_group_count[1]) / work_group_count[0];
-    double s = vec2_t(1.0, aspect_ratio).norm() / push_constants.focal_depth;
-
-    double phi_i;
-    do {
-        phi_i = phi_global(x + dir * phi) - s * phi;
-        phi += std::max(0.0, phi_i);
-    } while (phi_i > 0.0);
-
-    return phi;
-}

@@ -14,9 +14,11 @@ substance_t::data_t::data_t(const f32vec3_t & c, int32_t root, float r, uint32_t
     this->id = id;
 }
 
-substance_t::substance_t(uint32_t id,  std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter){
+substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter){
+    static uint32_t id = 0;
+
     this->form = form;
-    this->id = id;
+    this->id = id++;
     this->matter = matter;
 }
 

@@ -3,6 +3,7 @@
 
 #include "core/debug.h"
 
+#include <set>
 #include <string>
 #include <vector>
 
@@ -12,10 +13,6 @@
 
 class seraphim_t {
 private:
-    // initialisation functions
-    void create_instance();
-    std::vector<const char *> get_required_extensions();
-
     // debug fields
 #if SERAPHIM_DEBUG
     VkDebugReportCallbackEXT callback;
@@ -23,10 +20,14 @@ private:
     bool setup_debug_callback();
 #endif
 
-	std::unique_ptr<device_t> device;
+    // initialisation functions
+    void create_instance();
+    std::vector<const char *> get_required_extensions();
+
+	std::unique_ptr<device_t>   device;
     std::unique_ptr<renderer_t> renderer;
-    std::unique_ptr<window_t> window;
-    std::unique_ptr<physics_t> physics;
+    std::unique_ptr<window_t>   window;
+    std::unique_ptr<physics_t>  physics;
 
     VkInstance instance;
     VkSurfaceKHR surface;
@@ -34,8 +35,9 @@ private:
     u32vec2_t work_group_count;
     u32vec2_t work_group_size;
  
-    std::shared_ptr<camera_t> test_camera;
+    std::shared_ptr<camera_t> test_camera;      
 
+    std::set<std::weak_ptr<substance_t>> substances;
 
 public:
     seraphim_t();
@@ -44,7 +46,7 @@ public:
     void run();
 
     renderer_t * get_renderer() const;
-    window_t * get_window() const;
+    window_t *   get_window()   const;
 };
 
 #endif
