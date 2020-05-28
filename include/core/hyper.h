@@ -8,7 +8,7 @@ namespace hyper {
     constexpr double epsilon = 0.0078125;             // 2^-7 metres
 
     // shortest time period 
-    constexpr double iota    = 60;                // Hertz
+    constexpr double iota    = 1.0 / 60.0;                // Hertz
 
     // largest distance
     constexpr double rho     = 256;                 // metres    

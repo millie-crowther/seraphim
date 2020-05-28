@@ -3,12 +3,14 @@
 
 #include <thread>
 
+#include "core/hyper.h"
+
 class physics_t {
 private:
     bool quit;
     std::thread thread;
 
-    void tick(double delta);
+    void tick();
     void run();
 
 public:

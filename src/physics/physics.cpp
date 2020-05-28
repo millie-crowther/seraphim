@@ -1,8 +1,10 @@
 #include "physics/physics.h"
 
+#include <chrono>
+#include <iostream>
+
 physics_t::physics_t(){
     quit = false;
-
     thread = std::thread(&physics_t::run, this);
 }
 
@@ -12,13 +14,15 @@ physics_t::~physics_t(){
 }
 
 void
-physics_t::tick(double delta){
+physics_t::tick(){
 
 }
 
 void 
 physics_t::run(){
+    auto t = std::chrono::steady_clock::now();
     while (!quit){
-        tick(0);
+        t += std::chrono::microseconds(static_cast<uint32_t>(1000000 * hyper::iota));
+        std::this_thread::sleep_until(t);
     }
 }
