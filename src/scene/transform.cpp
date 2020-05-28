@@ -2,22 +2,24 @@
 
 void 
 transform_t::set_position(const vec3_t & x){
+    const std::lock_guard<std::mutex> lock(position_mutex);
     position = x;
 }
 
 void 
 transform_t::translate(const vec3_t & x){
-    position += x;
+    set_position(position + x);
 }
 
 void 
 transform_t::set_rotation(const quat_t & q){
+    const std::lock_guard<std::mutex> lock(rotation_mutex);
     rotation = q;
 }
 
 void 
 transform_t::rotate(const quat_t & q){
-    rotation *= q;
+    set_rotation(q * rotation);
 }
 
 quat_t 
