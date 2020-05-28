@@ -75,6 +75,8 @@ seraphim_t::seraphim_t(){
     renderer = std::make_shared<renderer_t>(
         device, surface, window, test_camera, work_group_count, work_group_size
     );
+
+    physics = std::make_unique<physics_t>();
 }
 
 seraphim_t::~seraphim_t(){

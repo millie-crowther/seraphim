@@ -29,6 +29,8 @@ set(SOURCES
     ../src/core/uuid.cpp
     ../src/core/device.cpp
     
+    ../src/physics/physics.cpp
+
     ../src/render/renderer.cpp
     ../src/render/texture.cpp
     ../src/render/camera.cpp

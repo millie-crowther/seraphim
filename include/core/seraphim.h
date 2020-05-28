@@ -5,6 +5,8 @@
 
 #include <string>
 #include <vector>
+
+#include "physics/physics.h"
 #include "render/renderer.h"
 #include "ui/window.h"
 
@@ -33,6 +35,8 @@ private:
     u32vec2_t work_group_size;
  
     std::shared_ptr<camera_t> test_camera;
+
+    std::unique_ptr<physics_t> physics;
 
 public:
     seraphim_t();
