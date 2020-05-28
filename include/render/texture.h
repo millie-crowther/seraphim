@@ -21,12 +21,12 @@ private:
     VkDescriptorType descriptor_type;
     uint32_t binding;
     VkExtent3D extents;
-    std::shared_ptr<device_t> device;
+    device_t * device;
 
 public:
     // constructors and destructors
     texture_t(
-        uint32_t binding, std::shared_ptr<device_t> device,
+        uint32_t binding, device_t * device,
         u32vec3_t size, VkImageUsageFlags usage,
         VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
     );

@@ -9,8 +9,8 @@
 #include <stdexcept>
 
 renderer_t::renderer_t(
-    std::shared_ptr<device_t> device,
-    VkSurfaceKHR surface, std::shared_ptr<window_t> window,
+    device_t * device,
+    VkSurfaceKHR surface, window_t * window,
     std::shared_ptr<camera_t> test_camera,
     u32vec2_t work_group_count, u32vec2_t work_group_size
 ){

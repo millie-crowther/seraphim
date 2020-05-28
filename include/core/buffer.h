@@ -11,7 +11,7 @@
 template<bool is_device_local, class T>
 class buffer_t {
 private:
-    std::shared_ptr<device_t> device;
+    device_t * device;
     VkBuffer buffer;
     VkDeviceMemory memory;
     uint64_t size;
@@ -23,7 +23,7 @@ private:
 
 public:
     // constructors and destructors
-    buffer_t(uint32_t binding, std::shared_ptr<device_t> device, uint64_t size){
+    buffer_t(uint32_t binding, device_t * device, uint64_t size){
         this->device = device;
         this->size = sizeof(T) * size;
         this->binding = binding;
@@ -159,7 +159,7 @@ public:
         return size;
     }
 
-    static uint32_t find_memory_type(std::shared_ptr<device_t> device, uint32_t type_filter, VkMemoryPropertyFlags prop){
+    static uint32_t find_memory_type(device_t * device, uint32_t type_filter, VkMemoryPropertyFlags prop){
         VkPhysicalDeviceMemoryProperties mem_prop;
         vkGetPhysicalDeviceMemoryProperties(device->get_physical_device(), &mem_prop);
 

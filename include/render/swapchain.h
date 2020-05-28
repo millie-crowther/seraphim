@@ -9,10 +9,7 @@
 
 class swapchain_t {
 public:
-    swapchain_t(
-        std::shared_ptr<device_t> device, u32vec2_t size,
-        VkSurfaceKHR surface
-    );
+    swapchain_t(device_t * device, u32vec2_t size, VkSurfaceKHR surface);
     ~swapchain_t();
 
     VkFormat get_image_format() const;
@@ -26,7 +23,7 @@ private:
     VkPresentModeKHR select_present_mode(VkSurfaceKHR surface);
     VkExtent2D select_swap_extent(u32vec2_t size, VkSurfaceKHR surface);
     
-    std::shared_ptr<device_t> device;
+    device_t * device;
     VkSwapchainKHR handle;
     std::vector<VkImageView> image_views;
     VkFormat image_format;

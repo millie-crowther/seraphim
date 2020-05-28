@@ -33,7 +33,7 @@ seraphim_t::seraphim_t(){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    window = std::make_shared<window_t>(work_group_count.hadamard(work_group_size));
+    window = std::make_unique<window_t>(work_group_count.hadamard(work_group_size));
 
     create_instance();
 
@@ -58,7 +58,7 @@ seraphim_t::seraphim_t(){
     }
 
 #if SERAPHIM_DEBUG
-    device = std::make_shared<device_t>(instance, surface, validation_layers);
+    device = std::make_unique<device_t>(instance, surface, validation_layers);
 
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
@@ -67,13 +67,13 @@ seraphim_t::seraphim_t(){
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
     std::cout << "\tMaximum image size: " << properties.limits.maxImageDimension3D << std::endl;
 #else   
-    device = std::make_shared<device_t>(instance, surface, std::vector<const char *>());
+    device = std::make_unique<device_t>(instance, surface, std::vector<const char *>());
 #endif
 
     test_camera = std::make_shared<camera_t>();
 
-    renderer = std::make_shared<renderer_t>(
-        device, surface, window, test_camera, work_group_count, work_group_size
+    renderer = std::make_unique<renderer_t>(
+        device.get(), surface, window.get(), test_camera, work_group_count, work_group_size
     );
 
     physics = std::make_unique<physics_t>();
@@ -111,9 +111,9 @@ seraphim_t::~seraphim_t(){
     std::cout << "Seraphim engine exiting gracefully." << std::endl;
 }
 
-std::weak_ptr<renderer_t> 
+renderer_t * 
 seraphim_t::get_renderer() const {
-    return renderer;
+    return renderer.get();
 }
 
 std::vector<const char *>
@@ -264,7 +264,7 @@ seraphim_t::run(){
     }
 }
 
-std::weak_ptr<window_t> 
+window_t *
 seraphim_t::get_window() const {
-    return window;
+    return window.get();
 }

@@ -3,7 +3,7 @@
 #include "render/texture.h"
 
 swapchain_t::swapchain_t(
-    std::shared_ptr<device_t> device, u32vec2_t size,
+    device_t * device, u32vec2_t size,
     VkSurfaceKHR surface
 ){
     this->device = device;

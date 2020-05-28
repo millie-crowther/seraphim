@@ -5,7 +5,7 @@
 #include "core/buffer.h"
 
 texture_t::texture_t(
-    uint32_t binding, std::shared_ptr<device_t> device,
+    uint32_t binding, device_t * device,
     u32vec3_t size, VkImageUsageFlags usage,
     VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
 ){    

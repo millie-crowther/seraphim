@@ -16,8 +16,6 @@ private:
     void create_instance();
     std::vector<const char *> get_required_extensions();
 
-	std::shared_ptr<device_t> device;
-
     // debug fields
 #if SERAPHIM_DEBUG
     VkDebugReportCallbackEXT callback;
@@ -25,18 +23,19 @@ private:
     bool setup_debug_callback();
 #endif
 
-    std::shared_ptr<renderer_t> renderer;
+	std::unique_ptr<device_t> device;
+    std::unique_ptr<renderer_t> renderer;
+    std::unique_ptr<window_t> window;
+    std::unique_ptr<physics_t> physics;
 
     VkInstance instance;
     VkSurfaceKHR surface;
 
-    std::shared_ptr<window_t> window;
     u32vec2_t work_group_count;
     u32vec2_t work_group_size;
  
     std::shared_ptr<camera_t> test_camera;
 
-    std::unique_ptr<physics_t> physics;
 
 public:
     seraphim_t();
@@ -44,8 +43,8 @@ public:
 
     void run();
 
-    std::weak_ptr<renderer_t> get_renderer() const;
-    std::weak_ptr<window_t> get_window() const;
+    renderer_t * get_renderer() const;
+    window_t * get_window() const;
 };
 
 #endif
