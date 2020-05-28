@@ -276,9 +276,8 @@ request_t render(uint i){
     request_t request;
     request.status = 0;
 
-    ray_t r = ray_t(pc.camera_position + pc.phi_initial * d, d);
+    ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
-    depth.data[i + work_group_offset()] = intersection.distance;
 
     vec4 hit_colour = colour(intersection.texture_coord) * light(vec3(-3, 3, -3), intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
@@ -288,23 +287,12 @@ request_t render(uint i){
 
 bool is_visible(substance_data_t sub){
     vec3 x = sub.c - pc.camera_position;
-        
-    vec3 up = pc.camera_up;
-    vec3 right = pc.camera_right;
-    vec3 forward = cross(right, up);
-
-    float d = dot(x, forward);
-    float u = dot(x, right);
-    float v = dot(x, up);
-
-    vec2 t = vec2(u, v) / d * pc.focal_depth;
+    float d = dot(x, cross(pc.camera_right, pc.camera_up));
+    vec2 t = vec2(dot(x, pc.camera_right), dot(x, pc.camera_up)) / d * pc.focal_depth;
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
-    ivec2 image_x = 
-        ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
-
+    ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
     float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-
     ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
     ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
 
