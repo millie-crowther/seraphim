@@ -221,9 +221,9 @@ intersection_t raycast(ray_t r, inout request_t request){
 }
 
 float shadow(vec3 l, vec3 p, inout request_t request){
-    return 1;
-    // intersection_t i = raycast(ray_t(l, normalize(p - l)), v_min, v_max, request);
-    // return float(length(i.x - p) < epsilon * 2);
+    // return 1;
+    intersection_t i = raycast(ray_t(l, normalize(p - l)), request);
+    return float(length(i.x - p) < epsilon * 10);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
@@ -237,7 +237,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
     float attenuation = 1.0 / (dist * dist);
 
     //ambient 
-    vec4 a = vec4(0.5, 0.5, 0.5, 1.0);
+    vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
     float shadow = shadow(light_p, x, request);
@@ -245,7 +245,7 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
     //diffuse
     vec3 l = normalize(light_p - x);
 
-    vec4 d = kd * dot(l, n) * colour;
+    vec4 d = kd * max(epsilon, dot(l, n)) * colour;
 
     //specular
     vec3 v = x - pc.camera_position;
