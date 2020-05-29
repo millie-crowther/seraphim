@@ -162,6 +162,10 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     vec3 y = abs(r.x) - s;
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
 
+    //
+    //  put this in its own function:
+    //
+
     // perform octree lookup for relevant node
     while (s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
@@ -172,15 +176,19 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     }
 
     uvec2 node = octree[i];
-
-    // if necessary, request more data from CPU
-    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && next == node_child_mask && request.status == 0;
-    if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
     
     // calculate distance to intersect plane
     vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
     float e = dot(c - r.x, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
     float phi_plane = min(0, e) / dot(r.d, n);
+
+    //
+    // up to here
+    //
+
+    // if necessary, request more data from CPU
+    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && next == node_child_mask && request.status == 0;
+    if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
     // calculate texture coordinate
     t = (r.x - c_prev + s * 4) / (s * 8);
@@ -223,12 +231,13 @@ intersection_t raycast(ray_t r, inout request_t request){
 float shadow(vec3 l, vec3 p, inout request_t request){
     uint n = 32;
     vec3 d = (p - l) / n;
-    float phi = pc.render_distance;
+    vec3 rd = normalize(d);
+    float phi = 1;
     float expected_size = expected_size(p);
     vec3 _;
     for (uint i = 1; i < n; i++){
         for (uint substanceID = 0; substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(ray_t(l + d * i, normalize(d)), substances[substanceID], expected_size, _, _, request));
+            phi = min(phi, phi_s(ray_t(l + d * i, rd), substances[substanceID], expected_size, _, _, request));
         }
     }
 
