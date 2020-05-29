@@ -221,9 +221,18 @@ intersection_t raycast(ray_t r, inout request_t request){
 }
 
 float shadow(vec3 l, vec3 p, inout request_t request){
-    // return 1;
-    intersection_t i = raycast(ray_t(l, normalize(p - l)), request);
-    return float(length(i.x - p) < epsilon * 10);
+    uint n = 32;
+    vec3 d = (p - l) / n;
+    float phi = pc.render_distance;
+    float expected_size = expected_size(p);
+    vec3 _;
+    for (uint i = 1; i < n; i++){
+        for (uint substanceID = 0; substanceID < substances_visible; substanceID++){
+            phi = min(phi, phi_s(ray_t(l + d * i, normalize(d)), substances[substanceID], expected_size, _, _, request));
+        }
+    }
+
+    return float(phi > epsilon);
 }
 
 vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
