@@ -87,8 +87,11 @@ layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substa
 shared uint vacant_node;
 shared uint chosen_request;
 shared uint substances_visible;
+shared uint shadow_substances_visible;
 
-shared substance_t substances[32];
+shared substance_t substances[gl_WorkGroupSize.x];
+shared substance_t shadow_substances[gl_WorkGroupSize.x];
+
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -236,8 +239,8 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     float expected_size = expected_size(p);
     vec3 _;
     for (uint i = 1; i < n; i++){
-        for (uint substanceID = 0; substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(ray_t(l + d * i, rd), substances[substanceID], expected_size, _, _, request));
+        for (uint substanceID = 0; substanceID < shadow_substances_visible; substanceID++){
+            phi = min(phi, phi_s(ray_t(l + d * i, rd), shadow_substances[substanceID], expected_size, _, _, request));
         }
     }
 
@@ -368,6 +371,42 @@ void prerender(uint i, uint work_group_id){
     }
 
     substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
+
+    // loading of all substances into shared memory for shadow check
+    barrier();
+    workspace[i / 4][i % 4] = uint(s.id != ~0);
+    barrier();
+
+    x = workspace[i >> 2];
+    workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
+
+    barrier();
+    if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
+    barrier();
+    if ((i &   2) != 0) workspace[i] += workspace[i &  ~2 |   1].w;    
+    barrier();
+    if ((i &   4) != 0) workspace[i] += workspace[i &  ~4 |   3].w;    
+    barrier();
+    if ((i &   8) != 0) workspace[i] += workspace[i &  ~8 |   7].w;    
+    barrier();
+    if ((i &  16) != 0) workspace[i] += workspace[i & ~16 |  15].w;    
+    barrier();
+    if ((i &  32) != 0) workspace[i] += workspace[i & ~32 |  31].w;    
+    barrier();
+    if ((i &  64) != 0) workspace[i] += workspace[i & ~64 |  63].w;    
+    barrier();
+    if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
+    barrier();
+
+    if (s.id != ~0 && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
+        vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
+        q = normalize(q);
+        shadow_substances[workspace[i / 4][i % 4] - 1] = substance_t(
+            s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
+        );
+    }
+
+    shadow_substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
 }
 
 void postrender(uint i, request_t request){
