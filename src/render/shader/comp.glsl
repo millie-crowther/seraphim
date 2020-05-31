@@ -108,8 +108,7 @@ shared substance_t shadow_substances[gl_WorkGroupSize.x];
 
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
-shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared vec4 fworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
@@ -304,54 +303,54 @@ vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
-void reduce_surface_aabb(uint i, vec3 x){
-    fworkspace[i] = x.xyzz;
+void reduce_surface_aabb(uint i, bool hit, vec3 x){
+    workspace[i] = mix(vec4(pc.render_distance), x.xyzz, hit);
 
     barrier();
-    if ((i & 0x001) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   1]);
+    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
     barrier();
-    if ((i & 0x003) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   2]);
+    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
     barrier();
-    if ((i & 0x007) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   4]);
+    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
     barrier();
-    if ((i & 0x00F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   8]);
+    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
     barrier();
-    if ((i & 0x01F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  16]);
+    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
     barrier();
-    if ((i & 0x03F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  32]);
+    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
     barrier();
-    if ((i & 0x07F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  64]);
+    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     barrier();
-    if ((i & 0x0FF) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  128]);
+    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     barrier();
-    if ((i & 0x1FF) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  256]);
-    barrier();
-
-    if (i == 0) surface_min = min(fworkspace[0], fworkspace[512]).xyz;
-
-    fworkspace[i] = x.xyzz;
-
-    barrier();
-    if ((i & 0x001) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   1]);
-    barrier();
-    if ((i & 0x003) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   2]);
-    barrier();
-    if ((i & 0x007) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   4]);
-    barrier();
-    if ((i & 0x00F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   8]);
-    barrier();
-    if ((i & 0x01F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  16]);
-    barrier();
-    if ((i & 0x03F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  32]);
-    barrier();
-    if ((i & 0x07F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  64]);
-    barrier();
-    if ((i & 0x0FF) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  128]);
-    barrier();
-    if ((i & 0x1FF) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  256]);
+    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
     barrier();
 
-    if (i == 0) surface_max = max(fworkspace[0], fworkspace[512]).xyz;
+    if (i == 0) surface_min = min(workspace[0], workspace[512]).xyz;
+
+    workspace[i] = mix(vec4(-pc.render_distance), x.xyzz, hit);
+
+    barrier();
+    if ((i & 0x001) == 0) workspace[i] = max(workspace[i], workspace[i +   1]);
+    barrier();
+    if ((i & 0x003) == 0) workspace[i] = max(workspace[i], workspace[i +   2]);
+    barrier();
+    if ((i & 0x007) == 0) workspace[i] = max(workspace[i], workspace[i +   4]);
+    barrier();
+    if ((i & 0x00F) == 0) workspace[i] = max(workspace[i], workspace[i +   8]);
+    barrier();
+    if ((i & 0x01F) == 0) workspace[i] = max(workspace[i], workspace[i +  16]);
+    barrier();
+    if ((i & 0x03F) == 0) workspace[i] = max(workspace[i], workspace[i +  32]);
+    barrier();
+    if ((i & 0x07F) == 0) workspace[i] = max(workspace[i], workspace[i +  64]);
+    barrier();
+    if ((i & 0x0FF) == 0) workspace[i] = max(workspace[i], workspace[i + 128]);
+    barrier();
+    if ((i & 0x1FF) == 0) workspace[i] = max(workspace[i], workspace[i + 256]);
+    barrier();
+
+    if (i == 0) surface_max = max(workspace[0], workspace[512]).xyz;
 }
 
 request_t render(uint i){
@@ -366,6 +365,8 @@ request_t render(uint i){
 
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
+
+    reduce_surface_aabb(i, intersection.hit, intersection.x);
 
     vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
@@ -410,8 +411,8 @@ void prerender(uint i, uint work_group_id){
     workspace[i / 4][i % 4] = uint(visible_substance);
     barrier();
 
-    uvec4 x = workspace[i >> 2];
-    workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
+    vec4 x = workspace[i >> 2];
+    workspace[i >> 2] = vec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
 
     barrier();
     if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
@@ -434,12 +435,12 @@ void prerender(uint i, uint work_group_id){
     if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
         q = normalize(q);
-        substances[workspace[i / 4][i % 4] - 1] = substance_t(
+        substances[uint(workspace[i / 4][i % 4]) - 1] = substance_t(
             s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
         );
     }
 
-    substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
+    substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 
     // loading of all substances into shared memory for shadow check
     barrier();
@@ -470,25 +471,25 @@ void prerender(uint i, uint work_group_id){
     if (s.id != ~0 && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
         q = normalize(q);
-        shadow_substances[workspace[i / 4][i % 4] - 1] = substance_t(
+        shadow_substances[uint(workspace[i / 4][i % 4]) - 1] = substance_t(
             s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
         );
     }
 
-    shadow_substances_visible = min(workspace[255].w, gl_WorkGroupSize.x);
+    shadow_substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 }
 
 void postrender(uint i, request_t request){
     // arbitrate and submit request
-    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
-    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +  1]);
+    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +  2]);
+    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +  4]);
+    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +  8]);
+    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i + 16]);
+    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i + 32]);
+    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i + 64]);
     
-    uvec4 m = min(workspace[0], workspace[128]);
+    vec4 m = min(workspace[0], workspace[128]);
     if (i == min(min(m.x, m.y), min(m.z, m.w))){
         octree_global.data[request.parent + work_group_offset()].x &= ~node_child_mask | vacant_node;
 
