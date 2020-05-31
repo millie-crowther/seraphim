@@ -67,7 +67,6 @@ struct substance_t {
     mat3 inverse;
 };
 
-// output buffers
 struct request_t {
     vec3 c;
     float size;
@@ -78,10 +77,22 @@ struct request_t {
     uint status;
 };
 
+struct light_t {
+    vec3 x;
+    float _1;
+
+    vec4 colour;
+};
+
 layout (binding = 1) buffer octree_buffer    { uvec2            data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
+
+uint lights_visible = 1;
+light_t lights[] = {
+    light_t(vec3(-3, 3, -3), 0, vec4(50))
+};
 
 // shared memory
 shared uint vacant_node;
@@ -89,12 +100,16 @@ shared uint chosen_request;
 shared uint substances_visible;
 shared uint shadow_substances_visible;
 
+shared vec3 surface_min;
+shared vec3 surface_max;
+
 shared substance_t substances[gl_WorkGroupSize.x];
 shared substance_t shadow_substances[gl_WorkGroupSize.x];
 
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared uvec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared vec4 fworkspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
     vec2 uv = vec2(gl_GlobalInvocationID.xy) / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
@@ -113,6 +128,11 @@ uint work_group_offset(){
 
 vec4 colour(vec3 t){
     return vec4(texture(colour_texture, t).xyz, 1.0);
+}
+
+bool cube_sphere_intersect(vec3 c_min, vec3 c_max, vec3 s_c, float s_r){
+    vec3 d = max(vec3(0), abs((c_max + c_min) / 2 - s_c) - (c_max - c_min) / 2);
+    return dot(d, d) > s_r * s_r;
 }
 
 mat3 get_mat(vec4 q){
@@ -247,26 +267,25 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     return float(phi > epsilon);
 }
 
-vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
-    vec4 colour = vec4(50);
+vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     float kd = 0.5;
     float ks = 0.76;
     float shininess = 32;
 
     // attenuation
-    float dist = length(light_p - x);
-    float attenuation = 1.0 / (dist * dist);
+    vec3 dist = light.x - x;
+    float attenuation = 1.0 / dot(dist, dist);
 
     //ambient 
     vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = shadow(light_p, x, request);
+    float shadow = shadow(light.x, x, request);
 
     //diffuse
-    vec3 l = normalize(light_p - x);
+    vec3 l = normalize(light.x - x);
 
-    vec4 d = kd * max(epsilon, dot(l, n)) * colour;
+    vec4 d = kd * max(epsilon, dot(l, n)) * light.colour;
 
     //specular
     vec3 v = x - pc.camera_position;
@@ -277,12 +296,62 @@ vec4 light(vec3 light_p, vec3 x, vec3 n, vec3 t, inout request_t request){
     v = normalize(v);
 
     vec3 r = reflect(l, n);
-    vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * colour;
+    vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * light.colour;
     return a + (d + s) * attenuation * shadow;
 }
 
 vec4 sky(){
     return vec4(0.5, 0.7, 0.9, 1.0);
+}
+
+void reduce_surface_aabb(uint i, vec3 x){
+    fworkspace[i] = x.xyzz;
+
+    barrier();
+    if ((i & 0x001) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   1]);
+    barrier();
+    if ((i & 0x003) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   2]);
+    barrier();
+    if ((i & 0x007) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   4]);
+    barrier();
+    if ((i & 0x00F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +   8]);
+    barrier();
+    if ((i & 0x01F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  16]);
+    barrier();
+    if ((i & 0x03F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  32]);
+    barrier();
+    if ((i & 0x07F) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  64]);
+    barrier();
+    if ((i & 0x0FF) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  128]);
+    barrier();
+    if ((i & 0x1FF) == 0) fworkspace[i] = min(fworkspace[i], fworkspace[i +  256]);
+    barrier();
+
+    if (i == 0) surface_min = min(fworkspace[0], fworkspace[512]).xyz;
+
+    fworkspace[i] = x.xyzz;
+
+    barrier();
+    if ((i & 0x001) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   1]);
+    barrier();
+    if ((i & 0x003) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   2]);
+    barrier();
+    if ((i & 0x007) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   4]);
+    barrier();
+    if ((i & 0x00F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +   8]);
+    barrier();
+    if ((i & 0x01F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  16]);
+    barrier();
+    if ((i & 0x03F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  32]);
+    barrier();
+    if ((i & 0x07F) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  64]);
+    barrier();
+    if ((i & 0x0FF) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  128]);
+    barrier();
+    if ((i & 0x1FF) == 0) fworkspace[i] = max(fworkspace[i], fworkspace[i +  256]);
+    barrier();
+
+    if (i == 0) surface_max = max(fworkspace[0], fworkspace[512]).xyz;
 }
 
 request_t render(uint i){
@@ -298,7 +367,7 @@ request_t render(uint i){
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
 
-    vec4 hit_colour = colour(intersection.texture_coord) * light(vec3(-3, 3, -3), intersection.x, intersection.normal, intersection.texture_coord, request);
+    vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
 
     return request;
