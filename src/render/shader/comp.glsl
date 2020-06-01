@@ -89,22 +89,25 @@ layout (binding = 2) buffer request_buffer   { request_t        data[]; } reques
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
 
-uint lights_visible = 1;
-light_t lights[] = {
-    light_t(vec3(-3, 3, -3), 0, vec4(50))
-};
 
 // shared memory
 shared uint vacant_node;
 shared uint chosen_request;
-shared uint substances_visible;
-shared uint shadow_substances_visible;
 
 shared vec3 surface_min;
 shared vec3 surface_max;
 
+shared vec3 lights_min;
+shared vec3 lights_max;
+
 shared substance_t substances[gl_WorkGroupSize.x];
+shared uint substances_visible;
+
 shared substance_t shadow_substances[gl_WorkGroupSize.x];
+shared uint shadow_substances_visible;
+
+shared light_t lights[32];
+shared uint lights_visible;
 
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
@@ -267,9 +270,7 @@ float shadow(vec3 l, vec3 p, inout request_t request){
 }
 
 vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
-    float kd = 0.5;
-    float ks = 0.76;
-    float shininess = 32;
+    float shininess = 16;
 
     // attenuation
     vec3 dist = light.x - x;
@@ -279,24 +280,19 @@ vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = shadow(light.x, x, request);
+    float shadow = 1;//shadow(light.x, x, request);
 
     //diffuse
     vec3 l = normalize(light.x - x);
-
-    vec4 d = kd * max(epsilon, dot(l, n)) * light.colour;
+    float d = 0.75 * max(epsilon, dot(l, n));
 
     //specular
-    vec3 v = x - pc.camera_position;
-    vec3 right = pc.eye_right;
-    vec3 u = pc.eye_up;
+    vec3 v = normalize(-x);
 
-    v = vec3(dot(v, right), dot(v, u), dot(v, cross(u, right))); 
-    v = normalize(v);
+    vec3 h = normalize(l + v);
+    float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
-    vec3 r = reflect(l, n);
-    vec4 s = ks * pow(max(dot(r, v), epsilon), shininess) * light.colour;
-    return a + (d + s) * attenuation * shadow;
+    return a + (d + s) * attenuation * shadow * light.colour;
 }
 
 vec4 sky(){
@@ -393,6 +389,8 @@ void prerender(uint i, uint work_group_id){
     if (i == 0){
         vacant_node = 0;
         chosen_request = ~0;
+        lights[0] = light_t(vec3(-3, 3, -3), 0, vec4(50));
+        lights_visible = 1;
     }
     hitmap[i / 8] = false;
 
@@ -476,7 +474,7 @@ void prerender(uint i, uint work_group_id){
         );
     }
 
-    shadow_substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
+        shadow_substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 }
 
 void postrender(uint i, request_t request){
