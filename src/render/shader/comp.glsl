@@ -384,29 +384,8 @@ bool is_directly_visible(substance_data_t sub){
     return length(diff) < r;
 }
 
-void prerender(uint i, uint work_group_id){
-    // clear shared variables
-    if (i == 0){
-        vacant_node = 0;
-        chosen_request = ~0;
-        lights[0] = light_t(vec3(-3, 3, -3), 0, vec4(50));
-        lights_visible = 1;
-    }
-    hitmap[i / 8] = false;
-
-    // load octree from global memory into shared memory
-    octree[i] = octree_global.data[i + work_group_offset()];
-
-    // submit free nodes to request queue
-    if ((i & 7) == 0 && (octree[i].x & node_unused_flag) != 0){
-        vacant_node = i; 
-    }
-
-    // visibility check on substances and load into shared memory
-    barrier();
-    substance_data_t s = substance.data[i];
-    bool visible_substance = s.id != ~0 && is_directly_visible(s);
-    workspace[i / 4][i % 4] = uint(visible_substance);
+uint reduce_to_fit(uint i, bool hit){
+    workspace[i / 4][i % 4] = uint(hit);
     barrier();
 
     vec4 x = workspace[i >> 2];
@@ -430,6 +409,36 @@ void prerender(uint i, uint work_group_id){
     if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
     barrier();
 
+
+    substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
+
+    return 0;
+}
+
+void prerender(uint i, uint work_group_id){
+    // clear shared variables
+    if (i == 0){
+        vacant_node = 0;
+        chosen_request = ~0;
+        lights[0] = light_t(vec3(-3, 3, -3), 0, vec4(50));
+        lights_visible = 1;
+    }
+    hitmap[i / 8] = false;
+
+    // load octree from global memory into shared memory
+    octree[i] = octree_global.data[i + work_group_offset()];
+
+    // submit free nodes to request queue
+    if ((i & 7) == 0 && (octree[i].x & node_unused_flag) != 0){
+        vacant_node = i; 
+    }
+
+    // visibility check on substances and load into shared memory
+    barrier();
+    substance_data_t s = substance.data[i];
+    bool visible_substance = s.id != ~0 && is_directly_visible(s);
+
+    reduce_to_fit(i, visible_substance);
     if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
         vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
         q = normalize(q);
@@ -437,8 +446,6 @@ void prerender(uint i, uint work_group_id){
             s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
         );
     }
-
-    substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 
     shadow_substances_visible = 0;
 }
