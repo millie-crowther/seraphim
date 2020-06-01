@@ -370,7 +370,7 @@ request_t render(uint i){
     return request;
 }
 
-bool is_visible(substance_data_t sub){
+bool is_directly_visible(substance_data_t sub){
     vec3 x = sub.c - pc.camera_position;
     float d = dot(x, cross(pc.eye_right, pc.eye_up));
     vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
@@ -405,7 +405,7 @@ void prerender(uint i, uint work_group_id){
     // visibility check on substances and load into shared memory
     barrier();
     substance_data_t s = substance.data[i];
-    bool visible_substance = s.id != ~0 && is_visible(s);
+    bool visible_substance = s.id != ~0 && is_directly_visible(s);
     workspace[i / 4][i % 4] = uint(visible_substance);
     barrier();
 
@@ -440,41 +440,7 @@ void prerender(uint i, uint work_group_id){
 
     substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 
-    // loading of all substances into shared memory for shadow check
-    barrier();
-    workspace[i / 4][i % 4] = uint(s.id != ~0);
-    barrier();
-
-    x = workspace[i >> 2];
-    workspace[i >> 2] = uvec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
-
-    barrier();
-    if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
-    barrier();
-    if ((i &   2) != 0) workspace[i] += workspace[i &  ~2 |   1].w;    
-    barrier();
-    if ((i &   4) != 0) workspace[i] += workspace[i &  ~4 |   3].w;    
-    barrier();
-    if ((i &   8) != 0) workspace[i] += workspace[i &  ~8 |   7].w;    
-    barrier();
-    if ((i &  16) != 0) workspace[i] += workspace[i & ~16 |  15].w;    
-    barrier();
-    if ((i &  32) != 0) workspace[i] += workspace[i & ~32 |  31].w;    
-    barrier();
-    if ((i &  64) != 0) workspace[i] += workspace[i & ~64 |  63].w;    
-    barrier();
-    if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
-    barrier();
-
-    if (s.id != ~0 && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
-        vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
-        q = normalize(q);
-        shadow_substances[uint(workspace[i / 4][i % 4]) - 1] = substance_t(
-            s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
-        );
-    }
-
-        shadow_substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
+    shadow_substances_visible = 0;
 }
 
 void postrender(uint i, request_t request){
