@@ -384,7 +384,7 @@ bool is_directly_visible(substance_data_t sub){
     return length(diff) < r;
 }
 
-uint reduce_to_fit(uint i, bool hit){
+uint reduce_to_fit(uint i, bool hit, out uint total){
     workspace[i / 4][i % 4] = uint(hit);
     barrier();
 
@@ -409,10 +409,10 @@ uint reduce_to_fit(uint i, bool hit){
     if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
     barrier();
 
+    total = uint(min(workspace[255].w, gl_WorkGroupSize.x));
 
-    substances_visible = uint(min(workspace[255].w, gl_WorkGroupSize.x));
-
-    return 0;
+    uint j = uint(workspace[i / 4][i % 4]) - 1;
+    return mix(~0, j, hit && j < gl_WorkGroupSize.x);
 }
 
 void prerender(uint i, uint work_group_id){
@@ -438,11 +438,11 @@ void prerender(uint i, uint work_group_id){
     substance_data_t s = substance.data[i];
     bool visible_substance = s.id != ~0 && is_directly_visible(s);
 
-    reduce_to_fit(i, visible_substance);
-    if (visible_substance && workspace[i / 4][i % 4] <= gl_WorkGroupSize.x){
+    uint j = reduce_to_fit(i, visible_substance, substances_visible);
+    if (j != ~0){
         vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
         q = normalize(q);
-        substances[uint(workspace[i / 4][i % 4]) - 1] = substance_t(
+        substances[j] = substance_t(
             s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
         );
     }
