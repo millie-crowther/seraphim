@@ -89,6 +89,7 @@ layout (binding = 2) buffer request_buffer   { request_t        data[]; } reques
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
 
+
 // shared memory
 shared uint vacant_node;
 shared uint chosen_request;
@@ -98,13 +99,13 @@ shared uint substances_visible;
 shared vec3 surface_min;
 shared vec3 surface_max;
 
-shared light_t lights[32];
-shared uint lights_visible;
+shared substance_t shadow_substances[gl_WorkGroupSize.x];
+shared uint shadow_substances_visible;
 shared vec3 lights_min;
 shared vec3 lights_max;
 
-shared substance_t shadow_substances[gl_WorkGroupSize.x];
-shared uint shadow_substances_visible;
+shared light_t lights[32];
+shared uint lights_visible;
 
 shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
@@ -401,7 +402,9 @@ request_t render(uint i, substance_t s){
     bool substance_shadow = is_substance_shadow(s);
     uint total;
     uint j = reduce_to_fit(i, substance_shadow, shadow_substances_visible);
-    if (j != ~0) shadow_substances[j] = s;
+    if (j != ~0){
+        shadow_substances[j] = s;
+    }
 
     vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
@@ -422,6 +425,7 @@ bool is_directly_visible(substance_t sub){
 
     return length(diff) < r;
 }
+
 
 void prerender(uint i, uint work_group_id, substance_t s){
     // clear shared variables
@@ -444,8 +448,11 @@ void prerender(uint i, uint work_group_id, substance_t s){
     // visibility check on substances and load into shared memory
     barrier();
     bool visible_substance = s.id != ~0 && is_directly_visible(s);
+
     uint j = reduce_to_fit(i, visible_substance, substances_visible);
-    if (j != ~0) substances[j] = s;
+    if (j != ~0){
+        substances[j] = s;
+    }
 }
 
 void postrender(uint i, request_t request){
