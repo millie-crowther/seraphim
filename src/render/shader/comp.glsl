@@ -349,39 +349,10 @@ void reduce_surface_aabb(uint i, bool hit, vec3 x){
     if (i == 0) surface_max = max(workspace[0], workspace[512]).xyz;
 }
 
-request_t render(uint i){
-    vec2 uv = uv();
-    vec3 up = pc.eye_up;
-    vec3 right = pc.eye_right;
-    vec3 forward = cross(right, up);
-    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
-
-    request_t request;
-    request.status = 0;
-
-    ray_t r = ray_t(pc.camera_position, d);
-    intersection_t intersection = raycast(r, request);
-
-    reduce_surface_aabb(i, intersection.hit, intersection.x);
-
-    vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
-
-    return request;
-}
-
-bool is_directly_visible(substance_data_t sub){
-    vec3 x = sub.c - pc.camera_position;
-    float d = dot(x, cross(pc.eye_right, pc.eye_up));
-    vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
-    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
-
-    ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
-    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
-    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
-
-    return length(diff) < r;
+bool is_substance_shadow(substance_data_t s){
+    vec3 shadow_min = min(lights_min, surface_min);
+    vec3 shadow_max = max(lights_max, surface_max);
+    return true;
 }
 
 uint reduce_to_fit(uint i, bool hit, out uint total){
@@ -409,11 +380,54 @@ uint reduce_to_fit(uint i, bool hit, out uint total){
     if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
     barrier();
 
-    total = uint(min(workspace[255].w, gl_WorkGroupSize.x));
+    total = min(uint(workspace[255].w), gl_WorkGroupSize.x);
 
     uint j = uint(workspace[i / 4][i % 4]) - 1;
     return mix(~0, j, hit && j < gl_WorkGroupSize.x);
 }
+
+request_t render(uint i){
+    vec2 uv = uv();
+    vec3 up = pc.eye_up;
+    vec3 right = pc.eye_right;
+    vec3 forward = cross(right, up);
+    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+
+    request_t request;
+    request.status = 0;
+
+    ray_t r = ray_t(pc.camera_position, d);
+    intersection_t intersection = raycast(r, request);
+
+    reduce_surface_aabb(i, intersection.hit, intersection.x);
+    lights_min = lights[0].x;
+    lights_max = lights[0].x;
+
+    substance_data_t s = substance.data[i];
+    bool substance_shadow = is_substance_shadow(s);
+    uint total;
+    uint j = reduce_to_fit(i, substance_shadow, total);
+
+    vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
+
+    return request;
+}
+
+bool is_directly_visible(substance_data_t sub){
+    vec3 x = sub.c - pc.camera_position;
+    float d = dot(x, cross(pc.eye_right, pc.eye_up));
+    vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
+    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
+
+    ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
+    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
+    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
+
+    return length(diff) < r;
+}
+
 
 void prerender(uint i, uint work_group_id){
     // clear shared variables
@@ -446,8 +460,6 @@ void prerender(uint i, uint work_group_id){
             s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
         );
     }
-
-    shadow_substances_visible = 0;
 }
 
 void postrender(uint i, request_t request){
