@@ -121,7 +121,7 @@ vec2 uv(){
 }
 
 float expected_size(vec3 x){
-    return 0.075 * (1 + length((x - pc.camera_position) / 10) + length(uv() / 2));
+    return 0.075 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
 }
 
 uint work_group_offset(){
@@ -132,10 +132,6 @@ vec4 colour(vec3 t){
     return vec4(texture(colour_texture, t).xyz, 1.0);
 }
 
-bool cube_sphere_intersect(vec3 c_min, vec3 c_max, vec3 s_c, float s_r){
-    vec3 d = max(vec3(0), abs((c_max + c_min) / 2 - s_c) - (c_max - c_min) / 2);
-    return dot(d, d) > s_r * s_r;
-}
 
 mat3 get_mat(vec4 q){
     float wx = q.x * q.y;
@@ -280,7 +276,7 @@ vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = 1;//shadow(light.x, x, request);
+    float shadow = shadow(light.x, x, request);
 
     //diffuse
     vec3 l = normalize(light.x - x);
@@ -349,10 +345,11 @@ void reduce_surface_aabb(uint i, bool hit, vec3 x){
     if (i == 0) surface_max = max(workspace[0], workspace[512]).xyz;
 }
 
-bool is_substance_shadow(substance_data_t s){
-    vec3 shadow_min = min(lights_min, surface_min);
-    vec3 shadow_max = max(lights_max, surface_max);
-    return true;
+bool is_substance_shadow(substance_t s){
+    vec3 c_min = min(lights_min, surface_min);
+    vec3 c_max = max(lights_max, surface_max);
+    vec3 d = max(vec3(0), abs((c_max + c_min) / 2 - s.c) - (c_max - c_min) / 2);
+    return length(d) < length(vec3(s.r));
 }
 
 uint reduce_to_fit(uint i, bool hit, out uint total){
@@ -386,7 +383,7 @@ uint reduce_to_fit(uint i, bool hit, out uint total){
     return mix(~0, j, hit && j < gl_WorkGroupSize.x);
 }
 
-request_t render(uint i){
+request_t render(uint i, substance_t s){
     vec2 uv = uv();
     vec3 up = pc.eye_up;
     vec3 right = pc.eye_right;
@@ -403,10 +400,14 @@ request_t render(uint i){
     lights_min = lights[0].x;
     lights_max = lights[0].x;
 
-    substance_data_t s = substance.data[i];
+    barrier();
+
     bool substance_shadow = is_substance_shadow(s);
     uint total;
-    uint j = reduce_to_fit(i, substance_shadow, total);
+    uint j = reduce_to_fit(i, substance_shadow, shadow_substances_visible);
+    if (j != ~0){
+        shadow_substances[j] = s;
+    }
 
     vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
@@ -414,7 +415,7 @@ request_t render(uint i){
     return request;
 }
 
-bool is_directly_visible(substance_data_t sub){
+bool is_directly_visible(substance_t sub){
     vec3 x = sub.c - pc.camera_position;
     float d = dot(x, cross(pc.eye_right, pc.eye_up));
     vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
@@ -429,7 +430,7 @@ bool is_directly_visible(substance_data_t sub){
 }
 
 
-void prerender(uint i, uint work_group_id){
+void prerender(uint i, uint work_group_id, substance_t s){
     // clear shared variables
     if (i == 0){
         vacant_node = 0;
@@ -449,16 +450,10 @@ void prerender(uint i, uint work_group_id){
 
     // visibility check on substances and load into shared memory
     barrier();
-    substance_data_t s = substance.data[i];
     bool visible_substance = s.id != ~0 && is_directly_visible(s);
-
     uint j = reduce_to_fit(i, visible_substance, substances_visible);
     if (j != ~0){
-        vec4 q = vec4(s.q & 0xFF, (s.q >> 8) & 0xFF, (s.q >> 16) & 0xFF, s.q >> 24) - 127.5;
-        q = normalize(q);
-        substances[j] = substance_t(
-            s.c, s.root, s.r, s.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
-        );
+        substances[j] = s;
     }
 }
 
@@ -491,13 +486,18 @@ void postrender(uint i, request_t request){
 void main(){
     uint work_group_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
-    vec3 v_min = pc.camera_position;
-    vec3 v_max = pc.camera_position;
 
-    prerender(i, work_group_id);
+    substance_data_t s_d = substance.data[i];
+    vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
+    q = normalize(q);
+    substance_t s = substance_t(
+        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
+    );
+
+    prerender(i, work_group_id, s);
 
     barrier();
-    request_t request = render(i);
+    request_t request = render(i, s);
 
     // submit request before barrier so that arbitration can start immediately afterwards
     workspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
