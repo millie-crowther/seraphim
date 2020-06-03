@@ -126,10 +126,6 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-vec4 colour(vec3 t){
-    return vec4(texture(colour_texture, t).xyz, 1.0);
-}
-
 mat3 get_mat(vec4 q){
     float wx = q.x * q.y;
     float wy = q.x * q.z;
@@ -263,17 +259,17 @@ float shadow(vec3 l, vec3 p, inout request_t request){
 }
 
 vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
-    float shininess = 16;
+    const float shininess = 16;
 
     // attenuation
     vec3 dist = light.x - x;
     float attenuation = 1.0 / dot(dist, dist);
 
     //ambient 
-    vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
+    const vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = 1;//shadow(light.x, x, request);
+    float shadow = shadow(light.x, x, request);
 
     //diffuse
     vec3 l = normalize(light.x - x);
@@ -286,10 +282,6 @@ vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
     return a + (d + s) * attenuation * shadow * light.colour;
-}
-
-vec4 sky(){
-    return vec4(0.5, 0.7, 0.9, 1.0);
 }
 
 void reduce_surface_aabb(uint i, bool hit, vec3 x){
@@ -353,8 +345,8 @@ uint reduce_to_fit(uint i, bool hit, out uint total){
     workspace[i / 4][i % 4] = uint(hit);
     barrier();
 
-    vec4 x = workspace[i >> 2];
-    workspace[i >> 2] = vec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
+    vec4 x = workspace[i];
+    workspace[i] = vec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
 
     barrier();
     if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
@@ -397,7 +389,6 @@ float reduce_min(uint i, bool hit, float value){
 }
 
 float phi_s_initial(vec3 d, vec3 centre, float r){
-    // bug here with -ve values
     float a = dot(d, d);
     float b = -2.0 * dot(centre, d);
     float c = dot(centre, centre) - 3 * r * r;
@@ -427,8 +418,12 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
         shadow_substances[j] = s;
     }
 
-    vec4 hit_colour = colour(intersection.texture_coord) * light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky(), hit_colour, intersection.hit));
+    const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
+
+    vec4 hit_colour = 
+        vec4(texture(colour_texture, intersection.texture_coord).xyz, 1.0) * 
+        light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky, hit_colour, intersection.hit));
 
     return request;
 }
