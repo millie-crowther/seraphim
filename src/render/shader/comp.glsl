@@ -273,7 +273,7 @@ vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = shadow(light.x, x, request);
+    float shadow = 1;//shadow(light.x, x, request);
 
     //diffuse
     vec3 l = normalize(light.x - x);
@@ -391,23 +391,27 @@ float reduce_min(uint i, bool hit, float value){
     if ((i & 0x1F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
     if ((i & 0x3F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
     if ((i & 0x7F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
-    if ((i & 0xFF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     
     vec4 m = workspace[0];
     return min(min(m.x, m.y), min(m.z, m.w));
 }
 
-request_t render(uint i, substance_t s){
-    vec2 uv = uv();
-    vec3 up = pc.eye_up;
-    vec3 right = pc.eye_right;
-    vec3 forward = cross(right, up);
-    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+float phi_s_initial(vec3 d, vec3 centre, float r){
+    // bug here with -ve values
+    float a = dot(d, d);
+    float b = -2.0 * dot(centre, d);
+    float c = dot(centre, centre) - 3 * r * r;
+    float discriminant = b * b - 4 * a * c;
+    float dist = (-b - sqrt(discriminant)) / (2.0 * a);
+    float result = mix(dist, pc.render_distance, discriminant < 0);
+    return max(0, result);
+}
 
+request_t render(uint i, substance_t s, vec3 d, float phi_initial){
     request_t request;
     request.status = 0;
 
-    ray_t r = ray_t(pc.camera_position, d);
+    ray_t r = ray_t(pc.camera_position + d * phi_initial, d);
     intersection_t intersection = raycast(r, request);
 
     reduce_surface_aabb(i, intersection.hit, intersection.x);
@@ -443,7 +447,7 @@ bool is_directly_visible(substance_t sub){
     return length(diff) < r;
 }
 
-void prerender(uint i, uint work_group_id, substance_t s){
+float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     // clear shared variables
     if (i == 0){
         vacant_node = 0;
@@ -463,11 +467,15 @@ void prerender(uint i, uint work_group_id, substance_t s){
 
     // visibility check on substances and load into shared memory
     barrier();
-    bool hit = s.id != ~0 && is_directly_visible(s);
-    uint j = reduce_to_fit(i, hit, substances_visible);
+    bool directly_visible = s.id != ~0 && is_directly_visible(s);
+    uint j = reduce_to_fit(i, directly_visible, substances_visible);
     if (j != ~0){
         substances[j] = s;
     }
+ 
+    // calculate initial distance
+    float phi_initial = reduce_min(i, s.id != ~0 && directly_visible, phi_s_initial(d, s.c, s.r));
+    return phi_initial;
 }
 
 void postrender(uint i, request_t request){
@@ -502,10 +510,16 @@ void main(){
         s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
     );
 
-    prerender(i, work_group_id, s);
+    vec2 uv = uv();
+    vec3 up = pc.eye_up;
+    vec3 right = pc.eye_right;
+    vec3 forward = cross(right, up);
+    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+
+    float phi_initial = prerender(i, work_group_id, d, s);
 
     barrier();
-    request_t request = render(i, s);
+    request_t request = render(i, s, d, phi_initial);
 
     barrier();
 
