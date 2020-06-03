@@ -11,7 +11,7 @@ namespace hyper {
     constexpr double iota    = 1.0 / 60.0;                // Hertz
 
     // largest distance
-    constexpr double rho     = 256;                 // metres    
+    constexpr double rho     = 2048;                 // metres    
 
     // largest object
     constexpr double kappa   = 256; 

@@ -380,6 +380,23 @@ uint reduce_to_fit(uint i, bool hit, out uint total){
     return mix(~0, j, hit && j < gl_WorkGroupSize.x);
 }
 
+float reduce_min(uint i, bool hit, float value){
+    barrier();
+    workspace[i / 4][i % 4] = mix(pc.render_distance, value, hit);
+    barrier();
+    if ((i & 0x01) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i & 0x03) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i & 0x07) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i & 0x0F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i & 0x1F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i & 0x3F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i & 0x7F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 0xFF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    
+    vec4 m = workspace[0];
+    return min(min(m.x, m.y), min(m.z, m.w));
+}
+
 request_t render(uint i, substance_t s){
     vec2 uv = uv();
     vec3 up = pc.eye_up;
@@ -426,7 +443,6 @@ bool is_directly_visible(substance_t sub){
     return length(diff) < r;
 }
 
-
 void prerender(uint i, uint work_group_id, substance_t s){
     // clear shared variables
     if (i == 0){
@@ -447,26 +463,20 @@ void prerender(uint i, uint work_group_id, substance_t s){
 
     // visibility check on substances and load into shared memory
     barrier();
-    bool visible_substance = s.id != ~0 && is_directly_visible(s);
-
-    uint j = reduce_to_fit(i, visible_substance, substances_visible);
+    bool hit = s.id != ~0 && is_directly_visible(s);
+    uint j = reduce_to_fit(i, hit, substances_visible);
     if (j != ~0){
         substances[j] = s;
     }
 }
 
 void postrender(uint i, request_t request){
-    // arbitrate and submit request
-    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +  1]);
-    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +  2]);
-    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +  4]);
-    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +  8]);
-    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i + 16]);
-    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i + 32]);
-    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i + 64]);
-    
-    vec4 m = min(workspace[0], workspace[128]);
-    if (i == min(min(m.x, m.y), min(m.z, m.w))){
+    barrier();
+    bool hit = request.status != 0 && vacant_node != 0;
+    barrier();
+    uint m = uint(reduce_min(i, hit, i));
+    barrier();
+    if (i == m){
         octree_global.data[request.parent + work_group_offset()].x &= ~node_child_mask | vacant_node;
 
         request.child = vacant_node + work_group_offset();
@@ -497,8 +507,6 @@ void main(){
     barrier();
     request_t request = render(i, s);
 
-    // submit request before barrier so that arbitration can start immediately afterwards
-    workspace[i / 4][i % 4] = mix(~0, i, request.status != 0 && vacant_node != 0);
     barrier();
 
     postrender(i, request);
