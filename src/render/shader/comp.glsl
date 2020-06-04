@@ -204,12 +204,6 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
 
     // calculate texture coordinate
     intersection.texture_coord = (r.x - c_prev + s * 4) / (s * 8);
-    intersection.texture_coord += vec3(
-        (i + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
-        (i + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x),
-        0
-    );
-    intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
    
     intersection.index = i;
@@ -413,14 +407,21 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
 
     barrier();
 
-    bool substance_shadow = is_substance_shadow(s);
-    uint total;
-    uint j = reduce_to_fit(i, substance_shadow, shadow_substances_visible);
-    if (j != ~0){
-        shadow_substances[j] = s;
-    }
+  //  bool substance_shadow = is_substance_shadow(s);
+    //uint total;
+   // uint j = reduce_to_fit(i, substance_shadow, shadow_substances_visible);
+   // if (j != ~0){
+    //    shadow_substances[j] = s;
+   // }
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
+    
+    intersection.texture_coord += vec3(
+        (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
+        (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x),
+        0
+    );
+    intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
     vec4 hit_colour = 
         vec4(texture(colour_texture, intersection.texture_coord).xyz, 1.0) * 
