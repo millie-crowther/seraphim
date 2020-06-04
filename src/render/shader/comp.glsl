@@ -195,8 +195,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     }
 
     // calculate distance to intersect plane
-    float e = - dot(r.x, workspace[i].xyz) + dot(c, workspace[i].xyz) + workspace[i].w * s.x;
-    float phi_plane = min(0, e) / dot(r.d, workspace[i].xyz);
+    float phi_plane = min(0, workspace[i].w - dot(r.x, workspace[i].xyz)) / dot(r.d, workspace[i].xyz);
 
     // if necessary, request more data from CPU
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
@@ -459,10 +458,11 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
         vacant_node = i; 
     }
 
-    workspace[i].xyz = vec3(
+    vec3 n = vec3(
         node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
     ) / 127.5 - 1;
-    workspace[i].w = -float(node.surface) / 1235007097.17 + sqrt3;
+    workspace[i].xyz = n;
+    workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
 
     return phi_initial;
 }
