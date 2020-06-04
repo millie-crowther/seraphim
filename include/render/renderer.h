@@ -89,7 +89,7 @@ private:
     std::unique_ptr<command_pool_t> graphics_command_pool;
 
     // buffers
-    std::unique_ptr<device_buffer_t<u32vec2_t>> octree_buffer;
+    std::unique_ptr<device_buffer_t<response_t::octree_data_t>> octree_buffer;
     std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
 
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;

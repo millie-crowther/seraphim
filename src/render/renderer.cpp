@@ -702,7 +702,7 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    octree_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, c * s);
+    octree_buffer = std::make_unique<device_buffer_t<response_t::octree_data_t>>(1, device, c * s);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c);
     depth_buffer = std::make_unique<device_buffer_t<float>>(3, device, c * s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
@@ -712,9 +712,9 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<u32vec2_t> initial_octree(
+    std::vector<response_t::octree_data_t> initial_octree(
         work_group_count.volume() * work_group_size.volume(),
-        u32vec2_t(response_t::node_unused_flag)
+        { response_t::node_unused_flag, 0, 0, 0, f32vec3_t(0), 0 }
     );
 
     for (auto pair : substances){

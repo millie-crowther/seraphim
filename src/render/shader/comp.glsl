@@ -83,7 +83,17 @@ struct light_t {
     vec4 colour;
 };
 
-layout (binding = 1) buffer octree_buffer    { uvec2            data[]; } octree_global;
+struct octree_data_t {
+    uint structure;
+    uint surface;
+    uint _1;
+    uint _2;
+
+    vec3 centre;
+    float size;
+};
+
+layout (binding = 1) buffer octree_buffer    { octree_data_t    data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
@@ -175,10 +185,6 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
     bool outside_aabb = phi_aabb > epsilon;
 
-    //
-    //  put this in its own function:
-    //
-
     // perform octree lookup for relevant node
     while (!outside_aabb && s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
@@ -189,25 +195,20 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     }
 
     // calculate distance to intersect plane
-    float e = dot(c - r.x, workspace[i].xyz) - workspace[i].w * s.x;
+    float e = - dot(r.x, workspace[i].xyz) + dot(c, workspace[i].xyz) + workspace[i].w * s.x;
     float phi_plane = min(0, e) / dot(r.d, workspace[i].xyz);
 
-    //
-    // up to here
-    //
-
     // if necessary, request more data from CPU
-    bool should_request = s.x >= expected_size && (octree[i] & node_empty_flag) == 0 && next == node_child_mask;
+    bool is_not_empty = (octree[i] & node_empty_flag) == 0;
+    bool should_request = s.x >= expected_size && is_not_empty && next == node_child_mask;
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
-    // calculate texture coordinate
     intersection.texture_coord = (r.x - c_prev + s * 4) / (s * 8);
     intersection.index = i;
     intersection.substance = sub;
  
-    // return distance value appropriate for case
-    bool hit = (octree[i] & node_empty_flag) == 0 && phi_plane >= 0;
-    return mix(mix(s.x, phi_plane, hit), phi_aabb, outside_aabb);
+    float phi_interior = mix(s.x, phi_plane, is_not_empty && phi_plane >= 0);
+    return mix(phi_interior, phi_aabb, outside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
@@ -450,20 +451,20 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     float phi_initial = reduce_min(i, s.id != ~0 && directly_visible, phi_s_initial(d, s.c, s.r));
 
     // load octree from global memory into shared memory
-    uvec2 node = octree_global.data[i + work_group_offset()];
-    octree[i] = node.x;
+    octree_data_t node = octree_global.data[i + work_group_offset()];
+    octree[i] = node.structure;
    
     // submit free nodes to request queue
-    if ((i & 7) == 0 && (node.x & node_unused_flag) != 0){
+    if ((i & 7) == 0 && (node.structure & node_unused_flag) != 0){
         vacant_node = i; 
     }
 
     workspace[i].xyz = vec3(
-        node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF
+        node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
     ) / 127.5 - 1;
-    workspace[i].w = float(node.y) / 1235007097.17 - sqrt3;
+    workspace[i].w = -float(node.surface) / 1235007097.17 + sqrt3;
 
- return phi_initial;
+    return phi_initial;
 }
 
 void postrender(uint i, request_t request){
@@ -473,7 +474,7 @@ void postrender(uint i, request_t request){
     uint m = uint(reduce_min(i, hit, i));
     barrier();
     if (i == m){
-        octree_global.data[request.parent + work_group_offset()].x &= ~node_child_mask | vacant_node;
+        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node;
 
         request.child = vacant_node + work_group_offset();
         requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
@@ -482,8 +483,8 @@ void postrender(uint i, request_t request){
     // cull nodes that havent been seen this frame
     uint c = (octree[i].x & node_child_mask);
     if (c != node_child_mask && !hitmap[c >> 3]){
-        octree_global.data[i + work_group_offset()].x |= node_child_mask;
-        octree_global.data[c + work_group_offset()].x |= node_unused_flag;
+        octree_global.data[i + work_group_offset()].structure |= node_child_mask;
+        octree_global.data[c + work_group_offset()].structure |= node_unused_flag;
     }
 }
 

@@ -97,7 +97,7 @@ response_t::get_colours() const {
     return colours;
 }
 
-const std::array<u32vec2_t, 8> &
+const std::array<response_t::octree_data_t, 8> &
 response_t::get_nodes() const {
     return nodes;
 }
@@ -108,7 +108,7 @@ response_t::squash(const vec4_t & x) const {
     return *reinterpret_cast<uint32_t *>(&x8);
 }
 
-u32vec2_t
+response_t::octree_data_t
 response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
     double p = sdf->phi(c);
     uint32_t empty_flag = std::abs(p) - hyper::epsilon <= r.chebyshev_norm() ? 0 : node_empty_flag;
@@ -116,8 +116,13 @@ response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3
 
     vec3_t n = (sdf->normal(c) / 2 + 0.5);
     
-    return u32vec2_t(
+    return {
         node_child_mask | empty_flag,
-        squash(vec4_t(n[0], n[1], n[2], p))
-    );
+        squash(vec4_t(n[0], n[1], n[2], p)),
+        0,
+        0,
+
+        c.cast<float>(),
+        static_cast<float>(r[0])
+    }; 
 }
