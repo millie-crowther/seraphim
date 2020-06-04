@@ -174,9 +174,9 @@ mat3 get_mat(vec4 q){
 
 float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec3 c = vec3(0);
-    vec3 c_prev = c;
 
-    uint i = ~0;
+    uint i = sub.root + uint(dot(step(0, r.x), vec3(1, 2, 4)));
+    uint i_prev;
     uint next = sub.root;
 
     r.x -= sub.c;
@@ -189,10 +189,10 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
 
     // perform octree lookup for relevant node
     while (!outside_aabb && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
+        i_prev = i;
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
-        c_prev = c;
         c += sign(r.x - c) * node_sizes[i];
     }
 
@@ -204,7 +204,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
     if (should_request) request = request_t(c, node_sizes[i], 0, i, sub.id, 1);
 
-    intersection.texture_coord = r.x - c_prev;
+    intersection.texture_coord = r.x - node_centres[i_prev];
     intersection.index = i;
     intersection.substance = sub;
  
@@ -467,9 +467,11 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     workspace[i].xyz = n;
     workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
 
+    barrier();
     node_centres[i] = node.centre;
+    barrier();
+    
     node_sizes[i] = node.size;
-
 
     return phi_initial;
 }
