@@ -105,7 +105,7 @@ shared vec3 lights_max;
 shared light_t lights[32];
 shared uint lights_visible;
 
-shared uvec2 octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uint octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
@@ -197,7 +197,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     //
 
     // if necessary, request more data from CPU
-    bool should_request = s.x >= expected_size && (octree[i].x & node_empty_flag) == 0 && next == node_child_mask;
+    bool should_request = s.x >= expected_size && (octree[i] & node_empty_flag) == 0 && next == node_child_mask;
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
     // calculate texture coordinate
@@ -206,7 +206,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     intersection.substance = sub;
  
     // return distance value appropriate for case
-    bool hit = (octree[i].x & node_empty_flag) == 0 && phi_plane >= 0;
+    bool hit = (octree[i] & node_empty_flag) == 0 && phi_plane >= 0;
     return mix(mix(s.x, phi_plane, hit), phi_aabb, outside_aabb);
 }
 
@@ -397,19 +397,6 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
     ray_t r = ray_t(pc.camera_position + d * phi_initial, d);
     intersection_t intersection = raycast(r, request);
 
-   // reduce_surface_aabb(i, intersection.hit, intersection.x);
-   // lights_min = lights[0].x;
-    //lights_max = lights[0].x;
-
-    ///barrier();
-
-  //  bool substance_shadow = is_substance_shadow(s);
-    //uint total;
-   // uint j = reduce_to_fit(i, substance_shadow, shadow_substances_visible);
-   // if (j != ~0){
-    //    shadow_substances[j] = s;
-   // }
-
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
     
     intersection.texture_coord += vec3(
@@ -464,7 +451,7 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
 
     // load octree from global memory into shared memory
     uvec2 node = octree_global.data[i + work_group_offset()];
-    octree[i] = node;
+    octree[i] = node.x;
    
     // submit free nodes to request queue
     if ((i & 7) == 0 && (node.x & node_unused_flag) != 0){
