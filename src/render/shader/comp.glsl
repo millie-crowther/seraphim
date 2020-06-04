@@ -183,8 +183,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     r.x = sub.rotation * r.x;
 
     // check against outside bounds of aabb
-    vec3 y = abs(r.x) - sub.r;
-    float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
+    float phi_aabb = length(max(abs(r.x) - sub.r, 0));
     bool outside_aabb = phi_aabb > epsilon;
 
     // perform octree lookup for relevant node
@@ -467,10 +466,7 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     workspace[i].xyz = n;
     workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
 
-    barrier();
     node_centres[i] = node.centre;
-    barrier();
-    
     node_sizes[i] = node.size;
 
     return phi_initial;
