@@ -175,7 +175,6 @@ mat3 get_mat(vec4 q){
 float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec3 c = vec3(0);
     vec3 c_prev = c;
-    vec3 s = vec3(sub.r);
 
     uint i = ~0;
     uint next = sub.root;
@@ -184,17 +183,17 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     r.x = sub.rotation * r.x;
 
     // check against outside bounds of aabb
-    vec3 y = abs(r.x) - s;
+    vec3 y = abs(r.x) - sub.r;
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
     bool outside_aabb = phi_aabb > epsilon;
 
     // perform octree lookup for relevant node
-    while (!outside_aabb && s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
+    while (!outside_aabb && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
         c_prev = c;
-        c += sign(r.x - c) * (s /= 2);
+        c += sign(r.x - c) * node_sizes[i];
     }
 
     // calculate distance to intersect plane
@@ -202,14 +201,14 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
 
     // if necessary, request more data from CPU
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
-    bool should_request = s.x >= expected_size && is_not_empty && next == node_child_mask;
-    if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
+    bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
+    if (should_request) request = request_t(c, node_sizes[i], 0, i, sub.id, 1);
 
-    intersection.texture_coord = (r.x - c_prev + s * 4) / s;
+    intersection.texture_coord = r.x - c_prev;
     intersection.index = i;
     intersection.substance = sub;
  
-    float phi_interior = mix(s.x, phi_plane, is_not_empty && phi_plane >= 0);
+    float phi_interior = mix(node_sizes[i], phi_plane, is_not_empty && phi_plane >= 0);
     return mix(phi_interior, phi_aabb, outside_aabb);
 }
 
@@ -402,7 +401,8 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
     
-    intersection.texture_coord /= 8;
+    intersection.texture_coord += node_sizes[intersection.index] * 4;
+    intersection.texture_coord /= node_sizes[intersection.index] * 8;
     intersection.texture_coord.xy += vec2(
         (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
