@@ -15,22 +15,6 @@ const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
-// types 
-struct ray_t {
-    vec3 x;
-    vec3 d;
-};
-
-struct intersection_t {
-    bool hit;
-    vec3 x;
-    vec3 normal;
-    vec3 texture_coord;
-    float distance;
-    uint index;
-};
-
-// push constants
 layout( push_constant ) uniform push_constants {
     uvec2 window_size;
     float render_distance;
@@ -46,7 +30,11 @@ layout( push_constant ) uniform push_constants {
     float dummy4;
 } pc;
 
-// input buffers
+struct ray_t {
+    vec3 x;
+    vec3 d;
+};
+
 struct substance_data_t {
     vec3 c;
     int root;
@@ -66,6 +54,16 @@ struct substance_t {
 
     mat3 rotation;
     mat3 inverse;
+};
+
+struct intersection_t {
+    bool hit;
+    vec3 x;
+    vec3 normal;
+    vec3 texture_coord;
+    float distance;
+    uint index;
+    substance_t substance;
 };
 
 struct request_t {
@@ -213,8 +211,10 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     );
     intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
-    intersection.normal = sub.inverse * normalize(texture(normal_texture, intersection.texture_coord).xyz - 0.5);
-    
+   
+    intersection.index = i;
+    intersection.substance = sub;
+ 
     // return distance value appropriate for case
     bool hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0;
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
@@ -258,25 +258,27 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     return float(phi > epsilon);
 }
 
-vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
+vec4 light(light_t light, intersection_t i, inout request_t request){
     const float shininess = 16;
 
+    vec3 n = i.substance.inverse * normalize(texture(normal_texture, i.texture_coord).xyz - 0.5);
+    
     // attenuation
-    vec3 dist = light.x - x;
+    vec3 dist = light.x - i.x;
     float attenuation = 1.0 / dot(dist, dist);
 
     //ambient 
     const vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = 1;//shadow(light.x, x, request);
+    float shadow = 1;//shadow(light.x, i.x, request);
 
     //diffuse
-    vec3 l = normalize(light.x - x);
+    vec3 l = normalize(light.x - i.x);
     float d = 0.75 * max(epsilon, dot(l, n));
 
     //specular
-    vec3 v = normalize(-x);
+    vec3 v = normalize(-i.x);
 
     vec3 h = normalize(l + v);
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
@@ -422,7 +424,7 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
 
     vec4 hit_colour = 
         vec4(texture(colour_texture, intersection.texture_coord).xyz, 1.0) * 
-        light(lights[0], intersection.x, intersection.normal, intersection.texture_coord, request);
+        light(lights[0], intersection, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky, hit_colour, intersection.hit));
 
     return request;
