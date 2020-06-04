@@ -27,6 +27,7 @@ struct intersection_t {
     vec3 normal;
     vec3 texture_coord;
     float distance;
+    uint index;
 };
 
 // push constants
@@ -88,7 +89,6 @@ layout (binding = 1) buffer octree_buffer    { uvec2            data[]; } octree
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
-
 
 // shared memory
 shared uint vacant_node;
@@ -161,7 +161,7 @@ mat3 get_mat(vec4 q){
     return mat3(a, b, c) * 2;
 }
 
-float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out vec3 t, inout request_t request){
+float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec3 c = vec3(0);
     vec3 c_prev = c;
     vec3 s = vec3(sub.r);
@@ -205,15 +205,15 @@ float phi_s(ray_t r, substance_t sub, float expected_size, out vec3 normal, out 
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
     // calculate texture coordinate
-    t = (r.x - c_prev + s * 4) / (s * 8);
-    t += vec3(
+    intersection.texture_coord = (r.x - c_prev + s * 4) / (s * 8);
+    intersection.texture_coord += vec3(
         (i + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
         (i + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x),
         0
     );
-    t /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
+    intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
-    normal = sub.inverse * normalize(texture(normal_texture, t).xyz - 0.5);
+    intersection.normal = sub.inverse * normalize(texture(normal_texture, intersection.texture_coord).xyz - 0.5);
     
     // return distance value appropriate for case
     bool hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0;
@@ -231,7 +231,7 @@ intersection_t raycast(ray_t r, inout request_t request){
         float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(r, substances[substanceID], expected_size, i.normal, i.texture_coord, request));
+            phi = min(phi, phi_s(r, substances[substanceID], expected_size, i, request));
             i.hit = i.hit || phi < epsilon;
         }
         r.x += r.d * phi;
@@ -248,10 +248,10 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     vec3 rd = normalize(d);
     float phi = 1;
     float expected_size = expected_size(p);
-    vec3 _;
+    intersection_t _;
     for (uint i = 1; i < n; i++){
         for (uint substanceID = 0; substanceID < shadow_substances_visible; substanceID++){
-            phi = min(phi, phi_s(ray_t(l + d * i, rd), shadow_substances[substanceID], expected_size, _, _, request));
+            phi = min(phi, phi_s(ray_t(l + d * i, rd), shadow_substances[substanceID], expected_size, _, request));
         }
     }
 
@@ -269,7 +269,7 @@ vec4 light(light_t light, vec3 x, vec3 n, vec3 t, inout request_t request){
     const vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
-    float shadow = shadow(light.x, x, request);
+    float shadow = 1;//shadow(light.x, x, request);
 
     //diffuse
     vec3 l = normalize(light.x - x);
