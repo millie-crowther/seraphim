@@ -173,12 +173,6 @@ mat3 get_mat(vec4 q){
 }
 
 float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
-    vec3 c = vec3(0);
-
-    uint i = sub.root + uint(dot(step(0, r.x), vec3(1, 2, 4)));
-    uint i_prev;
-    uint next = sub.root;
-
     r.x -= sub.c;
     r.x = sub.rotation * r.x;
 
@@ -186,13 +180,16 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     float phi_aabb = length(max(abs(r.x) - sub.r, 0));
     bool outside_aabb = phi_aabb > epsilon;
 
+    uint i = sub.root + uint(dot(step(0, r.x), vec3(1, 2, 4)));
+    uint i_prev = i;
+    uint next = octree[i].x & node_child_mask;
+
     // perform octree lookup for relevant node
     while (!outside_aabb && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i_prev = i;
-        i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
+        i = next | uint(dot(step(node_centres[i], r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
-        c += sign(r.x - c) * node_sizes[i];
     }
 
     // calculate distance to intersect plane
@@ -201,7 +198,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     // if necessary, request more data from CPU
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
     bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
-    if (should_request) request = request_t(c, node_sizes[i], 0, i, sub.id, 1);
+    if (should_request) request = request_t(node_centres[i], node_sizes[i], 0, i, sub.id, 1);
 
     intersection.texture_coord = r.x - node_centres[i_prev];
     intersection.index = i;
@@ -447,6 +444,8 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     if (j != ~0){
         substances[j] = s;
     }
+
+    if (s.id != ~0) hitmap[s.root / 8] = true;
  
     // calculate initial distance
     float phi_initial = reduce_min(i, s.id != ~0 && directly_visible, phi_s_initial(d, s.c, s.r));
