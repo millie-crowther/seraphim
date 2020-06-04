@@ -36,7 +36,6 @@ private:
     std::array<uint32_t, 8> colours;
 
     uint32_t squash(const vec4_t & x) const;    
-    bool intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const;
     u32vec2_t create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const;
 
 public:

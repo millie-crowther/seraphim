@@ -108,56 +108,18 @@ response_t::squash(const vec4_t & x) const {
     return *reinterpret_cast<uint32_t *>(&x8);
 }
 
-bool
-response_t::intersects(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
-    double lower_radius = r.chebyshev_norm();
-    double upper_radius = r.norm();
-
-    double p = sdf->phi(c);
-
-    // 1. is aabb definitely fully inside SDF?
-    if (p <= -upper_radius){
-        return false;
-    }
-
-    // 2. is it possible that part of aabb is partially outside SDF?
-    if (std::abs(p) <= lower_radius){
-        return true;
-    }
-
-    // 3. is aabb definitely fully outside SDF?
-    if (p >= upper_radius){
-        return false;
-    }
-
-    // 4. same as test 1 but more expensive and precise
-    double d = (sdf->normal(c) * p).chebyshev_norm();
-    if (p < 0 && d > lower_radius){
-        return false;
-    }
-
-    // 5. same as test 2 but more precise (again, i think)
-    if (d <= lower_radius){
-        return true;
-    }
-
-    // 6. default case
-    return false;
-}
-
 u32vec2_t
 response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
     double p = sdf->phi(c);
+    uint32_t empty_flag = std::abs(p) - hyper::epsilon <= r.chebyshev_norm() ? 0 : node_empty_flag;
+
     p /= r.norm() * 2;
     p += 0.5;
-    p *= 255;
-    p = std::max(0.0, std::min(p, 255.0));
 
-    vec3_t n = (sdf->normal(c) / 2 + 0.5) * 255;
-    u8vec4_t normal = vec4_t(n[0], n[1], n[2], p).cast<uint8_t>();
+    vec3_t n = (sdf->normal(c) / 2 + 0.5);
     
     return u32vec2_t(
-        node_child_mask | (intersects(c, r, sdf) ? 0 : node_empty_flag),
-        *reinterpret_cast<uint32_t *>(&normal)
+        node_child_mask | empty_flag,
+        squash(vec4_t(n[0], n[1], n[2], p))
     );
 }
