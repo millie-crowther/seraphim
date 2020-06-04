@@ -173,13 +173,14 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     // check against outside bounds of aabb
     vec3 y = abs(r.x) - s;
     float phi_aabb = length(max(y, 0)) + min(max(y.x, max(y.y, y.z)), 0) + epsilon;
+    bool outside_aabb = phi_aabb > epsilon;
 
     //
     //  put this in its own function:
     //
 
     // perform octree lookup for relevant node
-    while (s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
+    while (!outside_aabb && s.x >= expected_size && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
         i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i].x & node_child_mask;
@@ -206,7 +207,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
  
     // return distance value appropriate for case
     bool hit = (octree[i].x & node_empty_flag) == 0 && phi_plane >= 0;
-    return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
+    return mix(mix(s.x, phi_plane, hit), phi_aabb, outside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
