@@ -116,6 +116,9 @@ shared light_t lights[32];
 shared uint lights_visible;
 
 shared uint octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared vec3 node_centres[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared float node_sizes[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
@@ -202,7 +205,7 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     bool should_request = s.x >= expected_size && is_not_empty && next == node_child_mask;
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
-    intersection.texture_coord = (r.x - c_prev + s * 4) / (s * 8);
+    intersection.texture_coord = (r.x - c_prev + s * 4) / s;
     intersection.index = i;
     intersection.substance = sub;
  
@@ -399,10 +402,10 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
     
-    intersection.texture_coord += vec3(
+    intersection.texture_coord /= 8;
+    intersection.texture_coord.xy += vec2(
         (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
-        (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x),
-        0
+        (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
     );
     intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
 
@@ -463,6 +466,10 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     ) / 127.5 - 1;
     workspace[i].xyz = n;
     workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
+
+    node_centres[i] = node.centre;
+    node_sizes[i] = node.size;
+
 
     return phi_initial;
 }
