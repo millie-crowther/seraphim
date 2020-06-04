@@ -187,30 +187,25 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
         c += sign(r.x - c) * (s /= 2);
     }
 
-    uvec2 node = octree[i];
-    
     // calculate distance to intersect plane
-    vec3 n = vec3(node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF) / 127.5 - 1;
-    float e = dot(c - r.x, n) - (float(node.y) / 1235007097.17 - sqrt3) * s.x;
-    float phi_plane = min(0, e) / dot(r.d, n);
+    float e = dot(c - r.x, workspace[i].xyz) - workspace[i].w * s.x;
+    float phi_plane = min(0, e) / dot(r.d, workspace[i].xyz);
 
     //
     // up to here
     //
 
     // if necessary, request more data from CPU
-    bool should_request = s.x >= expected_size && (node.x & node_empty_flag) == 0 && next == node_child_mask && request.status == 0;
+    bool should_request = s.x >= expected_size && (octree[i].x & node_empty_flag) == 0 && next == node_child_mask;
     if (should_request) request = request_t(c, s.x, 0, i, sub.id, 1);
 
     // calculate texture coordinate
     intersection.texture_coord = (r.x - c_prev + s * 4) / (s * 8);
-
-   
     intersection.index = i;
     intersection.substance = sub;
  
     // return distance value appropriate for case
-    bool hit = (node.x & node_empty_flag) == 0 && phi_plane >= 0;
+    bool hit = (octree[i].x & node_empty_flag) == 0 && phi_plane >= 0;
     return mix(mix(s.x, phi_plane, hit), phi_aabb, phi_aabb > epsilon);
 }
 
@@ -401,11 +396,11 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
     ray_t r = ray_t(pc.camera_position + d * phi_initial, d);
     intersection_t intersection = raycast(r, request);
 
-    reduce_surface_aabb(i, intersection.hit, intersection.x);
-    lights_min = lights[0].x;
-    lights_max = lights[0].x;
+   // reduce_surface_aabb(i, intersection.hit, intersection.x);
+   // lights_min = lights[0].x;
+    //lights_max = lights[0].x;
 
-    barrier();
+    ///barrier();
 
   //  bool substance_shadow = is_substance_shadow(s);
     //uint total;
@@ -455,14 +450,6 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     }
     hitmap[i / 8] = false;
 
-    // load octree from global memory into shared memory
-    octree[i] = octree_global.data[i + work_group_offset()];
-
-    // submit free nodes to request queue
-    if ((i & 7) == 0 && (octree[i].x & node_unused_flag) != 0){
-        vacant_node = i; 
-    }
-
     // visibility check on substances and load into shared memory
     barrier();
     bool directly_visible = s.id != ~0 && is_directly_visible(s);
@@ -473,7 +460,22 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
  
     // calculate initial distance
     float phi_initial = reduce_min(i, s.id != ~0 && directly_visible, phi_s_initial(d, s.c, s.r));
-    return phi_initial;
+
+    // load octree from global memory into shared memory
+    uvec2 node = octree_global.data[i + work_group_offset()];
+    octree[i] = node;
+   
+    // submit free nodes to request queue
+    if ((i & 7) == 0 && (node.x & node_unused_flag) != 0){
+        vacant_node = i; 
+    }
+
+    workspace[i].xyz = vec3(
+        node.y & 0xFF, (node.y >> 8) & 0xFF, (node.y >> 16) & 0xFF
+    ) / 127.5 - 1;
+    workspace[i].w = float(node.y) / 1235007097.17 - sqrt3;
+
+ return phi_initial;
 }
 
 void postrender(uint i, request_t request){
