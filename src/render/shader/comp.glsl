@@ -281,6 +281,7 @@ bool is_substance_shadow(substance_t s){
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
+    barrier();
     workspace[i] = uvec4(hits);
     barrier();
 
@@ -311,20 +312,23 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
     bvec4 mask = lessThanEqual(workspace[i], vec4(gl_WorkGroupSize.x)) && hits;
     barrier();
 
-    return mix(uvec4(~0), uvec4(workspace[i]) - 1, mask);
+    uvec4 result = uvec4(workspace[i]);
+    barrier();
+
+    return mix(uvec4(~0), result - 1, mask);
 }
 
 float reduce_min(uint i, bool hit, float value){
     barrier();
     workspace[i / 4][i % 4] = mix(pc.render_distance, value, hit);
     barrier();
-    if ((i & 0x01) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    if ((i & 0x03) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    if ((i & 0x07) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    if ((i & 0x0F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    if ((i & 0x1F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    if ((i & 0x3F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
-    if ((i & 0x7F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 0x01) == 0) workspace[i] = min(workspace[i], workspace[i +  1]);
+    if ((i & 0x03) == 0) workspace[i] = min(workspace[i], workspace[i +  2]);
+    if ((i & 0x07) == 0) workspace[i] = min(workspace[i], workspace[i +  4]);
+    if ((i & 0x0F) == 0) workspace[i] = min(workspace[i], workspace[i +  8]);
+    if ((i & 0x1F) == 0) workspace[i] = min(workspace[i], workspace[i + 16]);
+    if ((i & 0x3F) == 0) workspace[i] = min(workspace[i], workspace[i + 32]);
+    if ((i & 0x7F) == 0) workspace[i] = min(workspace[i], workspace[i + 64]);
     
     vec4 m = workspace[0];
     return min(min(m.x, m.y), min(m.z, m.w));
