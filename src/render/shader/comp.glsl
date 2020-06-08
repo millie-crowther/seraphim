@@ -215,6 +215,7 @@ intersection_t raycast(ray_t r, inout request_t request){
     bool hit = false;
     uint steps;
     intersection_t i;
+    
     i.hit = false;
     i.distance = 0;
 
@@ -228,7 +229,7 @@ intersection_t raycast(ray_t r, inout request_t request){
         r.x += r.d * phi;
         i.distance += phi;
     }
-
+    
     i.x = r.x;
     return i;
 }
@@ -275,56 +276,6 @@ vec4 light(light_t light, intersection_t i, vec3 t, inout request_t request){
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
     return a + (d + s) * attenuation * shadow * light.colour;
-}
-
-void reduce_surface_aabb(uint i, bool hit, vec3 x){
-    workspace[i] = mix(vec4(pc.render_distance), x.xyzz, hit);
-
-    barrier();
-    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    barrier();
-    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    barrier();
-    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    barrier();
-    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    barrier();
-    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    barrier();
-    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
-    barrier();
-    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
-    barrier();
-    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
-    barrier();
-    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
-    barrier();
-
-    if (i == 0) surface_min = min(workspace[0], workspace[512]).xyz;
-
-    workspace[i] = mix(vec4(-pc.render_distance), x.xyzz, hit);
-
-    barrier();
-    if ((i & 0x001) == 0) workspace[i] = max(workspace[i], workspace[i +   1]);
-    barrier();
-    if ((i & 0x003) == 0) workspace[i] = max(workspace[i], workspace[i +   2]);
-    barrier();
-    if ((i & 0x007) == 0) workspace[i] = max(workspace[i], workspace[i +   4]);
-    barrier();
-    if ((i & 0x00F) == 0) workspace[i] = max(workspace[i], workspace[i +   8]);
-    barrier();
-    if ((i & 0x01F) == 0) workspace[i] = max(workspace[i], workspace[i +  16]);
-    barrier();
-    if ((i & 0x03F) == 0) workspace[i] = max(workspace[i], workspace[i +  32]);
-    barrier();
-    if ((i & 0x07F) == 0) workspace[i] = max(workspace[i], workspace[i +  64]);
-    barrier();
-    if ((i & 0x0FF) == 0) workspace[i] = max(workspace[i], workspace[i + 128]);
-    barrier();
-    if ((i & 0x1FF) == 0) workspace[i] = max(workspace[i], workspace[i + 256]);
-    barrier();
-
-    if (i == 0) surface_max = max(workspace[0], workspace[512]).xyz;
 }
 
 bool is_substance_shadow(substance_t s){
