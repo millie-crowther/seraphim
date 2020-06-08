@@ -256,7 +256,6 @@ vec4 light(light_t light, intersection_t i, vec3 t, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //ambient 
-    const vec4 a = vec4(0.25, 0.25, 0.25, 1.0);
 
     //shadows
     float shadow = 1;//shadow(light.x, i.x, request);
@@ -271,7 +270,7 @@ vec4 light(light_t light, intersection_t i, vec3 t, inout request_t request){
     vec3 h = normalize(l + v);
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
-    return a + (d + s) * attenuation * shadow * light.colour;
+    return (d + s) * attenuation * shadow * light.colour;
 }
 
 bool is_substance_shadow(substance_t s){
@@ -359,9 +358,14 @@ request_t render(uint i, vec3 d, float phi_initial){
     );
     t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
 
-    vec4 hit_colour = 
-        vec4(texture(colour_texture, t).xyz, 1.0) * 
-        light(lights[0], intersection, t, request);
+    // ambient
+    vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
+
+    for (uint i = 0; i < lights_visible; i++){
+        l += light(lights[i], intersection, t, request);
+    }
+
+    vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * l;
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky, hit_colour, intersection.hit));
 
     return request;
