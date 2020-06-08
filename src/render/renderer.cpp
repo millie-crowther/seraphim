@@ -597,6 +597,7 @@ renderer_t::render(){
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         substance_buffer->record_write(command_buffer);
         octree_buffer->record_write(command_buffer);
+        light_buffer->record_write(command_buffer);
 
         vkCmdCopyBufferToImage(
             command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
@@ -704,7 +705,7 @@ renderer_t::create_buffers(){
 
     octree_buffer = std::make_unique<device_buffer_t<response_t::octree_data_t>>(1, device, c * s);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c);
-    light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, c * s);
+    light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
 
     texture_staging_buffer = std::make_shared<host_buffer_t<uint32_t>>(~0, device, c * 8 * 2);
@@ -712,8 +713,9 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<light_t> lights(work_group_count.volume() * work_group_size.volume());
+    std::vector<light_t> lights(work_group_size.volume());
     lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
+    light_buffer->write(lights, 0);
 
     std::vector<response_t::octree_data_t> initial_octree(
         work_group_count.volume() * work_group_size.volume(),

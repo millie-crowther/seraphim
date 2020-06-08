@@ -105,13 +105,9 @@ shared uint chosen_request;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
-shared vec3 surface_min;
-shared vec3 surface_max;
 
 shared substance_t shadow_substances[gl_WorkGroupSize.x];
 shared uint shadow_substances_visible;
-shared vec3 lights_min;
-shared vec3 lights_max;
 
 shared light_t lights[32];
 shared uint lights_visible;
@@ -345,7 +341,7 @@ float phi_s_initial(vec3 d, vec3 centre, float r){
     return max(0, result);
 }
 
-request_t render(uint i, substance_t s, vec3 d, float phi_initial){
+request_t render(uint i, vec3 d, float phi_initial){
     request_t request;
     request.status = 0;
 
@@ -385,25 +381,40 @@ bool is_sphere_visible(vec3 centre, float radius){
     return length(diff) < r;
 }
 
-float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
+float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
         vacant_node = 0;
         chosen_request = ~0;
-        lights[0] = light_t(vec3(-3, 3, -3), 0, vec4(50));
-        lights_visible = 1;
     }
     hitmap[i / 8] = false;
 
+    // load shit
+    substance_data_t s_d = substance.data[i];
+    vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
+    q = normalize(q);
+    substance_t s = substance_t(
+        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
+    );
+    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
+
+    light_t l = lights_global.data[i];
+    bool light_visible = l.id != ~0;// && is_sphere_visible(light.x, )
+
     // visibility check on substances and load into shared memory
     barrier();
-    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
-    bvec4 hits = bvec4(directly_visible, false, false, false);
+    bvec4 hits = bvec4(directly_visible, light_visible, false, false);
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals);
+
     substances_visible = totals.x;
     if (indices.x != ~0){
         substances[indices.x] = s;
+    }
+
+    lights_visible = totals.y;
+    if (indices.y != ~0){
+        lights[indices.y] = l;
     }
 
     if (s.id != ~0) hitmap[s.root / 8] = true;
@@ -457,23 +468,16 @@ void main(){
     uint work_group_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
-    substance_data_t s_d = substance.data[i];
-    vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
-    q = normalize(q);
-    substance_t s = substance_t(
-        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
-    );
-
     vec2 uv = uv();
     vec3 up = pc.eye_up;
     vec3 right = pc.eye_right;
     vec3 forward = cross(right, up);
     vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 
-    float phi_initial = prerender(i, work_group_id, d, s);
+    float phi_initial = prerender(i, work_group_id, d);
 
     barrier();
-    request_t request = render(i, s, d, phi_initial);
+    request_t request = render(i, d, phi_initial);
 
     barrier();
 
