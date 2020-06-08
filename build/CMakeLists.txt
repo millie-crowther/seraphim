@@ -31,11 +31,12 @@ set(SOURCES
     
     ../src/physics/physics.cpp
 
-    ../src/render/renderer.cpp
-    ../src/render/texture.cpp
-    ../src/render/camera.cpp
-    ../src/render/swapchain.cpp
     ../src/render/call_and_response.cpp
+    ../src/render/camera.cpp
+    ../src/render/light.cpp
+    ../src/render/renderer.cpp
+    ../src/render/swapchain.cpp
+    ../src/render/texture.cpp
 
     ../src/substance/substance.cpp
     ../src/substance/form/form.cpp

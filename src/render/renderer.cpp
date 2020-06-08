@@ -712,6 +712,9 @@ renderer_t::create_buffers(){
 
 void
 renderer_t::initialise_buffers(){
+    std::vector<light_t> lights(work_group_count.volume() * work_group_size.volume());
+    lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
+
     std::vector<response_t::octree_data_t> initial_octree(
         work_group_count.volume() * work_group_size.volume(),
         { response_t::node_unused_flag, 0, 0, 0, f32vec3_t(0), 0 }

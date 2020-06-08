@@ -6,7 +6,7 @@
 class light_t {
 private:
     f32vec3_t x;
-    float _1;
+    uint32_t id;
 
     f32vec4_t colour;
 

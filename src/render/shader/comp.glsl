@@ -79,7 +79,7 @@ struct request_t {
 
 struct light_t {
     vec3 x;
-    float _1;
+    uint id;
 
     vec4 colour;
 };
