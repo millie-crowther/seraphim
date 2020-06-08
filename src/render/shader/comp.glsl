@@ -60,10 +60,11 @@ struct intersection_t {
     bool hit;
     vec3 x;
     vec3 normal;
-    vec3 texture_coord;
     float distance;
     uint index;
+    uint parent_index;
     substance_t substance;
+    vec3 local_x;
 };
 
 struct request_t {
@@ -201,7 +202,8 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
     if (should_request) request = request_t(node_centres[i], node_sizes[i], 0, i, sub.id, 1);
 
-    intersection.texture_coord = r.x - node_centres[i_prev];
+    intersection.local_x = r.x;
+    intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
  
@@ -247,10 +249,10 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     return float(phi > epsilon);
 }
 
-vec4 light(light_t light, intersection_t i, inout request_t request){
+vec4 light(light_t light, intersection_t i, vec3 t, inout request_t request){
     const float shininess = 16;
 
-    vec3 n = i.substance.inverse * normalize(texture(normal_texture, i.texture_coord).xyz - 0.5);
+    vec3 n = i.substance.inverse * normalize(texture(normal_texture, t).xyz - 0.5);
     
     // attenuation
     vec3 dist = light.x - i.x;
@@ -397,18 +399,19 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
     intersection_t intersection = raycast(r, request);
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
-    
-    intersection.texture_coord += node_sizes[intersection.index] * 4;
-    intersection.texture_coord /= node_sizes[intersection.index] * 8;
-    intersection.texture_coord.xy += vec2(
+   
+    vec3 t = intersection.local_x - node_centres[intersection.parent_index]; 
+    t += node_sizes[intersection.index] * 4;
+    t /= node_sizes[intersection.index] * 8;
+    t.xy += vec2(
         (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
     );
-    intersection.texture_coord /= vec3(gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1), 1);
+    t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
 
     vec4 hit_colour = 
-        vec4(texture(colour_texture, intersection.texture_coord).xyz, 1.0) * 
-        light(lights[0], intersection, request);
+        vec4(texture(colour_texture, t).xyz, 1.0) * 
+        light(lights[0], intersection, t, request);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky, hit_colour, intersection.hit));
 
     return request;
