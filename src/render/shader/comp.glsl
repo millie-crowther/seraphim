@@ -285,35 +285,38 @@ bool is_substance_shadow(substance_t s){
     return length(d) < length(vec3(s.r));
 }
 
-uint reduce_to_fit(uint i, bool hit, out uint total){
-    workspace[i / 4][i % 4] = uint(hit);
+uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
+    workspace[i] = uvec4(hits);
     barrier();
 
-    vec4 x = workspace[i];
-    workspace[i] = vec4(x.x, x.x + x.y, x.x + x.y + x.z, x.x + x.y + x.z + x.w);
+    if ((i &   1) != 0) workspace[i] += workspace[i &   ~1      ];    
+    barrier();
+    if ((i &   2) != 0) workspace[i] += workspace[i &   ~2 |   1];    
+    barrier();
+    if ((i &   4) != 0) workspace[i] += workspace[i &   ~4 |   3];    
+    barrier();
+    if ((i &   8) != 0) workspace[i] += workspace[i &   ~8 |   7];    
+    barrier();
+    if ((i &  16) != 0) workspace[i] += workspace[i &  ~16 |  15];    
+    barrier();
+    if ((i &  32) != 0) workspace[i] += workspace[i &  ~32 |  31];    
+    barrier();
+    if ((i &  64) != 0) workspace[i] += workspace[i &  ~64 |  63];    
+    barrier();
+    if ((i & 128) != 0) workspace[i] += workspace[i & ~128 | 127];    
+    barrier();
+    if ((i & 256) != 0) workspace[i] += workspace[i & ~256 | 255];    
+    barrier();
+    if ((i & 512) != 0) workspace[i] += workspace[           511];    
+    barrier();
 
-    barrier();
-    if ((i &   1) != 0) workspace[i] += workspace[i &  ~1      ].w;    
-    barrier();
-    if ((i &   2) != 0) workspace[i] += workspace[i &  ~2 |   1].w;    
-    barrier();
-    if ((i &   4) != 0) workspace[i] += workspace[i &  ~4 |   3].w;    
-    barrier();
-    if ((i &   8) != 0) workspace[i] += workspace[i &  ~8 |   7].w;    
-    barrier();
-    if ((i &  16) != 0) workspace[i] += workspace[i & ~16 |  15].w;    
-    barrier();
-    if ((i &  32) != 0) workspace[i] += workspace[i & ~32 |  31].w;    
-    barrier();
-    if ((i &  64) != 0) workspace[i] += workspace[i & ~64 |  63].w;    
-    barrier();
-    if ((i & 128) != 0) workspace[i] += workspace[          127].w;    
+    totals = min(uvec4(workspace[1023]), gl_WorkGroupSize.x);
     barrier();
 
-    total = min(uint(workspace[255].w), gl_WorkGroupSize.x);
+    bvec4 mask = lessThanEqual(workspace[i], vec4(gl_WorkGroupSize.x)) && hits;
+    barrier();
 
-    uint j = uint(workspace[i / 4][i % 4]) - 1;
-    return mix(~0, j, hit && j < gl_WorkGroupSize.x);
+    return mix(uvec4(~0), uvec4(workspace[i]) - 1, mask);
 }
 
 float reduce_min(uint i, bool hit, float value){
@@ -395,9 +398,12 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
     // visibility check on substances and load into shared memory
     barrier();
     bool directly_visible = s.id != ~0 && is_directly_visible(s);
-    uint j = reduce_to_fit(i, directly_visible, substances_visible);
-    if (j != ~0){
-        substances[j] = s;
+    bvec4 hits = bvec4(directly_visible, false, false, false);
+    uvec4 totals;
+    uvec4 indices = reduce_to_fit(i, hits, totals);
+    substances_visible = totals.x;
+    if (indices.x != ~0){
+        substances[indices.x] = s;
     }
 
     if (s.id != ~0) hitmap[s.root / 8] = true;
