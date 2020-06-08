@@ -185,11 +185,12 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     uint next = octree[i].x & node_child_mask;
 
     // perform octree lookup for relevant node
-    while (!outside_aabb && next != node_child_mask && (octree[next].x & node_unused_flag) == 0){
+    while (!outside_aabb && next != node_child_mask && (octree[next] & node_unused_flag) == 0){
+        vec3 c = node_centres[i];
         i_prev = i;
-        i = next | uint(dot(step(node_centres[i], r.x), vec3(1, 2, 4)));
+        i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
-        next = octree[i].x & node_child_mask;
+        next = octree[i] & node_child_mask;
     }
 
     // calculate distance to intersect plane
