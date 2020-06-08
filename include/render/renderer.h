@@ -13,6 +13,7 @@
 #include "core/buffer.h"
 #include "ui/window.h"
 #include "render/camera.h"
+#include "render/light.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "core/command.h"
@@ -91,10 +92,8 @@ private:
     // buffers
     std::unique_ptr<device_buffer_t<response_t::octree_data_t>> octree_buffer;
     std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
-
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;
-
-    std::unique_ptr<device_buffer_t<float>> depth_buffer;
+    std::unique_ptr<device_buffer_t<light_t>> light_buffer;
 
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;

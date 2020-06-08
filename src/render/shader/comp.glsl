@@ -96,7 +96,7 @@ struct octree_data_t {
 
 layout (binding = 1) buffer octree_buffer    { octree_data_t    data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
-layout (binding = 3) buffer depth_buffer     { float            data[]; } depth;
+layout (binding = 3) buffer lights_buffer    { light_t          data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
 
 // shared memory
@@ -371,14 +371,14 @@ request_t render(uint i, substance_t s, vec3 d, float phi_initial){
     return request;
 }
 
-bool is_directly_visible(substance_t sub){
-    vec3 x = sub.c - pc.camera_position;
+bool is_sphere_visible(vec3 centre, float radius){
+    vec3 x = centre - pc.camera_position;
     float d = dot(x, cross(pc.eye_right, pc.eye_up));
     vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
     ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
-    float r = sub.r / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+    float r = radius / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
     ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
     ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
 
@@ -397,7 +397,7 @@ float prerender(uint i, uint work_group_id, vec3 d, substance_t s){
 
     // visibility check on substances and load into shared memory
     barrier();
-    bool directly_visible = s.id != ~0 && is_directly_visible(s);
+    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
     bvec4 hits = bvec4(directly_visible, false, false, false);
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals);
