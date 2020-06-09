@@ -318,20 +318,22 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
     return mix(uvec4(~0), result - 1, mask);
 }
 
-float reduce_min(uint i, bool hit, float value){
+vec4 reduce_min(uint i, vec4 value){
     barrier();
-    workspace[i / 4][i % 4] = mix(pc.render_distance, value, hit);
+    workspace[i] = value;
     barrier();
-    if ((i & 0x01) == 0) workspace[i] = min(workspace[i], workspace[i +  1]);
-    if ((i & 0x03) == 0) workspace[i] = min(workspace[i], workspace[i +  2]);
-    if ((i & 0x07) == 0) workspace[i] = min(workspace[i], workspace[i +  4]);
-    if ((i & 0x0F) == 0) workspace[i] = min(workspace[i], workspace[i +  8]);
-    if ((i & 0x1F) == 0) workspace[i] = min(workspace[i], workspace[i + 16]);
-    if ((i & 0x3F) == 0) workspace[i] = min(workspace[i], workspace[i + 32]);
-    if ((i & 0x7F) == 0) workspace[i] = min(workspace[i], workspace[i + 64]);
+    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
+    if ((i & 0x3FF) == 0) workspace[i] = min(workspace[i], workspace[i + 512]);
     
-    vec4 m = workspace[0];
-    return min(min(m.x, m.y), min(m.z, m.w));
+    return workspace[0];
 }
 
 float phi_s_initial(vec3 d, vec3 centre, float r){
@@ -381,6 +383,12 @@ vec2 project(vec3 x){
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
     return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
+}
+
+void is_shadow_substance_visible(uint i, vec3 x){
+    vec2 p_x = project(x);
+
+    workspace[i] = vec4(p_x, -p_x);
 }
 
 bool is_sphere_visible(vec3 centre, float radius){
@@ -434,7 +442,8 @@ float prerender(uint i, uint work_group_id, vec3 d){
     if (s.id != ~0) hitmap[s.root / 8] = true;
  
     // calculate initial distance
-    float phi_initial = reduce_min(i, s.id != ~0 && directly_visible, phi_s_initial(d, s.c, s.r));
+    float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
+    float phi_initial = reduce_min(i, vec4(value)).x;
 
     // load octree from global memory into shared memory
     octree_data_t node = octree_global.data[i + work_group_offset()];
@@ -459,9 +468,9 @@ float prerender(uint i, uint work_group_id, vec3 d){
 
 void postrender(uint i, request_t request){
     barrier();
-    bool hit = request.status != 0 && vacant_node != 0;
+    float value = mix(pc.render_distance, float(i), request.status != 0 && vacant_node != 0);
     barrier();
-    uint m = uint(reduce_min(i, hit, i));
+    uint m = uint(reduce_min(i, vec4(value)).x);
     barrier();
     if (i == m){
         octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node;
