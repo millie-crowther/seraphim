@@ -375,13 +375,19 @@ request_t render(uint i, vec3 d, float phi_initial){
     return request;
 }
 
-bool is_sphere_visible(vec3 centre, float radius){
-    vec3 x = centre - pc.camera_position;
+vec2 project(vec3 x){
     float d = dot(x, cross(pc.eye_right, pc.eye_up));
     vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
-    ivec2 image_x = ivec2((t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy) / 2;
+    return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
+}
+
+bool is_sphere_visible(vec3 centre, float radius){
+    vec3 x = centre - pc.camera_position;
+
+    ivec2 image_x = ivec2(project(x));
+    float d = dot(x, cross(pc.eye_right, pc.eye_up));
     float r = radius / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
     ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
     ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
