@@ -388,7 +388,12 @@ vec2 project(vec3 x){
 void is_shadow_substance_visible(uint i, vec3 x){
     vec2 p_x = project(x);
 
-    workspace[i] = vec4(p_x, -p_x);
+    vec4 bounds = reduce_min(i, vec4(p_x, -p_x));
+
+    vec2 s_min = bounds.xy;
+    vec2 s_max = -bounds.zw;
+
+    // TODO
 }
 
 bool is_sphere_visible(vec3 centre, float radius){
