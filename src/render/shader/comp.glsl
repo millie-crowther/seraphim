@@ -168,31 +168,36 @@ mat3 get_mat(vec4 q){
     return mat3(a, b, c) * 2;
 }
 
+bool is_leaf(uint i){
+    return (octree[i] & node_child_mask) == node_child_mask;
+}
+
 float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     x -= sub.c;
     x = sub.rotation * x;
 
     // check against outside bounds of aabb
     float phi_aabb = length(max(abs(x) - sub.r, 0));
-    bool outside_aabb = phi_aabb > epsilon;
 
     uint i = sub.root + uint(dot(step(0, x), vec3(1, 2, 4)));
     uint i_prev = i;
-    uint next = octree[i] & node_child_mask;
 
     // perform octree lookup for relevant node
-    while (!outside_aabb && next != node_child_mask && (octree[next] & node_unused_flag) == 0){
-        vec3 c = node_centres[i];
-        i_prev = i;
-        i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
-        hitmap[i / 8] = true;
-        next = octree[i] & node_child_mask;
+    if (phi_aabb <= epsilon){
+        while (!is_leaf(i)){
+            i_prev = i;
+            i = (octree[i] & node_child_mask) | uint(dot(step(node_centres[i], x), vec3(1, 2, 4)));
+            hitmap[i / 8] = true; // TODO: move outside loop
+        }
     }
+
+    // hitmap[i_prev / 8] = true;
+    // hitmap[i / 8] = true;
 
     // if necessary, request more data from CPU
     float node_size = node_sizes[i];
-    bool is_not_empty = (octree[i] & node_empty_flag) == 0;
-    bool should_request = node_size >= expected_size && is_not_empty && next == node_child_mask;
+    uint node = octree[i];
+    bool should_request = node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
     if (should_request) request = request_t(node_centres[i], node_size, 0, i, sub.id, 1);
 
     intersection.local_x = x;
@@ -202,8 +207,8 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
  
     // calculate distance to intersect plane
     float phi_plane = dot(x, workspace[i].xyz) - workspace[i].w;
-    float phi_interior = mix(node_size, phi_plane, is_not_empty);
-    return mix(phi_interior, phi_aabb, outside_aabb);
+    float phi_interior = mix(node_size, phi_plane, (node & node_empty_flag) == 0);
+    return mix(phi_interior, phi_aabb, phi_aabb > epsilon);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
@@ -493,9 +498,9 @@ void postrender(uint i, request_t request){
         requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
     }
 
-    // cull nodes that havent been seen this frame
-    uint c = (octree[i].x & node_child_mask);
-    if (c != node_child_mask && !hitmap[c >> 3]){
+    // cull leaf nodes that havent been seen this frame
+    uint c  = (octree[i] & node_child_mask);
+    if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
         octree_global.data[i + work_group_offset()].structure |= node_child_mask;
         octree_global.data[c + work_group_offset()].structure |= node_unused_flag;
     }
