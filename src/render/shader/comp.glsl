@@ -189,9 +189,6 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
         next = octree[i] & node_child_mask;
     }
 
-    // calculate distance to intersect plane
-    float phi_plane = min(0, workspace[i].w - dot(x, workspace[i].xyz));
-
     // if necessary, request more data from CPU
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
     bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
@@ -202,7 +199,9 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
     intersection.index = i;
     intersection.substance = sub;
  
-    float phi_interior = mix(node_sizes[i], phi_plane, is_not_empty && phi_plane >= 0);
+    // calculate distance to intersect plane
+    float phi_plane = dot(x, workspace[i].xyz) - workspace[i].w;
+    float phi_interior = mix(node_sizes[i], phi_plane, is_not_empty);
     return mix(phi_interior, phi_aabb, outside_aabb);
 }
 
