@@ -450,7 +450,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     indices = reduce_to_fit(i, hits, totals);
     shadow_substances_visible = totals.x;
     if (indices.x != ~0){
-        // shadow_substances[indices.x] = s;
+        shadow_substances[indices.x] = s;
     }
 
     if (s.id != ~0) hitmap[s.root / 8] = true;
