@@ -385,15 +385,15 @@ vec2 project(vec3 x){
     return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
 }
 
-void is_shadow_substance_visible(uint i, vec3 x){
-    vec2 p_x = project(x);
+bool is_shadow_visible(uint i, vec3 x){
+    // vec2 p_x = project(x);
 
-    vec4 bounds = reduce_min(i, vec4(p_x, -p_x));
+    // vec4 bounds = reduce_min(i, vec4(p_x, -p_x));
 
-    vec2 s_min = bounds.xy;
-    vec2 s_max = -bounds.zw;
+    // vec2 s_min = bounds.xy;
+    // vec2 s_max = -bounds.zw;
 
-    // TODO
+    return true;
 }
 
 bool is_sphere_visible(vec3 centre, float radius){
@@ -442,6 +442,16 @@ float prerender(uint i, uint work_group_id, vec3 d){
     lights_visible = totals.y;
     if (indices.y != ~0){
         lights[indices.y] = l;
+    }
+
+    barrier();
+    bool shadow_visible = s.id != ~0 && is_shadow_visible(i, vec3(0));
+    barrier();
+    hits = bvec4(shadow_visible, false, false, false);
+    indices = reduce_to_fit(i, hits, totals);
+    shadow_substances_visible = totals.x;
+    if (indices.x != ~0){
+        // shadow_substances[indices.x] = s;
     }
 
     if (s.id != ~0) hitmap[s.root / 8] = true;
