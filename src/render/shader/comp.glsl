@@ -53,7 +53,6 @@ struct substance_t {
     uint id;
 
     mat3 rotation;
-    mat3 inverse;
 };
 
 struct intersection_t {
@@ -169,15 +168,15 @@ mat3 get_mat(vec4 q){
     return mat3(a, b, c) * 2;
 }
 
-float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
-    r.x -= sub.c;
-    r.x = sub.rotation * r.x;
+float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
+    x -= sub.c;
+    x = sub.rotation * x;
 
     // check against outside bounds of aabb
-    float phi_aabb = length(max(abs(r.x) - sub.r, 0));
+    float phi_aabb = length(max(abs(x) - sub.r, 0));
     bool outside_aabb = phi_aabb > epsilon;
 
-    uint i = sub.root + uint(dot(step(0, r.x), vec3(1, 2, 4)));
+    uint i = sub.root + uint(dot(step(0, x), vec3(1, 2, 4)));
     uint i_prev = i;
     uint next = octree[i].x & node_child_mask;
 
@@ -185,20 +184,20 @@ float phi_s(ray_t r, substance_t sub, float expected_size, inout intersection_t 
     while (!outside_aabb && next != node_child_mask && (octree[next] & node_unused_flag) == 0){
         vec3 c = node_centres[i];
         i_prev = i;
-        i = next | uint(dot(step(c, r.x), vec3(1, 2, 4)));
+        i = next | uint(dot(step(c, x), vec3(1, 2, 4)));
         hitmap[i / 8] = true;
         next = octree[i] & node_child_mask;
     }
 
     // calculate distance to intersect plane
-    float phi_plane = min(0, workspace[i].w - dot(r.x, workspace[i].xyz)) / dot(r.d, workspace[i].xyz);
+    float phi_plane = min(0, workspace[i].w - dot(x, workspace[i].xyz));
 
     // if necessary, request more data from CPU
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
     bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
     if (should_request) request = request_t(node_centres[i], node_sizes[i], 0, i, sub.id, 1);
 
-    intersection.local_x = r.x;
+    intersection.local_x = x;
     intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
@@ -219,7 +218,7 @@ intersection_t raycast(ray_t r, inout request_t request){
         float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(r, substances[substanceID], expected_size, i, request));
+            phi = min(phi, phi_s(r.x, substances[substanceID], expected_size, i, request));
             i.hit = i.hit || phi < epsilon;
         }
         r.x += r.d * phi;
@@ -239,17 +238,16 @@ float shadow(vec3 l, vec3 p, inout request_t request){
     intersection_t _;
     for (uint i = 1; i < n; i++){
         for (uint substanceID = 0; substanceID < shadow_substances_visible; substanceID++){
-            phi = min(phi, phi_s(ray_t(l + d * i, rd), shadow_substances[substanceID], expected_size, _, request));
+            phi = min(phi, phi_s(l + d * i, shadow_substances[substanceID], expected_size, _, request));
         }
     }
 
     return float(phi > epsilon);
 }
 
-vec4 light(light_t light, intersection_t i, vec3 t, inout request_t request){
+vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     const float shininess = 16;
 
-    vec3 n = i.substance.inverse * normalize(texture(normal_texture, t).xyz - 0.5);
     
     // attenuation
     vec3 dist = light.x - i.x;
@@ -363,12 +361,13 @@ request_t render(uint i, vec3 d, float phi_initial){
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
     );
     t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
+    vec3 n = inverse(intersection.substance.rotation) * normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient
     vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
 
     for (uint i = 0; i < lights_visible; i++){
-        l += light(lights[i], intersection, t, request);
+        l += light(lights[i], intersection, n, request);
     }
 
     vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * l;
@@ -421,7 +420,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
     q = normalize(q);
     substance_t s = substance_t(
-        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q), get_mat(vec4(q.x, -q.yzw))
+        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q)
     );
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
