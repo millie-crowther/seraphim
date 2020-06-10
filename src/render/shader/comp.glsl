@@ -178,7 +178,7 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
 
     uint i = sub.root + uint(dot(step(0, x), vec3(1, 2, 4)));
     uint i_prev = i;
-    uint next = octree[i].x & node_child_mask;
+    uint next = octree[i] & node_child_mask;
 
     // perform octree lookup for relevant node
     while (!outside_aabb && next != node_child_mask && (octree[next] & node_unused_flag) == 0){
@@ -190,9 +190,10 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
     }
 
     // if necessary, request more data from CPU
+    float node_size = node_sizes[i];
     bool is_not_empty = (octree[i] & node_empty_flag) == 0;
-    bool should_request = node_sizes[i] >= expected_size && is_not_empty && next == node_child_mask;
-    if (should_request) request = request_t(node_centres[i], node_sizes[i], 0, i, sub.id, 1);
+    bool should_request = node_size >= expected_size && is_not_empty && next == node_child_mask;
+    if (should_request) request = request_t(node_centres[i], node_size, 0, i, sub.id, 1);
 
     intersection.local_x = x;
     intersection.parent_index = i_prev;
@@ -201,7 +202,7 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
  
     // calculate distance to intersect plane
     float phi_plane = dot(x, workspace[i].xyz) - workspace[i].w;
-    float phi_interior = mix(node_sizes[i], phi_plane, is_not_empty);
+    float phi_interior = mix(node_size, phi_plane, is_not_empty);
     return mix(phi_interior, phi_aabb, outside_aabb);
 }
 
