@@ -65,3 +65,39 @@ quat_t::pack() const {
     u8vec4_t q_p = (qs + 1) * 127.5;
     return *reinterpret_cast<uint32_t *>(&q_p);
 }
+
+f32mat3_t
+quat_t::to_matrix() const {
+    float wx = qs[0] * qs[1];
+    float wy = qs[0] * qs[2];
+    float wz = qs[0] * qs[3];
+    
+    float xx = qs[1] * qs[1];
+    float xy = qs[1] * qs[2];
+    float xz = qs[1] * qs[3];
+
+    float yy = qs[2] * qs[2];
+    float yz = qs[2] * qs[3];
+
+    float zz = qs[3] * qs[3];
+
+    f32vec3_t a(
+        0.5f - yy - zz,
+        xy - wz,
+        xz + wy
+    );
+
+    f32vec3_t b(
+        xy + wz,
+        0.5f - xx - zz,
+        yz + wx
+    );
+
+    f32vec3_t c(
+        xz - wy,
+        yz - wx,
+        0.5f - xx - yy
+    );
+
+    return f32mat3_t(a, b, c) * 2;
+}

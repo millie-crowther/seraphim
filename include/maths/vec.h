@@ -247,4 +247,6 @@ typedef f64vec2_t vec2_t;
 typedef f64vec3_t vec3_t;
 typedef f64vec4_t vec4_t;
 
+typedef vec_t<f32vec3_t, 3> f32mat3_t;
+
 #endif
