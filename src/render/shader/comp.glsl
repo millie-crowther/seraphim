@@ -105,8 +105,8 @@ shared uint chosen_request;
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
 
-shared substance_t shadow_substances[gl_WorkGroupSize.x];
-shared uint shadow_substances_visible;
+shared substance_t shadows[gl_WorkGroupSize.x];
+shared uint shadows_visible;
 
 shared light_t lights[32];
 shared uint lights_visible;
@@ -212,7 +212,6 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
-    bool hit = false;
     uint steps;
     intersection_t i;
     
@@ -234,34 +233,40 @@ intersection_t raycast(ray_t r, inout request_t request){
     return i;
 }
 
-float shadow(vec3 l, vec3 p, inout request_t request){
-    uint n = 32;
-    vec3 d = (p - l) / n;
-    vec3 rd = normalize(d);
-    float phi = 1;
-    float expected_size = expected_size(p);
-    intersection_t _;
-    for (uint i = 1; i < n; i++){
-        for (uint substanceID = 0; substanceID < shadow_substances_visible; substanceID++){
-            phi = min(phi, phi_s(l + d * i, shadow_substances[substanceID], expected_size, _, request));
-        }
-    }
+float shadow(vec3 l, intersection_t i, inout request_t request){
+    bool hit = false;
+    uint steps;
 
-    return float(phi > epsilon);
+    intersection_t _;
+    uint hit_sub_id = 0;
+
+    ray_t r = ray_t(l, normalize(i.x - l));
+    
+    for (steps = 0; !hit && steps < max_steps; steps++){
+        float expected_size = expected_size(r.x);
+        float phi = pc.render_distance;
+        for (uint substanceID = 0; !hit && substanceID < shadows_visible; substanceID++){
+            substance_t sub = shadows[substanceID];
+            hit_sub_id = sub.id;
+            phi = min(phi, phi_s(r.x, sub, expected_size, _, request));
+            hit = hit || phi < epsilon;
+        }
+        r.x += r.d * phi;
+    }
+    
+    bool shadow = hit_sub_id != i.substance.id;
+    return float(!shadow);
 }
 
 vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     const float shininess = 16;
 
-    
     // attenuation
     vec3 dist = light.x - i.x;
     float attenuation = 1.0 / dot(dist, dist);
 
-    //ambient 
-
     //shadows
-    float shadow = 1;//shadow(light.x, i.x, request);
+    float shadow = shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -453,9 +458,9 @@ float prerender(uint i, uint work_group_id, vec3 d){
     barrier();
     hits = bvec4(shadow_visible, false, false, false);
     indices = reduce_to_fit(i, hits, totals);
-    shadow_substances_visible = totals.x;
+    shadows_visible = totals.x;
     if (indices.x != ~0){
-        shadow_substances[indices.x] = s;
+        shadows[indices.x] = s;
     }
 
     if (s.id != ~0) hitmap[s.root / 8] = true;
