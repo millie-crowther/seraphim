@@ -81,26 +81,26 @@ quat_t::to_matrix() const {
 
     float zz = qs[3] * qs[3];
 
-    f32vec4_t a(
+    f32vec4_t a = f32vec4_t(
         0.5f - yy - zz,
         xy - wz,
         xz + wy,
         0.0f
-    );
+    ) * 2.0f;
 
-    f32vec4_t b(
+    f32vec4_t b = f32vec4_t(
         xy + wz,
         0.5f - xx - zz,
         yz + wx,
         0.0f
-    );
+    ) * 2.0f;
 
-    f32vec4_t c(
+    f32vec4_t c = f32vec4_t(
         xz - wy,
         yz - wx,
         0.5f - xx - yy,
         0.0f
-    );
+    ) * 2.0f;
 
-    return f32mat4_t(a, b, c, f32vec4_t(0.0f)) * 2;
+    return f32mat4_t(a, b, c, f32vec4_t(0.0f, 0.0f, 0.0f, 1.0f));
 }

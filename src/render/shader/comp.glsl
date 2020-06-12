@@ -135,41 +135,6 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-mat4 get_mat(vec4 q){
-    float wx = q.x * q.y;
-    float wy = q.x * q.z;
-    float wz = q.x * q.w;
-    
-    float xx = q.y * q.y;
-    float xy = q.y * q.z;
-    float xz = q.y * q.w;
-
-    float yy = q.z * q.z;
-    float yz = q.z * q.w;
-
-    float zz = q.w * q.w;
-
-    vec3 a = vec3(
-        0.5 - yy - zz,
-        xy - wz,
-        xz + wy
-    );
-
-    vec3 b = vec3(
-        xy + wz,
-        0.5 - xx - zz,
-        yz + wx
-    );
-
-    vec3 c = vec3(
-        xz - wy,
-        yz - wx,
-        0.5 - xx - yy
-    );
-
-    return mat4(mat3(a, b, c) * 2);
-}
-
 bool is_leaf(uint i){
     return (octree[i] & node_child_mask) == node_child_mask;
 }
@@ -434,7 +399,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
     q = normalize(q);
     substance_t s = substance_t(
-        s_d.c, s_d.root, s_d.r, s_d.id, get_mat(q)
+        s_d.c, s_d.root, s_d.r, s_d.id, s_d.transform 
     );
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
