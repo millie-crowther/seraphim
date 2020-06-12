@@ -56,6 +56,7 @@ struct intersection_t {
     uint parent_index;
     substance_t substance;
     vec3 local_x;
+    float node_size;
 };
 
 struct request_t {
@@ -105,7 +106,6 @@ shared uint lights_visible;
 
 shared uint octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 shared vec3 node_centres[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-shared float node_sizes[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -138,10 +138,11 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
 
     uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
     uint i_prev = i;
+    uint depth = 1;
 
     // perform octree lookup for relevant node
     if (phi_aabb <= epsilon){
-        while (!is_leaf(i)){
+        for (; !is_leaf(i); depth++){
             i_prev = i;
             i = (octree[i] & node_child_mask) | uint(dot(step(node_centres[i], x.xyz), vec3(1, 2, 4)));
             hitmap[i / 8] = true; // TODO: move outside loop
@@ -152,19 +153,20 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     // hitmap[i / 8] = true;
 
     // if necessary, request more data from CPU
-    float node_size = node_sizes[i];
-    uint node = octree[i];
-    bool should_request = node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
-    if (should_request) request = request_t(node_centres[i], node_size, 0, i, sub.id, 1);
-
     intersection.local_x = x.xyz;
     intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
+    intersection.node_size = sub.r / (1 << depth);
+
+    uint node = octree[i];
+    bool should_request = intersection.node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
+    if (should_request) request = request_t(node_centres[i], intersection.node_size, 0, i, sub.id, 1);
+
  
     // calculate distance to intersect plane
     float phi_plane = dot(x.xyz, workspace[i].xyz) - workspace[i].w;
-    float phi_interior = mix(node_size, phi_plane, (node & node_empty_flag) == 0);
+    float phi_interior = mix(intersection.node_size, phi_plane, (node & node_empty_flag) == 0);
     return mix(phi_interior, phi_aabb, phi_aabb > epsilon);
 }
 
@@ -321,8 +323,8 @@ request_t render(uint i, vec3 d, float phi_initial){
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
     vec3 t = intersection.local_x - node_centres[intersection.parent_index]; 
-    t += node_sizes[intersection.index] * 4;
-    t /= node_sizes[intersection.index] * 8;
+    t += intersection.node_size * 4;
+    t /= intersection.node_size * 8;
     t.xy += vec2(
         (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
@@ -438,7 +440,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
     workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
 
     node_centres[i] = node.centre;
-    node_sizes[i] = node.size;
 
     return phi_initial;
 }
