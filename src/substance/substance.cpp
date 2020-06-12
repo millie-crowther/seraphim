@@ -34,7 +34,7 @@ substance_t::get_data(){
         form->get_root(),
         static_cast<float>(form->get_aabb()->get_size().chebyshev_norm()),
         id,
-        transform.get_rotation().inverse().to_matrix()
+        transform.to_matrix()
     );
 }
 

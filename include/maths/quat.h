@@ -24,9 +24,10 @@ public:
     
     void operator*=(const quat_t & r);
 
+    double operator[](uint32_t i) const;
+
     uint32_t pack() const;
 
-    f32mat4_t to_matrix() const;
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);

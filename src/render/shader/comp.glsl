@@ -131,7 +131,7 @@ bool is_leaf(uint i){
 
 float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec4 x = vec4(_x, 1);
-    x.xyz -= sub.c;
+    // x.xyz -= sub.c;
     x = sub.transform * x;
 
     // check against outside bounds of aabb

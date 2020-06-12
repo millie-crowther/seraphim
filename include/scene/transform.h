@@ -25,6 +25,7 @@ public:
     // accessors
     vec3_t get_position() const;
     quat_t get_rotation() const;
+    f32mat4_t to_matrix() const;
 
     vec3_t to_local_space(const vec3_t & x) const;
 };
