@@ -162,7 +162,6 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     uint node = octree[i];
     bool should_request = intersection.node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
     if (should_request) request = request_t(node_centres[i], intersection.node_size, 0, i, sub.id, 1);
-
  
     // calculate distance to intersect plane
     float phi_plane = dot(x.xyz, workspace[i].xyz) - workspace[i].w;
