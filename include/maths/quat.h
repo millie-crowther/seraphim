@@ -26,7 +26,7 @@ public:
 
     uint32_t pack() const;
 
-    f32mat3_t to_matrix() const;
+    f32mat4_t to_matrix() const;
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);

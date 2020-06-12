@@ -6,12 +6,13 @@ substance_t::data_t::data_t(){
     id = ~0;
 }
 
-substance_t::data_t::data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id){
+substance_t::data_t::data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id, const f32mat4_t & transform){
     this->c = c;
     this->root = root;
     this->r = r;
     this->rotation = rotation;
     this->id = id;
+    this->transform = transform;
 }
 
 substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter){
@@ -35,7 +36,8 @@ substance_t::get_data(){
 
         static_cast<float>(form->get_aabb()->get_size().chebyshev_norm()),
         transform.get_rotation().inverse().pack(),
-        id
+        id,
+        transform.get_rotation().inverse().to_matrix()
     );
 }
 

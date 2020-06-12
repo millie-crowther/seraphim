@@ -18,10 +18,10 @@ public:
         uint32_t _2;
         uint32_t id;
 
-        float _1[16];
+        f32mat4_t transform;
 
         data_t();
-        data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id);
+        data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id, const f32mat4_t & transform);
     };
 
     substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter);

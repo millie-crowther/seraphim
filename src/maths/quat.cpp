@@ -66,7 +66,7 @@ quat_t::pack() const {
     return *reinterpret_cast<uint32_t *>(&q_p);
 }
 
-f32mat3_t
+f32mat4_t
 quat_t::to_matrix() const {
     float wx = qs[0] * qs[1];
     float wy = qs[0] * qs[2];
@@ -81,23 +81,26 @@ quat_t::to_matrix() const {
 
     float zz = qs[3] * qs[3];
 
-    f32vec3_t a(
+    f32vec4_t a(
         0.5f - yy - zz,
         xy - wz,
-        xz + wy
+        xz + wy,
+        0.0f
     );
 
-    f32vec3_t b(
+    f32vec4_t b(
         xy + wz,
         0.5f - xx - zz,
-        yz + wx
+        yz + wx,
+        0.0f
     );
 
-    f32vec3_t c(
+    f32vec4_t c(
         xz - wy,
         yz - wx,
-        0.5f - xx - yy
+        0.5f - xx - yy,
+        0.0f
     );
 
-    return f32mat3_t(a, b, c) * 2;
+    return f32mat4_t(a, b, c, f32vec4_t(0.0f)) * 2;
 }
