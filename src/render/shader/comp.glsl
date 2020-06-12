@@ -35,23 +35,13 @@ struct ray_t {
     vec3 d;
 };
 
-struct substance_data_t {
-    vec3 c;
-    int root;
-
-    float r;
-    uint q;
-    uint _2;
-    uint id;
-
-    mat4 transform;
-};
-
 struct substance_t {
     vec3 c;
     int root;
 
     float r;
+    float _1;
+    float _2;
     uint id;
 
     mat4 transform;
@@ -98,7 +88,7 @@ struct octree_data_t {
 layout (binding = 1) buffer octree_buffer    { octree_data_t    data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t          data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer { substance_data_t data[]; } substance;
+layout (binding = 4) buffer substance_buffer { substance_t     data[]; } substance;
 
 // shared memory
 shared uint vacant_node;
@@ -395,12 +385,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     hitmap[i / 8] = false;
 
     // load shit
-    substance_data_t s_d = substance.data[i];
-    vec4 q = vec4(s_d.q & 0xFF, (s_d.q >> 8) & 0xFF, (s_d.q >> 16) & 0xFF, s_d.q >> 24) - 127.5;
-    q = normalize(q);
-    substance_t s = substance_t(
-        s_d.c, s_d.root, s_d.r, s_d.id, s_d.transform 
-    );
+    substance_t s = substance.data[i];
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
     light_t l = lights_global.data[i];
