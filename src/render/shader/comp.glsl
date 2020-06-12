@@ -100,7 +100,7 @@ shared uint substances_visible;
 shared substance_t shadows[gl_WorkGroupSize.x];
 shared uint shadows_visible;
 
-shared light_t lights[32];
+shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
 
 shared uint octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -131,7 +131,6 @@ bool is_leaf(uint i){
 
 float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec4 x = vec4(_x, 1);
-    // x.xyz -= sub.c;
     x = sub.transform * x;
 
     // check against outside bounds of aabb
@@ -368,7 +367,7 @@ bool is_sphere_visible(vec3 centre, float radius){
     vec3 x = centre - pc.camera_position;
 
     ivec2 image_x = ivec2(project(x));
-    float d = dot(x, cross(pc.eye_right, pc.eye_up));
+    float d = max(epsilon, dot(x, cross(pc.eye_right, pc.eye_up)));
     float r = radius / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
     ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
     ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
