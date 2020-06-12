@@ -18,6 +18,8 @@ public:
         uint32_t _2;
         uint32_t id;
 
+        float _1[16];
+
         data_t();
         data_t(const f32vec3_t & c, int32_t root, float r, uint32_t rotation, uint32_t id);
     };

@@ -43,6 +43,8 @@ struct substance_data_t {
     uint q;
     uint _2;
     uint id;
+
+    mat4 transform;
 };
 
 struct substance_t {
@@ -52,7 +54,7 @@ struct substance_t {
     float r;
     uint id;
 
-    mat3 rotation;
+    mat4 transform;
 };
 
 struct intersection_t {
@@ -133,7 +135,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 }
 
-mat3 get_mat(vec4 q){
+mat4 get_mat(vec4 q){
     float wx = q.x * q.y;
     float wy = q.x * q.z;
     float wz = q.x * q.w;
@@ -165,28 +167,29 @@ mat3 get_mat(vec4 q){
         0.5 - xx - yy
     );
 
-    return mat3(a, b, c) * 2;
+    return mat4(mat3(a, b, c) * 2);
 }
 
 bool is_leaf(uint i){
     return (octree[i] & node_child_mask) == node_child_mask;
 }
 
-float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
-    x -= sub.c;
-    x = sub.rotation * x;
+float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
+    vec4 x = vec4(_x, 1);
+    x.xyz -= sub.c;
+    x = sub.transform * x;
 
     // check against outside bounds of aabb
-    float phi_aabb = length(max(abs(x) - sub.r, 0));
+    float phi_aabb = length(max(abs(x.xyz) - sub.r, 0));
 
-    uint i = sub.root + uint(dot(step(0, x), vec3(1, 2, 4)));
+    uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
     uint i_prev = i;
 
     // perform octree lookup for relevant node
     if (phi_aabb <= epsilon){
         while (!is_leaf(i)){
             i_prev = i;
-            i = (octree[i] & node_child_mask) | uint(dot(step(node_centres[i], x), vec3(1, 2, 4)));
+            i = (octree[i] & node_child_mask) | uint(dot(step(node_centres[i], x.xyz), vec3(1, 2, 4)));
             hitmap[i / 8] = true; // TODO: move outside loop
         }
     }
@@ -200,13 +203,13 @@ float phi_s(vec3 x, substance_t sub, float expected_size, inout intersection_t i
     bool should_request = node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
     if (should_request) request = request_t(node_centres[i], node_size, 0, i, sub.id, 1);
 
-    intersection.local_x = x;
+    intersection.local_x = x.xyz;
     intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
  
     // calculate distance to intersect plane
-    float phi_plane = dot(x, workspace[i].xyz) - workspace[i].w;
+    float phi_plane = dot(x.xyz, workspace[i].xyz) - workspace[i].w;
     float phi_interior = mix(node_size, phi_plane, (node & node_empty_flag) == 0);
     return mix(phi_interior, phi_aabb, phi_aabb > epsilon);
 }
@@ -266,7 +269,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow(light.x, i, request);
+    float shadow = 1;//shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -371,7 +374,8 @@ request_t render(uint i, vec3 d, float phi_initial){
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
     );
     t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
-    vec3 n = inverse(intersection.substance.rotation) * normalize(texture(normal_texture, t).xyz - 0.5);
+    vec3 n = 
+        (inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))).xyz;
 
     // ambient
     vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
