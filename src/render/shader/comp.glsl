@@ -392,11 +392,16 @@ float prerender(uint i, uint work_group_id, vec3 d){
     light_t l = lights_global.data[i];
     bool light_visible = l.id != ~0;// && is_sphere_visible(light.x, )
 
+        // load octree from global memory into shared memory
+    octree_data_t node = octree_global.data[i + work_group_offset()];
+    octree[i] = node.structure;
+    bool is_node_vacant = (i & 7) == 0 && (node.structure & node_unused_flag) != 0;
+   
     // visibility check on substances and load into shared memory
     barrier();
-    bvec4 hits = bvec4(directly_visible, light_visible, false, false);
+    bvec4 hits = bvec4(directly_visible, light_visible, is_node_vacant, false);
     uvec4 totals;
-    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 0, 0);
+    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 4, 0);
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
 
     substances_visible = totals.x;
@@ -407,6 +412,10 @@ float prerender(uint i, uint work_group_id, vec3 d){
     lights_visible = totals.y;
     if (indices.y != ~0){
         lights[indices.y] = l;
+    }
+
+    if (indices.z != ~0){
+        vacant_node[indices.z] = i;
     }
 
     barrier();
@@ -424,15 +433,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
     // calculate initial distance
     float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
     float phi_initial = reduce_min(i, vec4(value)).x;
-
-    // load octree from global memory into shared memory
-    octree_data_t node = octree_global.data[i + work_group_offset()];
-    octree[i] = node.structure;
-   
-    // submit free nodes to request queue
-    if ((i & 7) == 0 && (node.structure & node_unused_flag) != 0){
-        vacant_node = uvec4(i);
-    }
 
     vec3 n = vec3(
         node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
