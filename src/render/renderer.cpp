@@ -670,9 +670,7 @@ renderer_t::handle_requests(uint32_t frame){
         std::memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
     });
 
-    for (uint32_t j = 0; j < work_group_count.volume() * 4; j += 4){
-        call_t call = calls[j];
-        uint32_t i = j / 4;
+    for (auto & call : calls){
         if (call.is_valid()){
             auto response = get_response(call, substances[call.get_substance_ID()]);
 
@@ -730,8 +728,6 @@ renderer_t::initialise_buffers(){
                     0u
                 ) * 2;
 
-                // FIXME: this value of 'm' will not be a valid index into texture staging buffer
-                //        if root is greater than buffer size
                 normal_texture->write(p, response.get_normals());
                 colour_texture->write(p, response.get_colours());
             }

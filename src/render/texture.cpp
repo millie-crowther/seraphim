@@ -206,7 +206,6 @@ texture_t::get_descriptor_layout_binding() const {
     return layout_binding;
 }
 
-
 void 
 texture_t::record_write(VkCommandBuffer command_buffer){
     vkCmdCopyBufferToImage(

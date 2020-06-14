@@ -93,7 +93,6 @@ layout (binding = 4) buffer substance_buffer { substance_t     data[]; } substan
 
 // shared memory
 shared uvec4 vacant_node;
-shared uint chosen_request;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
@@ -381,7 +380,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
         vacant_node = uvec4(~0);
-        chosen_request = ~0;
     }
     hitmap[i / 8] = false;
 
@@ -446,16 +444,14 @@ float prerender(uint i, uint work_group_id, vec3 d){
 }
 
 void postrender(uint i, request_t request){
-    barrier();
-    float value = mix(pc.render_distance, float(i), request.status != 0 && vacant_node != ~0);
-    barrier();
-    uint m = uint(reduce_min(i, vec4(value)).x);
-    barrier();
-    if (i == m){
+    bvec4 hits = bvec4(request.status != 0, false, false, false);
+    uvec4 totals;
+    uvec4 indices = reduce_to_fit(i, hits, totals, uvec4(1));
+    if (indices.x != ~0){
         octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node.x;
 
         request.child = vacant_node.x + work_group_offset();
-        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x))) * 4] = request;
+        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x))) * 4 + indices.x] = request;
     }
 
     // cull leaf nodes that havent been seen this frame
