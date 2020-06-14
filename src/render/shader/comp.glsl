@@ -92,7 +92,7 @@ layout (binding = 3) buffer lights_buffer    { light_t          data[]; } lights
 layout (binding = 4) buffer substance_buffer { substance_t     data[]; } substance;
 
 // shared memory
-shared uint vacant_node;
+shared uvec4 vacant_node;
 shared uint chosen_request;
 
 shared substance_t substances[gl_WorkGroupSize.x];
@@ -380,7 +380,7 @@ bool is_sphere_visible(vec3 centre, float radius){
 float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
-        vacant_node = ~0;
+        vacant_node = uvec4(~0);
         chosen_request = ~0;
     }
     hitmap[i / 8] = false;
@@ -431,7 +431,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
    
     // submit free nodes to request queue
     if ((i & 7) == 0 && (node.structure & node_unused_flag) != 0){
-        vacant_node = i; 
+        vacant_node = uvec4(i);
     }
 
     vec3 n = vec3(
@@ -452,9 +452,9 @@ void postrender(uint i, request_t request){
     uint m = uint(reduce_min(i, vec4(value)).x);
     barrier();
     if (i == m){
-        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node;
+        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node.x;
 
-        request.child = vacant_node + work_group_offset();
+        request.child = vacant_node.x + work_group_offset();
         requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
     }
 
