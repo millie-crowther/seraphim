@@ -246,7 +246,7 @@ bool is_substance_shadow(substance_t s){
     return length(d) < length(vec3(s.r));
 }
 
-uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
+uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
     barrier();
     workspace[i] = uvec4(hits);
     barrier();
@@ -272,10 +272,10 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
     if ((i & 512) != 0) workspace[i] += workspace[           511];    
     barrier();
 
-    totals = min(uvec4(workspace[1023]), gl_WorkGroupSize.x);
+    totals = min(uvec4(workspace[1023]), limits);
     barrier();
 
-    bvec4 mask = lessThanEqual(workspace[i], vec4(gl_WorkGroupSize.x)) && hits;
+    bvec4 mask = lessThanEqual(workspace[i], limits) && hits;
     barrier();
 
     uvec4 result = uvec4(workspace[i]);
@@ -329,8 +329,9 @@ request_t render(uint i, vec3 d, float phi_initial){
         (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
     );
     t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
-    vec3 n = 
-        (inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))).xyz;
+    vec3 n = (
+        inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))
+    ).xyz;
 
     // ambient
     vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
@@ -395,7 +396,8 @@ float prerender(uint i, uint work_group_id, vec3 d){
     barrier();
     bvec4 hits = bvec4(directly_visible, light_visible, false, false);
     uvec4 totals;
-    uvec4 indices = reduce_to_fit(i, hits, totals);
+    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 0, 0);
+    uvec4 indices = reduce_to_fit(i, hits, totals, limits);
 
     substances_visible = totals.x;
     if (indices.x != ~0){
@@ -411,7 +413,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool shadow_visible = s.id != ~0 && is_shadow_visible(i, vec3(0));
     barrier();
     hits = bvec4(shadow_visible, false, false, false);
-    indices = reduce_to_fit(i, hits, totals);
+    indices = reduce_to_fit(i, hits, totals, uvec4(gl_WorkGroupSize.x));
     shadows_visible = totals.x;
     if (indices.x != ~0){
         shadows[indices.x] = s;
