@@ -380,7 +380,7 @@ bool is_sphere_visible(vec3 centre, float radius){
 float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
-        vacant_node = 0;
+        vacant_node = ~0;
         chosen_request = ~0;
     }
     hitmap[i / 8] = false;
@@ -447,7 +447,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
 
 void postrender(uint i, request_t request){
     barrier();
-    float value = mix(pc.render_distance, float(i), request.status != 0 && vacant_node != 0);
+    float value = mix(pc.render_distance, float(i), request.status != 0 && vacant_node != ~0);
     barrier();
     uint m = uint(reduce_min(i, vec4(value)).x);
     barrier();
