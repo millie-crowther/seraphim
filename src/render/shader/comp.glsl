@@ -388,7 +388,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0;// && is_sphere_visible(light.x, )
+    bool light_visible = l.id != ~0 && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
         // load octree from global memory into shared memory
     octree_data_t node = octree_global.data[i + work_group_offset()];
@@ -446,8 +446,9 @@ float prerender(uint i, uint work_group_id, vec3 d){
 void postrender(uint i, request_t request){
     bvec4 hits = bvec4(request.status != 0);
     uvec4 _;
-    uvec4 indices = reduce_to_fit(i, hits, _, uvec4(1));
-    if (indices.x != ~0){
+    uvec4 limits = uvec4(1, 0, 0, 0);
+    uvec4 indices = reduce_to_fit(i, hits, _, limits);
+    if (indices.x != ~0 && vacant_node[indices.x] != ~0){
         octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node[indices.x];
 
         request.child = vacant_node[indices.x] + work_group_offset();
