@@ -602,19 +602,8 @@ renderer_t::render(){
         octree_buffer->record_write(command_buffer);
         light_buffer->record_write(command_buffer);
 
-        vkCmdCopyBufferToImage(
-            command_buffer, texture_staging_buffer->get_buffer(), normal_texture->get_image(), 
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            normal_texture_updates.size(), normal_texture_updates.data()
-        );
-        normal_texture_updates.clear();
-
-        vkCmdCopyBufferToImage(
-            command_buffer, texture_staging_buffer->get_buffer(), colour_texture->get_image(), 
-            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-            colour_texture_updates.size(), colour_texture_updates.data()
-        );
-        colour_texture_updates.clear();
+        normal_texture->record_write(command_buffer);
+        colour_texture->record_write(command_buffer);
 
         vkCmdPushConstants(
             command_buffer, compute_pipeline_layout, VK_SHADER_STAGE_COMPUTE_BIT,
@@ -694,11 +683,8 @@ renderer_t::handle_requests(uint32_t frame){
             ) * 2;
 
             octree_buffer->write(response.get_nodes(), call.get_child());
-            auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
-            auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
-
-            normal_texture_updates.push_back(normal_update);
-            colour_texture_updates.push_back(colour_update);
+            normal_texture->write(p, response.get_normals());
+            colour_texture->write(p, response.get_colours());
         }
     }   
 }
@@ -712,8 +698,6 @@ renderer_t::create_buffers(){
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
-
-    texture_staging_buffer = std::make_shared<host_buffer_t<uint32_t>>(~0, device, c * 8 * 2);
 }
 
 void
@@ -748,12 +732,8 @@ renderer_t::initialise_buffers(){
 
                 // FIXME: this value of 'm' will not be a valid index into texture staging buffer
                 //        if root is greater than buffer size
-                auto m = substance->get_data().root;
-                auto normal_update = normal_texture->write(texture_staging_buffer, m * 2, p, response.get_normals());
-                auto colour_update = colour_texture->write(texture_staging_buffer, m * 2 + 1, p, response.get_colours());
-
-                normal_texture_updates.push_back(normal_update);
-                colour_texture_updates.push_back(colour_update);
+                normal_texture->write(p, response.get_normals());
+                colour_texture->write(p, response.get_colours());
             }
         }
     }

@@ -90,6 +90,9 @@ texture_t::texture_t(
     if (max_requests > 0){
         staging_buffer = std::make_unique<host_buffer_t<uint32_t>>(~0, device, max_requests * 8);
     }
+
+    index = 0;
+    this->max_requests = max_requests;
 }
 
 VkFormat
@@ -174,12 +177,13 @@ texture_t::get_image() const {
     return image;
 }
 
-VkBufferImageCopy 
-texture_t::write(std::shared_ptr<host_buffer_t<uint32_t>> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x){
-    buffer->write(x, i * 8);
+void 
+texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
+    uint32_t offset = (index++ % max_requests) * 8;
+    staging_buffer->write(x, offset);
     
     VkBufferImageCopy region;
-    region.bufferOffset = i * sizeof(uint32_t) * 8;
+    region.bufferOffset = offset * sizeof(uint32_t);
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -189,7 +193,7 @@ texture_t::write(std::shared_ptr<host_buffer_t<uint32_t>> buffer, uint32_t i, u3
     region.imageOffset = { static_cast<int>(p[0]), static_cast<int>(p[1]), static_cast<int>(p[2]) };
     region.imageExtent = { 2, 2, 2 };
     
-    return region;
+    updates.push_back(region);
 }
 
 VkDescriptorSetLayoutBinding 
@@ -200,4 +204,15 @@ texture_t::get_descriptor_layout_binding() const {
     layout_binding.descriptorCount = 1;
     layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     return layout_binding;
+}
+
+
+void 
+texture_t::record_write(VkCommandBuffer command_buffer){
+    vkCmdCopyBufferToImage(
+        command_buffer, staging_buffer->get_buffer(), image, 
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+        updates.size(), updates.data()
+    );
+    updates.clear();
 }

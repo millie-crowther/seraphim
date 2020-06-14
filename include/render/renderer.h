@@ -84,7 +84,6 @@ private:
     std::unique_ptr<texture_t> render_texture; 
     std::unique_ptr<texture_t> colour_texture;
     std::unique_ptr<texture_t> normal_texture;
-    std::shared_ptr<host_buffer_t<uint32_t>> texture_staging_buffer;
     
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;
@@ -98,8 +97,6 @@ private:
     static constexpr uint32_t max_cache_size = 1000;    
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
     std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
-    std::vector<VkBufferImageCopy> normal_texture_updates;
-    std::vector<VkBufferImageCopy> colour_texture_updates;
 
     std::chrono::high_resolution_clock::time_point start;
 

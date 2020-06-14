@@ -24,6 +24,9 @@ private:
     device_t * device;
 
     std::unique_ptr<host_buffer_t<uint32_t>> staging_buffer;
+    std::vector<VkBufferImageCopy> updates;
+    uint32_t index;
+    uint32_t max_requests;
 
 public:
     // constructors and destructors
@@ -43,7 +46,9 @@ public:
     VkSampler get_sampler() const;
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
 
-    VkBufferImageCopy write(std::shared_ptr<host_buffer_t<uint32_t>> buffer, uint32_t i, u32vec3_t p, const std::array<uint32_t, 8> & x);
+
+    void record_write(VkCommandBuffer command_buffer);
+    void write(u32vec3_t p, const std::array<uint32_t, 8> & x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
