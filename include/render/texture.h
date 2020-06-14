@@ -23,12 +23,15 @@ private:
     VkExtent3D extents;
     device_t * device;
 
+    std::unique_ptr<host_buffer_t<uint32_t>> staging_buffer;
+
 public:
     // constructors and destructors
     texture_t(
         uint32_t binding, device_t * device,
         u32vec3_t size, VkImageUsageFlags usage,
-        VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
+        VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type,
+        uint32_t max_requests
     );
     ~texture_t();
 

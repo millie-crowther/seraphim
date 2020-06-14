@@ -7,7 +7,8 @@
 texture_t::texture_t(
     uint32_t binding, device_t * device,
     u32vec3_t size, VkImageUsageFlags usage,
-    VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
+    VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type,
+    uint32_t max_requests
 ){    
     this->binding = binding;
     this->device = device;
@@ -85,6 +86,10 @@ texture_t::texture_t(
     image_info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     image_info.imageView = image_view;
     image_info.sampler = sampler;
+
+    if (max_requests > 0){
+        staging_buffer = std::make_unique<host_buffer_t<uint32_t>>(~0, device, max_requests * 8);
+    }
 }
 
 VkFormat

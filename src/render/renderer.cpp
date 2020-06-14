@@ -73,14 +73,16 @@ renderer_t::renderer_t(
         11, device, size, 
         VK_IMAGE_USAGE_SAMPLED_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        work_group_count.volume() * 4
     );
 
     colour_texture = std::make_unique<texture_t>(
         12, device, size, 
         VK_IMAGE_USAGE_SAMPLED_BIT, 
         static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT), 
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        work_group_count.volume() * 4
     );
 
     create_descriptor_set_layout();
@@ -97,7 +99,8 @@ renderer_t::renderer_t(
     render_texture = std::make_unique<texture_t>(
         10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1u), 
         VK_IMAGE_USAGE_STORAGE_BIT,
-        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        0
     );
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
@@ -670,8 +673,8 @@ void
 renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); 
 
-    std::vector<call_t> empty_calls(work_group_count.volume() * 4);
     std::vector<call_t> calls(work_group_count.volume() * 4);
+    std::vector<call_t> empty_calls(calls.size());
 
     call_buffer->map(0, calls.size(), [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
