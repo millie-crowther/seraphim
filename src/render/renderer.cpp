@@ -744,8 +744,8 @@ renderer_t::initialise_buffers(){
                 // FIXME: this value of 'm' will not be a valid index into texture staging buffer
                 //        if root is greater than buffer size
                 auto m = substance->get_data().root;
-                auto normal_update = normal_texture->write(texture_staging_buffer, m, p, response.get_normals());
-                auto colour_update = colour_texture->write(texture_staging_buffer, m + work_group_count.volume(), p, response.get_colours());
+                auto normal_update = normal_texture->write(texture_staging_buffer, m * 2, p, response.get_normals());
+                auto colour_update = colour_texture->write(texture_staging_buffer, m * 2 + 1, p, response.get_colours());
 
                 normal_texture_updates.push_back(normal_update);
                 colour_texture_updates.push_back(colour_update);
