@@ -27,6 +27,8 @@ public:
     f32vec3_t get_centre() const;
     float get_size() const;
     uint32_t get_child() const;
+
+    bool is_valid() const;
 };
 
 class response_t {

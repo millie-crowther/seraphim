@@ -670,25 +670,27 @@ void
 renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); 
 
-    std::vector<call_t> empty_calls(work_group_count.volume());
-    std::vector<call_t> calls(work_group_count.volume());
+    std::vector<call_t> empty_calls(work_group_count.volume() * 4);
+    std::vector<call_t> calls(work_group_count.volume() * 4);
 
     call_buffer->map(0, calls.size(), [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
         std::memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
     });
 
-    for (uint32_t i = 0; i < work_group_count.volume(); i++){
-        if (calls[i].get_child() != 0){
-            auto response = get_response(calls[i], substances[calls[i].get_substance_ID()]);
+    for (uint32_t j = 0; j < work_group_count.volume() * 4; j += 4){
+        call_t call = calls[j];
+        uint32_t i = j / 4;
+        if (call.is_valid()){
+            auto response = get_response(call, substances[call.get_substance_ID()]);
 
             u32vec3_t p = u32vec3_t(
-                (calls[i].get_child() % (work_group_size[0] * work_group_count[0])) / 8,
-                calls[i].get_child() / (work_group_size[0] * work_group_count[0]),
+                (call.get_child() % (work_group_size[0] * work_group_count[0])) / 8,
+                call.get_child() / (work_group_size[0] * work_group_count[0]),
                 0u
             ) * 2;
 
-            octree_buffer->write(response.get_nodes(), calls[i].get_child());
+            octree_buffer->write(response.get_nodes(), call.get_child());
             auto normal_update = normal_texture->write(texture_staging_buffer, i, p, response.get_normals());
             auto colour_update = colour_texture->write(texture_staging_buffer, i + work_group_count.volume(), p, response.get_colours());
 
@@ -704,7 +706,7 @@ renderer_t::create_buffers(){
     uint32_t s = work_group_size.volume();
 
     octree_buffer = std::make_unique<device_buffer_t<response_t::octree_data_t>>(1, device, c * s);
-    call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c);
+    call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
 

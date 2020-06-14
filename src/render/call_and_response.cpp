@@ -1,13 +1,18 @@
 #include "render/call_and_response.h"
 
 call_t::call_t(){
-    child = 0;  
+    child = ~0;  
     status = 0;
 }
 
 call_t::call_t(const f32vec3_t & c, float size){
     this->c = c;
     this->size = size;
+}
+
+bool 
+call_t::is_valid() const {
+    return child != ~0;
 }
 
 f32vec3_t 

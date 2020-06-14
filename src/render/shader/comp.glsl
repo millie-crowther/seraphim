@@ -455,7 +455,7 @@ void postrender(uint i, request_t request){
         octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node.x;
 
         request.child = vacant_node.x + work_group_offset();
-        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x)))] = request;
+        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x))) * 4] = request;
     }
 
     // cull leaf nodes that havent been seen this frame

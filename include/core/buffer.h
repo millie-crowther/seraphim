@@ -93,6 +93,8 @@ public:
     template<class Ts>
     void write(const Ts & source, uint64_t offset){
         if (sizeof(T) * (offset + source.size()) > size){
+            std::cout << "offset: " << offset << ", size: " << (size / sizeof(T)) << std::endl;
+
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
@@ -123,7 +125,7 @@ public:
         region.dstOffset = 0;
         region.size = size;
         vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &region);
-        vkCmdFillBuffer(command_buffer, buffer, 0, size, 0);
+        vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
     }
 
     VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
