@@ -444,14 +444,14 @@ float prerender(uint i, uint work_group_id, vec3 d){
 }
 
 void postrender(uint i, request_t request){
-    bvec4 hits = bvec4(request.status != 0, false, false, false);
-    uvec4 totals;
-    uvec4 indices = reduce_to_fit(i, hits, totals, uvec4(1));
+    bvec4 hits = bvec4(request.status != 0);
+    uvec4 _;
+    uvec4 indices = reduce_to_fit(i, hits, _, uvec4(1));
     if (indices.x != ~0){
-        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node.x;
+        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node[indices.x];
 
-        request.child = vacant_node.x + work_group_offset();
-        requests.data[uint(dot(gl_WorkGroupID.xy, vec2(1, gl_NumWorkGroups.x))) * 4 + indices.x] = request;
+        request.child = vacant_node[indices.x] + work_group_offset();
+        requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
     }
 
     // cull leaf nodes that havent been seen this frame

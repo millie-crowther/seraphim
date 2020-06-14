@@ -717,10 +717,7 @@ renderer_t::initialise_buffers(){
 
             for (uint32_t i = 0; i < initial_octree.size(); i += work_group_size.volume()){
                 auto j = i + substance->get_data().root; 
-
-                for (uint32_t k = 0; k < 8; k++){
-                    initial_octree[j + k] = nodes[k];
-                }
+                std::memcpy(&initial_octree[j], nodes.data(), sizeof(response_t::octree_data_t) * 8);
 
                 u32vec3_t p = u32vec3_t(
                     (j % (work_group_size[0] * work_group_count[0])) / 8,
