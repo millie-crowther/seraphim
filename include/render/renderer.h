@@ -119,7 +119,9 @@ private:
     void cleanup_swapchain();
     void handle_requests(uint32_t frame);
     void present(uint32_t image_index) const;
-    response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);    
+    response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);   
+
+    uint32_t octree_pool_size() const; 
     
 public:
     // constructors and destructors

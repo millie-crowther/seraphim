@@ -10,6 +10,7 @@ layout (binding = 12) uniform sampler3D colour_texture;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
+const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
@@ -121,7 +122,7 @@ float expected_size(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * octree_pool_size;
 }
 
 bool is_leaf(uint i){
@@ -324,10 +325,11 @@ request_t render(uint i, vec3 d, float phi_initial){
     t += intersection.node_size * 4;
     t /= intersection.node_size * 8;
     t.xy += vec2(
-        (intersection.index + work_group_offset()) % (gl_WorkGroupSize.x * gl_NumWorkGroups.x) / 8,
-        (intersection.index + work_group_offset()) / (gl_WorkGroupSize.x * gl_NumWorkGroups.x)
+        ((intersection.index + work_group_offset()) % octree_pool_size) / 8,
+        (intersection.index + work_group_offset()) / octree_pool_size
     );
-    t.xy /= gl_WorkGroupSize.xy * gl_NumWorkGroups.xy / vec2(8, 1);
+    t.xy /= vec2(octree_pool_size / 8, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
+    
     vec3 n = (
         inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))
     ).xyz;
