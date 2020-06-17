@@ -57,6 +57,8 @@ struct intersection_t {
     uint parent_index;
     substance_t substance;
     vec3 local_x;
+
+    vec3 node_centre;
     float node_size;
 };
 
@@ -90,7 +92,7 @@ struct octree_data_t {
 layout (binding = 1) buffer octree_buffer    { octree_data_t    data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t          data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer { substance_t     data[]; } substance;
+layout (binding = 4) buffer substance_buffer { substance_t      data[]; } substance;
 
 // shared memory
 shared uvec4 vacant_node;
@@ -105,7 +107,6 @@ shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
 
 shared uint octree[octree_pool_size];
-shared vec3 node_centres[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
@@ -140,11 +141,22 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     uint i_prev = i;
     uint depth = 1;
 
+    vec3  c = vec3(0);
+    vec3 c_prev = c;
+    float s = sub.r;
+    vec3 d = step(c, x.xyz);
+    c += (d - 0.5) * s;
+    s /= 2;
+
     // perform octree lookup for relevant node
     if (phi_aabb <= epsilon){
         for (; !is_leaf(i); depth++){
             i_prev = i;
-            i = (octree[i] & node_child_mask) | uint(dot(step(node_centres[i], x.xyz), vec3(1, 2, 4)));
+            c_prev = c;
+            vec3 d = step(c, x.xyz);
+            c += (d - 0.5) * s;
+            s /= 2;
+            i = (octree[i] & node_child_mask) | uint(dot(d, vec3(1, 2, 4)));
             hitmap[i / 8] = true; // TODO: move outside loop
         }
     }
@@ -157,11 +169,13 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
+
+    intersection.node_centre = c_prev;
     intersection.node_size = sub.r / (1 << depth);
 
     uint node = octree[i];
     bool should_request = intersection.node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
-    if (should_request) request = request_t(node_centres[i], intersection.node_size, 0, i, sub.id, 1);
+    if (should_request) request = request_t(c, intersection.node_size, 0, i, sub.id, 1);
  
     // calculate distance to intersect plane
     float phi_plane = dot(x.xyz, workspace[i].xyz) - workspace[i].w;
@@ -321,7 +335,7 @@ request_t render(uint i, vec3 d, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
-    vec3 t = intersection.local_x - node_centres[intersection.parent_index]; 
+    vec3 t = intersection.local_x - intersection.node_centre;
     t += intersection.node_size * 4;
     t /= intersection.node_size * 8;
     t.xy += vec2(
@@ -439,8 +453,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
     ) / 127.5 - 1;
     workspace[i].xyz = n;
     workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
-
-    node_centres[i] = node.centre;
 
     return phi_initial;
 }
