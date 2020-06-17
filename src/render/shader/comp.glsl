@@ -223,7 +223,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = 1;//shadow(light.x, i, request);
+    float shadow = shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -388,7 +388,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0 && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
+    bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
         // load octree from global memory into shared memory
     octree_data_t node = octree_global.data[i + work_group_offset()];

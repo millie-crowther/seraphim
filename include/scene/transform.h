@@ -10,10 +10,8 @@
 class transform_t {
 private:
     vec3_t position;
-    std::mutex position_mutex;
 
     quat_t rotation;
-    std::mutex rotation_mutex;
 
 public:
     void set_position(const vec3_t & x);
