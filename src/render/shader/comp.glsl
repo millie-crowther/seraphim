@@ -10,7 +10,7 @@ layout (binding = 12) uniform sampler3D colour_texture;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
-const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y * 2;
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
@@ -104,7 +104,7 @@ shared uint shadows_visible;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
 
-shared uint octree[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared uint octree[octree_pool_size];
 shared vec3 node_centres[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
@@ -126,7 +126,7 @@ uint work_group_offset(){
 }
 
 bool is_leaf(uint i){
-    return (octree[i] & node_child_mask) == node_child_mask;
+    return (octree[i] & node_child_mask) >= octree_pool_size;
 }
 
 float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){

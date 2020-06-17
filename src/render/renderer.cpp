@@ -700,7 +700,7 @@ renderer_t::create_buffers(){
 
 uint32_t 
 renderer_t::octree_pool_size() const {
-    return work_group_size.volume();
+    return work_group_size.volume() * 2;
 } 
 
 void
