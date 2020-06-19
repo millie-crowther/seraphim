@@ -1,23 +1,31 @@
 #include "scene/transform.h"
 
+transform_t::transform_t(){
+    matrix = nullptr;
+}
+
 void 
 transform_t::set_position(const vec3_t & x){
     position = x;
+    matrix.reset();
 }
 
 void 
 transform_t::translate(const vec3_t & x){
     position += x;
+    matrix.reset();
 }
 
 void 
 transform_t::set_rotation(const quat_t & q){
     rotation = q;
+    matrix.reset();
 }
 
 void 
 transform_t::rotate(const quat_t & q){
     rotation *= q;
+    matrix.reset();
 }
 
 quat_t 
@@ -35,8 +43,8 @@ transform_t::to_local_space(const vec3_t & x) const {
     return rotation.inverse() * (position - x);
 }
 
-f32mat4_t
-transform_t::to_matrix() const {
+void
+transform_t::recalculate_matrix() {
     quat_t inverse = rotation.inverse();
 
     float wx = inverse[0] * inverse[1];
@@ -82,5 +90,14 @@ transform_t::to_matrix() const {
         1.0f
     );
 
-    return f32mat4_t(a, b, c, d);
+    matrix = std::make_unique<f32mat4_t>(a, b, c, d);
+}
+
+f32mat4_t *
+transform_t::get_matrix(){
+    if (matrix == nullptr){
+        recalculate_matrix();
+    }
+
+    return matrix.get();
 }

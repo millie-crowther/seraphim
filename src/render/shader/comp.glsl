@@ -238,7 +238,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow(light.x, i, request);
+    float shadow = 1;//shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
