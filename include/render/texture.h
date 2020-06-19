@@ -11,6 +11,8 @@
 
 class texture_t {
 private:
+    static constexpr uint32_t staging_buffer_size = 10000;
+
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory memory;
@@ -23,18 +25,16 @@ private:
     VkExtent3D extents;
     device_t * device;
 
-    std::unique_ptr<host_buffer_t<uint32_t>> staging_buffer;
+    std::unique_ptr<host_buffer_t<std::array<uint32_t, 8>>> staging_buffer;
     std::vector<VkBufferImageCopy> updates;
     uint32_t index;
-    uint32_t max_requests;
 
 public:
     // constructors and destructors
     texture_t(
         uint32_t binding, device_t * device,
         u32vec3_t size, VkImageUsageFlags usage,
-        VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type,
-        uint32_t max_requests
+        VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type
     );
     ~texture_t();
 

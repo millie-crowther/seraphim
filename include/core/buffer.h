@@ -77,7 +77,7 @@ public:
         vkDestroyBuffer(device->get_device(), buffer, nullptr);
         vkFreeMemory(device->get_device(), memory, nullptr);
     }    
-    
+
     template<class F>
     void map(uint64_t offset, uint64_t size, const F & f){
         if constexpr (is_device_local){
@@ -109,6 +109,10 @@ public:
             buffer_copy.size = sizeof(T) * source.size();
             updates.push_back(buffer_copy);
         } 
+    }
+
+    void write_element(const T & element, uint64_t offset){
+        write(std::vector<T>({ element }), offset);
     }
 
     void record_write(VkCommandBuffer command_buffer){
@@ -158,7 +162,7 @@ public:
     }
 
     uint64_t get_size() const {
-        return size;
+        return size / sizeof(T);
     }
 
     static uint32_t find_memory_type(device_t * device, uint32_t type_filter, VkMemoryPropertyFlags prop){
