@@ -119,7 +119,7 @@ vec2 uv(){
 }
 
 float expected_size(vec3 x){
-    return 0.075 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
+    return 0.05 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
 }
 
 uint work_group_offset(){
@@ -131,10 +131,10 @@ bool is_leaf(uint i){
 }
 
 float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
-    vec4 x = vec4(_x, 1);
-    x = sub.transform * x;
+    vec4 x = sub.transform * vec4(_x, 1);
 
     // check against outside bounds of aabb
+    bool outside_aabb = any(greaterThan(abs(x.xyz), vec3(sub.r + epsilon)));
     float phi_aabb = length(max(abs(x.xyz) - sub.r, 0));
 
     uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
@@ -171,16 +171,17 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     intersection.substance = sub;
 
     intersection.node_centre = c_prev;
-    intersection.node_size = sub.r / (1 << depth);
+    float node_size = sub.r / (1 << depth);
+    intersection.node_size = node_size;
 
     uint node = octree[i];
-    bool should_request = intersection.node_size >= expected_size && (node & (node_empty_flag | node_child_mask)) == node_child_mask;
-    if (should_request) request = request_t(c, intersection.node_size, 0, i, sub.id, 1);
+    bool node_is_empty = (node & node_empty_flag) != 0;
+    bool should_request = node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
+    if (should_request) request = request_t(c, node_size, 0, i, sub.id, 1);
  
     // calculate distance to intersect plane
-    float phi_plane = dot(x.xyz, workspace[i].xyz) - workspace[i].w;
-    float phi_interior = mix(intersection.node_size, phi_plane, (node & node_empty_flag) == 0);
-    return mix(phi_interior, phi_aabb, phi_aabb > epsilon);
+    float phi_plane = mix(0, node_size * 2, node_is_empty);
+    return mix(phi_plane, phi_aabb, outside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
@@ -448,11 +449,11 @@ float prerender(uint i, uint work_group_id, vec3 d){
     float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
     float phi_initial = reduce_min(i, vec4(value)).x;
 
-    vec3 n = vec3(
-        node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
-    ) / 127.5 - 1;
-    workspace[i].xyz = n;
-    workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
+    // vec3 n = vec3(
+    //     node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
+    // ) / 127.5 - 1;
+    // workspace[i].xyz = n;
+    // workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
 
     return phi_initial;
 }

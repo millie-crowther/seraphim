@@ -22,6 +22,10 @@ public:
         auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
         return vec_t<double, D>::nabla(f, x, hyper::epsilon);
     }
+
+    virtual bool contains(const vec_t<double, D> & x) const {
+        return phi(x) <= 0.0;
+    }
 };
 
 typedef sdf_t<3> sdf3_t;
