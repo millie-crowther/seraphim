@@ -39,12 +39,6 @@ public:
 
     struct octree_data_t {
         uint32_t structure;
-        uint32_t surface;
-        uint32_t _1;
-        uint32_t _2;
-
-        f32vec3_t centre;
-        float size;
     };
 
     response_t();

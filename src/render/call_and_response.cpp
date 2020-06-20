@@ -122,12 +122,6 @@ response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3
     vec3_t n = (sdf->normal(c) / 2 + 0.5);
     
     return {
-        node_child_mask | empty_flag,
-        squash(vec4_t(n[0], n[1], n[2], p)),
-        0,
-        0,
-
-        c.cast<float>(),
-        static_cast<float>(r[0])
+        node_child_mask | empty_flag
     }; 
 }

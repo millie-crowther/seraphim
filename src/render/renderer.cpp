@@ -708,7 +708,7 @@ renderer_t::initialise_buffers(){
 
     std::vector<response_t::octree_data_t> initial_octree(
         work_group_count.volume() * octree_pool_size(),
-        { response_t::node_unused_flag, 0, 0, 0, f32vec3_t(0), 0 }
+        { response_t::node_unused_flag }
     );
 
     for (auto pair : substances){

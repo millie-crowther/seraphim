@@ -79,20 +79,10 @@ struct light_t {
     vec4 colour;
 };
 
-struct octree_data_t {
-    uint structure;
-    uint surface;
-    uint _1;
-    uint _2;
-
-    vec3 centre;
-    float size;
-};
-
-layout (binding = 1) buffer octree_buffer    { octree_data_t    data[]; } octree_global;
-layout (binding = 2) buffer request_buffer   { request_t        data[]; } requests;
-layout (binding = 3) buffer lights_buffer    { light_t          data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer { substance_t      data[]; } substance;
+layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
+layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
+layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
+layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
 
 // shared memory
 shared uvec4 vacant_node;
@@ -149,7 +139,7 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     s /= 2;
 
     // perform octree lookup for relevant node
-    if (phi_aabb <= epsilon){
+    if (!outside_aabb){
         for (; !is_leaf(i); depth++){
             i_prev = i;
             c_prev = c;
@@ -408,9 +398,9 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
         // load octree from global memory into shared memory
-    octree_data_t node = octree_global.data[i + work_group_offset()];
-    octree[i] = node.structure;
-    bool is_node_vacant = (i & 7) == 0 && (node.structure & node_unused_flag) != 0;
+    uint node = octree_global.data[i + work_group_offset()];
+    octree[i] = node;
+    bool is_node_vacant = (i & 7) == 0 && (node & node_unused_flag) != 0;
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -464,7 +454,7 @@ void postrender(uint i, request_t request){
     uvec4 limits = uvec4(1, 0, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
     if (indices.x != ~0 && vacant_node[indices.x] != ~0){
-        octree_global.data[request.parent + work_group_offset()].structure &= ~node_child_mask | vacant_node[indices.x];
+        octree_global.data[request.parent + work_group_offset()] &= ~node_child_mask | vacant_node[indices.x];
 
         request.child = vacant_node[indices.x] + work_group_offset();
         requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
@@ -473,8 +463,8 @@ void postrender(uint i, request_t request){
     // cull leaf nodes that havent been seen this frame
     uint c  = (octree[i] & node_child_mask);
     if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
-        octree_global.data[i + work_group_offset()].structure |= node_child_mask;
-        octree_global.data[c + work_group_offset()].structure |= node_unused_flag;
+        octree_global.data[i + work_group_offset()] |= node_child_mask;
+        octree_global.data[c + work_group_offset()] |= node_unused_flag;
     }
 }
 
