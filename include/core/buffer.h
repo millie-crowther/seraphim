@@ -92,7 +92,7 @@ public:
 
     template<class Ts>
     void write(const Ts & source, uint64_t offset){
-        if (sizeof(T) * (offset + source.size()) > size){
+        if (sizeof(T) * (offset + source.size()) > size + 1){
             std::cout << "offset: " << offset << ", size: " << (size / sizeof(T)) << std::endl;
 
             throw std::runtime_error("Error: Invalid buffer write.");

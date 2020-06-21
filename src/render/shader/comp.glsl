@@ -98,7 +98,7 @@ shared uint lights_visible;
 
 shared uint octree[octree_pool_size];
 
-shared bool hitmap[gl_WorkGroupSize.x * gl_WorkGroupSize.y / 8];
+shared bool hitmap[octree_pool_size / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(){
@@ -109,7 +109,7 @@ vec2 uv(){
 }
 
 float expected_size(vec3 x){
-    return 0.05 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
+    return 0.075 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
 }
 
 uint work_group_offset(){
@@ -168,9 +168,13 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     bool node_is_empty = (node & node_empty_flag) != 0;
     bool should_request = node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
     if (should_request) request = request_t(c, node_size, 0, i, sub.id, 1);
+
+    vec3 v = vec3(node_size) - abs(c - x.xyz);
+    v = max(node_size - v, v);
+    float p = min(v.x, min(v.y, v.z));
  
     // calculate distance to intersect plane
-    float phi_plane = mix(0, node_size * 2, node_is_empty);
+    float phi_plane = mix(0, p + epsilon, node_is_empty);
     return mix(phi_plane, phi_aabb, outside_aabb);
 }
 
@@ -229,7 +233,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = 1;//shadow(light.x, i, request);
+    float shadow = shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -395,12 +399,22 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
+    bool light_visible = l.id != ~0 && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
-        // load octree from global memory into shared memory
-    uint node = octree_global.data[i + work_group_offset()];
-    octree[i] = node;
-    bool is_node_vacant = (i & 7) == 0 && (node & node_unused_flag) != 0;
+    // load octree from global memory into shared memory
+    uint i2 = i + gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+
+    uvec2 nodes = uvec2(
+        octree_global.data[i  + work_group_offset()],
+        octree_global.data[i2 + work_group_offset()]
+    );
+
+    octree[i ] = nodes.x;
+    octree[i2] = nodes.y;
+
+    bool is_node_vacant = 
+        (i & 7) == 0 && (nodes.x & node_unused_flag) != 0 ||
+        (i & 7) == 1 && (nodes.y & node_unused_flag) != 0;
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -420,7 +434,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     }
 
     if (indices.z != ~0){
-        vacant_node[indices.z] = i;
+        vacant_node[indices.z] = mix(i, i2, (i & 7) == 1);
     }
 
     barrier();
@@ -439,12 +453,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
     float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
     float phi_initial = reduce_min(i, vec4(value)).x;
 
-    // vec3 n = vec3(
-    //     node.surface & 0xFF, (node.surface >> 8) & 0xFF, (node.surface >> 16) & 0xFF
-    // ) / 127.5 - 1;
-    // workspace[i].xyz = n;
-    // workspace[i].w = dot(node.centre, n) - (float(node.surface) / 1235007097.17 - sqrt3) * node.size;
-
     return phi_initial;
 }
 
@@ -462,6 +470,13 @@ void postrender(uint i, request_t request){
 
     // cull leaf nodes that havent been seen this frame
     uint c  = (octree[i] & node_child_mask);
+    if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
+        octree_global.data[i + work_group_offset()] |= node_child_mask;
+        octree_global.data[c + work_group_offset()] |= node_unused_flag;
+    }
+
+    i += gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    c  = (octree[i] & node_child_mask);
     if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
         octree_global.data[i + work_group_offset()] |= node_child_mask;
         octree_global.data[c + work_group_offset()] |= node_unused_flag;

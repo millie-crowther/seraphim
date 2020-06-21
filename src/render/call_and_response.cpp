@@ -116,7 +116,7 @@ response_t::squash(const vec4_t & x) const {
 response_t::octree_data_t
 response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
     double p = sdf->phi(c);
-    uint32_t empty_flag = std::abs(p) - hyper::epsilon <= r.chebyshev_norm() ? 0 : node_empty_flag;
+    uint32_t empty_flag = p < r.chebyshev_norm() ? 0 : node_empty_flag;
     p = p / r.norm() / 2 + 0.5;
 
     vec3_t n = (sdf->normal(c) / 2 + 0.5);
