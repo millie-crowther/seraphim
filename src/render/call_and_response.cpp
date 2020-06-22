@@ -12,7 +12,7 @@ call_t::call_t(const f32vec3_t & c, float size){
 
 bool 
 call_t::is_valid() const {
-    return child != ~0;
+    return child != static_cast<uint32_t>(~0);
 }
 
 f32vec3_t 
@@ -115,13 +115,17 @@ response_t::squash(const vec4_t & x) const {
 
 response_t::octree_data_t
 response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
-    double p = sdf->phi(c);
-    uint32_t empty_flag = p < r.chebyshev_norm() ? 0 : node_empty_flag;
-    p = p / r.norm() / 2 + 0.5;
+    uint32_t empty_flag = sdf->phi(c) < r.chebyshev_norm() ? 0 : node_empty_flag;
 
-    vec3_t n = (sdf->normal(c) / 2 + 0.5);
+    uint32_t contains_mask = 0;
+
+    for (int i = 0; i < 8; i++){
+        if (!sdf->contains(c + vertices[i].hadamard(r))){
+            contains_mask |= 1 << (i + 16);
+        }
+    }
     
     return {
-        node_child_mask | empty_flag
+        contains_mask | node_child_mask | empty_flag
     }; 
 }

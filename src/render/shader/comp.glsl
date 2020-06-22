@@ -125,7 +125,7 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
 
     // check against outside bounds of aabb
     bool outside_aabb = any(greaterThan(abs(x.xyz), vec3(sub.r + epsilon)));
-    float phi_aabb = length(max(abs(x.xyz) - sub.r, 0));
+    float phi_aabb = length(max(abs(x.xyz) - sub.r, 0)) + epsilon;
 
     uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
     uint i_prev = i;
@@ -169,12 +169,17 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     bool should_request = node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
     if (should_request) request = request_t(c, node_size, 0, i, sub.id, 1);
 
-    vec3 v = vec3(node_size) - abs(c - x.xyz);
-    v = max(node_size - v, v);
-    float p = min(v.x, min(v.y, v.z));
- 
-    // calculate distance to intersect plane
-    float phi_plane = mix(0, p + epsilon, node_is_empty);
+    float vs[8];
+    for (int o = 0; o < 8; o++){
+        vs[o] = mix(-node_size, node_size, (node & (1 << (o + 16))) != 0);
+    }
+
+    vec3 alpha = (x.xyz - c + node_size) / (node_size * 2);
+
+    vec4 x1 = mix(vec4(vs[0], vs[1], vs[2], vs[3]), vec4(vs[4], vs[5], vs[6], vs[7]), alpha.z);
+    vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
+    float phi_plane = mix(x2.x, x2.y, alpha.x);
+
     return mix(phi_plane, phi_aabb, outside_aabb);
 }
 
@@ -233,7 +238,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow(light.x, i, request);
+    float shadow = 1;//shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -399,7 +404,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0 && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
+    bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
     // load octree from global memory into shared memory
     uint i2 = i + gl_WorkGroupSize.x * gl_WorkGroupSize.y;
@@ -450,14 +455,15 @@ float prerender(uint i, uint work_group_id, vec3 d){
     if (s.id != ~0) hitmap[s.root / 8] = true;
  
     // calculate initial distance
-    float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
-    float phi_initial = reduce_min(i, vec4(value)).x;
+    // float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
+    // float phi_initial = reduce_min(i, vec4(value)).x;
 
-    return phi_initial;
+    // return phi_initial;
+    return 0;
 }
 
 void postrender(uint i, request_t request){
-    bvec4 hits = bvec4(request.status != 0);
+    bvec4 hits = bvec4(request.status != 0, false, false, false);
     uvec4 _;
     uvec4 limits = uvec4(1, 0, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
