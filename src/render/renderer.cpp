@@ -564,8 +564,6 @@ renderer_t::render(){
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
     cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
-
-    theta = 0.0;
     sphere->set_position(vec3_t(std::sin(theta), 2.0, std::cos(theta)) * 0.5);
 
     std::vector<substance_t::data_t> substance_data(work_group_size.volume());

@@ -166,7 +166,7 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
 
     uint node = octree[i];
     bool node_is_empty = (node & node_empty_flag) != 0;
-    bool should_request = node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
+    bool should_request = !outside_aabb && node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
     if (should_request) request = request_t(c, node_size, 0, i, sub.id, 1);
 
     float vs[8];
@@ -238,7 +238,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = 1;//shadow(light.x, i, request);
+    float shadow = shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
