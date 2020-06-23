@@ -99,8 +99,8 @@ shared uint octree[octree_pool_size];
 shared bool hitmap[octree_pool_size / 8];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
-vec2 uv(){
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
+vec2 uv(vec2 xy){
+    vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
     uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     return uv;
@@ -395,6 +395,43 @@ bool is_sphere_visible(vec3 centre, float radius){
     return length(diff) < r;
 }
 
+vec3 get_ray_direction(uvec2 xy){
+    vec2 uv = uv(xy);
+    vec3 up = pc.eye_up;
+    vec3 right = pc.eye_right;
+    vec3 forward = cross(right, up);
+    return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+}
+
+bool is_sphere_visible2(vec3 centre, float radius){
+    // centre of work group in screen space coordinates
+    uvec2 pxc = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
+
+    // determine ray at centre of work group
+    vec3 b = get_ray_direction(pxc);
+
+    // calculate position of sphere relative to camera
+    vec3 a = centre - pc.camera_position;
+
+    // project sphere position into ray, remove values behind camera
+    float a1 = max(0, dot(a, b));
+
+    // find closest point to sphere on ray
+    vec3 x = pc.camera_position + b * a1;
+
+    // find closest point to ray on surface of sphere
+    vec3 x1 = centre + normalize(x - centre) * radius;
+
+    // project that point into screen space
+    vec2 px1 = project(x1);
+
+    // find offset of projected point from work group centre
+    vec2 dpx = abs(px1 - pxc);
+
+    // check that offset is less than size of work group
+    return all(lessThanEqual(dpx, gl_WorkGroupSize.xy / 2));
+}
+
 float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
@@ -496,11 +533,7 @@ void main(){
     uint work_group_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
 
-    vec2 uv = uv();
-    vec3 up = pc.eye_up;
-    vec3 right = pc.eye_right;
-    vec3 forward = cross(right, up);
-    vec3 d = normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+    vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
     float phi_initial = prerender(i, work_group_id, d);
 
