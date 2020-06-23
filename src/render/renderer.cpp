@@ -713,7 +713,7 @@ renderer_t::initialise_buffers(){
 
     for (auto pair : substances){
         if (auto substance = std::get<1>(pair).lock()){
-            call_t call(vec3_t(), substance->get_data().r);
+            call_t call(vec3_t(), substance->get_data().r.chebyshev_norm());
             response_t response(call, substance);
             auto nodes = response.get_nodes();
 

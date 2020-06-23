@@ -13,15 +13,13 @@ public:
         f32vec3_t c;
         int32_t root;
 
-        float r;
-        uint32_t _1;
-        uint32_t _2;
+        f32vec3_t r;
         uint32_t id;
 
         f32mat4_t transform;
 
         data_t();
-        data_t(const f32vec3_t & c, int32_t root, float r, uint32_t id, const f32mat4_t & transform);
+        data_t(const f32vec3_t & c, int32_t root, const f32vec3_t & r, uint32_t id, const f32mat4_t & transform);
     };
 
     substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter);

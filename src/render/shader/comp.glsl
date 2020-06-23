@@ -40,9 +40,7 @@ struct substance_t {
     vec3 c;
     int root;
 
-    float r;
-    float _1;
-    float _2;
+    vec3 r;
     uint id;
 
     mat4 transform;
@@ -120,6 +118,11 @@ bool is_leaf(uint i){
     return (octree[i] & node_child_mask) >= octree_pool_size;
 }
 
+float chebyshev_norm(vec3 x){
+    vec3 a = abs(x);
+    return max(a.x, max(a.y, a.z));
+}
+
 float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
     vec4 x = sub.transform * vec4(_x, 1);
 
@@ -133,7 +136,7 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
 
     vec3  c = vec3(0);
     vec3 c_prev = c;
-    float s = sub.r;
+    float s = chebyshev_norm(sub.r);
     vec3 d = step(c, x.xyz);
     c += (d - 0.5) * s;
     s /= 2;
@@ -161,7 +164,7 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     intersection.substance = sub;
 
     intersection.node_centre = c_prev;
-    float node_size = sub.r / (1 << depth);
+    float node_size = chebyshev_norm(sub.r) / (1 << depth);
     intersection.node_size = node_size;
 
     uint node = octree[i];
@@ -401,7 +404,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
 
     // load shit
     substance_t s = substance.data[i];
-    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, s.r);
+    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, chebyshev_norm(s.r));
 
     light_t l = lights_global.data[i];
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
