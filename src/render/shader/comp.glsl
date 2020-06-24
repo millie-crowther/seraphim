@@ -385,12 +385,11 @@ bool is_shadow_visible(uint i, vec3 x){
 
 bool is_sphere_visible(vec3 centre, float radius){
     vec3 x = centre - pc.camera_position;
-
-    ivec2 image_x = ivec2(project(x));
+    vec2 image_x = project(x);
     float d = max(epsilon, dot(x, cross(pc.eye_right, pc.eye_up)));
     float r = radius / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-    ivec2 c = ivec2(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
-    ivec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
+    vec2 c = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
+    vec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
 
     return length(diff) < r;
 }
@@ -403,35 +402,6 @@ vec3 get_ray_direction(uvec2 xy){
     return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 }
 
-bool is_sphere_visible2(vec3 centre, float radius){
-    // centre of work group in screen space coordinates
-    uvec2 pxc = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
-
-    // determine ray at centre of work group
-    vec3 b = get_ray_direction(pxc);
-
-    // calculate position of sphere relative to camera
-    vec3 a = centre - pc.camera_position;
-
-    // project sphere position into ray, remove values behind camera
-    float a1 = max(0, dot(a, b));
-
-    // find closest point to sphere on ray
-    vec3 x = pc.camera_position + b * a1;
-
-    // find closest point to ray on surface of sphere
-    vec3 x1 = centre + normalize(x - centre) * radius;
-
-    // project that point into screen space
-    vec2 px1 = project(x1);
-
-    // find offset of projected point from work group centre
-    vec2 dpx = abs(px1 - pxc);
-
-    // check that offset is less than size of work group
-    return all(lessThanEqual(dpx, gl_WorkGroupSize.xy / 2));
-}
-
 float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
     if (i == 0){
@@ -441,7 +411,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
 
     // load shit
     substance_t s = substance.data[i];
-    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, chebyshev_norm(s.r));
+    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, length(s.r));
 
     light_t l = lights_global.data[i];
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
