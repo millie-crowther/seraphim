@@ -64,7 +64,7 @@ renderer_t::renderer_t(
     create_render_pass();
 
     u32vec3_t size = u32vec3_t(
-        octree_pool_size() / 8, 
+        octree_pool_size(), 
         work_group_count.volume(), 
         1u
     ) * 2;
@@ -672,7 +672,7 @@ renderer_t::handle_requests(uint32_t frame){
             auto response = get_response(call, substances[call.get_substance_ID()]);
 
             u32vec3_t p = u32vec3_t(
-                (call.get_child() % octree_pool_size()) / 8,
+                call.get_child() % octree_pool_size(),
                 call.get_child() / octree_pool_size(),
                 0u
             ) * 2;
@@ -689,7 +689,7 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    octree_buffer = std::make_unique<device_buffer_t<response_t::octree_data_t>>(1, device, c * octree_pool_size());
+    octree_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, c * octree_pool_size());
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
@@ -697,7 +697,7 @@ renderer_t::create_buffers(){
 
 uint32_t 
 renderer_t::octree_pool_size() const {
-    return work_group_size.volume() * 2;
+    return work_group_size.volume();
 } 
 
 void
@@ -706,9 +706,9 @@ renderer_t::initialise_buffers(){
     lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
     light_buffer->write(lights, 0);
 
-    std::vector<response_t::octree_data_t> initial_octree(
+    std::vector<uint32_t> initial_octree(
         work_group_count.volume() * octree_pool_size(),
-        { response_t::node_unused_flag }
+        response_t::node_unused_flag
     );
 
     for (auto pair : substances){
@@ -719,10 +719,10 @@ renderer_t::initialise_buffers(){
 
             for (uint32_t i = 0; i < initial_octree.size(); i += octree_pool_size()){
                 auto j = i + substance->get_data().root; 
-                std::memcpy(&initial_octree[j], nodes.data(), sizeof(response_t::octree_data_t) * 8);
+                std::memcpy(&initial_octree[j], nodes.data(), sizeof(uint32_t) * 8);
 
                 u32vec3_t p = u32vec3_t(
-                    (j % octree_pool_size()) / 8,
+                    j % octree_pool_size(),
                     j / octree_pool_size(),
                     0u
                 ) * 2;

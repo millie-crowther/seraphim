@@ -10,7 +10,7 @@ layout (binding = 12) uniform sampler3D colour_texture;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
-const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y * 2;
+const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
@@ -52,7 +52,6 @@ struct intersection_t {
     vec3 normal;
     float distance;
     uint index;
-    uint parent_index;
     substance_t substance;
     vec3 local_x;
 
@@ -131,7 +130,6 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     float phi_aabb = length(max(abs(x.xyz) - sub.r, 0)) + epsilon;
 
     uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
-    uint i_prev = i;
     uint depth = 1;
 
     vec3  c = vec3(0);
@@ -144,7 +142,6 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     // perform octree lookup for relevant node
     if (!outside_aabb){
         for (; !is_leaf(i); depth++){
-            i_prev = i;
             c_prev = c;
             vec3 d = step(c, x.xyz);
             c += (d - 0.5) * s;
@@ -154,16 +151,14 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
         }
     }
 
-    // hitmap[i_prev / 8] = true;
     // hitmap[i / 8] = true;
 
     // if necessary, request more data from CPU
     intersection.local_x = x.xyz;
-    intersection.parent_index = i_prev;
     intersection.index = i;
     intersection.substance = sub;
 
-    intersection.node_centre = c_prev;
+    intersection.node_centre = c;
     float node_size = chebyshev_norm(sub.r) / (1 << depth);
     intersection.node_size = node_size;
 
@@ -339,13 +334,13 @@ request_t render(uint i, vec3 d, float phi_initial){
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
     vec3 t = intersection.local_x - intersection.node_centre;
-    t += intersection.node_size * 4;
-    t /= intersection.node_size * 8;
+    t += intersection.node_size * 2;
+    t /= intersection.node_size * 4;
     t.xy += vec2(
-        ((intersection.index + work_group_offset()) % octree_pool_size) / 8,
+        (intersection.index + work_group_offset()) % octree_pool_size,
         (intersection.index + work_group_offset()) / octree_pool_size
     );
-    t.xy /= vec2(octree_pool_size / 8, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
+    t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
     
     vec3 n = (
         inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))
@@ -428,8 +423,9 @@ float prerender(uint i, uint work_group_id, vec3 d){
     octree[i2] = nodes.y;
 
     bool is_node_vacant = 
-        (i & 7) == 0 && (nodes.x & node_unused_flag) != 0 ||
-        (i & 7) == 1 && (nodes.y & node_unused_flag) != 0;
+        (i & 7) == 0 && (nodes.x & node_unused_flag) != 0 
+        // || (i & 7) == 1 && (nodes.y & node_unused_flag) != 0
+        ;
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -449,7 +445,7 @@ float prerender(uint i, uint work_group_id, vec3 d){
     }
 
     if (indices.z != ~0){
-        vacant_node[indices.z] = mix(i, i2, (i & 7) == 1);
+        vacant_node[indices.z] = i;// = mix(i, i2, (i & 7) == 1);
     }
 
     barrier();
@@ -491,12 +487,12 @@ void postrender(uint i, request_t request){
         octree_global.data[c + work_group_offset()] |= node_unused_flag;
     }
 
-    i += gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-    c  = (octree[i] & node_child_mask);
-    if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
-        octree_global.data[i + work_group_offset()] |= node_child_mask;
-        octree_global.data[c + work_group_offset()] |= node_unused_flag;
-    }
+    // i += gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+    // c  = (octree[i] & node_child_mask);
+    // if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
+    //     octree_global.data[i + work_group_offset()] |= node_child_mask;
+    //     octree_global.data[c + work_group_offset()] |= node_unused_flag;
+    // }
 }
 
 void main(){

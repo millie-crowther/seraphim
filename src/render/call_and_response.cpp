@@ -77,32 +77,22 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
 
         for (int o = 0; o < 8; o++){
             vec3_t d = vertices[o].hadamard(r);
-                
-            auto sdf = substance->get_form()->get_sdf();
-            // create normals
-            vec3_t n = sdf->normal(c + d) / 2 + 0.5;
-            normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
-            
-            // create octree node
-            nodes[o] = create_node(c + d / 2, r / 2, sdf);
-
-            vec3_t c = substance->get_matter()->get_colour(c + d);
-            colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
+            create_node(o, c + d / 2, r / 2, substance);
         }
     }
 }
 
-const std::array<uint32_t, 8> &
+const std::array<std::array<uint32_t, 8>, 8> &
 response_t::get_normals() const {
     return normals;
 }
 
-const std::array<uint32_t, 8> &
+const std::array<std::array<uint32_t, 8>, 8> &
 response_t::get_colours() const {
     return colours;
 }
 
-const std::array<response_t::octree_data_t, 8> &
+const std::array<uint32_t, 8> &
 response_t::get_nodes() const {
     return nodes;
 }
@@ -113,19 +103,25 @@ response_t::squash(const vec4_t & x) const {
     return *reinterpret_cast<uint32_t *>(&x8);
 }
 
-response_t::octree_data_t
-response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<sdf3_t> sdf) const {
+void
+response_t::create_node(int i, const vec3_t & c, const vec3_t & r, std::shared_ptr<substance_t> sub){
+    auto sdf = sub->get_form()->get_sdf();
     uint32_t empty_flag = sdf->phi(c) < r.chebyshev_norm() ? 0 : node_empty_flag;
-
     uint32_t contains_mask = 0;
 
-    for (int i = 0; i < 8; i++){
-        if (!sdf->contains(c + vertices[i].hadamard(r))){
-            contains_mask |= 1 << (i + 16);
+    for (int o = 0; o < 8; o++){
+        if (!sdf->contains(c + vertices[o].hadamard(r))){
+            contains_mask |= 1 << (o + 16);
         }
+            
+        vec3_t d = vertices[o].hadamard(r);
+
+        vec3_t n = sdf->normal(c + d) / 2 + 0.5;
+        normals[i][o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
+
+        vec3_t c = sub->get_matter()->get_colour(c + d);
+        colours[i][o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
     }
     
-    return {
-        contains_mask | node_child_mask | empty_flag
-    }; 
+    nodes[i] = contains_mask | node_child_mask | empty_flag; 
 }

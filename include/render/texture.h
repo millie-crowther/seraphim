@@ -11,7 +11,7 @@
 
 class texture_t {
 private:
-    static constexpr uint32_t staging_buffer_size = 10000;
+    static constexpr uint32_t staging_buffer_size = 2000;
 
     VkImage image;
     VkImageView image_view;
@@ -25,7 +25,7 @@ private:
     VkExtent3D extents;
     device_t * device;
 
-    std::unique_ptr<host_buffer_t<std::array<uint32_t, 8>>> staging_buffer;
+    std::unique_ptr<host_buffer_t<std::array<std::array<uint32_t, 8>, 8>>> staging_buffer;
     std::vector<VkBufferImageCopy> updates;
     uint32_t index;
 
@@ -48,7 +48,7 @@ public:
 
 
     void record_write(VkCommandBuffer command_buffer);
-    void write(u32vec3_t p, const std::array<uint32_t, 8> & x);
+    void write(u32vec3_t p, const std::array<std::array<uint32_t, 8>, 8> & x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
