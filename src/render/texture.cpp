@@ -86,7 +86,7 @@ texture_t::texture_t(
     image_info.imageView = image_view;
     image_info.sampler = sampler;
 
-    staging_buffer = std::make_unique<host_buffer_t<std::array<std::array<uint32_t, 8>, 8>>>(~0, device, staging_buffer_size);
+    staging_buffer = std::make_unique<host_buffer_t<std::array<uint32_t, 8>>>(~0, device, staging_buffer_size);
 }
 
 VkFormat
@@ -172,12 +172,12 @@ texture_t::get_image() const {
 }
 
 void 
-texture_t::write(u32vec3_t p, const std::array<std::array<uint32_t, 8>, 8> & x){
+texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
     uint32_t offset = (index++ % staging_buffer->get_size());
     staging_buffer->write_element(x, offset);
     
     VkBufferImageCopy region;
-    region.bufferOffset = offset * sizeof(uint32_t) * 8 * 8;
+    region.bufferOffset = offset * sizeof(uint32_t) * 8;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

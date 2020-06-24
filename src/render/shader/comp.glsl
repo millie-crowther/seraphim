@@ -133,7 +133,6 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     uint depth = 1;
 
     vec3  c = vec3(0);
-    vec3 c_prev = c;
     float s = chebyshev_norm(sub.r);
     vec3 d = step(c, x.xyz);
     c += (d - 0.5) * s;
@@ -142,16 +141,13 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
     // perform octree lookup for relevant node
     if (!outside_aabb){
         for (; !is_leaf(i); depth++){
-            c_prev = c;
             vec3 d = step(c, x.xyz);
             c += (d - 0.5) * s;
             s /= 2;
             i = (octree[i] & node_child_mask) | uint(dot(d, vec3(1, 2, 4)));
-            hitmap[i / 8] = true; // TODO: move outside loop
+            hitmap[i / 8] = true; 
         }
     }
-
-    // hitmap[i / 8] = true;
 
     // if necessary, request more data from CPU
     intersection.local_x = x.xyz;

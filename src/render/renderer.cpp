@@ -670,16 +670,18 @@ renderer_t::handle_requests(uint32_t frame){
     for (auto & call : calls){
         if (call.is_valid()){
             auto response = get_response(call, substances[call.get_substance_ID()]);
-
-            u32vec3_t p = u32vec3_t(
-                call.get_child() % octree_pool_size(),
-                call.get_child() / octree_pool_size(),
-                0u
-            ) * 2;
-
             octree_buffer->write(response.get_nodes(), call.get_child());
-            normal_texture->write(p, response.get_normals());
-            colour_texture->write(p, response.get_colours());
+
+            for (uint32_t k = 0; k < 8; k++){
+                u32vec3_t p = u32vec3_t(
+                    (call.get_child() + k) % octree_pool_size(),
+                    (call.get_child() + k) / octree_pool_size(),
+                    0u
+                ) * 2;
+
+                normal_texture->write(p, response.get_normals()[k]);
+                colour_texture->write(p, response.get_colours()[k]);
+            }
         }
     }   
 }
@@ -718,17 +720,20 @@ renderer_t::initialise_buffers(){
             auto nodes = response.get_nodes();
 
             for (uint32_t i = 0; i < initial_octree.size(); i += octree_pool_size()){
-                auto j = i + substance->get_data().root; 
-                std::memcpy(&initial_octree[j], nodes.data(), sizeof(uint32_t) * 8);
+                for (uint32_t k = 0; k < 8; k++){
+                    auto j = i + k + substance->get_data().root; 
 
-                u32vec3_t p = u32vec3_t(
-                    j % octree_pool_size(),
-                    j / octree_pool_size(),
-                    0u
-                ) * 2;
+                    initial_octree[j] = nodes[k];
 
-                normal_texture->write(p, response.get_normals());
-                colour_texture->write(p, response.get_colours());
+                    u32vec3_t p = u32vec3_t(
+                        j % octree_pool_size(),
+                        j / octree_pool_size(),
+                        0u
+                    ) * 2;
+
+                    normal_texture->write(p, response.get_normals()[k]);
+                    colour_texture->write(p, response.get_colours()[k]);
+                }
             }
         }
     }
