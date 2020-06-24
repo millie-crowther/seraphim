@@ -76,6 +76,12 @@ struct light_t {
     vec4 colour;
 };
 
+struct node_t {
+    uint index;
+    vec3 centre;
+    float size;
+};
+
 layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
@@ -103,6 +109,10 @@ vec2 uv(vec2 xy){
     uv = uv * 2.0 - 1.0;
     uv.y *= -float(gl_NumWorkGroups.y) / gl_NumWorkGroups.x;
     return uv;
+}
+
+node_t hash_octree(vec3 x){
+    return node_t(0, vec3(0), 0);
 }
 
 float expected_size(vec3 x){
