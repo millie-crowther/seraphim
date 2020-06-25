@@ -117,8 +117,9 @@ vec2 uv(vec2 xy){
 
 uint expected_order(vec3 x){
     return uint(
-        length((x - pc.camera_position) / 10) 
-        + length(uv(gl_GlobalInvocationID.xy))
+        2
+        // length((x - pc.camera_position) / 10) +W
+        // length(uv(gl_GlobalInvocationID.xy))
     );
 }
 
@@ -142,14 +143,13 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     // - more location-aware hash
     uint full_hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
     uint hash = (full_hash >> 16) ^ (full_hash & 0xFFFF);
-    
 
     // calculate some useful variables for doing lookups
     uint index = full_hash % octree_pool_size;
-    vec3 c_grid = x_grid * size + size / 2;
+    vec3 centre = x_grid * size + size / 2;
     bool is_valid = (octree[index] & 0xFFFF) == hash;
 
-    return node_t(index, hash, c_grid, size, is_valid, octree[index]);
+    return node_t(index, hash, centre, size, is_valid, octree[index]);
 }
 
 uint work_group_offset(){
@@ -158,11 +158,6 @@ uint work_group_offset(){
 
 bool is_leaf(uint i){
     return (octree[i] & node_child_mask) >= octree_pool_size;
-}
-
-float chebyshev_norm(vec3 x){
-    vec3 a = abs(x);
-    return max(a.x, max(a.y, a.z));
 }
 
 float phi_s(vec3 global_x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
@@ -465,13 +460,6 @@ void postrender(uint i, request_t request){
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
     if (indices.x != ~0){
         requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
-    }
-
-    // cull leaf nodes that havent been seen this frame
-    uint c  = (octree[i] & node_child_mask);
-    if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
-        octree_global.data[i + work_group_offset()] |= node_child_mask;
-        octree_global.data[c + work_group_offset()] |= node_unused_flag;
     }
 }
 
