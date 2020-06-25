@@ -1,7 +1,6 @@
 #version 450
 
-layout(location = 0) out vec4 out_colour;
-
+layout (location = 0) out vec4 out_colour;
 layout (binding = 10, rgba8) uniform readonly image2D render_texture;
 
 void main(){

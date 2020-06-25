@@ -46,17 +46,21 @@ struct substance_t {
     mat4 transform;
 };
 
+struct node_t {
+    uint index;
+    uint hash;
+    vec3 centre;
+    float size;
+};
+
 struct intersection_t {
     bool hit;
     vec3 x;
     vec3 normal;
     float distance;
-    uint index;
     substance_t substance;
     vec3 local_x;
-
-    vec3 node_centre;
-    float node_size;
+    node_t node;
 };
 
 struct request_t {
@@ -74,12 +78,6 @@ struct light_t {
     uint id;
 
     vec4 colour;
-};
-
-struct node_t {
-    uint index;
-    vec3 centre;
-    float size;
 };
 
 layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
@@ -111,12 +109,16 @@ vec2 uv(vec2 xy){
     return uv;
 }
 
-node_t hash_octree(vec3 x){
-    return node_t(0, vec3(0), 0);
+node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
+    return node_t(0, 0, vec3(0), 0);
 }
 
 float expected_size(vec3 x){
-    return 0.075 * (1 + length((x - pc.camera_position) / 10));// + length(uv() / 2));
+    uint order = uint(
+        length((x - pc.camera_position) / 10) 
+        + length(uv(gl_GlobalInvocationID.xy))
+    );
+    return 0.075 * (1 << order);
 }
 
 uint work_group_offset(){
@@ -161,12 +163,12 @@ float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t 
 
     // if necessary, request more data from CPU
     intersection.local_x = x.xyz;
-    intersection.index = i;
+    intersection.node.index = i;
     intersection.substance = sub;
 
-    intersection.node_centre = c;
+    intersection.node.centre = c;
     float node_size = chebyshev_norm(sub.r) / (1 << depth);
-    intersection.node_size = node_size;
+    intersection.node.size = node_size;
 
     uint node = octree[i];
     bool node_is_empty = (node & node_empty_flag) != 0;
@@ -339,12 +341,12 @@ request_t render(uint i, vec3 d, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
-    vec3 t = intersection.local_x - intersection.node_centre;
-    t += intersection.node_size * 2;
-    t /= intersection.node_size * 4;
+    vec3 t = intersection.local_x - intersection.node.centre;
+    t += intersection.node.size * 2;
+    t /= intersection.node.size * 4;
     t.xy += vec2(
-        (intersection.index + work_group_offset()) % octree_pool_size,
-        (intersection.index + work_group_offset()) / octree_pool_size
+        (intersection.node.index + work_group_offset()) % octree_pool_size,
+        (intersection.node.index + work_group_offset()) / octree_pool_size
     );
     t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
     
