@@ -10,11 +10,17 @@ layout (binding = 12) uniform sampler3D colour_texture;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
-const uint octree_pool_size = gl_WorkGroupSize.x * gl_WorkGroupSize.y;
+const int octree_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
+
+const ivec3 p = ivec3(
+    6291469,
+    12582917,
+    25165843
+);
 
 layout( push_constant ) uniform push_constants {
     uvec2 window_size;
@@ -51,6 +57,7 @@ struct node_t {
     uint hash;
     vec3 centre;
     float size;
+    bool is_valid;
 };
 
 struct intersection_t {
@@ -109,16 +116,34 @@ vec2 uv(vec2 xy){
     return uv;
 }
 
-node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
-    return node_t(0, 0, vec3(0), 0);
-}
-
-float expected_size(vec3 x){
-    uint order = uint(
+uint expected_order(vec3 x){
+    return uint(
         length((x - pc.camera_position) / 10) 
         + length(uv(gl_GlobalInvocationID.xy))
     );
-    return 0.075 * (1 << order);
+}
+
+float expected_size(vec3 x){
+    return 0.075 * (1 << expected_order(x));
+}
+
+node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
+    uint order = expected_order(x); 
+    float size = expected_size(x);
+    ivec3 x_grid = ivec3(local_x / size);
+
+    uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
+    uvec3 x_hash  = abs(x_grid * p.y + p.z) % p.x;
+
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
+    hash = (hash >> 16) ^ (hash & 0xFFFF);
+    uint index = hash % octree_pool_size;
+
+    vec3 c_grid = x_grid * size + sign(x_grid) * size / 2;
+
+    bool is_valid = (octree[index] & 0xFFFF) == hash;
+
+    return node_t(index, hash, c_grid, size, is_valid);
 }
 
 uint work_group_offset(){
