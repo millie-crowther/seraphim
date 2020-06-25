@@ -44,7 +44,7 @@ struct ray_t {
 
 struct substance_t {
     vec3 c;
-    int root;
+    int _1;
 
     vec3 r;
     uint id;
@@ -75,8 +75,8 @@ struct request_t {
     vec3 c;
     float size;
 
-    uint child;
-    uint parent;
+    uint index;
+    uint hash;
     uint substanceID;
     uint status;
 };
@@ -94,8 +94,6 @@ layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_glob
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
 
 // shared memory
-shared uvec4 vacant_node;
-
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
 
@@ -107,7 +105,7 @@ shared uint lights_visible;
 
 shared uint octree[octree_pool_size];
 
-shared bool hitmap[octree_pool_size / 8];
+shared bool hitmap[octree_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 vec2 uv(vec2 xy){
@@ -144,6 +142,7 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     // - more location-aware hash
     uint full_hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
     uint hash = (full_hash >> 16) ^ (full_hash & 0xFFFF);
+    
 
     // calculate some useful variables for doing lookups
     uint index = full_hash % octree_pool_size;
@@ -166,57 +165,37 @@ float chebyshev_norm(vec3 x){
     return max(a.x, max(a.y, a.z));
 }
 
-float phi_s(vec3 _x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
-    vec4 x = sub.transform * vec4(_x, 1);
+float phi_s(vec3 global_x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
+    vec3 x = (sub.transform * vec4(global_x, 1)).xyz;
 
     // check against outside bounds of aabb
-    bool outside_aabb = any(greaterThan(abs(x.xyz), vec3(sub.r + epsilon)));
-    float phi_aabb = length(max(abs(x.xyz) - sub.r, 0)) + epsilon;
+    bool outside_aabb = any(greaterThan(abs(x), vec3(sub.r + epsilon)));
+    float phi_aabb = length(max(abs(x) - sub.r, 0)) + epsilon;
 
-    uint i = sub.root + uint(dot(step(0, x), vec4(1, 2, 4, 0)));
-    uint depth = 1;
-
-    vec3  c = vec3(0);
-    float s = chebyshev_norm(sub.r);
-    vec3 d = step(c, x.xyz);
-    c += (d - 0.5) * s;
-    s /= 2;
-
-    // perform octree lookup for relevant node
-    if (!outside_aabb){
-        for (; !is_leaf(i); depth++){
-            vec3 d = step(c, x.xyz);
-            c += (d - 0.5) * s;
-            s /= 2;
-            i = (octree[i] & node_child_mask) | uint(dot(d, vec3(1, 2, 4)));
-            hitmap[i / 8] = true; 
-        }
-    }
+    node_t node = hash_octree(global_x, x, sub.id);
 
     // if necessary, request more data from CPU
     intersection.local_x = x.xyz;
-    intersection.node.index = i;
+    intersection.node = node;
     intersection.substance = sub;
 
-    intersection.node.centre = c;
-    float node_size = chebyshev_norm(sub.r) / (1 << depth);
-    intersection.node.size = node_size;
-
-    uint node = octree[i];
-    bool node_is_empty = (node & node_empty_flag) != 0;
-    bool should_request = !outside_aabb && node_size >= expected_size && (node & node_child_mask) == node_child_mask && !node_is_empty;
-    if (should_request) request = request_t(c, node_size, 0, i, sub.id, 1);
+    if (node.is_valid){
+        hitmap[node.index] = true;
+    } else if (!outside_aabb) {
+        request = request_t(node.centre, node.size, node.index + work_group_offset(), node.hash, sub.id, 1);
+    }
 
     float vs[8];
     for (int o = 0; o < 8; o++){
-        vs[o] = mix(-node_size, node_size, (node & (1 << (o + 16))) != 0);
+        vs[o] = mix(-node.size, node.size, (node.data & (1 << (o + 16))) != 0);
     }
 
-    vec3 alpha = (x.xyz - c + node_size) / (node_size * 2);
+    vec3 alpha = (x.xyz - node.centre + node.size) / (node.size * 2);
 
     vec4 x1 = mix(vec4(vs[0], vs[1], vs[2], vs[3]), vec4(vs[4], vs[5], vs[6], vs[7]), alpha.z);
     vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
     float phi_plane = mix(x2.x, x2.y, alpha.x);
+    phi_plane = mix(node.size, phi_plane, node.is_valid);
 
     return mix(phi_plane, phi_aabb, outside_aabb);
 }
@@ -289,13 +268,6 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
     return (d + s) * attenuation * shadow * light.colour;
-}
-
-bool is_substance_shadow(substance_t s){
-    vec3 c_min = min(lights_min, surface_min);
-    vec3 c_max = max(lights_max, surface_max);
-    vec3 d = max(vec3(0), abs((c_max + c_min) / 2 - s.c) - (c_max - c_min) / 2);
-    return length(d) < length(vec3(s.r));
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
@@ -439,10 +411,7 @@ vec3 get_ray_direction(uvec2 xy){
 
 float prerender(uint i, uint work_group_id, vec3 d){
     // clear shared variables
-    if (i == 0){
-        vacant_node = uvec4(~0);
-    }
-    hitmap[i / 8] = false;
+    hitmap[i] = false;
 
     // load shit
     substance_t s = substance.data[i];
@@ -452,26 +421,13 @@ float prerender(uint i, uint work_group_id, vec3 d){
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
     // load octree from global memory into shared memory
-    uint i2 = i + gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-
-    uvec2 nodes = uvec2(
-        octree_global.data[i  + work_group_offset()],
-        octree_global.data[i2 + work_group_offset()]
-    );
-
-    octree[i ] = nodes.x;
-    octree[i2] = nodes.y;
-
-    bool is_node_vacant = 
-        (i & 7) == 0 && (nodes.x & node_unused_flag) != 0 
-        // || (i & 7) == 1 && (nodes.y & node_unused_flag) != 0
-        ;
+    octree[i] = octree_global.data[i  + work_group_offset()];
    
     // visibility check on substances and load into shared memory
     barrier();
-    bvec4 hits = bvec4(directly_visible, light_visible, is_node_vacant, false);
+    bvec4 hits = bvec4(directly_visible, light_visible, false, false);
     uvec4 totals;
-    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 4, 0);
+    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
 
     substances_visible = totals.x;
@@ -484,10 +440,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
         lights[indices.y] = l;
     }
 
-    if (indices.z != ~0){
-        vacant_node[indices.z] = i;// = mix(i, i2, (i & 7) == 1);
-    }
-
     barrier();
     bool shadow_visible = s.id != ~0 && is_shadow_visible(i, vec3(0));
     barrier();
@@ -498,8 +450,6 @@ float prerender(uint i, uint work_group_id, vec3 d){
         shadows[indices.x] = s;
     }
 
-    if (s.id != ~0) hitmap[s.root / 8] = true;
- 
     // calculate initial distance
     // float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
     // float phi_initial = reduce_min(i, vec4(value)).x;
@@ -509,14 +459,11 @@ float prerender(uint i, uint work_group_id, vec3 d){
 }
 
 void postrender(uint i, request_t request){
-    bvec4 hits = bvec4(request.status != 0, false, false, false);
+    bvec4 hits = bvec4(request.status != 0 && !hitmap[request.index], false, false, false);
     uvec4 _;
     uvec4 limits = uvec4(1, 0, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
-    if (indices.x != ~0 && vacant_node[indices.x] != ~0){
-        octree_global.data[request.parent + work_group_offset()] &= ~node_child_mask | vacant_node[indices.x];
-
-        request.child = vacant_node[indices.x] + work_group_offset();
+    if (indices.x != ~0){
         requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
     }
 
@@ -526,13 +473,6 @@ void postrender(uint i, request_t request){
         octree_global.data[i + work_group_offset()] |= node_child_mask;
         octree_global.data[c + work_group_offset()] |= node_unused_flag;
     }
-
-    // i += gl_WorkGroupSize.x * gl_WorkGroupSize.y;
-    // c  = (octree[i] & node_child_mask);
-    // if (!is_leaf(i) && is_leaf(c) && !hitmap[c / 8]){
-    //     octree_global.data[i + work_group_offset()] |= node_child_mask;
-    //     octree_global.data[c + work_group_offset()] |= node_unused_flag;
-    // }
 }
 
 void main(){

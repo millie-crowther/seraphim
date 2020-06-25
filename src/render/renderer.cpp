@@ -669,19 +669,19 @@ renderer_t::handle_requests(uint32_t frame){
 
     for (auto & call : calls){
         if (call.is_valid()){
-            for (uint32_t k = 0; k < 8; k++){
-                auto response = response_t(call, k, substances[call.get_substance_ID()]);
-                octree_buffer->write_element(response.get_node(), call.get_child() + k);
+            // std::cout << "valid call, index: " << call.get_index() << std::endl;
 
-                u32vec3_t p = u32vec3_t(
-                    (call.get_child() + k) % octree_pool_size(),
-                    (call.get_child() + k) / octree_pool_size(),
-                    0u
-                ) * 2;
+            auto response = get_response(call, substances[call.get_substance_ID()]);
+            octree_buffer->write_element(response.get_node(), call.get_index());
 
-                normal_texture->write(p, response.get_normals());
-                colour_texture->write(p, response.get_colours());
-            }
+            u32vec3_t p = u32vec3_t(
+                call.get_index() % octree_pool_size(),
+                call.get_index() / octree_pool_size(),
+                0u
+            ) * 2;
+
+            normal_texture->write(p, response.get_normals());
+            colour_texture->write(p, response.get_colours());
         }
     }   
 }
@@ -710,33 +710,33 @@ renderer_t::initialise_buffers(){
 
     std::vector<uint32_t> initial_octree(
         work_group_count.volume() * octree_pool_size(),
-        response_t::node_unused_flag
+        response_t::null_node
     );
 
-    for (auto pair : substances){
-        if (auto substance = std::get<1>(pair).lock()){
-            call_t call(vec3_t(), substance->get_data().r.chebyshev_norm());
+    // for (auto pair : substances){
+    //     if (auto substance = std::get<1>(pair).lock()){
+    //         call_t call(vec3_t(), substance->get_data().r.chebyshev_norm());
 
-            for (uint32_t i = 0; i < initial_octree.size(); i += octree_pool_size()){
-                for (uint32_t k = 0; k < 8; k++){
-                    response_t response(call, k, substance);
-                    auto node = response.get_node();
-                    auto j = i + k + substance->get_data().root; 
+    //         for (uint32_t i = 0; i < initial_octree.size(); i += octree_pool_size()){
+    //             for (uint32_t k = 0; k < 8; k++){
+    //                 response_t response(call, k, substance);
+    //                 auto node = response.get_node();
+    //                 auto j = i + k + substance->get_data().root; 
 
-                    initial_octree[j] = node;
+    //                 initial_octree[j] = node;
 
-                    u32vec3_t p = u32vec3_t(
-                        j % octree_pool_size(),
-                        j / octree_pool_size(),
-                        0u
-                    ) * 2;
+    //                 u32vec3_t p = u32vec3_t(
+    //                     j % octree_pool_size(),
+    //                     j / octree_pool_size(),
+    //                     0u
+    //                 ) * 2;
 
-                    normal_texture->write(p, response.get_normals());
-                    colour_texture->write(p, response.get_colours());
-                }
-            }
-        }
-    }
+    //                 normal_texture->write(p, response.get_normals());
+    //                 colour_texture->write(p, response.get_colours());
+    //             }
+    //         }
+    //     }
+    // }
 
     octree_buffer->write(initial_octree, 0);
 }
@@ -748,12 +748,12 @@ renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substan
         prev_calls.pop_front();     
     } 
 
-    // if (response_cache.count(call) == 0){
-    //     auto result = response_cache.emplace(call, response_t(call, substance));
-    //     if (std::get<1>(result)){
-    //         prev_calls.push_back(std::get<0>(result));
-    //     }
-    // }    
+    if (response_cache.count(call) == 0){
+        auto result = response_cache.emplace(call, response_t(call, substance));
+        if (std::get<1>(result)){
+            prev_calls.push_back(std::get<0>(result));
+        }
+    }    
 
     return response_cache[call];
 }
