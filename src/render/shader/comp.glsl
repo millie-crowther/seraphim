@@ -138,11 +138,11 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
     uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
-    hash = (hash >> 16) ^ (hash & 0xFFFF);
-    
+    uint full_hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
+    uint hash = (full_hash >> 16) ^ (full_hash & 0xFFFF);
+
     // calculate some useful variables for doing lookups
-    uint index = hash % octree_pool_size;
+    uint index = full_hash % octree_pool_size;
     vec3 c_grid = x_grid * size + size / 2;
     bool is_valid = (octree[index] & 0xFFFF) == hash;
 
