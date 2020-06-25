@@ -128,19 +128,22 @@ float expected_size(vec3 x){
 }
 
 node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
+    // find the expected size and order of magnitude of cell
     uint order = expected_order(x); 
     float size = expected_size(x);
-    ivec3 x_grid = ivec3(local_x / size);
 
+    // snap to grid, making sure not to duplicate zero
+    ivec3 x_grid = ivec3(floor(local_x / size));
+
+    // do a shitty hash to all the relevant fields
     uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
-    uvec3 x_hash  = abs(x_grid * p.y + p.z) % p.x;
-
+    uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
     hash = (hash >> 16) ^ (hash & 0xFFFF);
+    
+    // calculate some useful variables for doing lookups
     uint index = hash % octree_pool_size;
-
-    vec3 c_grid = x_grid * size + sign(x_grid) * size / 2;
-
+    vec3 c_grid = x_grid * size + size / 2;
     bool is_valid = (octree[index] & 0xFFFF) == hash;
 
     return node_t(index, hash, c_grid, size, is_valid);
