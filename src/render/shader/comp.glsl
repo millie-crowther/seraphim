@@ -58,6 +58,7 @@ struct node_t {
     vec3 centre;
     float size;
     bool is_valid;
+    uint data;
 };
 
 struct intersection_t {
@@ -146,7 +147,7 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     vec3 c_grid = x_grid * size + size / 2;
     bool is_valid = (octree[index] & 0xFFFF) == hash;
 
-    return node_t(index, hash, c_grid, size, is_valid);
+    return node_t(index, hash, c_grid, size, is_valid, octree[index]);
 }
 
 uint work_group_offset(){
