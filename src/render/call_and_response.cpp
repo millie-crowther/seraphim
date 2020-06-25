@@ -70,31 +70,31 @@ response_t::response_t(){
 
 }
 
-response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
+response_t::response_t(const call_t & call, uint32_t o, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
         vec3_t c = call.get_centre() - substance->get_data().c;
         vec3_t r(call.get_size());
 
-        for (int o = 0; o < 8; o++){
-            vec3_t d = vertices[o].hadamard(r);
-            create_node(o, c + d / 2, r / 2, substance);
-        }
+        
+
+        vec3_t d = vertices[o].hadamard(r);
+        create_node(c + d / 2, r / 2, substance);
     }
 }
 
-const std::array<std::array<uint32_t, 8>, 8> &
+const std::array<uint32_t, 8> &
 response_t::get_normals() const {
     return normals;
 }
 
-const std::array<std::array<uint32_t, 8>, 8> &
+const std::array<uint32_t, 8> &
 response_t::get_colours() const {
     return colours;
 }
 
-const std::array<uint32_t, 8> &
-response_t::get_nodes() const {
-    return nodes;
+uint32_t
+response_t::get_node() const {
+    return node;
 }
 
 uint32_t
@@ -104,7 +104,7 @@ response_t::squash(const vec4_t & x) const {
 }
 
 void
-response_t::create_node(int i, const vec3_t & c, const vec3_t & r, std::shared_ptr<substance_t> sub){
+response_t::create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<substance_t> sub){
     auto sdf = sub->get_form()->get_sdf();
     uint32_t empty_flag = sdf->phi(c) < r.chebyshev_norm() ? 0 : node_empty_flag;
     uint32_t contains_mask = 0;
@@ -117,11 +117,11 @@ response_t::create_node(int i, const vec3_t & c, const vec3_t & r, std::shared_p
         vec3_t d = vertices[o].hadamard(r);
 
         vec3_t n = sdf->normal(c + d) / 2 + 0.5;
-        normals[i][o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
+        normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
 
         vec3_t c = sub->get_matter()->get_colour(c + d);
-        colours[i][o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
+        colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
     }
     
-    nodes[i] = contains_mask | node_child_mask | empty_flag; 
+    node = contains_mask | node_child_mask | empty_flag; 
 }

@@ -39,19 +39,19 @@ public:
 
 
     response_t();
-    response_t(const call_t & call, std::weak_ptr<substance_t> substance);
+    response_t(const call_t & call, uint32_t octant, std::weak_ptr<substance_t> substance);
 
-    const std::array<std::array<uint32_t, 8>, 8> & get_normals() const;
-    const std::array<std::array<uint32_t, 8>, 8> & get_colours() const;
-    const std::array<uint32_t, 8> & get_nodes() const;
+    const std::array<uint32_t, 8> & get_normals() const;
+    const std::array<uint32_t, 8> & get_colours() const;
+    uint32_t get_node() const;
 
 private:
-    std::array<uint32_t, 8> nodes;
-    std::array<std::array<uint32_t, 8>, 8> normals;
-    std::array<std::array<uint32_t, 8>, 8> colours;
+    uint32_t node;
+    std::array<uint32_t, 8> normals;
+    std::array<uint32_t, 8> colours;
 
     uint32_t squash(const vec4_t & x) const;    
-    void create_node(int i, const vec3_t & c, const vec3_t & r, std::shared_ptr<substance_t> sub);
+    void create_node(const vec3_t & c, const vec3_t & r, std::shared_ptr<substance_t> sub);
 
 };
 

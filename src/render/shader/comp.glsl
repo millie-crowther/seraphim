@@ -139,6 +139,9 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
     uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
+
+    // maybe do sum instead of XOR of x_hash elements
+    // - more location-aware hash
     uint full_hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
     uint hash = (full_hash >> 16) ^ (full_hash & 0xFFFF);
 
