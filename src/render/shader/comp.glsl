@@ -331,9 +331,19 @@ float phi_s_initial(vec3 d, vec3 centre, float r){
     return max(0, result);
 }
 
-request_t render(uint i, vec3 d, float phi_initial){
+vec3 get_ray_direction(uvec2 xy){
+    vec2 uv = uv(xy);
+    vec3 up = pc.eye_up;
+    vec3 right = pc.eye_right;
+    vec3 forward = cross(right, up);
+    return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+}
+
+request_t render(uint i, float phi_initial){
     request_t request;
     request.status = 0;
+
+    vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
     ray_t r = ray_t(pc.camera_position + d * phi_initial, d);
     intersection_t intersection = raycast(r, request);
@@ -396,15 +406,8 @@ bool is_sphere_visible(vec3 centre, float radius){
     return length(diff) < r;
 }
 
-vec3 get_ray_direction(uvec2 xy){
-    vec2 uv = uv(xy);
-    vec3 up = pc.eye_up;
-    vec3 right = pc.eye_right;
-    vec3 forward = cross(right, up);
-    return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
-}
 
-float prerender(uint i, uint work_group_id, vec3 d){
+float prerender(uint i){
     // clear shared variables
     hitmap[i] = false;
 
@@ -464,16 +467,12 @@ void postrender(uint i, request_t request){
 }
 
 void main(){
-    uint work_group_id = gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
-
-    vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
-
-    float phi_initial = prerender(i, work_group_id, d);
+    
+    float phi_initial = prerender(i);
 
     barrier();
-    request_t request = render(i, d, phi_initial);
-
+    request_t request = render(i, phi_initial);
     barrier();
 
     postrender(i, request);

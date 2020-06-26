@@ -32,7 +32,7 @@ substance_t::get_data(){
     return data_t(
         form->get_aabb()->get_centre().cast<float>(),
         form->get_root(),
-        static_cast<float>(form->get_aabb()->get_size().chebyshev_norm()),
+        form->get_aabb()->get_size().cast<float>(),
         id,
         *transform.get_matrix()
     );

@@ -81,16 +81,16 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         uint32_t contains_mask = 0;
 
         for (int o = 0; o < 8; o++){
-            if (!sdf->contains(c + vertices[o].hadamard(r))){
+            vec3_t d = c + vertices[o].hadamard(r);
+
+            if (!sdf->contains(d)){
                 contains_mask |= 1 << (o + 16);
             }
-                
-            vec3_t d = vertices[o].hadamard(r);
 
-            vec3_t n = sdf->normal(c + d) / 2 + 0.5;
+            vec3_t n = sdf->normal(d) / 2 + 0.5;
             normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
 
-            vec3_t c = substance->get_matter()->get_colour(c + d);
+            vec3_t c = substance->get_matter()->get_colour(d);
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
         
