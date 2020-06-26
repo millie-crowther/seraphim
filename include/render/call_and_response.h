@@ -8,7 +8,7 @@
 class call_t {
 private:
     f32vec3_t c;
-    float size;
+    float radius;
 
     uint32_t index;
     uint32_t hash;
@@ -21,11 +21,10 @@ public:
     };
 
     call_t();
-    call_t(const f32vec3_t & c, float size);
 
     uint32_t get_substance_ID() const;
     f32vec3_t get_centre() const;
-    float get_size() const;
+    float get_radius() const;
     uint32_t get_index() const;
     uint32_t get_hash() const;
 

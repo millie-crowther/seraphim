@@ -55,8 +55,8 @@ struct substance_t {
 struct node_t {
     uint index;
     uint hash;
-    vec3 centre;
-    float size;
+    vec3 x;
+    float radius;
     bool is_valid;
     uint data;
 };
@@ -117,23 +117,23 @@ vec2 uv(vec2 xy){
 
 uint expected_order(vec3 x){
     return uint(
-        2
-        // length((x - pc.camera_position) / 10) +W
+        5
+        // length((x - pc.camera_position) / 10) +
         // length(uv(gl_GlobalInvocationID.xy))
     );
 }
 
-float expected_size(vec3 x){
-    return 0.075 * (1 << expected_order(x));
+float expected_radius(vec3 x){
+    return epsilon * (1 << expected_order(x));
 }
 
 node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     // find the expected size and order of magnitude of cell
     uint order = expected_order(x); 
-    float size = expected_size(x);
+    float radius = expected_radius(x);
 
     // snap to grid, making sure not to duplicate zero
-    ivec3 x_grid = ivec3(floor(local_x / size));
+    ivec3 x_grid = ivec3(floor(local_x / (radius * 2)));
 
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
@@ -141,15 +141,14 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
 
     // maybe do sum instead of XOR of x_hash elements
     // - more location-aware hash
-    uint full_hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
-    uint hash = (full_hash >> 16) ^ (full_hash & 0xFFFF);
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
     // calculate some useful variables for doing lookups
-    uint index = full_hash % octree_pool_size;
-    vec3 centre = x_grid * size + size / 2;
-    bool is_valid = (octree[index] & 0xFFFF) == hash;
+    uint index = hash % octree_pool_size;
+    vec3 node_x = x_grid * radius * 2;
+    bool is_valid = (octree[index] & 0xFFFF) == (hash >> 16);
 
-    return node_t(index, hash, centre, size, is_valid, octree[index]);
+    return node_t(index, hash >> 16, node_x, radius, is_valid, octree[index]);
 }
 
 uint work_group_offset(){
@@ -160,7 +159,7 @@ bool is_leaf(uint i){
     return (octree[i] & node_child_mask) >= octree_pool_size;
 }
 
-float phi_s(vec3 global_x, substance_t sub, float expected_size, inout intersection_t intersection, inout request_t request){
+float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, inout request_t request){
     vec3 x = (sub.transform * vec4(global_x, 1)).xyz;
 
     // check against outside bounds of aabb
@@ -170,27 +169,27 @@ float phi_s(vec3 global_x, substance_t sub, float expected_size, inout intersect
     node_t node = hash_octree(global_x, x, sub.id);
 
     // if necessary, request more data from CPU
-    intersection.local_x = x.xyz;
+    intersection.local_x = x;
     intersection.node = node;
     intersection.substance = sub;
 
     if (node.is_valid){
         hitmap[node.index] = true;
     } else if (!outside_aabb) {
-        request = request_t(node.centre, node.size, node.index + work_group_offset(), node.hash, sub.id, 1);
+        request = request_t(node.x + node.radius / 2, node.radius, node.index + work_group_offset(), node.hash, sub.id, 1);
     }
 
     float vs[8];
     for (int o = 0; o < 8; o++){
-        vs[o] = mix(-node.size, node.size, (node.data & (1 << (o + 16))) != 0);
+        vs[o] = mix(-node.radius, node.radius, (node.data & (1 << (o + 16))) != 0);
     }
 
-    vec3 alpha = (x.xyz - node.centre + node.size) / (node.size * 2);
+    vec3 alpha = (x.xyz - node.x) / (node.radius * 2);
 
     vec4 x1 = mix(vec4(vs[0], vs[1], vs[2], vs[3]), vec4(vs[4], vs[5], vs[6], vs[7]), alpha.z);
     vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
     float phi_plane = mix(x2.x, x2.y, alpha.x);
-    phi_plane = mix(node.size, phi_plane, node.is_valid);
+    phi_plane = mix(node.radius * 2, phi_plane, node.is_valid);
 
     return mix(phi_plane, phi_aabb, outside_aabb);
 }
@@ -203,10 +202,9 @@ intersection_t raycast(ray_t r, inout request_t request){
     i.distance = 0;
 
     for (steps = 0; !i.hit && steps < max_steps; steps++){
-        float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(r.x, substances[substanceID], expected_size, i, request));
+            phi = min(phi, phi_s(r.x, substances[substanceID], i, request));
             i.hit = i.hit || phi < epsilon;
         }
         r.x += r.d * phi;
@@ -225,17 +223,16 @@ float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
     ray_t r = ray_t(l, normalize(geometry_i.x - l));
     
     for (steps = 0; !hit && steps < max_steps; steps++){
-        float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !hit && substanceID < shadows_visible; substanceID++){
             substance_t sub = shadows[substanceID];
-            phi = min(phi, phi_s(r.x, sub, expected_size, shadow_i, request));
+            phi = min(phi, phi_s(r.x, sub, shadow_i, request));
             hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;
     }
     
-    bool clear = shadow_i.node.index == geometry_i.node.index;
+    bool clear = shadow_i.substance.id == geometry_i.substance.id;
     return float(clear);
 }
 
@@ -247,7 +244,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow(light.x, i, request);
+    float shadow = 1;//shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -347,9 +344,8 @@ request_t render(uint i, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
-    vec3 t = intersection.local_x - intersection.node.centre;
-    t += intersection.node.size * 2;
-    t /= intersection.node.size * 4;
+    vec3 t = intersection.local_x - intersection.node.x + intersection.node.radius;
+    t /= intersection.node.radius * 4;
     t.xy += vec2(
         (intersection.node.index + work_group_offset()) % octree_pool_size,
         (intersection.node.index + work_group_offset()) / octree_pool_size

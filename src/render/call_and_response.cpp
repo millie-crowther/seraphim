@@ -5,11 +5,6 @@ call_t::call_t(){
     status = 0;
 }
 
-call_t::call_t(const f32vec3_t & c, float size){
-    this->c = c;
-    this->size = size;
-}
-
 bool 
 call_t::is_valid() const {
     return index != static_cast<uint32_t>(~0);
@@ -21,8 +16,8 @@ call_t::get_centre() const {
 }
 
 float
-call_t::get_size() const {
-    return size;
+call_t::get_radius() const {
+    return radius;
 }
 
 uint32_t 
@@ -46,8 +41,8 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
         return a.substanceID < b.substanceID;
     }
     
-    if (a.size != b.size){
-        return a.size < b.size;
+    if (std::abs(a.radius - b.radius) > hyper::epsilon){
+        return a.radius < b.radius;
     }
 
     if ((a.c - b.c).chebyshev_norm() > hyper::epsilon){
@@ -58,14 +53,14 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
 }
 
 vec3_t vertices[] = {
-    vec3_t(-1.0, -1.0, -1.0),
-    vec3_t( 1.0, -1.0, -1.0),
-    vec3_t(-1.0,  1.0, -1.0),
-    vec3_t( 1.0,  1.0, -1.0),
-    vec3_t(-1.0, -1.0,  1.0),
-    vec3_t( 1.0, -1.0,  1.0),
-    vec3_t(-1.0,  1.0,  1.0),
-    vec3_t( 1.0,  1.0,  1.0)
+    vec3_t(0.0, 0.0, 0.0),
+    vec3_t(2.0, 0.0, 0.0),
+    vec3_t(0.0, 2.0, 0.0),
+    vec3_t(2.0, 2.0, 0.0),
+    vec3_t(0.0, 0.0, 2.0),
+    vec3_t(2.0, 0.0, 2.0),
+    vec3_t(0.0, 2.0, 2.0),
+    vec3_t(2.0, 2.0, 2.0)
 };
 
 response_t::response_t(){
@@ -75,13 +70,12 @@ response_t::response_t(){
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
         vec3_t c = call.get_centre() - substance->get_data().c;
-        vec3_t r(call.get_size());
 
         auto sdf = substance->get_form()->get_sdf();
         uint32_t contains_mask = 0;
 
         for (int o = 0; o < 8; o++){
-            vec3_t d = c + vertices[o].hadamard(r);
+            vec3_t d = c + vertices[o] * call.get_radius();
 
             if (!sdf->contains(d)){
                 contains_mask |= 1 << (o + 16);
