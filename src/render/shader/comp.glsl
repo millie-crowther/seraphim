@@ -217,29 +217,26 @@ intersection_t raycast(ray_t r, inout request_t request){
     return i;
 }
 
-float shadow(vec3 l, intersection_t i, inout request_t request){
+float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
     bool hit = false;
     uint steps;
 
-    intersection_t _;
-    uint hit_sub_id = 0;
-
-    ray_t r = ray_t(l, normalize(i.x - l));
+    intersection_t shadow_i;
+    ray_t r = ray_t(l, normalize(geometry_i.x - l));
     
     for (steps = 0; !hit && steps < max_steps; steps++){
         float expected_size = expected_size(r.x);
         float phi = pc.render_distance;
         for (uint substanceID = 0; !hit && substanceID < shadows_visible; substanceID++){
             substance_t sub = shadows[substanceID];
-            hit_sub_id = sub.id;
-            phi = min(phi, phi_s(r.x, sub, expected_size, _, request));
+            phi = min(phi, phi_s(r.x, sub, expected_size, shadow_i, request));
             hit = hit || phi < epsilon;
         }
         r.x += r.d * phi;
     }
     
-    bool shadow = hit_sub_id != i.substance.id;
-    return float(!shadow);
+    bool clear = shadow_i.node.index == geometry_i.node.index;
+    return float(clear);
 }
 
 vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
@@ -459,7 +456,7 @@ float prerender(uint i){
 void postrender(uint i, request_t request){
     bvec4 hits = bvec4(request.status != 0 && !hitmap[request.index], false, false, false);
     uvec4 _;
-    uvec4 limits = uvec4(1, 0, 0, 0);
+    uvec4 limits = uvec4(4, 0, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
     if (indices.x != ~0){
         requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;

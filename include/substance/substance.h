@@ -11,7 +11,7 @@ class substance_t {
 public:
     struct data_t {
         f32vec3_t c;
-        int32_t root;
+        int32_t _1;
 
         f32vec3_t r;
         uint32_t id;
@@ -19,7 +19,7 @@ public:
         f32mat4_t transform;
 
         data_t();
-        data_t(const f32vec3_t & c, int32_t root, const f32vec3_t & r, uint32_t id, const f32mat4_t & transform);
+        data_t(const f32vec3_t & c, const f32vec3_t & r, uint32_t id, const f32mat4_t & transform);
     };
 
     substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter);
