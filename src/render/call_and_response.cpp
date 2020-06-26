@@ -11,8 +11,8 @@ call_t::is_valid() const {
 }
 
 f32vec3_t 
-call_t::get_centre() const {
-    return c;
+call_t::get_position() const {
+    return position;
 }
 
 float
@@ -45,8 +45,8 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
         return a.radius < b.radius;
     }
 
-    if ((a.c - b.c).chebyshev_norm() > hyper::epsilon){
-        return a.c < b.c;
+    if ((a.position - b.position).chebyshev_norm() > hyper::epsilon){
+        return a.position < b.position;
     } 
    
     return false;  
@@ -69,16 +69,16 @@ response_t::response_t(){
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
-        vec3_t c = call.get_centre() - substance->get_data().c;
+        vec3_t p = call.get_position() - substance->get_data().c;
 
         auto sdf = substance->get_form()->get_sdf();
         uint32_t contains_mask = 0;
 
         for (int o = 0; o < 8; o++){
-            vec3_t d = c + vertices[o] * call.get_radius();
+            vec3_t d = p + vertices[o] * call.get_radius();
 
             if (!sdf->contains(d)){
-                contains_mask |= 1 << (o + 16);
+                contains_mask |= 1 << o;
             }
 
             vec3_t n = sdf->normal(d) / 2 + 0.5;
@@ -88,7 +88,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
         
-        node = contains_mask | call.get_hash(); 
+        node = (contains_mask << 16) | call.get_hash(); 
     }
 }
 

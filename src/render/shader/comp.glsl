@@ -53,10 +53,11 @@ struct substance_t {
 };
 
 struct node_t {
+    vec3 position;
+    float radius;
+
     uint index;
     uint hash;
-    vec3 x;
-    float radius;
     bool is_valid;
     uint data;
 };
@@ -72,8 +73,8 @@ struct intersection_t {
 };
 
 struct request_t {
-    vec3 c;
-    float size;
+    vec3 position;
+    float radius;
 
     uint index;
     uint hash;
@@ -148,7 +149,7 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     vec3 node_x = x_grid * radius * 2;
     bool is_valid = (octree[index] & 0xFFFF) == (hash >> 16);
 
-    return node_t(index, hash >> 16, node_x, radius, is_valid, octree[index]);
+    return node_t(node_x, radius, index, hash >> 16, is_valid, octree[index]);
 }
 
 uint work_group_offset(){
@@ -163,8 +164,8 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
     vec3 x = (sub.transform * vec4(global_x, 1)).xyz;
 
     // check against outside bounds of aabb
-    bool outside_aabb = any(greaterThan(abs(x), vec3(sub.r + epsilon)));
     float phi_aabb = length(max(abs(x) - sub.r, 0)) + epsilon;
+    bool outside_aabb = phi_aabb > epsilon;
 
     node_t node = hash_octree(global_x, x, sub.id);
 
@@ -176,7 +177,7 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
     if (node.is_valid){
         hitmap[node.index] = true;
     } else if (!outside_aabb) {
-        request = request_t(node.x + node.radius / 2, node.radius, node.index + work_group_offset(), node.hash, sub.id, 1);
+        request = request_t(node.position, node.radius, node.index + work_group_offset(), node.hash, sub.id, 1);
     }
 
     float vs[8];
@@ -184,7 +185,7 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
         vs[o] = mix(-node.radius, node.radius, (node.data & (1 << (o + 16))) != 0);
     }
 
-    vec3 alpha = (x.xyz - node.x) / (node.radius * 2);
+    vec3 alpha = (x - node.position) / (node.radius * 2);
 
     vec4 x1 = mix(vec4(vs[0], vs[1], vs[2], vs[3]), vec4(vs[4], vs[5], vs[6], vs[7]), alpha.z);
     vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
@@ -344,7 +345,7 @@ request_t render(uint i, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
-    vec3 t = intersection.local_x - intersection.node.x + intersection.node.radius;
+    vec3 t = intersection.local_x - intersection.node.position + intersection.node.radius;
     t /= intersection.node.radius * 4;
     t.xy += vec2(
         (intersection.node.index + work_group_offset()) % octree_pool_size,
@@ -378,13 +379,6 @@ vec2 project(vec3 x){
 }
 
 bool is_shadow_visible(uint i, vec3 x){
-    // vec2 p_x = project(x);
-
-    // vec4 bounds = reduce_min(i, vec4(p_x, -p_x));
-
-    // vec2 s_min = bounds.xy;
-    // vec2 s_max = -bounds.zw;
-
     return true;
 }
 
@@ -398,7 +392,6 @@ bool is_sphere_visible(vec3 centre, float radius){
 
     return length(diff) < r;
 }
-
 
 float prerender(uint i){
     // clear shared variables
@@ -435,7 +428,8 @@ float prerender(uint i){
     bool shadow_visible = s.id != ~0 && is_shadow_visible(i, vec3(0));
     barrier();
     hits = bvec4(shadow_visible, false, false, false);
-    indices = reduce_to_fit(i, hits, totals, uvec4(gl_WorkGroupSize.x));
+    limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
+    indices = reduce_to_fit(i, hits, totals, limits);
     shadows_visible = totals.x;
     if (indices.x != ~0){
         shadows[indices.x] = s;
