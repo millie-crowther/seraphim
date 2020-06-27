@@ -171,13 +171,14 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
 
     uint data = octree[index];
     vec3 alpha = x_scaled - x_grid;
-    vec4 x1 = mix(sign(data & vertex_masks[0]), sign(data & vertex_masks[1]), alpha.z);
-    vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
-    float phi_plane = 2 * mix(x2.x, x2.y, alpha.x) - 1;
 
-    phi_plane = radius * mix(2, phi_plane, is_valid);
+    vec4 phi = mix(sign(data & vertex_masks[0]), sign(data & vertex_masks[1]), alpha.z);
+    phi.xy = mix(phi.xy, phi.zw, alpha.y);
+    phi.x = mix(phi.x, phi.y, alpha.x);
 
-    return mix(phi_plane, phi_aabb, phi_aabb > epsilon);
+    phi.x = 2 * radius * mix(1, phi.x - 0.5, is_valid);
+
+    return mix(phi.x, phi_aabb, phi_aabb > epsilon);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
