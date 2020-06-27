@@ -17,9 +17,9 @@ const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 const ivec3 p = ivec3(
-    6291469,
-    12582917,
-    25165843
+    393241,
+    1572869,
+    98317
 );
 
 layout( push_constant ) uniform push_constants {
@@ -118,7 +118,7 @@ vec2 uv(vec2 xy){
 
 uint expected_order(vec3 x){
     return uint(
-        5
+        4
         // length((x - pc.camera_position) / 10) +
         // length(uv(gl_GlobalInvocationID.xy))
     );
@@ -140,9 +140,7 @@ node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
     uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
     uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
 
-    // maybe do sum instead of XOR of x_hash elements
-    // - more location-aware hash
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
 
     // calculate some useful variables for doing lookups
     uint index = hash % octree_pool_size;
