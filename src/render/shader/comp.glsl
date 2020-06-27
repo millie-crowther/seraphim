@@ -22,6 +22,11 @@ const ivec3 p = ivec3(
     98317
 );
 
+const uvec4 vertex_masks[2] = {
+    uvec4(1 << 16, 1 << 17, 1 << 18, 1 << 19),
+    uvec4(1 << 20, 1 << 21, 1 << 22, 1 << 23)
+};
+
 layout( push_constant ) uniform push_constants {
     uvec2 window_size;
     float render_distance;
@@ -52,16 +57,6 @@ struct substance_t {
     mat4 transform;
 };
 
-struct node_t {
-    vec3 position;
-    float radius;
-
-    uint index;
-    uint hash;
-    bool is_valid;
-    uint data;
-};
-
 struct intersection_t {
     bool hit;
     vec3 x;
@@ -69,7 +64,9 @@ struct intersection_t {
     float distance;
     substance_t substance;
     vec3 local_x;
-    node_t node;
+    vec3 cell_position;
+    float cell_radius;
+    uint index;
 };
 
 struct request_t {
@@ -128,28 +125,6 @@ float expected_radius(vec3 x){
     return epsilon * (1 << expected_order(x));
 }
 
-node_t hash_octree(vec3 x, vec3 local_x, uint substance_id){
-    // find the expected size and order of magnitude of cell
-    uint order = expected_order(x); 
-    float radius = expected_radius(x);
-
-    // snap to grid, making sure not to duplicate zero
-    ivec3 x_grid = ivec3(floor(local_x / (radius * 2)));
-
-    // do a shitty hash to all the relevant fields
-    uvec2 os_hash = (ivec2(order, substance_id) * p.x + p.y) % p.z;
-    uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
-
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
-
-    // calculate some useful variables for doing lookups
-    uint index = hash % octree_pool_size;
-    vec3 node_x = x_grid * radius * 2;
-    bool is_valid = (octree[index] & 0xFFFF) == (hash >> 16);
-
-    return node_t(node_x, radius, index, hash >> 16, is_valid, octree[index]);
-}
-
 uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * octree_pool_size;
 }
@@ -165,30 +140,49 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
     float phi_aabb = length(max(abs(x) - sub.r, 0)) + epsilon;
     bool outside_aabb = phi_aabb > epsilon;
 
-    node_t node = hash_octree(global_x, x, sub.id);
+    // find the expected size and order of magnitude of cell
+    uint order = expected_order(x); 
+    float radius = expected_radius(x);
+
+    // snap to grid, making sure not to duplicate zero
+    ivec3 x_grid = ivec3(floor(x / (radius * 2)));
+
+    // do a shitty hash to all the relevant fields
+    uvec2 os_hash = (ivec2(order, sub.id) * p.x + p.y) % p.z;
+    uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
+
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
+
+    // calculate some useful variables for doing lookups
+    uint index = hash % octree_pool_size;
+    hash = hash >> 16;
+
+    vec3 cell_position = x_grid * radius * 2;
+    bool is_valid = (octree[index] & 0xFFFF) == hash;
 
     // if necessary, request more data from CPU
     intersection.local_x = x;
-    intersection.node = node;
     intersection.substance = sub;
+    intersection.cell_position = cell_position;
+    intersection.index = index;
+    intersection.cell_radius = radius;
 
-    if (node.is_valid){
-        hitmap[node.index] = true;
+    if (is_valid){
+        hitmap[index] = true;
     } else if (!outside_aabb) {
-        request = request_t(node.position, node.radius, node.index + work_group_offset(), node.hash, sub.id, 1);
+        request = request_t(cell_position, radius, index + work_group_offset(), hash, sub.id, 1);
     }
 
-    float vs[8];
-    for (int o = 0; o < 8; o++){
-        vs[o] = mix(-node.radius, node.radius, (node.data & (1 << (o + 16))) != 0);
-    }
+    uint data = octree[index];
+    vec4 v1 = mix(vec4(-radius), vec4(radius), sign(data & vertex_masks[0]));
+    vec4 v2 = mix(vec4(-radius), vec4(radius), sign(data & vertex_masks[1]));
 
-    vec3 alpha = (x - node.position) / (node.radius * 2);
+    vec3 alpha = (x - cell_position) / (radius * 2);
 
-    vec4 x1 = mix(vec4(vs[0], vs[1], vs[2], vs[3]), vec4(vs[4], vs[5], vs[6], vs[7]), alpha.z);
+    vec4 x1 = mix(v1, v2, alpha.z);
     vec2 x2 = mix(x1.xy, x1.zw, alpha.y);
     float phi_plane = mix(x2.x, x2.y, alpha.x);
-    phi_plane = mix(node.radius * 2, phi_plane, node.is_valid);
+    phi_plane = mix(radius * 2, phi_plane, is_valid);
 
     return mix(phi_plane, phi_aabb, outside_aabb);
 }
@@ -343,11 +337,11 @@ request_t render(uint i, float phi_initial){
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
    
-    vec3 t = intersection.local_x - intersection.node.position + intersection.node.radius;
-    t /= intersection.node.radius * 4;
+    vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
+    t /= intersection.cell_radius * 4;
     t.xy += vec2(
-        (intersection.node.index + work_group_offset()) % octree_pool_size,
-        (intersection.node.index + work_group_offset()) / octree_pool_size
+        (intersection.index + work_group_offset()) % octree_pool_size,
+        (intersection.index + work_group_offset()) / octree_pool_size
     );
     t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
     
