@@ -219,7 +219,7 @@ intersection_t raycast(ray_t r, inout request_t request){
     i.hit = false;
     i.distance = 0;
 
-    for (steps = 0; !i.hit && steps < max_steps; steps++){
+    for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
         for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));

@@ -9,6 +9,8 @@ Features:
 
 ## state of the engine
 
+02/07/2020 - hitting about 40 FPS with shadows when camera isnt moving, 15FPS when it is moving. next improvement is to filter the substances that shadows check against
+
 24/06/2020 - Currently hitting a cool eighteen frames per second at 720p on a my laptop's GeForce GTX 860M graphics card. Current optimisation strategy is to restructure geometry lookups to remove a `for` loop in the shader that I think is trashing performance.
 
 ## install
