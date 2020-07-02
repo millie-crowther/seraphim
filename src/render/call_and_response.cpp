@@ -52,7 +52,7 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
     return false;  
 }
 
-vec3_t vertices[] = {
+vec3_t vertices[8] = {
     vec3_t(0.0, 0.0, 0.0),
     vec3_t(2.0, 0.0, 0.0),
     vec3_t(0.0, 2.0, 0.0),

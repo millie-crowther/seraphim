@@ -13,7 +13,7 @@ const uint node_child_mask = 0xFFFF;
 const int octree_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
-const int max_steps = 64;
+const int max_steps = 32;
 const float epsilon = 1.0 / 256.0;
 
 const ivec3 p = ivec3(
@@ -21,6 +21,24 @@ const ivec3 p = ivec3(
     1572869,
     98317
 );
+
+const vec3 cube_vertices[8] = {
+    vec3(-1.0, -1.0, -1.0),
+    vec3( 1.0, -1.0, -1.0),
+    vec3( 1.0,  1.0, -1.0),
+    vec3(-1.0,  1.0, -1.0),
+
+    vec3(-1.0, -1.0,  1.0),
+    vec3( 1.0, -1.0,  1.0),
+    vec3( 1.0,  1.0,  1.0),
+    vec3(-1.0,  1.0,  1.0)
+};
+
+const uvec2 cube_edges[12] = {
+    uvec2(0, 1), uvec2(1, 2), uvec2(2, 3), uvec2(3, 0),
+    uvec2(4, 5), uvec2(5, 6), uvec2(6, 7), uvec2(7, 4),
+    uvec2(0, 4), uvec2(1, 5), uvec2(2, 6), uvec2(3, 7)
+};
 
 const uvec4 vertex_masks[2] = {
     uvec4(1 << 16, 1 << 17, 1 << 18, 1 << 19),
@@ -51,7 +69,7 @@ struct substance_t {
     vec3 c;
     int _1;
 
-    vec3 r;
+    vec3 radius;
     uint id;
 
     mat4 transform;
@@ -114,11 +132,11 @@ vec2 uv(vec2 xy){
 }
 
 uint expected_order(vec3 x){
-    return uint(
-        4
-        // length((x - pc.camera_position) / 10) +
-        // length(uv(gl_GlobalInvocationID.xy))
-    );
+    return 4;
+    // max(3, uint(
+    //     length(x - pc.camera_position) * 1.5 +
+    //     length(uv(gl_GlobalInvocationID.xy))
+    // ));
 }
 
 uint work_group_offset(){
@@ -129,18 +147,31 @@ bool is_leaf(uint i){
     return (octree[i] & node_child_mask) >= octree_pool_size;
 }
 
-float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, inout request_t request){
-    vec3 local_x = (sub.transform * vec4(global_x, 1)).xyz;
+ray_t ray_transform(ray_t r, mat4 transform){
+    return ray_t(
+        (transform * vec4(r.x, 1)).xyz,
+        (transform * vec4(r.d, 0)).xyz
+    );
+}
+
+float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
+    ray_t r = ray_transform(global_r, sub.transform);
+
+    vec3 faces = -sign(r.d) * sub.radius;
+    vec3 phis = (faces - r.x) / r.d;
+    float phi_aabb = max(phis.x, max(phis.y, phis.z)) + epsilon;
 
     // check against outside bounds of aabb
-    float phi_aabb = length(max(abs(local_x) - sub.r, 0)) + epsilon;
+    bool inside_aabb = all(lessThan(abs(r.x), sub.radius));
+    phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > epsilon); 
+    // length(max(abs(r.x) - sub.radius, 0)) + epsilon;
 
     // find the expected size and order of magnitude of cell
-    uint order = expected_order(local_x); 
+    uint order = expected_order(r.x); 
     float radius = epsilon * (1 << order);
 
     // snap to grid, making sure not to duplicate zero
-    vec3 x_scaled = local_x / (radius * 2);
+    vec3 x_scaled = r.x / (radius * 2);
     ivec3 x_grid = ivec3(floor(x_scaled));
 
     // do a shitty hash to all the relevant fields
@@ -157,7 +188,7 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
     bool is_valid = (octree[index] & 0xFFFF) == hash;
 
     // if necessary, request more data from CPU
-    intersection.local_x = local_x;
+    intersection.local_x = r.x;
     intersection.substance = sub;
     intersection.cell_position = cell_position;
     intersection.index = index;
@@ -165,7 +196,7 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
 
     if (is_valid){
         hitmap[index] = true;
-    } else if (phi_aabb <= epsilon) {
+    } else if (inside_aabb) {
         request = request_t(cell_position, radius, index + work_group_offset(), hash, sub.id, 1);
     }
 
@@ -178,7 +209,7 @@ float phi_s(vec3 global_x, substance_t sub, inout intersection_t intersection, i
 
     phi.x = 2 * radius * mix(1, phi.x - 0.5, is_valid);
 
-    return mix(phi.x, phi_aabb, phi_aabb > epsilon);
+    return mix(phi_aabb, phi.x, inside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){
@@ -189,13 +220,13 @@ intersection_t raycast(ray_t r, inout request_t request){
     i.distance = 0;
 
     for (steps = 0; !i.hit && steps < max_steps; steps++){
-        float phi = pc.render_distance;
+        float p = pc.render_distance;
         for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
-            phi = min(phi, phi_s(r.x, substances[substanceID], i, request));
-            i.hit = i.hit || phi < epsilon;
+            p = min(p, phi(r, substances[substanceID], i, request));
+            i.hit = i.hit || p < epsilon;
         }
-        r.x += r.d * phi;
-        i.distance += phi;
+        r.x += r.d * p;
+        i.distance += p;
     }
     
     i.x = r.x;
@@ -203,22 +234,11 @@ intersection_t raycast(ray_t r, inout request_t request){
 }
 
 float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
-    bool hit = false;
-    uint steps;
-
-    intersection_t shadow_i;
     ray_t r = ray_t(l, normalize(geometry_i.x - l));
-    
-    for (steps = 0; !hit && steps < max_steps; steps++){
-        float phi = pc.render_distance;
-        for (uint substanceID = 0; !hit && substanceID < shadows_visible; substanceID++){
-            substance_t sub = shadows[substanceID];
-            phi = min(phi, phi_s(r.x, sub, shadow_i, request));
-            hit = hit || phi < epsilon;
-        }
-        r.x += r.d * phi;
-    }
-    
+
+    request_t null_request;
+    intersection_t shadow_i = raycast(r, request);
+
     bool clear = shadow_i.substance.id == geometry_i.substance.id;
     return float(clear);
 }
@@ -231,7 +251,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = 1;//shadow(light.x, i, request);
+    float shadow = shadow(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -356,8 +376,11 @@ request_t render(uint i, float phi_initial){
     return request;
 }
 
-vec2 project(vec3 x){
+vec2 project(vec3 x, mat4 transform){
+    x = (inverse(transform) * vec4(x, 1)).xyz;
+    x -= pc.camera_position;
     float d = dot(x, cross(pc.eye_right, pc.eye_up));
+    d = max(epsilon, d);
     vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
     t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
 
@@ -368,15 +391,69 @@ bool is_shadow_visible(uint i, vec3 x){
     return true;
 }
 
-bool is_sphere_visible(vec3 centre, float radius){
-    vec3 x = centre - pc.camera_position;
-    vec2 image_x = project(x);
-    float d = max(epsilon, dot(x, cross(pc.eye_right, pc.eye_up)));
-    float r = radius / d * pc.focal_depth * gl_NumWorkGroups.x * gl_WorkGroupSize.x;
-    vec2 c = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
-    vec2 diff = max(ivec2(0), abs(c - image_x) - ivec2(gl_WorkGroupSize.xy / 2));
+bool is_substance_visible(substance_t sub){
+    // TODO: this functions behaviour is correct, but insanely inefficient. optimise!!!!
 
-    return length(diff) < r;
+    bool hit = false;
+
+    vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
+    vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
+
+    // check if centre of substance projects into work group
+    vec2 c = project(vec3(0), sub.transform);
+    bvec2 c_hit = greaterThanEqual(c, lower) && lessThan(c, upper);
+    hit = hit || all(c_hit);
+
+    // check if ray from centre of work group hits substances
+    uvec2 xy = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
+    ray_t r = ray_t(pc.camera_position, get_ray_direction(xy));
+    r = ray_transform(r, sub.transform);
+    vec3 faces = -sign(r.d) * sub.radius;
+    vec3 phis = (faces - r.x) / r.d;
+    float phi = max(phis.x, max(phis.y, phis.z));
+    hit = hit || phi > 0;
+
+    // check if any edges of the cube break any edges of the work group
+    for (uint edge = 0; edge < 12; edge++){
+        uvec2 ab = cube_edges[edge];
+        vec3 a = cube_vertices[ab.x] * sub.radius;
+        vec3 b = cube_vertices[ab.y] * sub.radius;
+
+        vec2 a_p = project(a, sub.transform);
+        vec2 b_p = project(b, sub.transform);
+
+        float m = (b_p.y - a_p.y) / (b_p.x - a_p.x);
+        float c = a_p.y - m * a_p.x;
+
+        vec2 y = m * vec2(lower.x, upper.x) + c;
+        vec2 x = (vec2(lower.y, upper.y) - c) / m; 
+
+        vec2 lower1 = max(lower, min(a_p, b_p));
+        vec2 upper1 = min(upper, max(a_p, b_p));
+
+        bvec2 y_hit = greaterThanEqual(y, vec2(lower1.y)) && lessThanEqual(y, vec2(upper1.y));
+        bvec2 x_hit = greaterThanEqual(x, vec2(lower1.x)) && lessThanEqual(x, vec2(upper1.x));
+
+        bool vertical_hit = 
+            abs(a_p.x - b_p.x) < epsilon && 
+            a_p.x >= lower.x && a_p.x <= upper.x &&
+            lower.y >= min(a_p.y, b_p.y) && upper.y <= max(a_p.y, b_p.y);
+
+        hit = hit || any(bvec4(y_hit, x_hit)) || vertical_hit;
+    }
+
+    return hit && sub.id != ~0;
+}
+
+void debug_draw_point(vec3 x, mat4 transform){
+    vec2 proj_x = project(x, transform);
+
+    int k = 4;
+    for (int x = -k; x <= k; x++){
+        for (int y = -k; y <= k; y++){
+            imageStore(render_texture, ivec2(proj_x) + ivec2(x, y), vec4(0, 1, 0, 1));
+        }
+    }
 }
 
 float prerender(uint i){
@@ -385,7 +462,7 @@ float prerender(uint i){
 
     // load shit
     substance_t s = substance.data[i];
-    bool directly_visible = s.id != ~0 && is_sphere_visible(s.c, length(s.r));
+    bool directly_visible = is_substance_visible(s);
 
     light_t l = lights_global.data[i];
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
