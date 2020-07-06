@@ -133,7 +133,7 @@ vec2 uv(vec2 xy){
 
 uint expected_order(vec3 x){
     return 4;
-    // max(3, uint(
+    // return max(3, uint(
     //     length(x - pc.camera_position) * 1.5 +
     //     length(uv(gl_GlobalInvocationID.xy))
     // ));
@@ -141,10 +141,6 @@ uint expected_order(vec3 x){
 
 uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * octree_pool_size;
-}
-
-bool is_leaf(uint i){
-    return (octree[i] & node_child_mask) >= octree_pool_size;
 }
 
 ray_t ray_transform(ray_t r, mat4 transform){
@@ -389,6 +385,70 @@ vec2 project(vec3 x, mat4 transform){
 
 bool is_shadow_visible(uint i, vec3 x){
     return true;
+}
+
+vec2 solve_simultaneous(vec2 a, vec2 b, vec2 c, out bool has_solution){
+    float q = a.x * b.y - a.y * b.x;
+    float y = a.x * c.y - a.y * c.x;
+    float x = b.y * c.x - b.x * c.y; 
+    has_solution = abs(q) > epsilon;
+    return vec2(x, y) / q;
+}
+
+ray_t plane_intersect(vec3 x1, vec3 n1, vec3 x2, vec3 n2){
+    vec3 d = cross(n1, n2);
+    vec3 o;
+    vec2 a, b;
+    bool has_solution;
+    vec2 c = vec2(dot(x1, n1), dot(x2, n2));
+
+    o = vec3(0);
+    a = vec2(n1.x, n2.x);
+    b = vec2(n1.y, n2.y);
+    o.xy = solve_simultaneous(a, b, c, has_solution);
+
+    if (!has_solution){
+        o = vec3(0);
+        a = vec2(n1.y, n2.y);
+        b = vec2(n1.z, n2.z);
+        o.yz = solve_simultaneous(a, b, c, has_solution);
+    }
+
+    if (!has_solution){
+        o = vec3(0);
+        a = vec2(n1.x, n2.x);
+        b = vec2(n1.z, n2.z);
+        o.xz = solve_simultaneous(a, b, c, has_solution);
+    }
+
+    return ray_t(o, d);
+}
+
+bool plane_intersect_aabb(vec3 x, vec3 n, vec3 xmin, vec3 xmax){
+    float dmin = dot(n, xmin);
+    vec3 emin = d - n * xmin;
+
+    float dmax = dot(n, xmax);
+    vec3 emax = d - n * xmax;
+
+    bvec3 is_null = lessThan(abs(n), vec3(epsilon));
+
+    // ax + by + cz = d
+
+    // x plane
+    // y = (d - a * xmin.x - cz) / b;
+    // z = (d - a * xmin.x - by) / c;
+    
+
+    // y plane
+    // x = (d - b * xmin.y - cz) / a;
+    // z = (d - b * xmin.y - ax) / c;
+
+    // z plane
+    // x = (d - c * xmin.z - by) / a;
+    // y = (d - c * xmin.z - ax) / b;
+
+    return false;
 }
 
 bool is_substance_visible(substance_t sub){
