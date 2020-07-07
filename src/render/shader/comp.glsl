@@ -143,15 +143,11 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * octree_pool_size;
 }
 
-ray_t ray_transform(ray_t r, mat4 transform){
-    return ray_t(
-        (transform * vec4(r.x, 1)).xyz,
-        (transform * vec4(r.d, 0)).xyz
-    );
-}
-
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
-    ray_t r = ray_transform(global_r, sub.transform);
+    ray_t r = ray_t(
+        (sub.transform * vec4(global_r.x, 1)).xyz,
+        (sub.transform * vec4(global_r.d, 0)).xyz
+    );
 
     vec3 faces = -sign(r.d) * sub.radius;
     vec3 phis = (faces - r.x) / r.d;
@@ -387,73 +383,34 @@ bool is_shadow_visible(uint i, vec3 x){
     return true;
 }
 
-vec2 solve_simultaneous(vec2 a, vec2 b, vec2 c, out bool has_solution){
-    float q = a.x * b.y - a.y * b.x;
-    float y = a.x * c.y - a.y * c.x;
-    float x = b.y * c.x - b.x * c.y; 
-    has_solution = abs(q) > epsilon;
-    return vec2(x, y) / q;
-}
-
-ray_t plane_intersect(vec3 x1, vec3 n1, vec3 x2, vec3 n2){
-    vec3 d = cross(n1, n2);
-    vec3 o;
-    vec2 a, b;
-    bool has_solution;
-    vec2 c = vec2(dot(x1, n1), dot(x2, n2));
-
-    o = vec3(0);
-    a = vec2(n1.x, n2.x);
-    b = vec2(n1.y, n2.y);
-    o.xy = solve_simultaneous(a, b, c, has_solution);
-
-    if (!has_solution){
-        o = vec3(0);
-        a = vec2(n1.y, n2.y);
-        b = vec2(n1.z, n2.z);
-        o.yz = solve_simultaneous(a, b, c, has_solution);
-    }
-
-    if (!has_solution){
-        o = vec3(0);
-        a = vec2(n1.x, n2.x);
-        b = vec2(n1.z, n2.z);
-        o.xz = solve_simultaneous(a, b, c, has_solution);
-    }
-
-    return ray_t(o, d);
-}
-
 bool plane_intersect_aabb(vec3 x, vec3 n, vec3 xmin, vec3 xmax){
-    float dmin = dot(n, xmin);
-    vec3 emin = d - n * xmin;
+    float d = dot(x, n);
 
-    float dmax = dot(n, xmax);
-    vec3 emax = d - n * xmax;
+    bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
+    bvec3 intersects;
 
-    bvec3 is_null = lessThan(abs(n), vec3(epsilon));
+    vec2 ax = n.x * vec2(xmin.x, xmax.x);
+    vec2 by = n.y * vec2(xmin.y, xmax.y);
+    vec2 cz = n.z * vec2(xmin.z, xmax.z);
 
     // ax + by + cz = d
 
-    // x plane
-    // y = (d - a * xmin.x - cz) / b;
-    // z = (d - a * xmin.x - by) / c;
-    
+    // x = (d - by - cz) / a;
+    vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
+    intersects.x = !(all(lessThan(xs, xmin.xxxx)) || all(greaterThan(xs, xmax.xxxx)));
 
-    // y plane
-    // x = (d - b * xmin.y - cz) / a;
-    // z = (d - b * xmin.y - ax) / c;
+    // y = (d - ax - cz) / b;
+    vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
+    intersects.y = !(all(lessThan(ys, xmin.yyyy)) || all(greaterThan(ys, xmax.yyyy)));
 
-    // z plane
-    // x = (d - c * xmin.z - by) / a;
-    // y = (d - c * xmin.z - ax) / b;
+    // z = (d - ax - by) / c;
+    vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
+    intersects.z = !(all(lessThan(zs, xmin.zzzz)) || all(greaterThan(zs, xmax.zzzz)));
 
-    return false;
+    return any(intersects && is_not_null);
 }
 
 bool is_substance_visible(substance_t sub){
-    // TODO: this functions behaviour is correct, but insanely inefficient. optimise!!!!
-
     bool hit = false;
 
     vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
@@ -464,43 +421,22 @@ bool is_substance_visible(substance_t sub){
     bvec2 c_hit = greaterThanEqual(c, lower) && lessThan(c, upper);
     hit = hit || all(c_hit);
 
-    // check if ray from centre of work group hits substances
-    uvec2 xy = gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2;
-    ray_t r = ray_t(pc.camera_position, get_ray_direction(xy));
-    r = ray_transform(r, sub.transform);
-    vec3 faces = -sign(r.d) * sub.radius;
-    vec3 phis = (faces - r.x) / r.d;
-    float phi = max(phis.x, max(phis.y, phis.z));
-    hit = hit || phi > 0;
+    vec3 o = (sub.transform * vec4(pc.camera_position, 1)).xyz;
 
-    // check if any edges of the cube break any edges of the work group
-    for (uint edge = 0; edge < 12; edge++){
-        uvec2 ab = cube_edges[edge];
-        vec3 a = cube_vertices[ab.x] * sub.radius;
-        vec3 b = cube_vertices[ab.y] * sub.radius;
+    vec3 p = get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
+    vec3 q = get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy);
+    vec3 r = get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy);
+    vec3 s = get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy);
 
-        vec2 a_p = project(a, sub.transform);
-        vec2 b_p = project(b, sub.transform);
+    p = (sub.transform * vec4(p, 0)).xyz;
+    q = (sub.transform * vec4(q, 0)).xyz;
+    r = (sub.transform * vec4(r, 0)).xyz;
+    s = (sub.transform * vec4(s, 0)).xyz;
 
-        float m = (b_p.y - a_p.y) / (b_p.x - a_p.x);
-        float c = a_p.y - m * a_p.x;
-
-        vec2 y = m * vec2(lower.x, upper.x) + c;
-        vec2 x = (vec2(lower.y, upper.y) - c) / m; 
-
-        vec2 lower1 = max(lower, min(a_p, b_p));
-        vec2 upper1 = min(upper, max(a_p, b_p));
-
-        bvec2 y_hit = greaterThanEqual(y, vec2(lower1.y)) && lessThanEqual(y, vec2(upper1.y));
-        bvec2 x_hit = greaterThanEqual(x, vec2(lower1.x)) && lessThanEqual(x, vec2(upper1.x));
-
-        bool vertical_hit = 
-            abs(a_p.x - b_p.x) < epsilon && 
-            a_p.x >= lower.x && a_p.x <= upper.x &&
-            lower.y >= min(a_p.y, b_p.y) && upper.y <= max(a_p.y, b_p.y);
-
-        hit = hit || any(bvec4(y_hit, x_hit)) || vertical_hit;
-    }
+    hit = hit || plane_intersect_aabb(o, cross(p, q), -sub.radius, sub.radius);
+    hit = hit || plane_intersect_aabb(o, cross(q, r), -sub.radius, sub.radius);
+    hit = hit || plane_intersect_aabb(o, cross(r, s), -sub.radius, sub.radius);
+    hit = hit || plane_intersect_aabb(o, cross(s, q), -sub.radius, sub.radius);
 
     return hit && sub.id != ~0;
 }
