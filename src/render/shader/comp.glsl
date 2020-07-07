@@ -226,10 +226,19 @@ intersection_t raycast(ray_t r, inout request_t request){
 }
 
 float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
+    uint steps;
     ray_t r = ray_t(l, normalize(geometry_i.x - l));
 
-    request_t null_request;
-    intersection_t shadow_i = raycast(r, request);
+    intersection_t shadow_i;
+    for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
+        float p = pc.render_distance;
+        for (uint substanceID = 0; !shadow_i.hit && substanceID < shadows_visible; substanceID++){
+            p = min(p, phi(r, shadows[substanceID], shadow_i, request));
+            shadow_i.hit = shadow_i.hit || p < epsilon;
+        }
+        r.x += r.d * p;
+        shadow_i.distance += p;
+    }
 
     bool clear = shadow_i.substance.id == geometry_i.substance.id;
     return float(clear);
