@@ -384,27 +384,29 @@ bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     float d = dot(x, n);
 
     bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
-    bvec3 intersects;
 
     vec2 ax = n.x * vec2(aabb.lower.x, aabb.upper.x);
     vec2 by = n.y * vec2(aabb.lower.y, aabb.upper.y);
     vec2 cz = n.z * vec2(aabb.lower.z, aabb.upper.z);
 
     // ax + by + cz = d
-
-    // x = (d - by - cz) / a;
     vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
-    intersects.x = !(all(lessThan(xs, aabb.lower.xxxx)) || all(greaterThan(xs, aabb.upper.xxxx)));
-
-    // y = (d - ax - cz) / b;
     vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
-    intersects.y = !(all(lessThan(ys, aabb.lower.yyyy)) || all(greaterThan(ys, aabb.upper.yyyy)));
-
-    // z = (d - ax - by) / c;
     vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
-    intersects.z = !(all(lessThan(zs, aabb.lower.zzzz)) || all(greaterThan(zs, aabb.upper.zzzz)));
 
-    return any(intersects && is_not_null);
+    bvec3 lt = bvec3(
+        all(lessThan(xs, aabb.lower.xxxx)),
+        all(lessThan(ys, aabb.lower.yyyy)),
+        all(lessThan(zs, aabb.lower.zzzz))
+    );
+
+    bvec3 gt = bvec3(
+        all(greaterThan(xs, aabb.upper.xxxx)),
+        all(greaterThan(ys, aabb.upper.yyyy)),
+        all(greaterThan(zs, aabb.upper.zzzz))
+    );
+
+    return any(!(lt || gt) && is_not_null);
 }
 
 bool is_substance_visible(substance_t sub){
