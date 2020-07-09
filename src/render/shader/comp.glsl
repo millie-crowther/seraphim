@@ -178,18 +178,37 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
 }
 
 vec4 reduce_min(uint i, vec4 value){
+    vec4 x;
     barrier();
     workspace[i] = value;
     barrier();
-    if ((i & 0x001) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    if ((i & 0x003) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    if ((i & 0x007) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    if ((i & 0x00F) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    if ((i & 0x01F) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    if ((i & 0x03F) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
-    if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
-    if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
-    if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
+
+    x = min(workspace[i], workspace[i +   1]);
+    if ((i &  1) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +   2]);
+    if ((i &  3) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +   4]);
+    if ((i &  7) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +   8]);
+    if ((i & 15) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +  16]);
+    if ((i & 31) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +  32]);
+    if ((i & 63) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i +  64]);
+    if ((i & 127) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i + 128]);
+    if ((i & 255) == 0) workspace[i] = x;
+
+    x = min(workspace[i], workspace[i + 256]);
+    if ((i & 511) == 0) workspace[i] = x;
     
     return min(workspace[0], workspace[512]);
 }
@@ -211,7 +230,10 @@ request_t render(uint i){
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
 
-    const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
+    vec4 x = intersection.x.xyzz;
+    vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
+    vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
+    surface_aabb = aabb_t(lower.xyz, -upper.xyz);
     
     uint j = intersection.index + work_group_offset();
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
@@ -230,8 +252,12 @@ request_t render(uint i){
         l += light(lights[i], intersection, n, request);
     }
 
+    const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
     vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * l;
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), mix(sky, hit_colour, intersection.hit));
+    vec4 image_colour = mix(sky, hit_colour, intersection.hit);
+    bool c = lights_visible == 1;
+    // image_colour = mix(vec4(1, 0, 0, 1), vec4(0, 1, 0, 1), c);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), image_colour);
 
     return request;
 }
@@ -302,17 +328,6 @@ bool is_substance_visible(substance_t sub){
     );
 
     return (all(c_hit) || any(rays_hit)) && sub.id != ~0;
-}
-
-void debug_draw_point(vec3 x, mat4 transform){
-    vec2 proj_x = project(x, transform);
-
-    int k = 4;
-    for (int x = -k; x <= k; x++){
-        for (int y = -k; y <= k; y++){
-            imageStore(render_texture, ivec2(proj_x) + ivec2(x, y), vec4(0, 1, 0, 1));
-        }
-    }
 }
 
 void prerender(uint i){
