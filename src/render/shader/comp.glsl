@@ -106,8 +106,8 @@ shared uint shadows_visible;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
 
-aabb_t lights_visible;
-aabb_t surface_visible;
+aabb_t light_aabb;
+aabb_t surface_aabb;
 
 shared uint octree[octree_pool_size];
 
@@ -240,10 +240,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = 1.0;
-    if (i.hit){
-        shadow = shadow_cast(light.x, i, request);
-    }
+    float shadow = shadow_cast(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -309,9 +306,8 @@ vec4 reduce_min(uint i, vec4 value){
     if ((i & 0x07F) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     if ((i & 0x0FF) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     if ((i & 0x1FF) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
-    if ((i & 0x3FF) == 0) workspace[i] = min(workspace[i], workspace[i + 512]);
     
-    return workspace[0];
+    return min(workspace[0], workspace[512]);
 }
 
 float phi_s_initial(vec3 d, vec3 centre, float r){
@@ -412,34 +408,30 @@ bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
 }
 
 bool is_substance_visible(substance_t sub){
-    bool hit = false;
-
     vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
 
     // check if centre of substance projects into work group
     vec2 c = project(vec3(0), sub.transform);
     bvec2 c_hit = greaterThanEqual(c, lower) && lessThan(c, upper);
-    hit = hit || all(c_hit);
 
     vec3 o = (sub.transform * vec4(pc.camera_position, 1)).xyz;
 
-    vec3 p = get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy);
-    vec3 q = get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy);
-    vec3 r = get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy);
-    vec3 s = get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy);
+    mat4x3 rays = mat3(sub.transform) * mat4x3(
+        get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy)
+    );
 
-    p = (sub.transform * vec4(p, 0)).xyz;
-    q = (sub.transform * vec4(q, 0)).xyz;
-    r = (sub.transform * vec4(r, 0)).xyz;
-    s = (sub.transform * vec4(s, 0)).xyz;
+    bvec4 rays_hit = bvec4(
+        plane_intersect_aabb(o, cross(rays[0], rays[1]), aabb_t(-sub.radius, sub.radius)),
+        plane_intersect_aabb(o, cross(rays[1], rays[2]), aabb_t(-sub.radius, sub.radius)),
+        plane_intersect_aabb(o, cross(rays[2], rays[3]), aabb_t(-sub.radius, sub.radius)),
+        plane_intersect_aabb(o, cross(rays[3], rays[0]), aabb_t(-sub.radius, sub.radius))
+    );
 
-    hit = hit || plane_intersect_aabb(o, cross(p, q), aabb_t(-sub.radius, sub.radius));
-    hit = hit || plane_intersect_aabb(o, cross(q, r), aabb_t(-sub.radius, sub.radius));
-    hit = hit || plane_intersect_aabb(o, cross(r, s), aabb_t(-sub.radius, sub.radius));
-    hit = hit || plane_intersect_aabb(o, cross(s, q), aabb_t(-sub.radius, sub.radius));
-
-    return hit && sub.id != ~0;
+    return (all(c_hit) || any(rays_hit)) && sub.id != ~0;
 }
 
 void debug_draw_point(vec3 x, mat4 transform){
