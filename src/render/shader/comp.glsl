@@ -328,28 +328,26 @@ vec3 get_ray_direction(uvec2 xy){
     return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 }
 
-request_t render(uint i, float phi_initial){
+request_t render(uint i){
     request_t request;
     request.status = 0;
 
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
-    ray_t r = ray_t(pc.camera_position + d * phi_initial, d);
+    ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
-   
+    
+    uint j = intersection.index + work_group_offset();
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
-    t.xy += vec2(
-        (intersection.index + work_group_offset()) % octree_pool_size,
-        (intersection.index + work_group_offset()) / octree_pool_size
-    );
+    t.xy += vec2(j % octree_pool_size, j / octree_pool_size);
     t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
     
-    vec3 n = (
-        inverse(intersection.substance.transform) * normalize(vec4(texture(normal_texture, t).xyz - 0.5, 0))
-    ).xyz;
+    vec3 n = 
+        inverse(mat3(intersection.substance.transform)) * 
+        normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient
     vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
@@ -447,7 +445,7 @@ void debug_draw_point(vec3 x, mat4 transform){
     }
 }
 
-float prerender(uint i){
+void prerender(uint i){
     // clear shared variables
     hitmap[i] = false;
 
@@ -488,13 +486,6 @@ float prerender(uint i){
     if (indices.x != ~0){
         shadows[indices.x] = s;
     }
-
-    // calculate initial distance
-    // float value = mix(pc.render_distance, phi_s_initial(d, s.c, s.r), s.id != ~0 && directly_visible);
-    // float phi_initial = reduce_min(i, vec4(value)).x;
-
-    // return phi_initial;
-    return 0;
 }
 
 void postrender(uint i, request_t request){
@@ -510,10 +501,10 @@ void postrender(uint i, request_t request){
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     
-    float phi_initial = prerender(i);
+    prerender(i);
 
     barrier();
-    request_t request = render(i, phi_initial);
+    request_t request = render(i);
     barrier();
 
     postrender(i, request);
