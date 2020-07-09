@@ -373,10 +373,6 @@ vec2 project(vec3 x, mat4 transform){
     return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
 }
 
-bool is_shadow_visible(uint i, vec3 x){
-    return true;
-}
-
 bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     // TODO: check if this still handles intersections that are behind the camera!
     float d = dot(x, n);
@@ -457,7 +453,7 @@ void prerender(uint i){
     bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
 
     // load octree from global memory into shared memory
-    octree[i] = octree_global.data[i  + work_group_offset()];
+    octree[i] = octree_global.data[i + work_group_offset()];
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -477,7 +473,7 @@ void prerender(uint i){
     }
 
     barrier();
-    bool shadow_visible = s.id != ~0 && is_shadow_visible(i, vec3(0));
+    bool shadow_visible = s.id != ~0;
     barrier();
     hits = bvec4(shadow_visible, false, false, false);
     limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
