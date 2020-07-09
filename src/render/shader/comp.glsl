@@ -194,16 +194,6 @@ vec4 reduce_min(uint i, vec4 value){
     return min(workspace[0], workspace[512]);
 }
 
-float phi_s_initial(vec3 d, vec3 centre, float r){
-    float a = dot(d, d);
-    float b = -2.0 * dot(centre, d);
-    float c = dot(centre, centre) - 3 * r * r;
-    float discriminant = b * b - 4 * a * c;
-    float dist = (-b - sqrt(discriminant)) / (2.0 * a);
-    float result = mix(dist, pc.render_distance, discriminant < 0);
-    return max(0, result);
-}
-
 vec3 get_ray_direction(uvec2 xy){
     vec2 uv = uv(xy);
     vec3 up = pc.eye_up;
@@ -334,7 +324,7 @@ void prerender(uint i){
     bool directly_visible = is_substance_visible(s);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0;// && is_sphere_visible(l.x, sqrt(length(l.colour) / epsilon));
+    bool light_visible = l.id != ~0;
 
     // load octree from global memory into shared memory
     octree[i] = octree_global.data[i + work_group_offset()];
