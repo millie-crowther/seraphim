@@ -22,24 +22,6 @@ const ivec3 p = ivec3(
     98317
 );
 
-const vec3 cube_vertices[8] = {
-    vec3(-1.0, -1.0, -1.0),
-    vec3( 1.0, -1.0, -1.0),
-    vec3( 1.0,  1.0, -1.0),
-    vec3(-1.0,  1.0, -1.0),
-
-    vec3(-1.0, -1.0,  1.0),
-    vec3( 1.0, -1.0,  1.0),
-    vec3( 1.0,  1.0,  1.0),
-    vec3(-1.0,  1.0,  1.0)
-};
-
-const uvec2 cube_edges[12] = {
-    uvec2(0, 1), uvec2(1, 2), uvec2(2, 3), uvec2(3, 0),
-    uvec2(4, 5), uvec2(5, 6), uvec2(6, 7), uvec2(7, 4),
-    uvec2(0, 4), uvec2(1, 5), uvec2(2, 6), uvec2(3, 7)
-};
-
 const uvec4 vertex_masks[2] = {
     uvec4(1 << 16, 1 << 17, 1 << 18, 1 << 19),
     uvec4(1 << 20, 1 << 21, 1 << 22, 1 << 23)
@@ -104,6 +86,11 @@ struct light_t {
     vec4 colour;
 };
 
+struct aabb_t {
+    vec3 lower;
+    vec3 upper;
+};
+
 layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
@@ -118,6 +105,9 @@ shared uint shadows_visible;
 
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
+
+aabb_t lights_visible;
+aabb_t surface_visible;
 
 shared uint octree[octree_pool_size];
 
@@ -156,7 +146,6 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     // check against outside bounds of aabb
     bool inside_aabb = all(lessThan(abs(r.x), sub.radius));
     phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > epsilon); 
-    // length(max(abs(r.x) - sub.radius, 0)) + epsilon;
 
     // find the expected size and order of magnitude of cell
     uint order = expected_order(r.x); 
@@ -225,7 +214,7 @@ intersection_t raycast(ray_t r, inout request_t request){
     return i;
 }
 
-float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
+float shadow_cast(vec3 l, intersection_t geometry_i, inout request_t request){
     uint steps;
     ray_t r = ray_t(l, normalize(geometry_i.x - l));
 
@@ -240,8 +229,7 @@ float shadow(vec3 l, intersection_t geometry_i, inout request_t request){
         shadow_i.distance += p;
     }
 
-    bool clear = shadow_i.substance.id == geometry_i.substance.id;
-    return float(clear);
+    return float(shadow_i.substance.id == geometry_i.substance.id);
 }
 
 vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
@@ -252,7 +240,10 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow(light.x, i, request);
+    float shadow = 1.0;
+    if (i.hit){
+        shadow = shadow_cast(light.x, i, request);
+    }
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -392,29 +383,30 @@ bool is_shadow_visible(uint i, vec3 x){
     return true;
 }
 
-bool plane_intersect_aabb(vec3 x, vec3 n, vec3 xmin, vec3 xmax){
+bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
+    // TODO: check if this still handles intersections that are behind the camera!
     float d = dot(x, n);
 
     bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
     bvec3 intersects;
 
-    vec2 ax = n.x * vec2(xmin.x, xmax.x);
-    vec2 by = n.y * vec2(xmin.y, xmax.y);
-    vec2 cz = n.z * vec2(xmin.z, xmax.z);
+    vec2 ax = n.x * vec2(aabb.lower.x, aabb.upper.x);
+    vec2 by = n.y * vec2(aabb.lower.y, aabb.upper.y);
+    vec2 cz = n.z * vec2(aabb.lower.z, aabb.upper.z);
 
     // ax + by + cz = d
 
     // x = (d - by - cz) / a;
     vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
-    intersects.x = !(all(lessThan(xs, xmin.xxxx)) || all(greaterThan(xs, xmax.xxxx)));
+    intersects.x = !(all(lessThan(xs, aabb.lower.xxxx)) || all(greaterThan(xs, aabb.upper.xxxx)));
 
     // y = (d - ax - cz) / b;
     vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
-    intersects.y = !(all(lessThan(ys, xmin.yyyy)) || all(greaterThan(ys, xmax.yyyy)));
+    intersects.y = !(all(lessThan(ys, aabb.lower.yyyy)) || all(greaterThan(ys, aabb.upper.yyyy)));
 
     // z = (d - ax - by) / c;
     vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
-    intersects.z = !(all(lessThan(zs, xmin.zzzz)) || all(greaterThan(zs, xmax.zzzz)));
+    intersects.z = !(all(lessThan(zs, aabb.lower.zzzz)) || all(greaterThan(zs, aabb.upper.zzzz)));
 
     return any(intersects && is_not_null);
 }
@@ -442,10 +434,10 @@ bool is_substance_visible(substance_t sub){
     r = (sub.transform * vec4(r, 0)).xyz;
     s = (sub.transform * vec4(s, 0)).xyz;
 
-    hit = hit || plane_intersect_aabb(o, cross(p, q), -sub.radius, sub.radius);
-    hit = hit || plane_intersect_aabb(o, cross(q, r), -sub.radius, sub.radius);
-    hit = hit || plane_intersect_aabb(o, cross(r, s), -sub.radius, sub.radius);
-    hit = hit || plane_intersect_aabb(o, cross(s, q), -sub.radius, sub.radius);
+    hit = hit || plane_intersect_aabb(o, cross(p, q), aabb_t(-sub.radius, sub.radius));
+    hit = hit || plane_intersect_aabb(o, cross(q, r), aabb_t(-sub.radius, sub.radius));
+    hit = hit || plane_intersect_aabb(o, cross(r, s), aabb_t(-sub.radius, sub.radius));
+    hit = hit || plane_intersect_aabb(o, cross(s, q), aabb_t(-sub.radius, sub.radius));
 
     return hit && sub.id != ~0;
 }
