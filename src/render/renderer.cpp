@@ -170,7 +170,6 @@ renderer_t::create_compute_pipeline(){
     }
 
     std::string compute_shader_code = 
-        resources::load_file("../src/render/shader/types.glsl") +
         resources::load_file("../src/render/shader/constants.glsl") +
         resources::load_file("../src/render/shader/buffers.glsl") +
         resources::load_file("../src/render/shader/shared.glsl") +

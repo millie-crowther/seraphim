@@ -1,3 +1,117 @@
+#version 450
+
+struct ray_t {
+    vec3 x;
+    vec3 d;
+};
+
+struct substance_t {
+    vec3 _2;
+    int _1;
+
+    vec3 radius;
+    uint id;
+
+    mat4 transform;
+};
+
+struct intersection_t {
+    bool hit;
+    vec3 x;
+    vec3 normal;
+    float distance;
+    substance_t substance;
+    vec3 local_x;
+    vec3 cell_position;
+    float cell_radius;
+    uint index;
+};
+
+struct request_t {
+    vec3 position;
+    float radius;
+
+    uint index;
+    uint hash;
+    uint substanceID;
+    uint status;
+};
+
+struct light_t {
+    vec3 x;
+    uint id;
+
+    vec4 colour;
+};
+
+struct aabb_t {
+    vec3 lower;
+    vec3 upper;
+};
+
+layout (local_size_x = 32, local_size_y = 32) in;
+
+const uint node_empty_flag = 1 << 24;
+const uint node_unused_flag = 1 << 25;
+const uint node_child_mask = 0xFFFF;
+const int octree_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+
+const float sqrt3 = 1.73205080757;
+const int max_steps = 32;
+const float epsilon = 1.0 / 256.0;
+
+const ivec3 p = ivec3(
+    393241,
+    1572869,
+    98317
+);
+
+const uvec4 vertex_masks[2] = {
+    uvec4(1 << 16, 1 << 17, 1 << 18, 1 << 19),
+    uvec4(1 << 20, 1 << 21, 1 << 22, 1 << 23)
+};
+
+layout (binding = 10) uniform writeonly image2D render_texture;
+layout (binding = 11) uniform sampler3D normal_texture;
+layout (binding = 12) uniform sampler3D colour_texture;
+
+layout( push_constant ) uniform push_constants {
+    uvec2 window_size;
+    float render_distance;
+    uint current_frame;
+
+    vec3 camera_position;
+    float phi_initial;        
+
+    vec3 eye_right;
+    float focal_depth;
+
+    vec3 eye_up;
+    float dummy4;
+} pc;
+
+layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
+layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
+layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
+layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
+
+shared substance_t substances[gl_WorkGroupSize.x];
+shared uint substances_visible;
+
+shared substance_t shadows[gl_WorkGroupSize.x];
+shared uint shadows_visible;
+
+shared light_t lights[gl_WorkGroupSize.x];
+shared uint lights_visible;
+
+aabb_t light_aabb;
+aabb_t surface_aabb;
+
+shared uint octree[octree_pool_size];
+
+shared bool hitmap[octree_pool_size];
+shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -221,7 +335,7 @@ vec3 get_ray_direction(uvec2 xy){
     return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 }
 
-request_t render(uint i){
+request_t render(uint i, substance_t s){
     request_t request;
     request.status = 0;
 
@@ -234,6 +348,22 @@ request_t render(uint i){
     vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
     vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
     surface_aabb = aabb_t(lower.xyz, -upper.xyz);
+
+    barrier();
+    bool shadow_visible = s.id != ~0;
+    barrier();
+    bvec4 hits = bvec4(shadow_visible, false, false, false);
+    uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
+    uvec4 totals;
+    barrier();
+    uvec4 indices = reduce_to_fit(i, hits, totals, limits);
+    barrier();
+    shadows_visible = totals.x;
+    barrier();
+    if (indices.x != ~0){
+        shadows[indices.x] = s;
+    }
+    barrier();
     
     uint j = intersection.index + work_group_offset();
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
@@ -255,8 +385,6 @@ request_t render(uint i){
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
     vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * l;
     vec4 image_colour = mix(sky, hit_colour, intersection.hit);
-    bool c = lights_visible == 1;
-    // image_colour = mix(vec4(1, 0, 0, 1), vec4(0, 1, 0, 1), c);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), image_colour);
 
     return request;
@@ -330,12 +458,11 @@ bool is_substance_visible(substance_t sub){
     return (all(c_hit) || any(rays_hit)) && sub.id != ~0;
 }
 
-void prerender(uint i){
+void prerender(uint i, substance_t s){
     // clear shared variables
     hitmap[i] = false;
 
     // load shit
-    substance_t s = substance.data[i];
     bool directly_visible = is_substance_visible(s);
 
     light_t l = lights_global.data[i];
@@ -360,17 +487,6 @@ void prerender(uint i){
     if (indices.y != ~0){
         lights[indices.y] = l;
     }
-
-    barrier();
-    bool shadow_visible = s.id != ~0;
-    barrier();
-    hits = bvec4(shadow_visible, false, false, false);
-    limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
-    indices = reduce_to_fit(i, hits, totals, limits);
-    shadows_visible = totals.x;
-    if (indices.x != ~0){
-        shadows[indices.x] = s;
-    }
 }
 
 void postrender(uint i, request_t request){
@@ -386,10 +502,11 @@ void postrender(uint i, request_t request){
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     
-    prerender(i);
+    substance_t s = substance.data[i];
+    prerender(i, s);
 
     barrier();
-    request_t request = render(i);
+    request_t request = render(i, s);
     barrier();
 
     postrender(i, request);
