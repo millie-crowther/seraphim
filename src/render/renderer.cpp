@@ -169,7 +169,12 @@ renderer_t::create_compute_pipeline(){
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
-    std::string compute_shader_code = resources::load_file("../src/render/shader/comp.glsl");
+    std::string compute_shader_code = 
+        resources::load_file("../src/render/shader/types.glsl") +
+        resources::load_file("../src/render/shader/constants.glsl") +
+        resources::load_file("../src/render/shader/buffers.glsl") +
+        resources::load_file("../src/render/shader/shared.glsl") +
+        resources::load_file("../src/render/shader/comp.glsl");
 
     VkShaderModule module = create_shader_module(compute_shader_code);
 
