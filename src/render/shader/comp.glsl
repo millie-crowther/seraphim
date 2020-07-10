@@ -254,6 +254,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
+    vec4 x;
     barrier();
     workspace[i] = uvec4(hits);
     barrier();
@@ -344,14 +345,13 @@ request_t render(uint i, substance_t s){
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
 
-    vec4 x = intersection.x.xyzz;
-    vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
-    vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
-    surface_aabb = aabb_t(lower.xyz, -upper.xyz);
+    // vec4 x = intersection.x.xyzz;
+    // vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
+    // vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
+    // surface_aabb = aabb_t(lower.xyz, -upper.xyz);
 
     barrier();
     bool shadow_visible = s.id != ~0;
-    barrier();
     bvec4 hits = bvec4(shadow_visible, false, false, false);
     uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
     uvec4 totals;
