@@ -217,6 +217,7 @@ float shadow_cast(vec3 l, intersection_t geometry_i, inout request_t request){
     ray_t r = ray_t(l, normalize(geometry_i.x - l));
 
     intersection_t shadow_i;
+    shadow_i.substance.id = ~0;
     for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
         for (uint substanceID = 0; !shadow_i.hit && substanceID < shadows_visible; substanceID++){
@@ -227,7 +228,7 @@ float shadow_cast(vec3 l, intersection_t geometry_i, inout request_t request){
         shadow_i.distance += p;
     }
 
-    return float(shadow_i.substance.id == geometry_i.substance.id);
+    return float(shadow_i.substance.id == geometry_i.substance.id || shadow_i.substance.id == ~0);
 }
 
 vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
