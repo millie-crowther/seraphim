@@ -218,6 +218,9 @@ float shadow_cast(vec3 l, intersection_t geometry_i, inout request_t request){
 
     intersection_t shadow_i;
     shadow_i.substance.id = ~0;
+    shadow_i.hit = false;
+    shadow_i.distance = 0;
+
     for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
         for (uint substanceID = 0; !shadow_i.hit && substanceID < shadows_visible; substanceID++){
@@ -346,10 +349,12 @@ request_t render(uint i, substance_t s){
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
 
-    // vec4 x = intersection.x.xyzz;
-    // vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
-    // vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
-    // surface_aabb = aabb_t(lower.xyz, -upper.xyz);
+    vec4 x = intersection.x.xyzz;
+    barrier();
+    vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
+    barrier();
+    vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
+    surface_aabb = aabb_t(lower.xyz, -upper.xyz);
 
     barrier();
     bool shadow_visible = s.id != ~0;
