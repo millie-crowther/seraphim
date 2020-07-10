@@ -6,7 +6,7 @@ struct ray_t {
 };
 
 struct substance_t {
-    vec3 _2;
+    vec3 c;
     int _1;
 
     vec3 radius;
@@ -103,9 +103,6 @@ shared uint shadows_visible;
 
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_visible;
-
-aabb_t light_aabb;
-aabb_t surface_aabb;
 
 shared uint octree[octree_pool_size];
 
@@ -297,37 +294,17 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
 }
 
 vec4 reduce_min(uint i, vec4 value){
-    vec4 x;
-    barrier();
     workspace[i] = value;
-    barrier();
 
-    x = min(workspace[i], workspace[i +   1]);
-    if ((i &  1) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +   2]);
-    if ((i &  3) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +   4]);
-    if ((i &  7) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +   8]);
-    if ((i & 15) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +  16]);
-    if ((i & 31) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +  32]);
-    if ((i & 63) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i +  64]);
-    if ((i & 127) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i + 128]);
-    if ((i & 255) == 0) workspace[i] = x;
-
-    x = min(workspace[i], workspace[i + 256]);
-    if ((i & 511) == 0) workspace[i] = x;
+    if ((i &  1) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i &  3) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i &  7) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i & 15) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i & 31) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i & 63) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i & 127) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 255) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    if ((i & 511) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
     
     return min(workspace[0], workspace[512]);
 }
@@ -340,6 +317,18 @@ vec3 get_ray_direction(uvec2 xy){
     return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
 }
 
+bool is_shadow_visible(aabb_t light_aabb, aabb_t surface_aabb, substance_t sub){
+    aabb_t aabb = aabb_t(
+        min(light_aabb.lower, surface_aabb.lower), 
+        max(light_aabb.upper, surface_aabb.upper)
+    );
+    vec3 c = aabb.upper / 2 + aabb.lower / 2;
+    vec3 r = aabb.upper / 2 - aabb.lower / 2;
+    vec3 d = max(abs(c - sub.c) - r, 0);
+    bool visible = length(d) < length(sub.radius) + epsilon;
+    return visible && sub.id != ~0;
+}
+
 request_t render(uint i, substance_t s){
     request_t request;
     request.status = 0;
@@ -348,28 +337,29 @@ request_t render(uint i, substance_t s){
 
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
+    barrier();
 
     vec4 x = intersection.x.xyzz;
     barrier();
     vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
     barrier();
     vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
-    surface_aabb = aabb_t(lower.xyz, -upper.xyz);
+    barrier();
+    aabb_t surface_aabb = aabb_t(lower.xyz, -upper.xyz);
+    aabb_t light_aabb = aabb_t(lights[0].x, lights[0].x);
 
     barrier();
-    bool shadow_visible = s.id != ~0;
+
+    bool shadow_visible = is_shadow_visible(light_aabb, surface_aabb, s);
+    barrier();
     bvec4 hits = bvec4(shadow_visible, false, false, false);
     uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
     uvec4 totals;
-    barrier();
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
-    barrier();
     shadows_visible = totals.x;
-    barrier();
     if (indices.x != ~0){
         shadows[indices.x] = s;
     }
-    barrier();
     
     uint j = intersection.index + work_group_offset();
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
