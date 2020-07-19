@@ -325,7 +325,7 @@ bool is_shadow_visible(aabb_t light_aabb, aabb_t surface_aabb, substance_t sub){
     vec3 c = aabb.upper / 2 + aabb.lower / 2;
     vec3 r = aabb.upper / 2 - aabb.lower / 2;
     vec3 d = max(abs(c - sub.c) - r, 0);
-    bool visible = length(d) < length(sub.radius) + epsilon;
+    bool visible = true;//length(d) < length(sub.radius);
     return visible && sub.id != ~0;
 }
 
