@@ -695,11 +695,11 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    octree_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, c * octree_pool_size());
+    octree_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, c * s);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
-    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * octree_pool_size());
+    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
 }
 
 uint32_t 

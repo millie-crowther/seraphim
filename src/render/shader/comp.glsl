@@ -25,6 +25,7 @@ struct intersection_t {
     vec3 cell_position;
     float cell_radius;
     uint index;
+    uint global_index;
 };
 
 struct request_t {
@@ -107,8 +108,11 @@ shared uint lights_visible;
 
 shared uint octree[octree_pool_size];
 
-shared bool hitmap[octree_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+
+int patch_pool_size(){
+    return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+}
 
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
@@ -159,10 +163,9 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // calculate some useful variables for doing lookups
     uint index = hash % octree_pool_size;
-    hash = hash >> 16;
 
     vec3 cell_position = x_grid * radius * 2;
-    bool is_valid = (octree[index] & 0xFFFF) == hash;
+    bool is_valid = (octree[index] & 0xFFFF) == hash >> 16;
 
     // if necessary, request more data from CPU
     intersection.local_x = r.x;
@@ -170,11 +173,10 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_position = cell_position;
     intersection.index = index;
     intersection.cell_radius = radius;
+    intersection.global_index = hash % patch_pool_size();
 
-    if (is_valid){
-        hitmap[index] = true;
-    } else if (inside_aabb) {
-        request = request_t(cell_position, radius, index + work_group_offset(), hash, sub.id, 1);
+    if (inside_aabb && !is_valid) {
+        request = request_t(cell_position, radius, hash % patch_pool_size(), hash, sub.id, 1);
     }
 
     uint data = octree[index];
@@ -362,7 +364,7 @@ request_t render(uint i, substance_t s){
         shadows[indices.x] = s;
     }
     
-    uint j = intersection.index + work_group_offset();
+    uint j = intersection.global_index;//intersection.index + work_group_offset();
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
     t.xy += vec2(j % octree_pool_size, j / octree_pool_size);
@@ -456,13 +458,10 @@ bool is_substance_visible(substance_t sub){
 }
 
 uint get_patch_index(uint i){
-    return i + work_group_offset();
+    return pointers.data[i + work_group_offset()];
 }
 
 void prerender(uint i, substance_t s){
-    // clear shared variables
-    hitmap[i] = false;
-
     // load shit
     bool directly_visible = is_substance_visible(s);
 
@@ -491,11 +490,14 @@ void prerender(uint i, substance_t s){
 }
 
 void postrender(uint i, request_t request){
-    bvec4 hits = bvec4(request.status != 0 && !hitmap[request.index], false, false, false);
+    bvec4 hits = bvec4(request.status != 0, false, false, false);
     uvec4 _;
     uvec4 limits = uvec4(4, 0, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, _, limits);
     if (indices.x != ~0){
+        uint local_index = request.hash % octree_pool_size;
+        pointers.data[local_index + work_group_offset()] = request.index; 
+        request.hash = request.hash >> 16;
         requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
     }
 }
