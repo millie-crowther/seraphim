@@ -110,6 +110,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(light_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(pointer_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -169,11 +170,7 @@ renderer_t::create_compute_pipeline(){
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
-    std::string compute_shader_code = 
-        resources::load_file("../src/render/shader/constants.glsl") +
-        resources::load_file("../src/render/shader/buffers.glsl") +
-        resources::load_file("../src/render/shader/shared.glsl") +
-        resources::load_file("../src/render/shader/comp.glsl");
+    std::string compute_shader_code = resources::load_file("../src/render/shader/comp.glsl");
 
     VkShaderModule module = create_shader_module(compute_shader_code);
 
@@ -507,6 +504,7 @@ renderer_t::create_descriptor_set_layout(){
         substance_buffer->get_descriptor_set_layout_binding(),
         light_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
+        pointer_buffer->get_descriptor_set_layout_binding(),
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -701,6 +699,7 @@ renderer_t::create_buffers(){
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
+    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * octree_pool_size());
 }
 
 uint32_t 

@@ -94,6 +94,7 @@ layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_glob
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
+layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
@@ -454,6 +455,10 @@ bool is_substance_visible(substance_t sub){
     return (all(c_hit) || any(rays_hit)) && sub.id != ~0;
 }
 
+uint get_patch_index(uint i){
+    return i + work_group_offset();
+}
+
 void prerender(uint i, substance_t s){
     // clear shared variables
     hitmap[i] = false;
@@ -465,7 +470,7 @@ void prerender(uint i, substance_t s){
     bool light_visible = l.id != ~0;
 
     // load octree from global memory into shared memory
-    octree[i] = octree_global.data[i + work_group_offset()];
+    octree[i] = octree_global.data[get_patch_index(i)];
    
     // visibility check on substances and load into shared memory
     barrier();
