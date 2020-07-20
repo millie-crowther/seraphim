@@ -88,7 +88,7 @@ layout( push_constant ) uniform push_constants {
     float focal_depth;
 
     vec3 eye_up;
-    float dummy4;
+    uint number_of_calls;
 } pc;
 
 layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
@@ -109,10 +109,6 @@ shared uint lights_visible;
 shared uint octree[octree_pool_size];
 
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
-
-int number_of_calls(){
-    return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * 4);
-}
 
 int patch_pool_size(){
     return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
@@ -499,7 +495,7 @@ void postrender(uint i, request_t request){
         pointers.data[index_local] = request.index; 
 
         if ((octree_global.data[request.index] & 0xFFFF) != request.hash >> 16){
-            int index = int(request.hash) % number_of_calls();
+            uint index = request.hash % pc.number_of_calls;
             request.hash = request.hash >> 16;
             requests.data[index] = request;
         }

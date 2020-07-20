@@ -30,6 +30,7 @@ renderer_t::renderer_t(
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
+    push_constants.number_of_calls = number_of_calls;
 
     set_main_camera(test_camera);
 
@@ -665,8 +666,8 @@ void
 renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); 
 
-    std::vector<call_t> calls(work_group_count.volume() * 4);
-    std::vector<call_t> empty_calls(calls.size());
+    std::vector<call_t> calls(number_of_calls);
+    std::vector<call_t> empty_calls(number_of_calls);
 
     call_buffer->map(0, calls.size(), [&](void * memory_map){
         std::memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
@@ -696,7 +697,7 @@ renderer_t::create_buffers(){
     uint32_t s = work_group_size.volume();
 
     octree_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, c * s);
-    call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, c * 4);
+    call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);

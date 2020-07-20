@@ -35,11 +35,12 @@ private:
         float focal_depth;
 
         f32vec3_t camera_up;
-        float dummy4;
+        uint32_t number_of_calls;
     };
 
     // constants
     static constexpr uint8_t frames_in_flight = 2;
+    static constexpr uint32_t number_of_calls = 2048;
 
     // fields
     u32vec2_t work_group_count;
