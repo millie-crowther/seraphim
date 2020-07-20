@@ -110,6 +110,10 @@ shared uint octree[octree_pool_size];
 
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
+int number_of_calls(){
+    return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * 4);
+}
+
 int patch_pool_size(){
     return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 }
@@ -490,15 +494,15 @@ void prerender(uint i, substance_t s){
 }
 
 void postrender(uint i, request_t request){
-    bvec4 hits = bvec4(request.status != 0, false, false, false);
-    uvec4 _;
-    uvec4 limits = uvec4(4, 0, 0, 0);
-    uvec4 indices = reduce_to_fit(i, hits, _, limits);
-    if (indices.x != ~0){
-        uint local_index = request.hash % octree_pool_size;
-        pointers.data[local_index + work_group_offset()] = request.index; 
-        request.hash = request.hash >> 16;
-        requests.data[(gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * 4 + indices.x] = request;
+    if (request.status != 0){
+        uint index_local = request.hash % octree_pool_size + work_group_offset();
+        pointers.data[index_local] = request.index; 
+
+        if ((octree_global.data[request.index] & 0xFFFF) != request.hash >> 16){
+            int index = int(request.hash) % number_of_calls();
+            request.hash = request.hash >> 16;
+            requests.data[index] = request;
+        }
     }
 }
 
