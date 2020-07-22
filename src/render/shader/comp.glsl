@@ -122,11 +122,7 @@ vec2 uv(vec2 xy){
 }
 
 uint expected_order(vec3 x){
-    return 4;
-    // return max(3, uint(
-    //     length(x - pc.camera_position) * 1.5 +
-    //     length(uv(gl_GlobalInvocationID.xy))
-    // ));
+    return 15;
 }
 
 uint work_group_offset(){
@@ -136,7 +132,7 @@ uint work_group_offset(){
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
     ray_t r = ray_t(
         (sub.transform * vec4(global_r.x, 1)).xyz,
-        (sub.transform * vec4(global_r.d, 0)).xyz
+        mat3(sub.transform) * global_r.d
     );
 
     vec3 faces = -sign(r.d) * sub.radius;
@@ -149,7 +145,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // find the expected size and order of magnitude of cell
     uint order = expected_order(r.x); 
-    float radius = epsilon * (1 << order);
+    float radius = epsilon * order;
 
     // snap to grid, making sure not to duplicate zero
     vec3 x_scaled = r.x / (radius * 2);
@@ -299,12 +295,12 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
 vec4 reduce_min(uint i, vec4 value){
     workspace[i] = value;
 
-    if ((i &  1) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
-    if ((i &  3) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
-    if ((i &  7) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
-    if ((i & 15) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
-    if ((i & 31) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
-    if ((i & 63) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i &   1) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i &   3) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i &   7) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i &  15) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i &  31) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i &  63) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
     if ((i & 127) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     if ((i & 255) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     if ((i & 511) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
@@ -364,7 +360,7 @@ request_t render(uint i, substance_t s){
         shadows[indices.x] = s;
     }
     
-    uint j = intersection.global_index;//intersection.index + work_group_offset();
+    uint j = intersection.global_index;
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
     t.xy += vec2(j % octree_pool_size, j / octree_pool_size);
@@ -402,32 +398,27 @@ vec2 project(vec3 x, mat4 transform){
 
 bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     // TODO: check if this still handles intersections that are behind the camera!
-    float d = dot(x, n);
+    // TODO: matrixify this
 
     bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
+ 
+    vec4 ab = -n.xyxy * vec4(aabb.lower.xy, aabb.upper.xy);
+    vec4 bc = -n.yzyz * vec4(aabb.lower.yz, aabb.upper.yz);
 
-    vec2 ax = n.x * vec2(aabb.lower.x, aabb.upper.x);
-    vec2 by = n.y * vec2(aabb.lower.y, aabb.upper.y);
-    vec2 cz = n.z * vec2(aabb.lower.z, aabb.upper.z);
+    mat4x3 abc = mat4x3(ab.yxx, ab.wzz, bc.yyx, bc.wwz);
 
-    // ax + by + cz = d
-    vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
-    vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
-    vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
+    vec3 p = (ab.yxx + bc.yyx) / n;
+    vec3 q = (ab.yxx + bc.wwz) / n;
+    vec3 r = (ab.wzz + bc.yyx) / n;
+    vec3 s = (ab.wzz + bc.wwz) / n;
 
-    bvec3 lt = bvec3(
-        all(lessThan(xs, aabb.lower.xxxx)),
-        all(lessThan(ys, aabb.lower.yyyy)),
-        all(lessThan(zs, aabb.lower.zzzz))
-    );
+    vec3 d = dot(x, n) / n;
+    vec3 min_ = d + min(min(p, q), min(r, s));
+    vec3 max_ = d + max(max(p, q), max(r, s));
 
-    bvec3 gt = bvec3(
-        all(greaterThan(xs, aabb.upper.xxxx)),
-        all(greaterThan(ys, aabb.upper.yyyy)),
-        all(greaterThan(zs, aabb.upper.zzzz))
-    );
-
-    return any(!(lt || gt) && is_not_null);
+    return any(is_not_null && !(
+        lessThan(max_, aabb.lower) || greaterThan(min_, aabb.upper)
+    ));
 }
 
 bool is_substance_visible(substance_t sub){
@@ -490,6 +481,7 @@ void prerender(uint i, substance_t s){
 }
 
 void postrender(uint i, request_t request){
+    // TODO: performance test on putting this inside the lookup function
     if (request.status != 0){
         uint index_local = request.hash % octree_pool_size + work_group_offset();
         pointers.data[index_local] = request.index; 
