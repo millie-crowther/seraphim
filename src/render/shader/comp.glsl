@@ -42,7 +42,8 @@ struct light_t {
     vec3 x;
     uint id;
 
-    vec4 colour;
+    vec3 colour;
+    float _1;
 };
 
 struct aabb_t {
@@ -250,7 +251,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     vec3 h = normalize(l + v);
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
-    return (d + s) * attenuation * shadow * light.colour;
+    return (d + s) * attenuation * shadow * vec4(light.colour, 1);
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
@@ -402,41 +403,56 @@ bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
 
     bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
  
-    vec4 ab = -n.xyxy * vec4(aabb.lower.xy, aabb.upper.xy);
-    vec4 bc = -n.yzyz * vec4(aabb.lower.yz, aabb.upper.yz);
+    vec2 ax = n.x * vec2(aabb.lower.x, aabb.upper.x);
+    vec2 by = n.y * vec2(aabb.lower.y, aabb.upper.y);
+    vec2 cz = n.z * vec2(aabb.lower.z, aabb.upper.z);
 
-    mat4x3 abc = mat4x3(ab.yxx, ab.wzz, bc.yyx, bc.wwz);
+    // ax + by + cz = d
+    float d = dot(x, n);
+    vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
+    vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
+    vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
 
-    vec3 p = (ab.yxx + bc.yyx) / n;
-    vec3 q = (ab.yxx + bc.wwz) / n;
-    vec3 r = (ab.wzz + bc.yyx) / n;
-    vec3 s = (ab.wzz + bc.wwz) / n;
+    bvec3 lt = bvec3(
+        all(lessThan(xs, aabb.lower.xxxx)),
+        all(lessThan(ys, aabb.lower.yyyy)),
+        all(lessThan(zs, aabb.lower.zzzz))
+    );
 
-    vec3 d = dot(x, n) / n;
-    vec3 min_ = d + min(min(p, q), min(r, s));
-    vec3 max_ = d + max(max(p, q), max(r, s));
+    bvec3 gt = bvec3(
+        all(greaterThan(xs, aabb.upper.xxxx)),
+        all(greaterThan(ys, aabb.upper.yyyy)),
+        all(greaterThan(zs, aabb.upper.zzzz))
+    );
 
-    return any(is_not_null && !(
-        lessThan(max_, aabb.lower) || greaterThan(min_, aabb.upper)
-    ));
+    return any(is_not_null && !(lt || gt));
 }
 
-bool is_substance_visible(substance_t sub){
+bool is_light_visible(light_t l, mat4x3 rays){
+    vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
+    vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
+    vec2 c = project(l.x, mat4(1));
+    bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
+
+    vec3 x = l.x - pc.camera_position;
+    vec4 ds = abs(transpose(rays) * x);
+    float r = sqrt(length(l.colour) / epsilon);
+    bool intersects = any(lessThanEqual(ds, vec4(r)));
+
+    return l.id != ~0 && (c_hit || intersects);
+}
+
+bool is_substance_visible(substance_t sub, mat4x3 rays_global){
     vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
 
     // check if centre of substance projects into work group
     vec2 c = project(vec3(0), sub.transform);
-    bvec2 c_hit = greaterThanEqual(c, lower) && lessThan(c, upper);
+    bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
 
     vec3 o = (sub.transform * vec4(pc.camera_position, 1)).xyz;
 
-    mat4x3 rays = mat3(sub.transform) * mat4x3(
-        get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
-        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy),
-        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
-        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy)
-    );
+    mat4x3 rays = mat3(sub.transform) * rays_global;
 
     bvec4 rays_hit = bvec4(
         plane_intersect_aabb(o, cross(rays[0], rays[1]), aabb_t(-sub.radius, sub.radius)),
@@ -445,22 +461,26 @@ bool is_substance_visible(substance_t sub){
         plane_intersect_aabb(o, cross(rays[3], rays[0]), aabb_t(-sub.radius, sub.radius))
     );
 
-    return (all(c_hit) || any(rays_hit)) && sub.id != ~0;
-}
-
-uint get_patch_index(uint i){
-    return pointers.data[i + work_group_offset()];
+    return (c_hit || any(rays_hit)) && sub.id != ~0;
 }
 
 void prerender(uint i, substance_t s){
+    mat4x3 rays = mat4x3(
+        get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy)
+    );
+
     // load shit
-    bool directly_visible = is_substance_visible(s);
+    bool directly_visible = is_substance_visible(s, rays);
 
     light_t l = lights_global.data[i];
-    bool light_visible = l.id != ~0;
+    bool light_visible = is_light_visible(l, rays);
 
     // load octree from global memory into shared memory
-    octree[i] = octree_global.data[get_patch_index(i)];
+    uint patch_index = pointers.data[i + work_group_offset()];
+    octree[i] = octree_global.data[patch_index];
    
     // visibility check on substances and load into shared memory
     barrier();
