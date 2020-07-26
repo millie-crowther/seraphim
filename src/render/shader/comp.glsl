@@ -115,6 +115,10 @@ int patch_pool_size(){
     return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 }
 
+int number_of_lights(){
+    return int(min(gl_WorkGroupSize.x * gl_WorkGroupSize.y, gl_NumWorkGroups.x * gl_NumWorkGroups.y));
+}
+
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -399,7 +403,7 @@ vec2 project(vec3 x, mat4 transform){
 
 bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     // TODO: check if this still handles intersections that are behind the camera!
-    // TODO: matrixify this
+    // TODO: improve this
 
     bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
  
@@ -476,7 +480,7 @@ void prerender(uint i, substance_t s){
     bool directly_visible = is_substance_visible(s, rays);
 
     light_t l = lights_global.data[i];
-    bool light_visible = is_light_visible(l, rays);
+    bool light_visible = is_light_visible(l, rays) && i < number_of_lights();
 
     // load octree from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
