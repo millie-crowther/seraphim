@@ -518,10 +518,18 @@ void postrender(uint i, request_t request){
     }
 }
 
+bool light_check(uint j, substance_t s){
+    light_t l = lights_global.data[j];
+
+    return j < number_of_lights() && l.id != ~0 && s.id != ~0;
+}
+
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
     
     substance_t s = substance.data[i];
+    bool hit = light_check(j, s);
     prerender(i, s);
 
     barrier();
