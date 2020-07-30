@@ -97,6 +97,7 @@ layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
 layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
+layout (binding = 6) buffer shadow_buffer    { vec4        data[]; } shadows_global;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_visible;
@@ -142,11 +143,14 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     vec3 faces = -sign(r.d) * sub.radius;
     vec3 phis = (faces - r.x) / r.d;
-    float phi_aabb = max(phis.x, max(phis.y, phis.z)) + epsilon;
+    float phi_aabb = max(phis.x, max(phis.y, phis.z));
+
+    // TODO: feel like you should be able to use length(max(phis, 0)) here 
+    //       instead of max(phis.x, phis.y, phis.z)
 
     // check against outside bounds of aabb
     bool inside_aabb = all(lessThan(abs(r.x), sub.radius));
-    phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > epsilon); 
+    phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > 0) + epsilon; 
 
     // find the expected size and order of magnitude of cell
     uint order = expected_order(r.x); 
@@ -520,6 +524,14 @@ void postrender(uint i, request_t request){
 
 bool light_check(uint j, substance_t s){
     light_t l = lights_global.data[j];
+
+    float r = sqrt(length(l.colour) / epsilon);
+
+    vec3 x = (s.transform * vec4(l.x, 1)).xyz;
+    float min_phi = length(max( abs(x) - s.radius, 0));
+    float max_phi = length(max(-abs(x) - s.radius, 0));
+    bool hit = min_phi <= r;
+    
 
     return j < number_of_lights() && l.id != ~0 && s.id != ~0;
 }

@@ -112,6 +112,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(light_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(pointer_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(shadows_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -506,6 +507,7 @@ renderer_t::create_descriptor_set_layout(){
         light_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
         pointer_buffer->get_descriptor_set_layout_binding(),
+        shadows_buffer->get_descriptor_set_layout_binding()
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -701,6 +703,7 @@ renderer_t::create_buffers(){
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, number_of_lights());
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
+    shadows_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(6, device, c * s);
 }
 
 uint32_t
