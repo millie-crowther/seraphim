@@ -522,18 +522,39 @@ void postrender(uint i, request_t request){
     }
 }
 
-bool light_check(uint j, substance_t s){
-    light_t l = lights_global.data[j];
+void light_check(uint i, uint j, substance_t s){
+    // do light check
+    uint index = j * gl_WorkGroupSize.x * gl_WorkGroupSize.y + i;
+    vec4 shadow_data = shadows_global.data[index];
+
+    light_t l = lights_global.data[int(shadow_data.x)];
 
     float r = sqrt(length(l.colour) / epsilon);
-
     vec3 x = (s.transform * vec4(l.x, 1)).xyz;
-    float min_phi = length(max( abs(x) - s.radius, 0));
-    float max_phi = length(max(-abs(x) - s.radius, 0));
-    bool hit = min_phi <= r;
-    
 
-    return j < number_of_lights() && l.id != ~0 && s.id != ~0;
+    float min_phi = length(max(abs(x) - s.radius, 0));
+    float max_phi = length(    abs(x) + s.radius    );
+    bool hit = l.id != ~0 && j < number_of_lights();
+    min_phi += pc.render_distance * float(!hit);
+    
+    shadow_data.yz = vec2(min_phi, max_phi);
+
+    // do fakesort
+    barrier();
+    vec4 shadow_data2 = shadows_global.data[index + 1];
+    bool is_sorted = shadow_data.y < shadow_data2.y;
+
+    if ((i & 1) == 0){
+        shadows_global.data[index] = mix(shadow_data2, shadow_data,  is_sorted);
+        shadows_global.data[index] = mix(shadow_data,  shadow_data2, is_sorted);
+    }
+
+    barrier();
+
+    if ((i & 1) == 1 && i < gl_WorkGroupSize.x * gl_WorkGroupSize.y){
+        shadows_global.data[index] = mix(shadow_data2, shadow_data,  is_sorted);
+        shadows_global.data[index] = mix(shadow_data,  shadow_data2, is_sorted);
+    }
 }
 
 void main(){
@@ -541,7 +562,7 @@ void main(){
     uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
     
     substance_t s = substance.data[i];
-    bool hit = light_check(j, s);
+    light_check(i, j, s);
     prerender(i, s);
 
     barrier();
