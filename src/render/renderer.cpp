@@ -564,8 +564,6 @@ renderer_t::present(uint32_t image_index) const {
 
 void
 renderer_t::render(){
-    push_constants.current_frame++;
-
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
     cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
@@ -640,6 +638,7 @@ renderer_t::render(){
     vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
     vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
     
+    push_constants.current_frame++;
     current_frame = (current_frame + 1) % frames_in_flight; 
 }
 
@@ -728,6 +727,21 @@ renderer_t::initialise_buffers(){
     );
 
     octree_buffer->write(initial_octree, 0);
+
+    std::vector<f32vec4_t> initial_shadows(shadows_buffer->get_size());
+    for (uint32_t i = 0; i < shadows_buffer->get_size(); i += work_group_size.volume()){
+        for (uint32_t j = 0; j < work_group_size.volume(); j++){
+            initial_shadows[i + j] = f32vec4_t(j);
+        }
+    }
+    shadows_buffer->write(initial_shadows, 0);
+
+    compute_command_pool->one_time_buffer([&](auto command_buffer){
+        shadows_buffer->record_write(command_buffer);
+    })->submit(
+        VK_NULL_HANDLE, VK_NULL_HANDLE, 
+        VK_NULL_HANDLE, VK_NULL_HANDLE
+    );
 }
 
 response_t
