@@ -522,25 +522,27 @@ void postrender(uint i, request_t request){
     }
 }
 
-vec4 fakesort(uint i){
-    barrier();
-    vec4 x = workspace[i];
-    vec4 y = workspace[i + 1];
+vec4 fakesort(uint i, vec4 x){
+    vec4 temp;
+
+    workspace[i] = x;
 
     barrier();
-    bool is_sorted = x.x < y.x;
+    bool is_sorted = x.x < workspace[i + 1].x;
 
-    if ((i & 1) == 0){
-        workspace[i  ] = mix(y, x, is_sorted);
-        workspace[i+1] = mix(x, y, is_sorted);
+    if ((i & 1) == 0 && !is_sorted){
+        temp = workspace[i];
+        workspace[i] = workspace[i + 1];
+        workspace[i + 1] = temp;
     }
 
     barrier();
-    is_sorted = workspace[i].x < workspace[i+1].x;
+    is_sorted = workspace[i].x < workspace[i + 1].x || i == gl_WorkGroupSize.x * gl_WorkGroupSize.y - 1;
 
-    if ((i & 1) == 1 && i != gl_WorkGroupSize.x * gl_WorkGroupSize.y - 1){
-        workspace[i  ] = mix(y, x, is_sorted);
-        workspace[i+1] = mix(x, y, is_sorted);
+    if ((i & 1) == 1 && !is_sorted){
+        temp = workspace[i];
+        workspace[i] = workspace[i + 1];
+        workspace[i + 1] = temp;
     }
 
     barrier();
@@ -565,9 +567,7 @@ void light_check(uint i, uint j, substance_t s){
     
     shadow_data.xy = vec2(min_phi, max_phi);
 
-    workspace[i] = shadow_data;
-    // do fakesort
-    vec4 result = fakesort(i);
+    vec4 result = fakesort(i, shadow_data);
 }
 
 void main(){
