@@ -43,7 +43,7 @@ struct light_t {
     uint id;
 
     vec3 colour;
-    float _1;
+    uint index;
 };
 
 struct aabb_t {
@@ -100,13 +100,13 @@ layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
 layout (binding = 6) buffer shadow_buffer    { vec4        data[]; } shadows_global;
 
 shared substance_t substances[gl_WorkGroupSize.x];
-shared uint substances_visible;
+shared uint visible_substances_size;
 
 shared substance_t shadows[gl_WorkGroupSize.x];
 shared uint shadows_visible;
 
 shared light_t lights[gl_WorkGroupSize.x];
-shared uint lights_visible;
+shared uint visible_lights_size;
 
 shared uint octree[octree_pool_size];
 
@@ -205,7 +205,7 @@ intersection_t raycast(ray_t r, inout request_t request){
 
     for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
-        for (uint substanceID = 0; !i.hit && substanceID < substances_visible; substanceID++){
+        for (uint substanceID = 0; !i.hit && substanceID < visible_substances_size; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));
             i.hit = i.hit || p < epsilon;
         }
@@ -247,7 +247,7 @@ vec4 light(light_t light, intersection_t i, vec3 n, inout request_t request){
     float attenuation = 1.0 / dot(dist, dist);
 
     //shadows
-    float shadow = shadow_cast(light.x, i, request);
+    float shadow = 1;//shadow_cast(light.x, i, request);
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
@@ -337,6 +337,10 @@ bool is_shadow_visible(aabb_t light_aabb, aabb_t surface_aabb, substance_t sub){
     return visible && sub.id != ~0;
 }
 
+bool is_light_visible2(light_t l, float near, float far){
+    return true;
+}
+
 request_t render(uint i, substance_t s){
     request_t request;
     request.status = 0;
@@ -347,28 +351,34 @@ request_t render(uint i, substance_t s){
     intersection_t intersection = raycast(r, request);
     barrier();
 
-    vec4 x = intersection.x.xyzz;
+    // find aabb of points
+    vec2 x = vec2(intersection.distance, -intersection.distance);
+    vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyxy, intersection.hit));
     barrier();
-    vec4 lower = reduce_min(i, mix(vec4(pc.render_distance),  x, intersection.hit));
-    barrier();
-    vec4 upper = reduce_min(i, mix(vec4(pc.render_distance), -x, intersection.hit));
-    barrier();
-    aabb_t surface_aabb = aabb_t(lower.xyz, -upper.xyz);
-    aabb_t light_aabb = aabb_t(lights[0].x, lights[0].x);
+    float near = result.x;
+    float far = -result.y;
 
     barrier();
 
-    bool shadow_visible = is_shadow_visible(light_aabb, surface_aabb, s);
+    // filter visible lights
+    light_t l = lights_global.data[i];
+    l.index = i;
+    bool light_visible = is_light_visible2(l, near, far) && i < number_of_lights();
     barrier();
-    bvec4 hits = bvec4(shadow_visible, false, false, false);
+    bvec4 hits = bvec4(light_visible, false, false, false);
     uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
-    shadows_visible = totals.x;
-    if (indices.x != ~0){
-        shadows[indices.x] = s;
-    }
     
+    visible_lights_size = totals.x;
+    if (indices.x != ~0){
+        lights[indices.x] = l;
+    }
+
+    // find the list of substances that each light sees
+    
+    
+    // find texture coordinate
     uint j = intersection.global_index;
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
@@ -380,14 +390,14 @@ request_t render(uint i, substance_t s){
         normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient
-    vec4 l = vec4(0.25, 0.25, 0.25, 1.0);
+    vec4 lighting = vec4(0.25, 0.25, 0.25, 1.0);
 
-    for (uint i = 0; i < lights_visible; i++){
-        l += light(lights[i], intersection, n, request);
+    for (uint i = 0; i < visible_lights_size; i++){
+        lighting += light(lights[i], intersection, n, request);
     }
 
     const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
-    vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * l;
+    vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * lighting;
     vec4 image_colour = mix(sky, hit_colour, intersection.hit);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), image_colour);
 
@@ -436,20 +446,6 @@ bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     return any(is_not_null && !(lt || gt));
 }
 
-bool is_light_visible(light_t l, mat4x3 rays){
-    vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
-    vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
-    vec2 c = project(l.x, mat4(1));
-    bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
-
-    vec3 x = l.x - pc.camera_position;
-    vec4 ds = abs(transpose(rays) * x);
-    float r = sqrt(length(l.colour) / epsilon);
-    bool intersects = any(lessThanEqual(ds, vec4(r)));
-
-    return l.id != ~0 && (c_hit || intersects);
-}
-
 bool is_substance_visible(substance_t sub, mat4x3 rays_global){
     vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
@@ -473,6 +469,9 @@ bool is_substance_visible(substance_t sub, mat4x3 rays_global){
 }
 
 void prerender(uint i, substance_t s){
+    // clear things
+    lights[gl_LocalInvocationID.x].index = ~0;
+
     mat4x3 rays = mat4x3(
         get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
         get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy),
@@ -483,28 +482,20 @@ void prerender(uint i, substance_t s){
     // load shit
     bool directly_visible = is_substance_visible(s, rays);
 
-    light_t l = lights_global.data[i];
-    bool light_visible = is_light_visible(l, rays) && i < number_of_lights();
-
     // load octree from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
     octree[i] = octree_global.data[patch_index];
    
     // visibility check on substances and load into shared memory
     barrier();
-    bvec4 hits = bvec4(directly_visible, light_visible, false, false);
+    bvec4 hits = bvec4(directly_visible, false, false, false);
+    uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
     uvec4 totals;
-    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 0, 0);
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
 
-    substances_visible = totals.x;
+    visible_substances_size = totals.x;
     if (indices.x != ~0){
         substances[indices.x] = s;
-    }
-
-    lights_visible = totals.y;
-    if (indices.y != ~0){
-        lights[indices.y] = l;
     }
 }
 
@@ -523,12 +514,14 @@ void postrender(uint i, request_t request){
 }
 
 vec4 fakesort(uint i, vec4 x){
+    // TODO: this is fast, which is good, but will take a lot of frames to 
+    //       sort a reversed list.
     vec4 temp;
 
     workspace[i] = x;
 
     barrier();
-    bool is_sorted = x.x < workspace[i + 1].x;
+    bool is_sorted = x.x <= workspace[i + 1].x;
 
     if ((i & 1) == 0 && !is_sorted){
         temp = workspace[i];
@@ -537,7 +530,7 @@ vec4 fakesort(uint i, vec4 x){
     }
 
     barrier();
-    is_sorted = workspace[i].x < workspace[i + 1].x || i == gl_WorkGroupSize.x * gl_WorkGroupSize.y - 1;
+    is_sorted = workspace[i].x <= workspace[i + 1].x || i == gl_WorkGroupSize.x * gl_WorkGroupSize.y - 1;
 
     if ((i & 1) == 1 && !is_sorted){
         temp = workspace[i];
@@ -550,32 +543,36 @@ vec4 fakesort(uint i, vec4 x){
     return workspace[i];
 }
 
-void light_check(uint i, uint j, substance_t s){
+void light_check(uint i, uint j){
     // do light check
     uint index = j * gl_WorkGroupSize.x * gl_WorkGroupSize.y + i;
     vec4 shadow_data = shadows_global.data[index];
 
-    light_t l = lights_global.data[int(shadow_data.z)];
+    substance_t s = substance.data[int(shadow_data.z)];
+
+    light_t l = lights_global.data[j];
 
     float r = sqrt(length(l.colour) / epsilon);
     vec3 x = (s.transform * vec4(l.x, 1)).xyz;
 
     float min_phi = length(max(abs(x) - s.radius, 0));
     float max_phi = length(    abs(x) + s.radius    );
-    bool hit = l.id != ~0 && j < number_of_lights();
+    bool hit = l.id != ~0 && s.id != ~0 && j < number_of_lights();
     min_phi += pc.render_distance * float(!hit);
     
     shadow_data.xy = vec2(min_phi, max_phi);
 
-    vec4 result = fakesort(i, shadow_data);
+    shadows_global.data[index] = fakesort(i, shadow_data);
+    barrier();
 }
 
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
     
+    light_check(i, j);
+
     substance_t s = substance.data[i];
-    light_check(i, j, s);
     prerender(i, s);
 
     barrier();
