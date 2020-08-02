@@ -112,7 +112,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(light_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(pointer_buffer->get_write_descriptor_set(descriptor_set));
-        write_desc_sets.push_back(shadows_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(frustum_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -507,7 +507,7 @@ renderer_t::create_descriptor_set_layout(){
         light_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
         pointer_buffer->get_descriptor_set_layout_binding(),
-        shadows_buffer->get_descriptor_set_layout_binding()
+        frustum_buffer->get_descriptor_set_layout_binding()
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -702,7 +702,7 @@ renderer_t::create_buffers(){
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, number_of_lights());
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
-    shadows_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(6, device, c * s);
+    frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
 }
 
 uint32_t
@@ -727,21 +727,6 @@ renderer_t::initialise_buffers(){
     );
 
     octree_buffer->write(initial_octree, 0);
-
-    std::vector<f32vec4_t> initial_shadows(shadows_buffer->get_size());
-    for (uint32_t i = 0; i < shadows_buffer->get_size(); i += work_group_size.volume()){
-        for (uint32_t j = 0; j < work_group_size.volume(); j++){
-            initial_shadows[i + j] = f32vec4_t(j);
-        }
-    }
-    shadows_buffer->write(initial_shadows, 0);
-
-    compute_command_pool->one_time_buffer([&](auto command_buffer){
-        shadows_buffer->record_write(command_buffer);
-    })->submit(
-        VK_NULL_HANDLE, VK_NULL_HANDLE, 
-        VK_NULL_HANDLE, VK_NULL_HANDLE
-    );
 }
 
 response_t

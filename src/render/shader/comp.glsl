@@ -97,7 +97,7 @@ layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
 layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
-layout (binding = 6) buffer shadow_buffer    { vec4        data[]; } shadows_global;
+layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;
@@ -227,8 +227,6 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
     shadow_i.hit = false;  
     shadow_i.distance = 0;
 
-    float total_distance = length(l - geometry_i.x);
-
     for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
 
@@ -332,14 +330,14 @@ vec3 get_ray_direction(uvec2 xy){
 }
 
 bool is_light_visible(light_t l, float near, float far){
-    return l.id != ~0;
+    return l.id != ~0 && near < far;
 }
 
 bool is_shadow_visible(substance_t s, float near, float far){
-    return s.id != ~0;
+    return s.id != ~0 && near < far;
 }
 
-request_t render(uint i, substance_t s){
+request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
 
@@ -347,43 +345,29 @@ request_t render(uint i, substance_t s){
 
     ray_t r = ray_t(pc.camera_position, d);
     intersection_t intersection = raycast(r, request);
+    
     barrier();
 
     // find near / far planes of intersection points
     vec2 x = vec2(intersection.distance, -intersection.distance);
     vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyxy, intersection.hit));
+    
     barrier();
-    float near = result.x;
-    float far = -result.y;
+    
+    frustum.data[j] = vec2(result.x, -result.y);
 
     barrier();
 
-    // filter visible lights
-    light_t l = lights_global.data[i];
-    l.index = i;
-    bool light_visible = is_light_visible(l, near, far) && i < number_of_lights();
-    bool shadow_visible = is_shadow_visible(s, near, far);
-    barrier();
-    bvec4 hits = bvec4(light_visible, shadow_visible, false, false);
-    uvec4 limits = uvec4(gl_WorkGroupSize.xx, 0, 0);
-    uvec4 totals;
-    uvec4 indices = reduce_to_fit(i, hits, totals, limits);
-
-    lights_size = totals.x;
-    if (indices.x != ~0){
-        lights[indices.x] = l;
-    }
-
-    substances_size = totals.y;
-    if (indices.y != ~0){
-        substances[indices.y] = s;
+    substances_size = shadow_size;
+    if (shadow_index != ~0){
+        substances[shadow_index] = s;
     }
     
     // find texture coordinate
-    uint j = intersection.global_index;
+    uint k = intersection.global_index;
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
-    t.xy += vec2(j % octree_pool_size, j / octree_pool_size);
+    t.xy += vec2(k % octree_pool_size, k / octree_pool_size);
     t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
     
     vec3 n = 
@@ -469,7 +453,7 @@ bool is_substance_visible(substance_t sub, mat4x3 rays_global){
     return (c_hit || any(rays_hit)) && sub.id != ~0;
 }
 
-void prerender(uint i, substance_t s){
+void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
     // clear things
     lights[gl_LocalInvocationID.x].index = ~0;
 
@@ -482,6 +466,10 @@ void prerender(uint i, substance_t s){
 
     // load shit
     bool directly_visible = is_substance_visible(s, rays);
+    light_t l = lights_global.data[i];
+    vec2 f = frustum.data[j].xy;
+    bool light_visible = is_light_visible(l, f.x, f.y) && i < number_of_lights();
+    bool shadow_visible = is_shadow_visible(s, f.x, f.y);
 
     // load octree from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
@@ -489,8 +477,8 @@ void prerender(uint i, substance_t s){
    
     // visibility check on substances and load into shared memory
     barrier();
-    bvec4 hits = bvec4(directly_visible, false, false, false);
-    uvec4 limits = uvec4(gl_WorkGroupSize.x, 0, 0, 0);
+    bvec4 hits = bvec4(directly_visible, light_visible, shadow_visible, false);
+    uvec4 limits = uvec4(gl_WorkGroupSize.xxx, 0);
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals, limits);
 
@@ -498,6 +486,14 @@ void prerender(uint i, substance_t s){
     if (indices.x != ~0){
         substances[indices.x] = s;
     }
+
+    lights_size = totals.y;
+    if (indices.y != ~0){
+        lights[indices.y] = l;
+    }
+
+    shadow_index = indices.z;
+    shadow_size = totals.z;
 }
 
 void postrender(uint i, request_t request){
@@ -516,12 +512,14 @@ void postrender(uint i, request_t request){
 
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
+    uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
     
     substance_t s = substance.data[i];
-    prerender(i, s);
+    uint shadow_index, shadow_size;
+    prerender(i, j, s, shadow_index, shadow_size);
 
     barrier();
-    request_t request = render(i, s);
+    request_t request = render(i, j, s, shadow_index, shadow_size);
     barrier();
 
     postrender(i, request);
