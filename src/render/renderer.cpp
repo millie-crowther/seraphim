@@ -578,9 +578,7 @@ renderer_t::render(){
     uint32_t i = 0;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            // update substance transforms
             substance_data[i] = sub->get_data();
-            substance_data[i].c += sub->get_position();
         }
         i++;
     }

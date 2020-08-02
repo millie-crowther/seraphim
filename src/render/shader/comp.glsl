@@ -6,8 +6,10 @@ struct ray_t {
 };
 
 struct substance_t {
-    vec3 c;
-    int _1;
+    float near;
+    float far;
+    float _1;
+    float _2;
 
     vec3 radius;
     uint id;
@@ -127,7 +129,7 @@ vec2 uv(vec2 xy){
 }
 
 uint expected_order(vec3 x){
-    return 15;
+    return 13;
 }
 
 uint work_group_offset(){
@@ -264,7 +266,7 @@ vec4 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
     return (d + s) * attenuation * shadow * vec4(light.colour, 1);
 }
 
-uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
+uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
     vec4 x;
     barrier();
     workspace[i] = uvec4(hits);
@@ -291,10 +293,10 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals, uvec4 limits){
     if ((i & 512) != 0) workspace[i] += workspace[           511];    
     barrier();
 
-    totals = min(uvec4(workspace[1023]), limits);
+    totals = min(uvec4(workspace[1023]), gl_WorkGroupSize.xxxx);
     barrier();
 
-    bvec4 mask = lessThanEqual(workspace[i], limits) && hits;
+    bvec4 mask = lessThanEqual(workspace[i], gl_WorkGroupSize.xxxx) && hits;
     barrier();
 
     uvec4 result = uvec4(workspace[i]);
@@ -480,9 +482,8 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     // visibility check on substances and load into shared memory
     barrier();
     bvec4 hits = bvec4(directly_visible, light_visible, shadow_visible, false);
-    uvec4 limits = uvec4(gl_WorkGroupSize.xxx, 0);
     uvec4 totals;
-    uvec4 indices = reduce_to_fit(i, hits, totals, limits);
+    uvec4 indices = reduce_to_fit(i, hits, totals);
 
     substances_size = totals.x;
     if (indices.x != ~0){

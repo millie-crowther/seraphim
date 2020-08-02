@@ -6,8 +6,7 @@ substance_t::data_t::data_t(){
     id = ~0;
 }
 
-substance_t::data_t::data_t(const f32vec3_t & c, const f32vec3_t & r, uint32_t id, const f32mat4_t & transform){
-    this->c = c;
+substance_t::data_t::data_t(const f32vec3_t & r, uint32_t id, const f32mat4_t & transform){
     this->r = r;
     this->id = id;
     this->transform = transform;
@@ -29,7 +28,6 @@ substance_t::get_form() const {
 substance_t::data_t
 substance_t::get_data(){
     return data_t(
-        form->get_aabb()->get_centre().cast<float>(),
         form->get_aabb()->get_size().cast<float>(),
         id,
         *transform.get_matrix()
