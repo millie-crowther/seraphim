@@ -82,14 +82,12 @@ layout( push_constant ) uniform push_constants {
     float render_distance;
     uint current_frame;
 
-    vec3 camera_position;
     float phi_initial;        
-
-    vec3 eye_right;
     float focal_depth;
-
-    vec3 eye_up;
     uint number_of_calls;
+    float _1;
+
+    mat4 eye_transform;
 } pc;
 
 layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
@@ -323,10 +321,7 @@ vec4 reduce_min(uint i, vec4 value){
 
 vec3 get_ray_direction(uvec2 xy){
     vec2 uv = uv(xy);
-    vec3 up = pc.eye_up;
-    vec3 right = pc.eye_right;
-    vec3 forward = cross(right, up);
-    return normalize(forward * pc.focal_depth + right * uv.x + up * uv.y);
+    return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
 }
 
 bool is_light_visible(light_t l, float near, float far){
@@ -341,11 +336,12 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     request_t request;
     request.status = 0;
 
+    vec3 rx = inverse(pc.eye_transform)[3].xyz;
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
-    ray_t r = ray_t(pc.camera_position, d);
+    ray_t r = ray_t(rx, d);
     intersection_t intersection = raycast(r, request);
-    
+
     barrier();
 
     // find near / far planes of intersection points
@@ -389,17 +385,6 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     return request;
 }
 
-vec2 project(vec3 x, mat4 transform){
-    x = (inverse(transform) * vec4(x, 1)).xyz;
-    x -= pc.camera_position;
-    float d = dot(x, cross(pc.eye_right, pc.eye_up));
-    d = max(epsilon, d);
-    vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
-    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
-
-    return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
-}
-
 bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     // TODO: check if this still handles intersections that are behind the camera!
     // TODO: improve this
@@ -436,10 +421,10 @@ bool is_substance_visible(substance_t sub, mat4x3 rays_global){
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
 
     // check if centre of substance projects into work group
-    vec2 c = project(vec3(0), sub.transform);
+    vec2 c = (inverse(pc.eye_transform) * inverse(sub.transform) * vec4(0, 0, 0, 1)).xy;
     bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
 
-    vec3 o = (sub.transform * vec4(pc.camera_position, 1)).xyz;
+    vec3 o = (sub.transform * inverse(pc.eye_transform)[3]).xyz;
 
     mat4x3 rays = mat3(sub.transform) * rays_global;
 

@@ -588,9 +588,7 @@ renderer_t::render(){
     substance_buffer->write(substance_data, 0);
     
     if (auto camera = main_camera.lock()){
-        push_constants.camera_position = camera->get_position().cast<float>();
-        push_constants.camera_right = camera->get_right().cast<float>();
-        push_constants.camera_up = camera->get_up().cast<float>();
+        push_constants.eye_transform = camera->get_matrix();
     }
    
     uint32_t image_index;

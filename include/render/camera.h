@@ -16,11 +16,7 @@ public:
 
     void update(double delta, const keyboard_t & keyboard, const mouse_t & mouse);
 
-    // accessors
-    vec3_t get_position() const;
-    vec3_t get_right() const;
-    vec3_t get_up() const;
-    vec3_t get_forward() const;
+    f32mat4_t get_matrix();
 };
 
 #endif

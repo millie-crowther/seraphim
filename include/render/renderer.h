@@ -28,14 +28,12 @@ private:
         float render_distance;
         uint32_t current_frame;
 
-        f32vec3_t camera_position;
         float phi_initial;           
-
-        f32vec3_t camera_right;
         float focal_depth;
-
-        f32vec3_t camera_up;
         uint32_t number_of_calls;
+        float _1;
+
+        f32mat4_t eye_transform;
     };
 
     // constants
