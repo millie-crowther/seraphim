@@ -324,8 +324,22 @@ vec3 get_ray_direction(uvec2 xy){
     return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
 }
 
-bool is_light_visible(light_t l, float near, float far){
-    return l.id != ~0 && near < far;
+bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
+    vec3 eye = inverse(pc.eye_transform)[3].xyz;
+    vec3 light = l.x - eye;
+    vec4 phis = transpose(normals) * light;
+
+    float r = sqrt(length(l.colour) / epsilon);
+
+    bool frustum_hit = all(lessThanEqual(phis, vec4(r)));
+
+    vec3 forward = mat3(pc.eye_transform) * vec3(0, 0, 1);
+    float depth = dot(forward, light);
+
+    bool depth_hit = depth >= near - r  && depth <= far + r;
+     
+
+    return l.id != ~0 && frustum_hit && depth_hit;
 }
 
 bool is_shadow_visible(substance_t s, float near, float far){
@@ -416,7 +430,7 @@ bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
     return any(is_not_null && !(lt || gt));
 }
 
-bool is_substance_visible(substance_t sub, mat4x3 rays_global){
+bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
 
@@ -426,13 +440,11 @@ bool is_substance_visible(substance_t sub, mat4x3 rays_global){
 
     vec3 o = (sub.transform * inverse(pc.eye_transform)[3]).xyz;
 
-    mat4x3 rays = mat3(sub.transform) * rays_global;
-
+    mat4x3 normals = mat3(sub.transform) * normals_global;
+    aabb_t aabb = aabb_t(-sub.radius, sub.radius);
     bvec4 rays_hit = bvec4(
-        plane_intersect_aabb(o, cross(rays[0], rays[1]), aabb_t(-sub.radius, sub.radius)),
-        plane_intersect_aabb(o, cross(rays[1], rays[2]), aabb_t(-sub.radius, sub.radius)),
-        plane_intersect_aabb(o, cross(rays[2], rays[3]), aabb_t(-sub.radius, sub.radius)),
-        plane_intersect_aabb(o, cross(rays[3], rays[0]), aabb_t(-sub.radius, sub.radius))
+        plane_intersect_aabb(o, normals[0], aabb), plane_intersect_aabb(o, normals[1], aabb),
+        plane_intersect_aabb(o, normals[2], aabb), plane_intersect_aabb(o, normals[3], aabb)
     );
 
     return (c_hit || any(rays_hit)) && sub.id != ~0;
@@ -444,16 +456,21 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 
     mat4x3 rays = mat4x3(
         get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
-        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy),
         get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
-        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy)
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy)
+    );
+
+    mat4x3 normals = mat4x3(
+        cross(rays[1], rays[0]), cross(rays[2], rays[1]),
+        cross(rays[3], rays[2]), cross(rays[0], rays[3])
     );
 
     // load shit
-    bool directly_visible = is_substance_visible(s, rays);
+    bool directly_visible = is_substance_visible(s, normals);
     light_t l = lights_global.data[i];
     vec2 f = frustum.data[j].xy;
-    bool light_visible = is_light_visible(l, f.x, f.y) && i < number_of_lights();
+    bool light_visible = is_light_visible(l, f.x, f.y, normals) && i < number_of_lights();
     bool shadow_visible = is_shadow_visible(s, f.x, f.y);
 
     // load octree from global memory into shared memory
