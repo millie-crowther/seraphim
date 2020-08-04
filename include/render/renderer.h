@@ -31,9 +31,14 @@ private:
         float phi_initial;           
         float focal_depth;
         uint32_t number_of_calls;
-        float _1;
+        uint32_t _1;
 
         f32mat4_t eye_transform;
+
+        uint32_t texture_size;
+        uint32_t texture_depth;
+        uint32_t patch_pool_size;
+        float _3;
     };
 
     // constants

@@ -87,12 +87,17 @@ layout( push_constant ) uniform push_constants {
     float phi_initial;        
     float focal_depth;
     uint number_of_calls;
-    float _1;
+    uint _1;
 
     mat4 eye_transform;
+
+    uint texture_size;
+    uint texture_depth;
+    uint patch_pool_size;
+    float _3;
 } pc;
 
-layout (binding = 1) buffer octree_buffer    { uint        data[]; } octree_global;
+layout (binding = 1) buffer patch_buffer     { uint        data[]; } patches_global;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
@@ -105,14 +110,12 @@ shared uint substances_size;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_size;
 
-shared uint octree[octree_pool_size];
-
+shared uint patch_pool[octree_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 int patch_pool_size(){
     return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 }
-
 int number_of_lights(){
     return int(min(gl_WorkGroupSize.x * gl_WorkGroupSize.y, gl_NumWorkGroups.x * gl_NumWorkGroups.y));
 }
@@ -171,7 +174,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uint index = hash % octree_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
-    bool is_valid = (octree[index] & 0xFFFF) == hash >> 16;
+    bool is_valid = (patch_pool[index] & 0xFFFF) == hash >> 16;
 
     // if necessary, request more data from CPU
     intersection.local_x = r.x;
@@ -185,7 +188,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
         request = request_t(cell_position, radius, hash % patch_pool_size(), hash, sub.id, 1);
     }
 
-    uint data = octree[index];
+    uint data = patch_pool[index];
     vec3 alpha = x_scaled - x_grid;
 
     vec4 phi = mix(sign(data & vertex_masks[0]), sign(data & vertex_masks[1]), alpha.z);
@@ -380,12 +383,14 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     uint k = intersection.global_index;
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
+
+    uint ts = pc.texture_size;//1024;
     t += vec3(
-        k % 1024,
-        (k % (1024 * 1024)) / 1024,
-        k / 1024 / 1024
+        k % ts,
+        (k % (ts * ts)) / ts,
+        k / ts / ts
     );
-    t /= vec3(1024, 1024, 1);
+    t /= vec3(ts, ts, pc.texture_depth);
     
     vec3 n = 
         inverse(mat3(intersection.substance.transform)) * 
@@ -482,7 +487,7 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 
     // load octree from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
-    octree[i] = octree_global.data[patch_index];
+    patch_pool[i] = patches_global.data[patch_index];
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -510,7 +515,7 @@ void postrender(uint i, request_t request){
         uint index_local = request.hash % octree_pool_size + work_group_offset();
         pointers.data[index_local] = request.index; 
 
-        if ((octree_global.data[request.index] & 0xFFFF) != request.hash >> 16){
+        if ((patches_global.data[request.index] & 0xFFFF) != request.hash >> 16){
             uint index = request.hash % pc.number_of_calls;
             request.hash = request.hash >> 16;
             requests.data[index] = request;

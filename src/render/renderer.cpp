@@ -20,6 +20,7 @@ renderer_t::renderer_t(
 
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
+    patch_image_size = max_image_size / patch_sample_size;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -32,6 +33,9 @@ renderer_t::renderer_t(
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
     push_constants.number_of_calls = number_of_calls;
+    push_constants.texture_size = patch_image_size;
+    push_constants.texture_depth = std::max<uint32_t>(number_of_patches / patch_image_size / patch_image_size, 1u);
+    push_constants.patch_pool_size = number_of_patches;
 
     set_main_camera(test_camera);
 
@@ -65,12 +69,10 @@ renderer_t::renderer_t(
 
     create_render_pass();
 
-    patch_image_size = max_image_size / patch_sample_size;
-
     u32vec3_t size = u32vec3_t(
-        1024,
-        1024,
-        1u
+        patch_image_size,
+        patch_image_size,
+        push_constants.texture_depth
     ) * patch_sample_size;
 
     normal_texture = std::make_unique<texture_t>(
@@ -682,9 +684,9 @@ renderer_t::handle_requests(uint32_t frame){
             octree_buffer->write_element(response.get_node(), call.get_index());
 
             u32vec3_t p = u32vec3_t(
-                call.get_index() % 1024,
-                (call.get_index() % (1024 * 1024)) / 1024,
-                call.get_index() / 1024 / 1024
+                call.get_index() % patch_image_size,
+                (call.get_index() % (patch_image_size * patch_image_size)) / patch_image_size,
+                call.get_index() / patch_image_size / patch_image_size
             ) * patch_sample_size;
 
             normal_texture->write(p, response.get_normals());
