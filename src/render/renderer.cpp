@@ -12,7 +12,8 @@ renderer_t::renderer_t(
     device_t * device,
     VkSurfaceKHR surface, window_t * window,
     std::shared_ptr<camera_t> test_camera,
-    u32vec2_t work_group_count, u32vec2_t work_group_size
+    u32vec2_t work_group_count, u32vec2_t work_group_size,
+    uint32_t max_image_size
 ){
     this->device = device;
     this->surface = surface;
@@ -64,11 +65,13 @@ renderer_t::renderer_t(
 
     create_render_pass();
 
+    patch_image_size = max_image_size / patch_sample_size;
+
     u32vec3_t size = u32vec3_t(
-        octree_pool_size(), 
-        work_group_count.volume(), 
+        1024,
+        1024,
         1u
-    ) * 2;
+    ) * patch_sample_size;
 
     normal_texture = std::make_unique<texture_t>(
         11, device, size, 
@@ -679,10 +682,10 @@ renderer_t::handle_requests(uint32_t frame){
             octree_buffer->write_element(response.get_node(), call.get_index());
 
             u32vec3_t p = u32vec3_t(
-                call.get_index() % octree_pool_size(),
-                call.get_index() / octree_pool_size(),
-                0u
-            ) * 2;
+                call.get_index() % 1024,
+                (call.get_index() % (1024 * 1024)) / 1024,
+                call.get_index() / 1024 / 1024
+            ) * patch_sample_size;
 
             normal_texture->write(p, response.get_normals());
             colour_texture->write(p, response.get_colours());

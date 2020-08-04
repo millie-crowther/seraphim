@@ -39,10 +39,13 @@ private:
     // constants
     static constexpr uint8_t frames_in_flight = 2;
     static constexpr uint32_t number_of_calls = 2048;
+    static constexpr uint32_t number_of_patches = 1000000;
+    static constexpr uint32_t patch_sample_size = 2;
 
     // fields
     u32vec2_t work_group_count;
     u32vec2_t work_group_size;
+    uint32_t patch_image_size; 
     push_constant_t push_constants;
     device_t * device;
     std::vector<VkFramebuffer> framebuffers;
@@ -131,7 +134,8 @@ public:
         device_t * device,
         VkSurfaceKHR surface, window_t * window,
         std::shared_ptr<camera_t> test_camera,
-        u32vec2_t work_group_count, u32vec2_t work_group_size
+        u32vec2_t work_group_count, u32vec2_t work_group_size,
+        uint32_t max_image_size
     );
     ~renderer_t();
 

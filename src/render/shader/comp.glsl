@@ -333,19 +333,14 @@ vec3 get_ray_direction(uvec2 xy){
 }
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
-    vec3 eye = inverse(pc.eye_transform)[3].xyz;
-    vec3 light = l.x - eye;
-    vec4 phis = transpose(normals) * light;
-
+    vec3 light = l.x - inverse(pc.eye_transform)[3].xyz;
     float r = sqrt(length(l.colour) / epsilon);
 
+    vec4 phis = transpose(normals) * light;
     bool frustum_hit = all(lessThanEqual(phis, vec4(r)));
 
-    vec3 forward = mat3(pc.eye_transform) * vec3(0, 0, 1);
-    float depth = dot(forward, light);
-
+    float depth = dot(pc.eye_transform[2].xyz, light);
     bool depth_hit = depth >= near - r  && depth <= far + r;
-     
 
     return l.id != ~0 && frustum_hit && depth_hit;
 }
@@ -385,8 +380,12 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     uint k = intersection.global_index;
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
-    t.xy += vec2(k % octree_pool_size, k / octree_pool_size);
-    t.xy /= vec2(octree_pool_size, gl_NumWorkGroups.x * gl_NumWorkGroups.y);
+    t += vec3(
+        k % 1024,
+        (k % (1024 * 1024)) / 1024,
+        k / 1024 / 1024
+    );
+    t /= vec3(1024, 1024, 1);
     
     vec3 n = 
         inverse(mat3(intersection.substance.transform)) * 

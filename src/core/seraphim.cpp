@@ -65,7 +65,9 @@ seraphim_t::seraphim_t(){
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
-    std::cout << "\tMaximum image size: " << properties.limits.maxImageDimension3D << std::endl;
+
+    uint32_t max_image_size = properties.limits.maxImageDimension3D;
+    std::cout << "\tMaximum image size: " << max_image_size << std::endl;
 #else   
     device = std::make_unique<device_t>(instance, surface, std::vector<const char *>());
 #endif
@@ -73,7 +75,7 @@ seraphim_t::seraphim_t(){
     test_camera = std::make_shared<camera_t>();
 
     renderer = std::make_unique<renderer_t>(
-        device.get(), surface, window.get(), test_camera, work_group_count, work_group_size
+        device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
 
     physics = std::make_unique<physics_t>();

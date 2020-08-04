@@ -29,7 +29,7 @@ substance_t::get_form() const {
 
 bool 
 substance_t::data_t::comparator_t::operator()(const substance_t::data_t & a, const substance_t::data_t & b) const {
-    return a.near < b.near && a.id != static_cast<uint32_t>(~0);
+    return a.far < b.far && a.id != static_cast<uint32_t>(~0);
 }
 
 substance_t::data_t
