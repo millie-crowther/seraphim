@@ -206,7 +206,13 @@ intersection_t raycast(ray_t r, inout request_t request){
 
     for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
-        for (uint substanceID = 0; !i.hit && substanceID < substances_size; substanceID++){
+
+        uint substanceID = 0;
+
+        // skip over substances you've already passed
+        for (; substanceID < substances_size && i.distance > substances[substanceID].far; substanceID++){}
+
+        for (; !i.hit && substanceID < substances_size; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));
             i.hit = i.hit || p < epsilon;
         }

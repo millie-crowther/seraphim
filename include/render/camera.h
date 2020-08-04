@@ -17,6 +17,7 @@ public:
     void update(double delta, const keyboard_t & keyboard, const mouse_t & mouse);
 
     f32mat4_t get_matrix();
+    vec3_t get_position() const;
 };
 
 #endif

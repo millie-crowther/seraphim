@@ -578,10 +578,12 @@ renderer_t::render(){
     uint32_t i = 0;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            substance_data[i] = sub->get_data();
+            substance_data[i] = sub->get_data(main_camera.lock()->get_position());
         }
         i++;
     }
+
+    std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
     
