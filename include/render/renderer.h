@@ -46,6 +46,7 @@ private:
     static constexpr uint32_t number_of_calls = 2048;
     static constexpr uint32_t number_of_patches = 1000000;
     static constexpr uint32_t patch_sample_size = 2;
+    static constexpr uint32_t max_cache_size = 1000;  
 
     // fields
     u32vec2_t work_group_count;
@@ -96,14 +97,13 @@ private:
     std::unique_ptr<command_pool_t> graphics_command_pool;
 
     // buffers
-    std::unique_ptr<device_buffer_t<uint32_t>> octree_buffer;
+    std::unique_ptr<device_buffer_t<uint32_t>> patch_buffer;
     std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;
     std::unique_ptr<device_buffer_t<light_t>> light_buffer;
     std::unique_ptr<device_buffer_t<uint32_t>> pointer_buffer;
     std::unique_ptr<device_buffer_t<f32vec2_t>> frustum_buffer;
-
-    static constexpr uint32_t max_cache_size = 1000;    
+  
     std::map<call_t, response_t, call_t::comparator_t> response_cache;
     std::list<std::map<call_t, response_t, call_t::comparator_t>::iterator> prev_calls;
 

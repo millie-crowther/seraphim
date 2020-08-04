@@ -112,7 +112,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(normal_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(colour_texture->get_descriptor_write(descriptor_set));
 
-        write_desc_sets.push_back(octree_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(patch_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(substance_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(call_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(light_buffer->get_write_descriptor_set(descriptor_set));
@@ -507,7 +507,7 @@ renderer_t::create_descriptor_set_layout(){
         normal_texture->get_descriptor_layout_binding(),
         colour_texture->get_descriptor_layout_binding(),
 
-        octree_buffer->get_descriptor_set_layout_binding(),
+        patch_buffer->get_descriptor_set_layout_binding(),
         substance_buffer->get_descriptor_set_layout_binding(),
         light_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
@@ -606,7 +606,7 @@ renderer_t::render(){
 
     compute_command_pool->one_time_buffer([&](auto command_buffer){
         substance_buffer->record_write(command_buffer);
-        octree_buffer->record_write(command_buffer);
+        patch_buffer->record_write(command_buffer);
         light_buffer->record_write(command_buffer);
 
         normal_texture->record_write(command_buffer);
@@ -681,7 +681,7 @@ renderer_t::handle_requests(uint32_t frame){
     for (auto & call : calls){
         if (call.is_valid()){
             auto response = get_response(call, substances[call.get_substance_ID()]);
-            octree_buffer->write_element(response.get_node(), call.get_index());
+            patch_buffer->write_element(response.get_node(), call.get_index());
 
             u32vec3_t p = u32vec3_t(
                 call.get_index() % patch_image_size,
@@ -700,7 +700,7 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    octree_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, c * s);
+    patch_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, number_of_lights());
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
@@ -729,7 +729,7 @@ renderer_t::initialise_buffers(){
         response_t::null_node
     );
 
-    octree_buffer->write(initial_octree, 0);
+    patch_buffer->write(initial_octree, 0);
 }
 
 response_t

@@ -58,7 +58,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
-const int octree_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+const int patch_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 32;
@@ -93,7 +93,7 @@ layout( push_constant ) uniform push_constants {
 
     uint texture_size;
     uint texture_depth;
-    uint patch_pool_size;
+    uint global_patch_pool_size;
     float _3;
 } pc;
 
@@ -110,12 +110,9 @@ shared uint substances_size;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_size;
 
-shared uint patch_pool[octree_pool_size];
+shared uint patch_pool[patch_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
-int patch_pool_size(){
-    return int(gl_NumWorkGroups.x * gl_NumWorkGroups.y * gl_WorkGroupSize.x * gl_WorkGroupSize.y);
-}
 int number_of_lights(){
     return int(min(gl_WorkGroupSize.x * gl_WorkGroupSize.y, gl_NumWorkGroups.x * gl_NumWorkGroups.y));
 }
@@ -136,7 +133,7 @@ uint expected_order(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * octree_pool_size;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * patch_pool_size;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -171,7 +168,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
 
     // calculate some useful variables for doing lookups
-    uint index = hash % octree_pool_size;
+    uint index = hash % patch_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
     bool is_valid = (patch_pool[index] & 0xFFFF) == hash >> 16;
@@ -182,10 +179,10 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_position = cell_position;
     intersection.index = index;
     intersection.cell_radius = radius;
-    intersection.global_index = hash % patch_pool_size();
+    intersection.global_index = hash % pc.global_patch_pool_size;
 
     if (inside_aabb && !is_valid) {
-        request = request_t(cell_position, radius, hash % patch_pool_size(), hash, sub.id, 1);
+        request = request_t(cell_position, radius, hash % pc.global_patch_pool_size, hash, sub.id, 1);
     }
 
     uint data = patch_pool[index];
@@ -384,13 +381,12 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
 
-    uint ts = pc.texture_size;//1024;
     t += vec3(
-        k % ts,
-        (k % (ts * ts)) / ts,
-        k / ts / ts
+        k % pc.texture_size,
+        (k % (pc.texture_size * pc.texture_size)) / pc.texture_size,
+        k / pc.texture_size / pc.texture_size
     );
-    t /= vec3(ts, ts, pc.texture_depth);
+    t /= vec3(pc.texture_size, pc.texture_size, pc.texture_depth);
     
     vec3 n = 
         inverse(mat3(intersection.substance.transform)) * 
@@ -485,7 +481,7 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     bool light_visible = is_light_visible(l, f.x, f.y, normals) && i < number_of_lights();
     bool shadow_visible = is_shadow_visible(s, f.x, f.y);
 
-    // load octree from global memory into shared memory
+    // load patches from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
     patch_pool[i] = patches_global.data[patch_index];
    
@@ -512,7 +508,7 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 void postrender(uint i, request_t request){
     // TODO: performance test on putting this inside the lookup function
     if (request.status != 0){
-        uint index_local = request.hash % octree_pool_size + work_group_offset();
+        uint index_local = request.hash % patch_pool_size + work_group_offset();
         pointers.data[index_local] = request.index; 
 
         if ((patches_global.data[request.index] & 0xFFFF) != request.hash >> 16){
