@@ -118,6 +118,7 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(light_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(pointer_buffer->get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(frustum_buffer->get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(lighting_buffer->get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
@@ -512,7 +513,8 @@ renderer_t::create_descriptor_set_layout(){
         light_buffer->get_descriptor_set_layout_binding(),
         call_buffer->get_descriptor_set_layout_binding(),
         pointer_buffer->get_descriptor_set_layout_binding(),
-        frustum_buffer->get_descriptor_set_layout_binding()
+        frustum_buffer->get_descriptor_set_layout_binding(),
+        lighting_buffer->get_descriptor_set_layout_binding()
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -706,6 +708,7 @@ renderer_t::create_buffers(){
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
+    lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }
 
 uint32_t

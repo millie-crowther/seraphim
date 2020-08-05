@@ -103,6 +103,7 @@ layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_glob
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
 layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
 layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
+layout (binding = 7) buffer lighting_buffer  { vec4        data[]; } lighting;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;
@@ -363,6 +364,12 @@ bool is_shadow_visible(substance_t s, float near, float far){
     return s.id != ~0 && near < far;
 }
 
+float light_distance(){
+    float dist = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x);
+    bool is_valid = lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0;
+    return mix(-1, dist, is_valid);
+}
+
 request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
@@ -376,8 +383,15 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     barrier();
 
     // find near / far planes of intersection points
-    vec2 x = vec2(intersection.distance, -intersection.distance);
-    vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyxy, intersection.hit));
+    float l_dist = light_distance();
+    vec3 x = vec3(intersection.distance, -intersection.distance, -l_dist);
+    vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyzz, intersection.hit));
+
+    if (l_dist == -result.z){
+        vec3  lc = (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2;
+        float lr = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x) / 2;
+        lr *= float(l_dist > 0);
+    }
     
     barrier();
     
@@ -469,7 +483,7 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
         plane_intersect_aabb(o, normals[2], aabb), plane_intersect_aabb(o, normals[3], aabb)
     );
 
-    return (c_hit || any(rays_hit)) && sub.id != ~0;
+    return (c_hit || any(rays_hit)) && sub.near < pc.render_distance && sub.id != ~0;
 }
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
