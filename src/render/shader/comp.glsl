@@ -388,9 +388,11 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyzz, intersection.hit));
 
     if (l_dist == -result.z){
-        vec3  lc = (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2;
-        float lr = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x) / 2;
-        lr *= float(l_dist > 0);
+
+        lighting.data[j] = vec4(
+            (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2, 
+            l_dist / 2
+        );
     }
     
     barrier();
