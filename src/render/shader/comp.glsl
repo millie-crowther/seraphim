@@ -61,7 +61,7 @@ const uint node_child_mask = 0xFFFF;
 const int patch_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
-const int max_steps = 32;
+const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
 const ivec3 p = ivec3(
@@ -146,9 +146,6 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     vec3 phis = (faces - r.x) / r.d;
     float phi_aabb = max(phis.x, max(phis.y, phis.z));
 
-    // TODO: feel like you should be able to use length(max(phis, 0)) here 
-    //       instead of max(phis.x, phis.y, phis.z)
-
     // check against outside bounds of aabb
     bool inside_aabb = all(lessThan(abs(r.x), sub.radius));
     phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > 0) + epsilon; 
@@ -162,13 +159,14 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     ivec3 x_grid = ivec3(floor(x_scaled));
 
     // do a shitty hash to all the relevant fields
-    uvec2 os_hash = (ivec2(order, sub.id) * p.x + p.y) % p.z;
-    uvec3 x_hash  = (x_grid * p.y + p.z) % p.x;
+    uvec2 os_hash = ivec2(order, sub.id) * p.xy + p.yz;
+    uvec3 x_hash  = x_grid * p + p.zyx;
 
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
 
     // calculate some useful variables for doing lookups
     uint index = hash % patch_pool_size;
+    uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
     bool is_valid = (patch_pool[index] & 0xFFFF) == hash >> 16;
@@ -179,10 +177,15 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_position = cell_position;
     intersection.index = index;
     intersection.cell_radius = radius;
-    intersection.global_index = hash % pc.global_patch_pool_size;
+    intersection.global_index = global_index;
 
     if (inside_aabb && !is_valid) {
-        request = request_t(cell_position, radius, hash % pc.global_patch_pool_size, hash, sub.id, 1);
+        pointers.data[index + work_group_offset()] = global_index; 
+
+        uint upper_hash = hash >> 16;
+        if ((patches_global.data[global_index] & 0xFFFF) != upper_hash){
+            request = request_t(cell_position, radius, global_index, upper_hash, sub.id, 1);
+        }
     }
 
     uint data = patch_pool[index];
@@ -312,17 +315,28 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
 }
 
 vec4 reduce_min(uint i, vec4 value){
+    barrier();
     workspace[i] = value;
+    barrier();
 
     if ((i &   1) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    barrier();
     if ((i &   3) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    barrier();
     if ((i &   7) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    barrier();
     if ((i &  15) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    barrier();
     if ((i &  31) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    barrier();
     if ((i &  63) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    barrier();
     if ((i & 127) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    barrier();
     if ((i & 255) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    barrier();
     if ((i & 511) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
+    barrier();
     
     return min(workspace[0], workspace[512]);
 }
@@ -506,16 +520,8 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 }
 
 void postrender(uint i, request_t request){
-    // TODO: performance test on putting this inside the lookup function
     if (request.status != 0){
-        uint index_local = request.hash % patch_pool_size + work_group_offset();
-        pointers.data[index_local] = request.index; 
-
-        if ((patches_global.data[request.index] & 0xFFFF) != request.hash >> 16){
-            uint index = request.hash % pc.number_of_calls;
-            request.hash = request.hash >> 16;
-            requests.data[index] = request;
-        }
+        requests.data[request.hash % pc.number_of_calls] = request;
     }
 }
 
