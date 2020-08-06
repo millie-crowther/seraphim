@@ -132,7 +132,6 @@ private:
     response_t get_response(const call_t & call, std::weak_ptr<substance_t> substance);   
 
     uint32_t octree_pool_size() const; 
-    uint32_t number_of_lights() const;
     
 public:
     // constructors and destructors

@@ -704,16 +704,11 @@ renderer_t::create_buffers(){
 
     patch_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
-    light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, number_of_lights());
+    light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
-}
-
-uint32_t
-renderer_t::number_of_lights() const {
-    return std::min(work_group_count.volume(), work_group_size.volume());
 }
 
 uint32_t 
@@ -723,7 +718,7 @@ renderer_t::octree_pool_size() const {
 
 void
 renderer_t::initialise_buffers(){
-    std::vector<light_t> lights(number_of_lights());
+    std::vector<light_t> lights(work_group_size.volume());
     lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
     light_buffer->write(lights, 0);
 

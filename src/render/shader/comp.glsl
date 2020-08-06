@@ -114,14 +114,6 @@ shared uint lights_size;
 shared uint patch_pool[patch_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
-int number_of_lights(){
-    return int(min(gl_WorkGroupSize.x * gl_WorkGroupSize.y, gl_NumWorkGroups.x * gl_NumWorkGroups.y));
-}
-
-int number_of_substances(){
-    return int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
-}
-
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -251,7 +243,7 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
     return float(shadow_i.substance.id == geometry_i.substance.id || shadow_i.substance.id == ~0);
 }
 
-vec4 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
+vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
     const float shininess = 16;
 
     light_t light = lights[light_i];
@@ -273,7 +265,7 @@ vec4 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
     vec3 h = normalize(l + v);
     float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
 
-    return (d + s) * attenuation * shadow * vec4(light.colour, 1);
+    return (d + s) * attenuation * shadow * light.colour;
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
@@ -360,16 +352,6 @@ bool is_light_visible(light_t l, float near, float far, mat4x3 normals){
     return l.id != ~0 && frustum_hit && depth_hit;
 }
 
-bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
-    return s.id != ~0 && near < far;
-}
-
-float light_distance(){
-    float dist = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x);
-    bool is_valid = lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0;
-    return mix(-1, dist, is_valid);
-}
-
 void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
@@ -382,15 +364,19 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     barrier();
 
-    // find near / far planes of intersection points
-    float l_dist = light_distance();
-    vec3 x = vec3(intersection.distance, -intersection.distance, -l_dist);
-    vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyzz, intersection.hit));
+    float dist = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x);
+    bool is_valid = lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0;
+    vec4 result = reduce_min(i, mix(
+        vec4(pc.render_distance), 
+        vec4(intersection.distance, -intersection.distance, -dist, 0), 
+        bvec4(intersection.hit, intersection.hit, is_valid, false)
+    ));
+    barrier();
 
-    if (l_dist == -result.z){
+    if (abs(dist + result.z) < epsilon && is_valid){
         lighting.data[j] = vec4(
             (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2, 
-            l_dist / 2
+            dist / 2
         );
     }
     
@@ -422,16 +408,16 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
         normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient
-    vec4 lighting = vec4(0.25, 0.25, 0.25, 1.0);
+    vec3 lighting = vec3(0.25, 0.25, 0.25);
 
     for (uint light_i = 0; light_i < lights_size; light_i++){
         lighting += light(light_i, intersection, n, request);
     }
 
-    const vec4 sky = vec4(0.5, 0.7, 0.9, 1.0);
-    vec4 hit_colour = vec4(texture(colour_texture, t).xyz, 1.0) * lighting;
-    vec4 image_colour = mix(sky, hit_colour, intersection.hit);
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), image_colour);
+    const vec3 sky = vec3(0.5, 0.7, 0.9);
+    vec3 hit_colour = texture(colour_texture, t).xyz * lighting;
+    vec3 image_colour = mix(sky, hit_colour, intersection.hit);
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != 0){
         requests.data[request.hash % pc.number_of_calls] = request;
@@ -474,7 +460,7 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
 
     // check if centre of substance projects into work group
-    vec2 c = (inverse(pc.eye_transform) * inverse(sub.transform) * vec4(0, 0, 0, 1)).xy;
+    vec2 c = inverse(pc.eye_transform * sub.transform)[3].xy;
     bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
 
     vec3 o = (sub.transform * inverse(pc.eye_transform)[3]).xyz;
@@ -487,6 +473,28 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     );
 
     return (c_hit || any(rays_hit)) && sub.near < pc.render_distance && sub.id != ~0;
+}
+
+bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
+    // vec3 eye = inverse(pc.eye_transform)[3].xyz;
+    // vec3 ed1 = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy);
+    // vec3 ed2 = get_ray_direction(gl_WorkGroupSize.xy * (gl_WorkGroupID.xy + 1));
+    // vec3 a = eye + ed1 * near;
+    // vec3 b = eye + ed2 * far;
+    // vec3 ec = (a + b) / 2;
+    // float er = length(a - b) / 2;
+
+    // vec3 sc = inverse(s.transform)[3].xyz;
+    // float sr = length(s.radius);
+
+    // vec3 d = normalize(lc - ec);
+    // float alpha = dot(d, sc) / length(lc - ec);
+    // alpha = clamp(alpha, 0, 1);
+
+    // vec3 c = mix(ec, lc, alpha);
+    // float r = mix(er, lr, alpha);
+
+    return s.id != ~0 && near < far && abs(lr) < epsilon; //&& length(sc - c) < r + sr;
 }
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
@@ -510,7 +518,8 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     light_t l = lights_global.data[i];
     vec2 f = frustum.data[j].xy;
     vec4 li = lighting.data[j];
-    bool light_visible = is_light_visible(l, f.x, f.y, normals) && i < number_of_lights();
+    barrier();
+    bool light_visible = is_light_visible(l, f.x, f.y, normals);
     bool shadow_visible = is_shadow_visible(s, f.x, f.y, li.xyz, li.w);
 
     // load patches from global memory into shared memory
