@@ -130,7 +130,7 @@ vec2 uv(vec2 xy){
 }
 
 uint expected_order(vec3 x){
-    return 13;
+    return 10;
 }
 
 uint work_group_offset(){
@@ -360,7 +360,7 @@ bool is_light_visible(light_t l, float near, float far, mat4x3 normals){
     return l.id != ~0 && frustum_hit && depth_hit;
 }
 
-bool is_shadow_visible(substance_t s, float near, float far){
+bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
     return s.id != ~0 && near < far;
 }
 
@@ -370,7 +370,7 @@ float light_distance(){
     return mix(-1, dist, is_valid);
 }
 
-request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
+void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
 
@@ -388,7 +388,6 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     vec4 result = reduce_min(i, mix(vec4(pc.render_distance), x.xyzz, intersection.hit));
 
     if (l_dist == -result.z){
-
         lighting.data[j] = vec4(
             (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2, 
             l_dist / 2
@@ -434,7 +433,9 @@ request_t render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_s
     vec4 image_colour = mix(sky, hit_colour, intersection.hit);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), image_colour);
 
-    return request;
+    if (request.status != 0){
+        requests.data[request.hash % pc.number_of_calls] = request;
+    }
 }
 
 bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
@@ -508,8 +509,9 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     bool directly_visible = is_substance_visible(s, normals);
     light_t l = lights_global.data[i];
     vec2 f = frustum.data[j].xy;
+    vec4 li = lighting.data[j];
     bool light_visible = is_light_visible(l, f.x, f.y, normals) && i < number_of_lights();
-    bool shadow_visible = is_shadow_visible(s, f.x, f.y);
+    bool shadow_visible = is_shadow_visible(s, f.x, f.y, li.xyz, li.w);
 
     // load patches from global memory into shared memory
     uint patch_index = pointers.data[i + work_group_offset()];
@@ -535,12 +537,6 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 }
 
-void postrender(uint i, request_t request){
-    if (request.status != 0){
-        requests.data[request.hash % pc.number_of_calls] = request;
-    }
-}
-
 void main(){
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
@@ -550,8 +546,6 @@ void main(){
     prerender(i, j, s, shadow_index, shadow_size);
 
     barrier();
-    request_t request = render(i, j, s, shadow_index, shadow_size);
+    render(i, j, s, shadow_index, shadow_size);
     barrier();
-
-    postrender(i, request);
 }
