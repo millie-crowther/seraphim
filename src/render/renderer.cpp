@@ -43,9 +43,10 @@ renderer_t::renderer_t(
     vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
 
     floor_substance = std::make_shared<substance_t>( 
-        std::make_shared<form_t>(0, std::make_shared<primitive::cuboid_t<3>>(vec3_t(5.0, 0.2, 5.0))),
+        std::make_shared<form_t>(0, std::make_shared<primitive::cuboid_t<3>>(vec3_t(100.0, 0.5, 100.0))),
         std::make_shared<matter_t>(vec3_t(0.4, 0.3, 0.6))
     );
+    floor_substance->set_position(vec3_t(0.0, -0.5, 0.0));
 
     sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(8, std::make_shared<primitive::sphere_t<3>>(0.5)),

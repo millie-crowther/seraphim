@@ -64,10 +64,22 @@ const float sqrt3 = 1.73205080757;
 const int max_steps = 64;
 const float epsilon = 1.0 / 256.0;
 
-const ivec3 p = ivec3(
-    393241,
-    1572869,
-    98317
+const ivec3 p1 = ivec3(
+    3145739,
+    12582917,
+    6291469
+);
+
+const ivec3 p2 = ivec3(
+    25165843,
+    50331653,
+    100663319
+);
+
+const ivec3 p3 = ivec3(
+    904573,
+    904577,
+    904601
 );
 
 const uvec4 vertex_masks[2] = {
@@ -122,7 +134,8 @@ vec2 uv(vec2 xy){
 }
 
 uint expected_order(vec3 x){
-    return 10;
+    vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
+    return 9 + uint(dot(dx, dx)) / 5;
 }
 
 uint work_group_offset(){
@@ -152,10 +165,10 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     ivec3 x_grid = ivec3(floor(x_scaled));
 
     // do a shitty hash to all the relevant fields
-    uvec2 os_hash = ivec2(order, sub.id) * p.xy + p.yz;
-    uvec3 x_hash  = x_grid * p + p.zyx;
+    uvec2 os_hash = ivec2(order, sub.id) * p3.xy + p2.yz;
+    uvec3 x_hash  = x_grid * p1 + p3;
 
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ (x_hash.y * p.x)  ^ (x_hash.z * p.y);
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
     // calculate some useful variables for doing lookups
     uint index = hash % patch_pool_size;
@@ -188,7 +201,8 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    phi.x = 2 * radius * mix(1, phi.x - 0.5, is_valid);
+    // phi.x = 2 * radius * mix(1, phi.x - 0.5, is_valid);
+    phi.x = 2 * radius * (phi.x - 0.5) * float(is_valid);
 
     return mix(phi_aabb, phi.x, inside_aabb);
 }
