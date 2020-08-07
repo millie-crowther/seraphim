@@ -240,7 +240,14 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
         shadow_i.distance += p;
     }
 
-    return float(shadow_i.substance.id == geometry_i.substance.id || shadow_i.substance.id == ~0);
+    float dist = length(geometry_i.x - l);
+
+    bool is_clear = 
+        shadow_i.substance.id == geometry_i.substance.id || 
+        shadow_i.substance.id == ~0 ||
+        shadow_i.distance > dist;
+
+    return float(is_clear);
 }
 
 vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
@@ -365,7 +372,9 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     barrier();
 
     float dist = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x);
-    bool is_valid = lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0;
+    bool is_valid = 
+        lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0 &&
+        max(gl_LocalInvocationID.x, gl_LocalInvocationID.y) < lights_size;
     vec4 result = reduce_min(i, mix(
         vec4(pc.render_distance), 
         vec4(intersection.distance, -intersection.distance, -dist, 0), 
@@ -373,7 +382,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     ));
     barrier();
 
-    if (abs(dist + result.z) < epsilon && is_valid){
+    if (dist == -result.z && is_valid){
         lighting.data[j] = vec4(
             (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2, 
             dist / 2
@@ -476,31 +485,26 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
 }
 
 bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
-    // vec3 eye = inverse(pc.eye_transform)[3].xyz;
-    // vec3 ed1 = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy);
-    // vec3 ed2 = get_ray_direction(gl_WorkGroupSize.xy * (gl_WorkGroupID.xy + 1));
-    // vec3 a = eye + ed1 * near;
-    // vec3 b = eye + ed2 * far;
-    // vec3 ec = (a + b) / 2;
-    // float er = length(a - b) / 2;
+    vec3 eye = inverse(pc.eye_transform)[3].xyz;
+    vec3 ed = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
+    vec3 ec = ed * (near + far) / 2;
+    float er = length(ed * far - ec);
+    ec += eye;
 
-    // vec3 sc = inverse(s.transform)[3].xyz;
-    // float sr = length(s.radius);
+    vec3 sc = inverse(s.transform)[3].xyz;
+    float sr = length(s.radius);
 
-    // vec3 d = normalize(lc - ec);
-    // float alpha = dot(d, sc) / length(lc - ec);
-    // alpha = clamp(alpha, 0, 1);
+    vec3 d = normalize(lc - ec);
+    float alpha = dot(d, sc - ec) / length(lc - ec);
+    alpha = clamp(alpha, 0, 1);
 
-    // vec3 c = mix(ec, lc, alpha);
-    // float r = mix(er, lr, alpha);
+    vec3 c = mix(ec, lc, alpha);
+    float r = mix(er, lr, alpha);
 
-    return s.id != ~0 && near < far && abs(lr) < epsilon; //&& length(sc - c) < r + sr;
+    return s.id != ~0 && near < far && length(sc - c) < r + sr;
 }
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
-    // clear things
-    lights[gl_LocalInvocationID.x].index = ~0;
-
     mat4x3 rays = mat4x3(
         get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
         get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
