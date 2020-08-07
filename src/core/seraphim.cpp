@@ -24,7 +24,7 @@ seraphim_t::seraphim_t(){
     std::cout << "Running in release mode." << std::endl;
 #endif
 
-    work_group_count = u32vec2_t(10u, 10u);
+    work_group_count = u32vec2_t(48u, 20u);
     work_group_size = u32vec2_t(32u);
 
     if (!glfwInit()){
