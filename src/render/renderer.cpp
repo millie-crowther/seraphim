@@ -101,7 +101,7 @@ renderer_t::renderer_t(
     create_sync();
 
     render_texture = std::make_unique<texture_t>(
-        10, device, u32vec3_t(work_group_count[0] * work_group_size[1], work_group_count[0] * work_group_size[1], 1u), 
+        10, device, u32vec3_t(work_group_count[0] * work_group_size[0], work_group_count[1] * work_group_size[1], 1u), 
         VK_IMAGE_USAGE_STORAGE_BIT,
         VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
     );

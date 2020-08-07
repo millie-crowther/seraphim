@@ -11,13 +11,11 @@
 #include <memory>
 #include "render/renderer.h"
 
-#include "logic/scheduler.h"
-
-#if SERAPHIM_DEBUG
 const std::vector<const char *> validation_layers = {
-    "VK_LAYER_LUNARG_standard_validation"
-};
+#if SERAPHIM_DEBUG
+   // "VK_LAYER_KHRONOS_validation"
 #endif
+};
 
 seraphim_t::seraphim_t(){
 #if SERAPHIM_DEBUG
@@ -26,7 +24,7 @@ seraphim_t::seraphim_t(){
     std::cout << "Running in release mode." << std::endl;
 #endif
 
-    work_group_count = u32vec2_t(48u, 20u);
+    work_group_count = u32vec2_t(10u, 10u);
     work_group_size = u32vec2_t(32u);
 
     if (!glfwInit()){
@@ -34,8 +32,6 @@ seraphim_t::seraphim_t(){
     }
 
     window = std::make_unique<window_t>(work_group_count.hadamard(work_group_size));
-
-    create_instance();
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
@@ -47,6 +43,8 @@ seraphim_t::seraphim_t(){
 	    std::cout << "\t" << extension.extensionName << std::endl;
     }
 
+    create_instance();
+
 #if SERAPHIM_DEBUG
     if (!setup_debug_callback()){
         throw std::runtime_error("Error: Failed to setup debug callback.");
@@ -57,19 +55,18 @@ seraphim_t::seraphim_t(){
 	    throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-#if SERAPHIM_DEBUG
     device = std::make_unique<device_t>(instance, surface, validation_layers);
 
+#if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
+    std::cout << "\tMaximum 2d image size: " << properties.limits.maxImageDimension2D << std::endl;
 
     uint32_t max_image_size = properties.limits.maxImageDimension3D;
-    std::cout << "\tMaximum image size: " << max_image_size << std::endl;
-#else   
-    device = std::make_unique<device_t>(instance, surface, std::vector<const char *>());
+    std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
 #endif
 
     test_camera = std::make_shared<camera_t>();

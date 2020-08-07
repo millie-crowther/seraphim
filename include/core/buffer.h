@@ -59,7 +59,9 @@ public:
             throw std::runtime_error("Error: Failed to allocate buffer memory.");
         } 
 
-        vkBindBufferMemory(device->get_device(), buffer, memory, 0); 
+        if (vkBindBufferMemory(device->get_device(), buffer, memory, 0) != VK_SUCCESS){
+            throw std::runtime_error("Error: Failed to bind buffer memory.");
+        } 
 
         desc_buffer_info = {};
         desc_buffer_info.buffer = buffer;
@@ -93,8 +95,6 @@ public:
     template<class Ts>
     void write(const Ts & source, uint64_t offset){
         if (sizeof(T) * (offset + source.size()) > size + 1){
-            std::cout << "offset: " << offset << ", size: " << (size / sizeof(T)) << std::endl;
-
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 

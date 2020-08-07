@@ -426,7 +426,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     const vec3 sky = vec3(0.5, 0.7, 0.9);
     vec3 hit_colour = texture(colour_texture, t).xyz * lighting;
     vec3 image_colour = mix(sky, hit_colour, intersection.hit);
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
+    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(0, 0, 1, 1));//image_colour, 1));
 
     if (request.status != 0){
         requests.data[request.hash % pc.number_of_calls] = request;

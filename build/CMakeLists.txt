@@ -50,8 +50,6 @@ set(SOURCES
     ../src/ui/resources.cpp
     ../src/ui/window.cpp
     ../src/ui/mouse.cpp
-
-    ../src/logic/scheduler.cpp
 )
 
 add_executable(seraphim ${SOURCES})
