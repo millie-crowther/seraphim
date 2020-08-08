@@ -52,3 +52,14 @@ vec4 fakesort(uint i, vec4 x){
 
     return workspace[i];
 }
+
+vec2 project(vec3 x, mat4 transform){
+    x = (inverse(transform) * vec4(x, 1)).xyz;
+    x -= pc.camera_position;
+    float d = dot(x, cross(pc.eye_right, pc.eye_up));
+    d = max(epsilon, d);
+    vec2 t = vec2(dot(x, pc.eye_right), dot(x, pc.eye_up)) / d * pc.focal_depth;
+    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
+
+    return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
+}

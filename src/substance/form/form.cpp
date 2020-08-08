@@ -1,7 +1,6 @@
 #include "substance/form/form.h"
 
-form_t::form_t(uint32_t root, std::shared_ptr<sdf3_t> sdf){
-    this->root = root;
+form_t::form_t(std::shared_ptr<sdf3_t> sdf){
     this->sdf = sdf;
 }
 
@@ -58,9 +57,4 @@ form_t::get_aabb(){
 std::shared_ptr<sdf3_t>
 form_t::get_sdf() const {
     return sdf;
-}
-
-uint32_t
-form_t::get_root() const {
-    return root;
 }

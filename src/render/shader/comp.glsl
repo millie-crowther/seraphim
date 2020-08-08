@@ -61,7 +61,7 @@ const uint node_child_mask = 0xFFFF;
 const int patch_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
-const int max_steps = 64;
+const int max_steps = 128;
 const float epsilon = 1.0 / 256.0;
 
 const ivec3 p1 = ivec3(
@@ -126,6 +126,8 @@ shared uint lights_size;
 shared uint patch_pool[patch_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
+shared bool test;
+
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -135,7 +137,7 @@ vec2 uv(vec2 xy){
 
 uint expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 9 + uint(dot(dx, dx)) / 5;
+    return 10;//9 + uint(dot(dx, dx)) / 5;
 }
 
 uint work_group_offset(){
@@ -201,7 +203,6 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    // phi.x = 2 * radius * mix(1, phi.x - 0.5, is_valid);
     phi.x = 2 * radius * (phi.x - 0.5) * float(is_valid);
 
     return mix(phi_aabb, phi.x, inside_aabb);
@@ -355,7 +356,7 @@ vec4 reduce_min(uint i, vec4 value){
     return min(workspace[0], workspace[512]);
 }
 
-vec3 get_ray_direction(uvec2 xy){
+vec3 get_ray_direction(vec2 xy){
     vec2 uv = uv(xy);
     return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
 }
@@ -389,6 +390,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     bool is_valid = 
         lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0 &&
         max(gl_LocalInvocationID.x, gl_LocalInvocationID.y) < lights_size;
+        
     vec4 result = reduce_min(i, mix(
         vec4(pc.render_distance), 
         vec4(intersection.distance, -intersection.distance, -dist, 0), 
@@ -439,7 +441,9 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     const vec3 sky = vec3(0.5, 0.7, 0.9);
     vec3 hit_colour = texture(colour_texture, t).xyz * lighting;
+
     vec3 image_colour = mix(sky, hit_colour, intersection.hit);
+    image_colour = mix(image_colour, vec3(0, 1, 0), test);
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != 0){
@@ -447,55 +451,36 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
 }
 
-bool plane_intersect_aabb(vec3 x, vec3 n, aabb_t aabb){
-    // TODO: check if this still handles intersections that are behind the camera!
-    // TODO: improve this
-
-    bvec3 is_not_null = greaterThanEqual(abs(n), vec3(epsilon));
- 
-    vec2 ax = n.x * vec2(aabb.lower.x, aabb.upper.x);
-    vec2 by = n.y * vec2(aabb.lower.y, aabb.upper.y);
-    vec2 cz = n.z * vec2(aabb.lower.z, aabb.upper.z);
-
-    // ax + by + cz = d
-    float d = dot(x, n);
-    vec4 xs = (d - by.xxyy - cz.xyxy) / n.x;
-    vec4 ys = (d - ax.xxyy - cz.xyxy) / n.y;
-    vec4 zs = (d - ax.xxyy - by.xyxy) / n.z;
-
-    bvec3 lt = bvec3(
-        all(lessThan(xs, aabb.lower.xxxx)),
-        all(lessThan(ys, aabb.lower.yyyy)),
-        all(lessThan(zs, aabb.lower.zzzz))
-    );
-
-    bvec3 gt = bvec3(
-        all(greaterThan(xs, aabb.upper.xxxx)),
-        all(greaterThan(ys, aabb.upper.yyyy)),
-        all(greaterThan(zs, aabb.upper.zzzz))
-    );
-
-    return any(is_not_null && !(lt || gt));
-}
-
 bool is_substance_visible(substance_t sub, mat4x3 normals_global){
-    vec2 lower = gl_WorkGroupID.xy * gl_WorkGroupSize.xy;
-    vec2 upper = (gl_WorkGroupID.xy + 1) * gl_WorkGroupSize.xy;
-
-    // check if centre of substance projects into work group
-    vec2 c = inverse(pc.eye_transform * sub.transform)[3].xy;
-    bool c_hit = all(greaterThanEqual(c, lower) && lessThan(c, upper));
-
-    vec3 o = (sub.transform * inverse(pc.eye_transform)[3]).xyz;
-
     mat4x3 normals = mat3(sub.transform) * normals_global;
-    aabb_t aabb = aabb_t(-sub.radius, sub.radius);
-    bvec4 rays_hit = bvec4(
-        plane_intersect_aabb(o, normals[0], aabb), plane_intersect_aabb(o, normals[1], aabb),
-        plane_intersect_aabb(o, normals[2], aabb), plane_intersect_aabb(o, normals[3], aabb)
+    vec3 eye = (sub.transform * inverse(pc.eye_transform))[3].xyz;
+    vec4 ds = transpose(normals) * eye;
+
+    mat4x3 xs = mat4x3(
+        sign(normals[0]) * sub.radius,
+        sign(normals[1]) * sub.radius,
+        sign(normals[2]) * sub.radius,
+        sign(normals[3]) * sub.radius
     );
 
-    return (c_hit || any(rays_hit)) && sub.near < pc.render_distance && sub.id != ~0;
+    vec4 phis = vec4(
+        dot(normals[0], xs[0]),
+        dot(normals[1], xs[1]),
+        dot(normals[2], xs[2]),
+        dot(normals[3], xs[3])
+    );
+
+    vec3 sc = inverse(sub.transform)[3].xyz;
+    vec4 depth = (pc.eye_transform) * vec4(sc, 1);
+    bool is_behind = false;//depth.z < -length(sub.radius);
+
+    bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && !is_behind;
+
+    if (sub.id == 2 && is_visible){
+        // test = true;
+    }
+
+    return is_visible;
 }
 
 bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
@@ -564,7 +549,24 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 }
 
+vec2 project(vec3 x, mat4 transform){
+    vec3 camera_position = inverse(pc.eye_transform)[3].xyz;
+    vec3 eye_up = vec3(0, 1, 0);
+    vec3 eye_right = mat3(pc.eye_transform) * vec3(1, 0, 0);
+
+
+    x = (inverse(transform) * vec4(x, 1)).xyz;
+    x -= camera_position;
+    float d = dot(x, cross(eye_right, eye_up));
+    d = max(epsilon, d);
+    vec2 t = vec2(dot(x, eye_right), dot(x, eye_up)) / d * pc.focal_depth;
+    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
+
+    return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
+}
+
 void main(){
+    test = false;
     uint i = gl_LocalInvocationID.x + gl_LocalInvocationID.y * gl_WorkGroupSize.x;
     uint j = gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x;
     
@@ -574,5 +576,4 @@ void main(){
 
     barrier();
     render(i, j, s, shadow_index, shadow_size);
-    barrier();
 }
