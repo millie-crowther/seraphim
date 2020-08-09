@@ -470,14 +470,16 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
         dot(normals[3], xs[3])
     );
 
-    vec3 sc = inverse(sub.transform)[3].xyz;
-    vec4 depth = (pc.eye_transform) * vec4(sc, 1);
-    bool is_behind = false;//depth.z < -length(sub.radius);
+    vec3 f = (sub.transform * pc.eye_transform)[2].xyz;
+    // vec3 f = mat3(sub.transform) * get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
+    vec3 v = sign(f) * sub.radius - eye;
 
-    bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && !is_behind;
+    bool is_behind = dot(f, v) < 0;
 
-    if (sub.id == 2 && is_visible){
-        // test = true;
+    bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && sub.near < pc.render_distance && !is_behind;
+
+    if (sub.id == 1 && is_visible){
+        test = true;
     }
 
     return is_visible;
@@ -547,22 +549,6 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 
     shadow_index = indices.z;
     shadow_size = totals.z;
-}
-
-vec2 project(vec3 x, mat4 transform){
-    vec3 camera_position = inverse(pc.eye_transform)[3].xyz;
-    vec3 eye_up = vec3(0, 1, 0);
-    vec3 eye_right = mat3(pc.eye_transform) * vec3(1, 0, 0);
-
-
-    x = (inverse(transform) * vec4(x, 1)).xyz;
-    x -= camera_position;
-    float d = dot(x, cross(eye_right, eye_up));
-    d = max(epsilon, d);
-    vec2 t = vec2(dot(x, eye_right), dot(x, eye_up)) / d * pc.focal_depth;
-    t.y *= -float(gl_NumWorkGroups.x) / gl_NumWorkGroups.y;
-
-    return (t + 1) * gl_NumWorkGroups.xy * gl_WorkGroupSize.xy / 2;
 }
 
 void main(){
