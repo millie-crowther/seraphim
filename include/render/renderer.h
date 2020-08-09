@@ -44,7 +44,7 @@ private:
     // constants
     static constexpr uint8_t frames_in_flight = 2;
     static constexpr uint32_t number_of_calls = 2048;
-    static constexpr uint32_t number_of_patches = 1000000;
+    static constexpr uint32_t number_of_patches = 2000000;
     static constexpr uint32_t patch_sample_size = 2;
     static constexpr uint32_t max_cache_size = 1000;  
 

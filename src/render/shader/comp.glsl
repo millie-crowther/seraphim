@@ -479,7 +479,7 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && sub.near < pc.render_distance && !is_behind;
 
     if (sub.id == 1 && is_visible){
-        test = true;
+        // test = true;
     }
 
     return is_visible;

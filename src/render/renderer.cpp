@@ -34,7 +34,7 @@ renderer_t::renderer_t(
     push_constants.focal_depth = 1.0;
     push_constants.number_of_calls = number_of_calls;
     push_constants.texture_size = patch_image_size;
-    push_constants.texture_depth = std::max<uint32_t>(number_of_patches / patch_image_size / patch_image_size, 1u);
+    push_constants.texture_depth = number_of_patches / patch_image_size / patch_image_size + 1;
     push_constants.patch_pool_size = number_of_patches;
 
     set_main_camera(test_camera);
