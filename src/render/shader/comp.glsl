@@ -123,7 +123,6 @@ shared uint substances_size;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_size;
 
-shared uint patch_pool[patch_pool_size];
 shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
 
 shared bool test;
@@ -135,9 +134,14 @@ vec2 uv(vec2 xy){
     return uv;
 }
 
+vec3 get_ray_direction(vec2 xy){
+    vec2 uv = uv(xy);
+    return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
+}
+
 uint expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 10;//9 + uint(dot(dx, dx)) / 5;
+    return 6 + max(uint(log(dot(dx, dx))), 0);
 }
 
 uint work_group_offset(){
@@ -168,7 +172,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = ivec2(order, sub.id) * p3.xy + p2.yz;
-    uvec3 x_hash  = x_grid * p1 + p3;
+    uvec3 x_hash  = x_grid * p1 + p2.x;
 
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
@@ -177,7 +181,8 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
-    bool is_valid = (patch_pool[index] & 0xFFFF) == hash >> 16;
+    uint data = floatBitsToUint(workspace[index].x);
+    bool is_valid = (data & 0xFFFF) == hash >> 16;
 
     intersection.local_x = r.x;
     intersection.substance = sub;
@@ -186,13 +191,11 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_radius = radius;
     intersection.global_index = global_index;
 
-    uint data = patch_pool[index];
     if (inside_aabb && !is_valid) {
-        pointers.data[index + work_group_offset()] = global_index; 
-
         uint upper_hash = hash >> 16;
         uint global_data = patches_global.data[global_index];
         if ((global_data & 0xFFFF) == upper_hash){
+            pointers.data[index + work_group_offset()] = global_index; 
             data = global_data;
             is_valid = true;
         } else {
@@ -218,13 +221,16 @@ intersection_t raycast(ray_t r, inout request_t request){
     i.hit = false;
     i.distance = 0;
 
+    uint min_substanceID = 0;
+
     for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
 
-        uint substanceID = 0;
+        if (i.distance > substances[min_substanceID].far){
+            min_substanceID++;
+        }
 
-        // skip over substances you've already passed
-        for (; substanceID < substances_size && i.distance > substances[substanceID].far; substanceID++){}
+        uint substanceID = min_substanceID;
 
         for (; !i.hit && substanceID < substances_size; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));
@@ -359,24 +365,6 @@ vec4 reduce_min(uint i, vec4 value){
     return min(workspace[0], workspace[512]);
 }
 
-vec3 get_ray_direction(vec2 xy){
-    vec2 uv = uv(xy);
-    return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
-}
-
-bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
-    vec3 light = l.x - inverse(pc.eye_transform)[3].xyz;
-    float r = sqrt(length(l.colour) / epsilon);
-
-    vec4 phis = transpose(normals) * light;
-    bool frustum_hit = all(lessThanEqual(phis, vec4(r)));
-
-    float depth = dot(pc.eye_transform[2].xyz, light);
-    bool depth_hit = depth >= near - r  && depth <= far + r;
-
-    return l.id != ~0 && frustum_hit && depth_hit;
-}
-
 void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
@@ -446,7 +434,10 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     vec3 hit_colour = texture(colour_texture, t).xyz * lighting;
 
     vec3 image_colour = mix(sky, hit_colour, intersection.hit);
-    image_colour = mix(image_colour, vec3(0, 1, 0), test);
+
+    // debug line:
+    // image_colour = mix(image_colour, vec3(0, 1, 0), test);
+
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != 0){
@@ -454,36 +445,34 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
 }
 
+bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
+    vec3 light = l.x - inverse(pc.eye_transform)[3].xyz;
+    float r = sqrt(length(l.colour) / epsilon);
+
+    vec4 phis = transpose(normals) * light;
+    bool frustum_hit = all(lessThanEqual(phis, vec4(r)));
+
+    float depth = dot(pc.eye_transform[2].xyz, light);
+    bool depth_hit = depth >= near - r  && depth <= far + r;
+
+    return l.id != ~0 && frustum_hit && depth_hit;
+}
+
 bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     mat4x3 normals = mat3(sub.transform) * normals_global;
     vec3 eye = (sub.transform * inverse(pc.eye_transform))[3].xyz;
     vec4 ds = transpose(normals) * eye;
 
-    mat4x3 xs = mat4x3(
-        sign(normals[0]) * sub.radius,
-        sign(normals[1]) * sub.radius,
-        sign(normals[2]) * sub.radius,
-        sign(normals[3]) * sub.radius
-    );
-
     vec4 phis = vec4(
-        dot(normals[0], xs[0]),
-        dot(normals[1], xs[1]),
-        dot(normals[2], xs[2]),
-        dot(normals[3], xs[3])
+        dot(abs(normals[0]), vec3(sub.radius)),
+        dot(abs(normals[1]), vec3(sub.radius)),
+        dot(abs(normals[2]), vec3(sub.radius)),
+        dot(abs(normals[3]), vec3(sub.radius))
     );
 
-    vec3 f = (sub.transform * pc.eye_transform)[2].xyz;
-    // vec3 f = mat3(sub.transform) * get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
-    vec3 v = sign(f) * sub.radius - eye;
-
-    bool is_behind = dot(f, v) < 0;
-
+    vec3 f = mat3(sub.transform) * get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
+    bool is_behind  = all(greaterThan(sub.radius + eye * sign(f), vec3(0)));
     bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && sub.near < pc.render_distance && !is_behind;
-
-    if (sub.id == 1 && is_visible){
-        // test = true;
-    }
 
     return is_visible;
 }
@@ -530,9 +519,6 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     bool light_visible = is_light_visible(l, f.x, f.y, normals);
     bool shadow_visible = is_shadow_visible(s, f.x, f.y, li.xyz, li.w);
 
-    // load patches from global memory into shared memory
-    uint patch_index = pointers.data[i + work_group_offset()];
-    patch_pool[i] = patches_global.data[patch_index];
    
     // visibility check on substances and load into shared memory
     barrier();
@@ -552,6 +538,10 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 
     shadow_index = indices.z;
     shadow_size = totals.z;
+
+    // load patches from global memory into shared memory
+    uint patch_index = pointers.data[i + work_group_offset()];
+    workspace[i].x = uintBitsToFloat(patches_global.data[patch_index]);
 }
 
 void main(){
