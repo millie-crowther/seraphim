@@ -179,7 +179,6 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     vec3 cell_position = x_grid * radius * 2;
     bool is_valid = (patch_pool[index] & 0xFFFF) == hash >> 16;
 
-    // if necessary, request more data from CPU
     intersection.local_x = r.x;
     intersection.substance = sub;
     intersection.cell_position = cell_position;
@@ -187,16 +186,20 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_radius = radius;
     intersection.global_index = global_index;
 
+    uint data = patch_pool[index];
     if (inside_aabb && !is_valid) {
         pointers.data[index + work_group_offset()] = global_index; 
 
         uint upper_hash = hash >> 16;
-        if ((patches_global.data[global_index] & 0xFFFF) != upper_hash){
+        uint global_data = patches_global.data[global_index];
+        if ((global_data & 0xFFFF) == upper_hash){
+            data = global_data;
+            is_valid = true;
+        } else {
             request = request_t(cell_position, radius, global_index, upper_hash, sub.id, 1);
         }
     }
 
-    uint data = patch_pool[index];
     vec3 alpha = x_scaled - x_grid;
 
     vec4 phi = mix(sign(data & vertex_masks[0]), sign(data & vertex_masks[1]), alpha.z);
