@@ -37,7 +37,7 @@ substance_t::get_data(const vec3_t & eye_position){
     vec3_t r = form->get_aabb()->get_size();
     vec3_t eye = transform.to_local_space(eye_position);
 
-    float near = (eye.abs() - r).max(vec3_t(0.0, 0.0, 0.0)).norm();
+    float near = (eye.abs() - r).max(vec3_t()).norm();
     float far  = (eye.abs() + r).norm();
 
     return data_t(

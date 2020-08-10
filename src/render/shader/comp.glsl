@@ -47,10 +47,6 @@ struct light_t {
     uint index;
 };
 
-struct aabb_t {
-    vec3 lower;
-    vec3 upper;
-};
 
 layout (local_size_x = 32, local_size_y = 32) in;
 
@@ -64,7 +60,7 @@ const int max_steps = 128;
 const float epsilon = 1.0 / 256.0;
 
 const ivec3 p1 = ivec3(
-    3145739,
+    904601,
     12582917,
     6291469
 );
@@ -72,13 +68,13 @@ const ivec3 p1 = ivec3(
 const ivec3 p2 = ivec3(
     25165843,
     50331653,
-    100663319
+    904573
 );
 
 const ivec3 p3 = ivec3(
-    904573,
+    100663319,
     904577,
-    904601
+    3145739
 );
 
 const uvec4 vertex_masks[2] = {
@@ -191,7 +187,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.global_index = global_index;
 
     if (inside_aabb && !is_valid) {
-        uint upper_hash = hash >> 16;
+        uint upper_hash = (hash >> 16) ^ (hash & 0xFFFF);
         uint global_data = patches_global.data[global_index];
         if ((global_data & 0xFFFF) == upper_hash){
             pointers.data[index_v + work_group_offset()][index_e] = global_index; 
