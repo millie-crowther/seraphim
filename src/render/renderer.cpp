@@ -707,7 +707,7 @@ renderer_t::create_buffers(){
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
-    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
+    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s * 4);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }

@@ -26,7 +26,6 @@ struct intersection_t {
     vec3 local_x;
     vec3 cell_position;
     float cell_radius;
-    uint index;
     uint global_index;
 };
 
@@ -58,7 +57,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 const uint node_empty_flag = 1 << 24;
 const uint node_unused_flag = 1 << 25;
 const uint node_child_mask = 0xFFFF;
-const int patch_pool_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
+const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
@@ -113,7 +112,7 @@ layout (binding = 1) buffer patch_buffer     { uint        data[]; } patches_glo
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
-layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
+layout (binding = 5) buffer pointer_buffer   { uvec4       data[]; } pointers;
 layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
 layout (binding = 7) buffer lighting_buffer  { vec4        data[]; } lighting;
 
@@ -123,7 +122,7 @@ shared uint substances_size;
 shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_size;
 
-shared vec4 workspace[gl_WorkGroupSize.x * gl_WorkGroupSize.y];
+shared vec4 workspace[work_group_size];
 
 shared bool test;
 
@@ -145,7 +144,7 @@ uint expected_order(vec3 x){
 }
 
 uint work_group_offset(){
-    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * patch_pool_size;
+    return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -177,17 +176,17 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
     // calculate some useful variables for doing lookups
-    uint index = hash % patch_pool_size;
+    uint index_v = (hash / 4) % work_group_size;
+    uint index_e = hash % 4;
     uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
-    uint data = floatBitsToUint(workspace[index].x);
+    uint data = floatBitsToUint(workspace[index_v][index_e]);
     bool is_valid = (data & 0xFFFF) == hash >> 16;
 
     intersection.local_x = r.x;
     intersection.substance = sub;
     intersection.cell_position = cell_position;
-    intersection.index = index;
     intersection.cell_radius = radius;
     intersection.global_index = global_index;
 
@@ -195,7 +194,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
         uint upper_hash = hash >> 16;
         uint global_data = patches_global.data[global_index];
         if ((global_data & 0xFFFF) == upper_hash){
-            pointers.data[index + work_group_offset()] = global_index; 
+            pointers.data[index_v + work_group_offset()][index_e] = global_index; 
             data = global_data;
             is_valid = true;
         } else {
@@ -540,8 +539,13 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 
     // load patches from global memory into shared memory
-    uint patch_index = pointers.data[i + work_group_offset()];
-    workspace[i].x = uintBitsToFloat(patches_global.data[patch_index]);
+    uvec4 patch_index = pointers.data[i + work_group_offset()];
+    workspace[i] = uintBitsToFloat(uvec4(
+        patches_global.data[patch_index.x],
+        patches_global.data[patch_index.y],
+        patches_global.data[patch_index.z],
+        patches_global.data[patch_index.w]
+    ));
 }
 
 void main(){
