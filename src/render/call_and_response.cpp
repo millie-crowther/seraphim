@@ -88,7 +88,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
         
-        node = (contains_mask << 16) | call.get_hash(); 
+        node = u32vec2_t(contains_mask << 16, call.get_hash()); 
     }
 }
 
@@ -102,7 +102,7 @@ response_t::get_colours() const {
     return colours;
 }
 
-uint32_t
+u32vec2_t
 response_t::get_node() const {
     return node;
 }

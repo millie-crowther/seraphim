@@ -33,17 +33,15 @@ public:
 
 class response_t {
 public:
-    static constexpr uint32_t null_node = 0xFFFF;
-
     response_t();
     response_t(const call_t & call, std::weak_ptr<substance_t> substance);
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    uint32_t get_node() const;
+    u32vec2_t get_node() const;
 
 private:
-    uint32_t node;
+    u32vec2_t node;
     std::array<uint32_t, 8> normals;
     std::array<uint32_t, 8> colours;
 

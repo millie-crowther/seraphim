@@ -47,7 +47,6 @@ struct light_t {
     uint index;
 };
 
-
 layout (local_size_x = 32, local_size_y = 32) in;
 
 const uint node_empty_flag = 1 << 24;
@@ -104,11 +103,11 @@ layout( push_constant ) uniform push_constants {
     float _3;
 } pc;
 
-layout (binding = 1) buffer patch_buffer     { uint        data[]; } patches_global;
+layout (binding = 1) buffer patch_buffer     { uvec2       data[]; } patches;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
-layout (binding = 5) buffer pointer_buffer   { uvec4       data[]; } pointers;
+layout (binding = 5) buffer pointer_buffer   { uvec2       data[]; } pointers;
 layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
 layout (binding = 7) buffer lighting_buffer  { vec4        data[]; } lighting;
 
@@ -136,7 +135,7 @@ vec3 get_ray_direction(vec2 xy){
 
 uint expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 6 + max(uint(log(dot(dx, dx))), 0);
+    return 6 + max(uint(length(dx)), 0);
 }
 
 uint work_group_offset(){
@@ -167,18 +166,18 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = ivec2(order, sub.id) * p3.xy + p2.yz;
-    uvec3 x_hash  = x_grid * p1 + p2.x;
+    uvec3 x_hash  = x_grid * p1 + p3;
 
     uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
     // calculate some useful variables for doing lookups
-    uint index_v = (hash / 4) % work_group_size;
-    uint index_e = hash % 4;
+    uint index_w = (hash / 2) % work_group_size;
+    uint index_e = (hash & 1);
     uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * radius * 2;
-    uint data = floatBitsToUint(workspace[index_v][index_e]);
-    bool is_valid = (data & 0xFFFF) == hash >> 16;
+    vec4 data_w = workspace[index_w];
+    uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
 
     intersection.local_x = r.x;
     intersection.substance = sub;
@@ -186,25 +185,23 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.cell_radius = radius;
     intersection.global_index = global_index;
 
-    if (inside_aabb && !is_valid) {
-        uint upper_hash = (hash >> 16) ^ (hash & 0xFFFF);
-        uint global_data = patches_global.data[global_index];
-        if ((global_data & 0xFFFF) == upper_hash){
-            pointers.data[index_v + work_group_offset()][index_e] = global_index; 
+    if (inside_aabb && data.y != hash) {
+        uvec2 global_data = patches.data[global_index];
+        if (global_data.y == hash){
+            pointers.data[index_w + work_group_offset()][index_e] = global_index; 
             data = global_data;
-            is_valid = true;
         } else {
-            request = request_t(cell_position, radius, global_index, upper_hash, sub.id, 1);
+            request = request_t(cell_position, radius, global_index, hash, sub.id, 1);
         }
     }
 
     vec3 alpha = x_scaled - x_grid;
 
-    vec4 phi = mix(sign(data & vertex_masks[0]), sign(data & vertex_masks[1]), alpha.z);
+    vec4 phi = mix(sign(data.x & vertex_masks[0]), sign(data.x & vertex_masks[1]), alpha.z);
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    phi.x = 2 * radius * (phi.x - 0.5) * float(is_valid);
+    phi.x = 2 * radius * (phi.x - 0.5) * float(data.y == hash);
 
     return mix(phi_aabb, phi.x, inside_aabb);
 }
@@ -535,13 +532,11 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 
     // load patches from global memory into shared memory
-    uvec4 patch_index = pointers.data[i + work_group_offset()];
-    workspace[i] = uintBitsToFloat(uvec4(
-        patches_global.data[patch_index.x],
-        patches_global.data[patch_index.y],
-        patches_global.data[patch_index.z],
-        patches_global.data[patch_index.w]
-    ));
+    uvec2 ptrs = pointers.data[i + work_group_offset()];
+    workspace[i] = vec4(
+        uintBitsToFloat(patches.data[ptrs.x]),
+        uintBitsToFloat(patches.data[ptrs.y])
+    );
 }
 
 void main(){

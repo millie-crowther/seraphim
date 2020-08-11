@@ -124,7 +124,6 @@ renderer_t::renderer_t(
 
     vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
-    initialise_buffers();
     create_command_buffers();
 }
 
@@ -572,6 +571,7 @@ renderer_t::present(uint32_t image_index) const {
 
 void
 renderer_t::render(){
+    // update substances
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
     cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
@@ -581,6 +581,7 @@ renderer_t::render(){
         std::cos(theta) * 0.5
     ));
 
+    // write substances
     std::vector<substance_t::data_t> substance_data(work_group_size.volume());
 
     uint32_t i = 0;
@@ -594,6 +595,11 @@ renderer_t::render(){
     std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
+
+    // write lights
+    std::vector<light_t> lights(work_group_size.volume());
+    lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
+    light_buffer->write(lights, 0);
     
     if (auto camera = main_camera.lock()){
         push_constants.eye_transform = camera->get_matrix();
@@ -703,33 +709,15 @@ renderer_t::create_buffers(){
     uint32_t c = work_group_count.volume();
     uint32_t s = work_group_size.volume();
 
-    patch_buffer = std::make_unique<device_buffer_t<uint32_t>>(1, device, number_of_patches);
+    patch_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
-    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s * 4);
+    pointer_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }
 
-uint32_t 
-renderer_t::octree_pool_size() const {
-    return work_group_size.volume();
-} 
-
-void
-renderer_t::initialise_buffers(){
-    std::vector<light_t> lights(work_group_size.volume());
-    lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
-    light_buffer->write(lights, 0);
-
-    std::vector<uint32_t> initial_octree(
-        work_group_count.volume() * octree_pool_size(),
-        response_t::null_node
-    );
-
-    patch_buffer->write(initial_octree, 0);
-}
 
 response_t
 renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
