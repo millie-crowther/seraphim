@@ -38,13 +38,13 @@ private:
         uint32_t texture_size;
         uint32_t texture_depth;
         uint32_t patch_pool_size;
-        float _3;
+        float epsilon;
     };
 
     // constants
     static constexpr uint8_t frames_in_flight = 2;
     static constexpr uint32_t number_of_calls = 2048;
-    static constexpr uint32_t number_of_patches = 1000000;
+    static constexpr uint32_t number_of_patches = 2500000;
     static constexpr uint32_t patch_sample_size = 2;
     static constexpr uint32_t max_cache_size = 1000;  
 
@@ -89,10 +89,12 @@ private:
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
 
+    // textures
     std::unique_ptr<texture_t> render_texture; 
     std::unique_ptr<texture_t> colour_texture;
     std::unique_ptr<texture_t> normal_texture;
     
+    // command pool
     std::unique_ptr<command_pool_t> compute_command_pool;
     std::unique_ptr<command_pool_t> graphics_command_pool;
 

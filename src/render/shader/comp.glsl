@@ -49,14 +49,9 @@ struct light_t {
 
 layout (local_size_x = 32, local_size_y = 32) in;
 
-const uint node_empty_flag = 1 << 24;
-const uint node_unused_flag = 1 << 25;
-const uint node_child_mask = 0xFFFF;
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
-
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
-const float epsilon = 1.0 / 256.0;
 
 const ivec3 p1 = ivec3(
     904601,
@@ -100,7 +95,7 @@ layout( push_constant ) uniform push_constants {
     uint texture_size;
     uint texture_depth;
     uint global_patch_pool_size;
-    float _3;
+    float epsilon;
 } pc;
 
 layout (binding = 1) buffer patch_buffer     { uvec2       data[]; } patches;
@@ -135,7 +130,7 @@ vec3 get_ray_direction(vec2 xy){
 
 uint expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 6 + max(uint(length(dx)), 0);
+    return 8 + max(uint(length(dx)) / 2, 0);
 }
 
 uint work_group_offset(){
@@ -154,11 +149,12 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // check against outside bounds of aabb
     bool inside_aabb = all(lessThan(abs(r.x), sub.radius));
-    phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > 0) + epsilon; 
+    phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > 0) + pc.epsilon; 
 
     // find the expected size and order of magnitude of cell
     uint order = expected_order(r.x); 
-    float radius = epsilon * order;
+    float radius = pc.epsilon * order;
+    uvec3 n_cells = uvec3(sub.radius / radius) * uvec3(2, 3, 5);
 
     // snap to grid, making sure not to duplicate zero
     vec3 x_scaled = r.x / (radius * 2);
@@ -166,9 +162,8 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // do a shitty hash to all the relevant fields
     uvec2 os_hash = ivec2(order, sub.id) * p3.xy + p2.yz;
-    uvec3 x_hash  = x_grid * p1 + p3;
-
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash.x ^ x_hash.y ^ x_hash.z;
+    uint x_hash  = x_grid.x + x_grid.y * n_cells.x + x_grid.z * n_cells.x * n_cells.y;
+    uint hash = os_hash.x ^ os_hash.y ^ x_hash;
 
     // calculate some useful variables for doing lookups
     uint index_w = (hash / 2) % work_group_size;
@@ -226,7 +221,7 @@ intersection_t raycast(ray_t r, inout request_t request){
 
         for (; !i.hit && substanceID < substances_size; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));
-            i.hit = i.hit || p < epsilon;
+            i.hit = i.hit || p < pc.epsilon;
         }
         r.x += r.d * p;
         i.distance += p;
@@ -250,7 +245,7 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
 
         for (uint i = 0; !shadow_i.hit && i < substances_size; i++){
             p = min(p, phi(r, substances[i], shadow_i, request));
-            shadow_i.hit = shadow_i.hit || p < epsilon;
+            shadow_i.hit = shadow_i.hit || p < pc.epsilon;
         }
         r.x += r.d * p;
         shadow_i.distance += p;
@@ -280,7 +275,7 @@ vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
 
     //diffuse
     vec3 l = normalize(light.x - i.x);
-    float d = 0.75 * max(epsilon, dot(l, n));
+    float d = 0.75 * max(pc.epsilon, dot(l, n));
 
     //specular
     vec3 v = normalize(-i.x);
@@ -439,7 +434,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
     vec3 light = l.x - inverse(pc.eye_transform)[3].xyz;
-    float r = sqrt(length(l.colour) / epsilon);
+    float r = sqrt(length(l.colour) / pc.epsilon);
 
     vec4 phis = transpose(normals) * light;
     bool frustum_hit = all(lessThanEqual(phis, vec4(r)));

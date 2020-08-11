@@ -36,6 +36,7 @@ renderer_t::renderer_t(
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth = number_of_patches / patch_image_size / patch_image_size + 1;
     push_constants.patch_pool_size = number_of_patches;
+    push_constants.epsilon = hyper::epsilon;
 
     set_main_camera(test_camera);
 
