@@ -128,9 +128,9 @@ vec3 get_ray_direction(vec2 xy){
     return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
 }
 
-uint expected_order(vec3 x){
+int expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 8 + max(uint(length(dx)) / 2, 0);
+    return 8 + max(int(length(dx)) / 2, 0);
 }
 
 uint work_group_offset(){
@@ -152,18 +152,18 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     phi_aabb = mix(pc.render_distance, phi_aabb, phi_aabb > 0) + pc.epsilon; 
 
     // find the expected size and order of magnitude of cell
-    uint order = expected_order(r.x); 
+    int order = expected_order(r.x); 
     float radius = pc.epsilon * order;
     uvec3 n_cells = uvec3(sub.radius / radius) * uvec3(2, 3, 5);
 
     // snap to grid, making sure not to duplicate zero
     vec3 x_scaled = r.x / (radius * 2);
     ivec3 x_grid = ivec3(floor(x_scaled));
+    ivec3 x_aligned = x_grid * 2 * order;
 
     // do a shitty hash to all the relevant fields
-    uvec2 os_hash = ivec2(order, sub.id) * p3.xy + p2.yz;
-    uint x_hash  = x_grid.x + x_grid.y * n_cells.x + x_grid.z * n_cells.x * n_cells.y;
-    uint hash = os_hash.x ^ os_hash.y ^ x_hash;
+    uint x_hash  = x_aligned.x + x_aligned.y * n_cells.x + x_aligned.z * n_cells.x * n_cells.y;
+    uint hash = sub.id ^ x_hash;
 
     // calculate some useful variables for doing lookups
     uint index_w = (hash / 2) % work_group_size;
