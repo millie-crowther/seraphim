@@ -7,11 +7,11 @@
 
 namespace primitive {
     template<uint8_t D>
-    class sphere_t : public sdf_t<D> {
+    class n_sphere_t : public sdf_t<D> {
     private:
         double r;
     public:
-        sphere_t(double r){
+        n_sphere_t(double r){
             this->r = r;
         }
 
@@ -22,15 +22,22 @@ namespace primitive {
         vec_t<double, D> normal(const vec_t<double, D> & x) const override {
             return x.normalise();
         }
+
+        aabb3_t get_aabb() override {
+            return aabb3_t(vec3_t(-r), vec3_t(r));
+        }
     };  
 
+    typedef n_sphere_t<2> circle_t;
+    typedef n_sphere_t<3> sphere_t;
+
     template<uint8_t D>
-    class cuboid_t : public sdf_t<D> {
+    class n_box_t : public sdf_t<D> {
     private:
         vec_t<double, D> r;
 
     public:
-        cuboid_t(const vec_t<double, D> & r){
+        n_box_t(const vec_t<double, D> & r){
             this->r = r;
         }
 
@@ -39,8 +46,15 @@ namespace primitive {
             return 
                 q.max(vec_t<double, D>()).norm() +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
+        }        
+        
+        aabb3_t get_aabb() override {
+            return aabb3_t(-r, r);
         }
     };
+
+    typedef n_box_t<2> rectangle_t;
+    typedef n_box_t<3> cuboid_t;
 }
 
 #endif

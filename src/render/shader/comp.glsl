@@ -131,18 +131,11 @@ vec3 get_ray_direction(vec2 xy){
 int expected_order(vec3 x){
     float dist = length(inverse(pc.eye_transform)[3].xyz - x);
     float centre = length(uv(gl_GlobalInvocationID.xy));
-    return 1 + int(dist + centre * 2.5);
+    return max(1, int(dist + centre * 2.5));
 }
 
 uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
-}
-
-uint hash_patch(uint subID, int order, ivec3 x_grid){
-    ivec3 x_aligned = x_grid * order;
-    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
-    uint hash = subID ^ x_hash.x ^ x_hash.y ^ x_hash.z ^ (order << 5);
-    return hash;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -165,7 +158,10 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     float size = pc.epsilon * order * 2;
     vec3 x_scaled = r.x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
-    uint hash = hash_patch(sub.id, order, x_grid);
+
+    ivec3 x_aligned = x_grid * order;
+    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
+    uint hash = sub.id ^ x_hash.x ^ x_hash.y ^ x_hash.z ^ (order << 5);
 
     // calculate some useful variables for doing lookups
     uint index_w = (hash / 2) % work_group_size;

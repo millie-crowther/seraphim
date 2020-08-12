@@ -1,10 +1,9 @@
 #ifndef SDF_H
 #define SDF_H
 
-#include "maths/vec.h"
-#include "maths/aabb.h"
 #include <functional>
 #include "core/hyper.h"
+#include "maths/aabb.h"
 
 template<uint8_t D>
 class sdf_t {
@@ -25,6 +24,10 @@ public:
 
     virtual bool contains(const vec_t<double, D> & x) const {
         return phi(x) <= 0.0;
+    }
+
+    virtual aabb_t<double, D> get_aabb(){
+        return aabb_t<double, D>(vec_t<double, D>(-hyper::rho), vec_t<double, D>(hyper::rho));
     }
 };
 

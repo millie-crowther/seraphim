@@ -69,9 +69,9 @@ response_t::response_t(){
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
-        vec3_t p = call.get_position() - substance->get_form()->get_aabb()->get_centre();
+        auto sdf = substance->get_matter()->get_sdf();
+        vec3_t p = call.get_position() - sdf->get_aabb().get_centre();
 
-        auto sdf = substance->get_form()->get_sdf();
         uint32_t contains_mask = 0;
 
         for (int o = 0; o < 8; o++){

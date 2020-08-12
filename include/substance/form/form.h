@@ -4,20 +4,12 @@
 #include <memory>
 
 #include "sdf.h"
+#include "maths/aabb.h"
 
 class form_t {
 private:
-    std::shared_ptr<sdf3_t> sdf;
-    std::shared_ptr<aabb3_t> aabb;
-
-    void create_aabb();
 
 public:
-    form_t(std::shared_ptr<sdf3_t> sdf);
-
-    std::shared_ptr<aabb3_t> get_aabb();
-    std::shared_ptr<sdf3_t> get_sdf() const;
-
 };
 
 #endif

@@ -34,7 +34,7 @@ substance_t::data_t::comparator_t::operator()(const substance_t::data_t & a, con
 
 substance_t::data_t
 substance_t::get_data(const vec3_t & eye_position){
-    vec3_t r = form->get_aabb()->get_size();
+    vec3_t r = matter->get_sdf()->get_aabb().get_size();
     vec3_t eye = transform.to_local_space(eye_position);
 
     float near = (eye.abs() - r).max(vec3_t()).norm();
@@ -70,7 +70,7 @@ substance_t::set_rotation(const quat_t & q){
 
 double 
 substance_t::phi(const vec3_t & x) const {
-    return form->get_sdf()->phi(transform.to_local_space(x));
+    return matter->get_sdf()->phi(transform.to_local_space(x));
 }
 
 std::shared_ptr<matter_t> 

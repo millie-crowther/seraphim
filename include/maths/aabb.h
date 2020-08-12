@@ -12,9 +12,14 @@ private:
     vec_t<T, D> max;
 
 public:
-    aabb_t(){
-        min = vec_t<T, D>(std::numeric_limits<T>::max());
-        max = vec_t<T, D>(std::numeric_limits<T>::min());
+    aabb_t() : aabb_t(
+        vec_t<T, D>(std::numeric_limits<T>::max()),
+        vec_t<T, D>(std::numeric_limits<T>::min())
+    ){}
+    
+    aabb_t(const vec_t<T, D> & min_, const vec_t<T, D> & max_){
+        min = min_;
+        max = max_;
     }
 
     void capture_sphere(const vec_t<T, D> & c, const T & r){
