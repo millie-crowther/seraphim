@@ -129,12 +129,20 @@ vec3 get_ray_direction(vec2 xy){
 }
 
 int expected_order(vec3 x){
-    vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 3 + int(length(dx)) + int(length(uv(gl_GlobalInvocationID.xy)) * 3) ;
+    float dist = length(inverse(pc.eye_transform)[3].xyz - x);
+    float centre = length(uv(gl_GlobalInvocationID.xy));
+    return 1 + int(dist + centre * 2.5);
 }
 
 uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
+}
+
+uint hash_patch(uint subID, int order, ivec3 x_grid){
+    ivec3 x_aligned = x_grid * order;
+    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
+    uint hash = subID ^ x_hash.x ^ x_hash.y ^ x_hash.z ^ (order << 5);
+    return hash;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -153,16 +161,11 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // find the expected size and order of magnitude of cell
     int order = expected_order(r.x); 
+    
     float size = pc.epsilon * order * 2;
-
-    // snap to grid, making sure not to duplicate zero
     vec3 x_scaled = r.x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
-    ivec3 x_aligned = x_grid * order;
-
-    // do a shitty hash to all the relevant fields
-    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
-    uint hash = sub.id ^ x_hash.x ^ x_hash.y ^ x_hash.z;
+    uint hash = hash_patch(sub.id, order, x_grid);
 
     // calculate some useful variables for doing lookups
     uint index_w = (hash / 2) % work_group_size;
@@ -173,11 +176,6 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     vec4 data_w = workspace[index_w];
     uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
 
-    intersection.local_x = r.x;
-    intersection.substance = sub;
-    intersection.cell_position = cell_position;
-    intersection.cell_radius = size / 2;
-    intersection.global_index = global_index;
 
     if (inside_aabb && data.y != hash) {
         uvec2 global_data = patches.data[global_index];
@@ -188,6 +186,12 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
             request = request_t(cell_position, size / 2, global_index, hash, sub.id, 1);
         }
     }
+
+    intersection.local_x = r.x;
+    intersection.substance = sub;
+    intersection.cell_position = cell_position;
+    intersection.cell_radius = size / 2;
+    intersection.global_index = global_index;
 
     vec3 alpha = x_scaled - x_grid;
 
