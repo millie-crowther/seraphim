@@ -153,31 +153,30 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     // find the expected size and order of magnitude of cell
     int order = expected_order(r.x); 
-    float radius = pc.epsilon * order;
-    uvec3 n_cells = uvec3(sub.radius / radius) * uvec3(2, 3, 5);
+    float size = pc.epsilon * order * 2;
 
     // snap to grid, making sure not to duplicate zero
-    vec3 x_scaled = r.x / (radius * 2);
+    vec3 x_scaled = r.x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
-    ivec3 x_aligned = x_grid * 2 * order;
+    ivec3 x_aligned = x_grid * order;
 
     // do a shitty hash to all the relevant fields
-    uint x_hash  = x_aligned.x + x_aligned.y * n_cells.x + x_aligned.z * n_cells.x * n_cells.y;
-    uint hash = sub.id ^ x_hash;
+    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
+    uint hash = sub.id ^ x_hash.x ^ x_hash.y ^ x_hash.z;
 
     // calculate some useful variables for doing lookups
     uint index_w = (hash / 2) % work_group_size;
     uint index_e = (hash & 1);
     uint global_index = hash % pc.global_patch_pool_size;
 
-    vec3 cell_position = x_grid * radius * 2;
+    vec3 cell_position = x_grid * size;
     vec4 data_w = workspace[index_w];
     uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
 
     intersection.local_x = r.x;
     intersection.substance = sub;
     intersection.cell_position = cell_position;
-    intersection.cell_radius = radius;
+    intersection.cell_radius = size / 2;
     intersection.global_index = global_index;
 
     if (inside_aabb && data.y != hash) {
@@ -186,7 +185,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
             pointers.data[index_w + work_group_offset()][index_e] = global_index; 
             data = global_data;
         } else {
-            request = request_t(cell_position, radius, global_index, hash, sub.id, 1);
+            request = request_t(cell_position, size / 2, global_index, hash, sub.id, 1);
         }
     }
 
@@ -196,7 +195,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    phi.x = 2 * radius * (phi.x - 0.5) * float(data.y == hash);
+    phi.x = size * (phi.x - 0.5) * float(data.y == hash);
 
     return mix(phi_aabb, phi.x, inside_aabb);
 }
