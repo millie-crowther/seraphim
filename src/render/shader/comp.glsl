@@ -130,7 +130,7 @@ vec3 get_ray_direction(vec2 xy){
 
 int expected_order(vec3 x){
     vec3 dx = inverse(pc.eye_transform)[3].xyz - x;
-    return 8 + max(int(length(dx)) / 2, 0);
+    return 3 + int(length(dx)) + int(length(uv(gl_GlobalInvocationID.xy)) * 3) ;
 }
 
 uint work_group_offset(){
