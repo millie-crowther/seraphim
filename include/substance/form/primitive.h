@@ -10,6 +10,9 @@ namespace primitive {
     class n_sphere_t : public sdf_t<D> {
     private:
         double r;
+
+        static constexpr double four_thirds_pi = 4.188790204786390;
+
     public:
         n_sphere_t(double r){
             this->r = r;
@@ -25,6 +28,10 @@ namespace primitive {
 
         aabb_t<double, D> get_aabb() override {
             return aabb_t<double, D>(vec_t<double, D>(-r), vec_t<double, D>(r));
+        }
+
+        double get_volume() override {
+            return four_thirds_pi * std::pow(r, 3);
         }
     };  
 
@@ -50,6 +57,10 @@ namespace primitive {
         
         aabb_t<double, D> get_aabb() override {
             return aabb_t<double, D>(-r, r);
+        }
+
+        double get_volume() override {
+            return r.volume() * 8;
         }
     };
 

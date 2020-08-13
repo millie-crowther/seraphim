@@ -171,7 +171,7 @@ renderer_t::~renderer_t(){
     std::cout << "number of hits: " << indices.size() << std::endl;
     std::cout << "number of hashes: " << hashes.size() << std::endl;
     std::cout << "occupancy rate: " << float(indices.size()) / float(number_of_patches) * 100.0f << "%" << std::endl;
-    std::cout << "hit rate: " << float(indices.size()) / float(hashes.size()) * 100.0f << "%" << std::endl;
+    std::cout << "hash hit rate: " << float(indices.size()) / float(hashes.size()) * 100.0f << "%" << std::endl;
 }
   
 void 

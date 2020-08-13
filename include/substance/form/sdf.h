@@ -29,6 +29,10 @@ public:
     virtual aabb_t<double, D> get_aabb(){
         return aabb_t<double, D>(vec_t<double, D>(-hyper::rho), vec_t<double, D>(hyper::rho));
     }
+
+    virtual double get_volume(){
+        return 0.0;
+    }
 };
 
 typedef sdf_t<3> sdf3_t;
