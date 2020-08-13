@@ -51,6 +51,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
+const int max_hash_retries = 16;
 
 const ivec3 p1 = ivec3(
     904601,
@@ -112,7 +113,6 @@ shared light_t lights[gl_WorkGroupSize.x];
 shared uint lights_size;
 
 shared vec4 workspace[work_group_size];
-
 shared bool test;
 
 vec2 uv(vec2 xy){
@@ -193,7 +193,11 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uvec2 data;
 
     if (inside_aabb){
-        uvec3 hash_data = get_data(r.x, order, sub.id, intersection, request);
+        uvec3 hash_data = uvec3(1, 0, 0);
+        int tries = 0;
+        for (; tries < max_hash_retries && hash_data.x != hash_data.z; tries++){
+            hash_data = get_data(r.x, order + tries, sub.id, intersection, request);
+        }
         hash = hash_data.x;
         data = hash_data.yz;
     }
