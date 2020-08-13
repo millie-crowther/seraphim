@@ -51,3 +51,8 @@ transform_t &
 matter_t::get_transform(){
     return transform;
 }
+
+void 
+matter_t::apply_force(const vec3_t & force){
+    
+}

@@ -29,9 +29,10 @@ public:
     };
 
     struct comparator_t {
-        bool operator()(const substance_t & a, const substance_t & b) const;
+        bool operator()(std::shared_ptr<substance_t> a, std::shared_ptr<substance_t> b) const;
     };
 
+    substance_t(uint32_t i);
     substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter);
 
     std::shared_ptr<form_t> get_form() const;

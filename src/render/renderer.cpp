@@ -70,9 +70,7 @@ renderer_t::renderer_t(
 
     cube->get_matter()->set_position(vec3_t(-2.5, 1.0, 0.5));
 
-    substances[sphere->get_id()] = sphere;
-    substances[floor_substance->get_id()] = floor_substance;
-    substances[cube->get_id()] = cube;
+    substances = { sphere, floor_substance, cube };
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -598,15 +596,16 @@ renderer_t::render(){
     ));
 
     // write substances
-    std::vector<substance_t::data_t> substance_data(work_group_size.volume());
+    std::vector<substance_t::data_t> substance_data;
+    
+    // std::transform(substances.begin(), substances.end(), substance_data.begin(), [&](auto s){
+    //     return s->get_data(main_camera.lock()->get_position());
+    // });
 
-    uint32_t i = 0;
-    for (auto pair : substances){
-        if (auto sub = std::get<1>(pair).lock()){
-            substance_data[i] = sub->get_data(main_camera.lock()->get_position());
-        }
-        i++;
+    for (auto s : substances){
+        substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
     }
+    substance_data.resize(work_group_size.volume());
 
     std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
@@ -705,20 +704,25 @@ renderer_t::handle_requests(uint32_t frame){
 
     for (auto & call : calls){
         if (call.is_valid()){
-            auto response = get_response(call, substances[call.get_substance_ID()]);
-            patch_buffer->write_element(response.get_node(), call.get_index());
+            auto lookup_substance = std::make_shared<substance_t>(call.get_substance_ID());
+            auto substance_iterator = substances.find(lookup_substance);
 
-            u32vec3_t p = u32vec3_t(
-                call.get_index() % patch_image_size,
-                (call.get_index() % (patch_image_size * patch_image_size)) / patch_image_size,
-                call.get_index() / patch_image_size / patch_image_size
-            ) * patch_sample_size;
+            if (substance_iterator != substances.end()){
+                auto response = get_response(call, *substance_iterator);
+                patch_buffer->write_element(response.get_node(), call.get_index());
 
-            normal_texture->write(p, response.get_normals());
-            colour_texture->write(p, response.get_colours());
+                u32vec3_t p = u32vec3_t(
+                    call.get_index() % patch_image_size,
+                    (call.get_index() % (patch_image_size * patch_image_size)) / patch_image_size,
+                    call.get_index() / patch_image_size / patch_image_size
+                ) * patch_sample_size;
 
-            indices.insert(call.get_index());
-            hashes.insert(call.get_hash());
+                normal_texture->write(p, response.get_normals());
+                colour_texture->write(p, response.get_colours());
+
+                indices.insert(call.get_index());
+                hashes.insert(call.get_hash());
+            } 
         }
     }   
 }

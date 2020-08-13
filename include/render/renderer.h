@@ -83,12 +83,12 @@ private:
     std::string fragment_shader_code;
     std::string vertex_shader_code;
 
+    // substances
+    std::set<std::shared_ptr<substance_t>, substance_t::comparator_t> substances;
     std::shared_ptr<substance_t> sphere;
     std::shared_ptr<substance_t> floor_substance;
     std::shared_ptr<substance_t> cube;
     
-    std::map<uint32_t, std::weak_ptr<substance_t>> substances;
-
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
 

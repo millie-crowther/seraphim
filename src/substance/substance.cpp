@@ -2,6 +2,10 @@
 
 #include <iostream>
 
+substance_t::substance_t(uint32_t id) {
+    this->id = id;
+}
+
 substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter){
     static uint32_t id = 0;
 
@@ -15,15 +19,14 @@ substance_t::get_form() const {
     return form;
 }
 
-
 std::shared_ptr<matter_t> 
 substance_t::get_matter() const {
     return matter;
 }
 
 bool
-substance_t::comparator_t::operator()(const substance_t & a, const substance_t & b) const {
-    return a.get_id() < b.get_id();
+substance_t::comparator_t::operator()(std::shared_ptr<substance_t> a, std::shared_ptr<substance_t> b) const {
+    return a->get_id() < b->get_id();
 }
 
 uint32_t 
