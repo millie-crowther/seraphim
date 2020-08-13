@@ -1,6 +1,6 @@
 #include "render/renderer.h"
 
-#include "substance/form/primitive.h"
+#include "substance/matter/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
 
@@ -50,7 +50,7 @@ renderer_t::renderer_t(
             vec3_t(0.1, 0.8, 0.8)
         )
     );
-    floor_substance->set_position(vec3_t(0.0, -100.0, 0.0));
+    floor_substance->get_matter()->set_position(vec3_t(0.0, -100.0, 0.0));
 
     sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
@@ -68,11 +68,11 @@ renderer_t::renderer_t(
         )
     );
 
-    cube->set_position(vec3_t(-2.5, 1.0, 0.5));
+    cube->get_matter()->set_position(vec3_t(-2.5, 1.0, 0.5));
 
-    substances[sphere->get_id()] = sphere;
-    substances[floor_substance->get_id()] = floor_substance;
-    substances[cube->get_id()] = cube;
+    substances[sphere->get_matter()->get_id()] = sphere;
+    substances[floor_substance->get_matter()->get_id()] = floor_substance;
+    substances[cube->get_matter()->get_id()] = cube;
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -590,27 +590,27 @@ renderer_t::render(){
     // update substances
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    cube->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
-    sphere->set_position(vec3_t(
+    cube->get_matter()->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
+    sphere->get_matter()->set_position(vec3_t(
         std::sin(theta) * 0.5,
         1.0, 
         std::cos(theta) * 0.5
     ));
 
     // write substances
-    std::vector<substance_t::data_t> substance_data(work_group_size.volume());
+    std::vector<matter_t::data_t> matter_data(work_group_size.volume());
 
     uint32_t i = 0;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            substance_data[i] = sub->get_data(main_camera.lock()->get_position());
+            matter_data[i] = sub->get_matter()->get_data(main_camera.lock()->get_position());
         }
         i++;
     }
 
-    std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
+    std::sort(matter_data.begin(), matter_data.end(), matter_t::data_t::comparator_t());
 
-    substance_buffer->write(substance_data, 0);
+    substance_buffer->write(matter_data, 0);
 
     // write lights
     std::vector<light_t> lights(work_group_size.volume());
@@ -731,7 +731,7 @@ renderer_t::create_buffers(){
     patch_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
-    substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
+    substance_buffer = std::make_unique<device_buffer_t<matter_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
