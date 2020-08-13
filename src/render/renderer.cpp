@@ -70,9 +70,9 @@ renderer_t::renderer_t(
 
     cube->get_matter()->set_position(vec3_t(-2.5, 1.0, 0.5));
 
-    substances[sphere->get_matter()->get_id()] = sphere;
-    substances[floor_substance->get_matter()->get_id()] = floor_substance;
-    substances[cube->get_matter()->get_id()] = cube;
+    substances[sphere->get_id()] = sphere;
+    substances[floor_substance->get_id()] = floor_substance;
+    substances[cube->get_id()] = cube;
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -598,19 +598,19 @@ renderer_t::render(){
     ));
 
     // write substances
-    std::vector<matter_t::data_t> matter_data(work_group_size.volume());
+    std::vector<substance_t::data_t> substance_data(work_group_size.volume());
 
     uint32_t i = 0;
     for (auto pair : substances){
         if (auto sub = std::get<1>(pair).lock()){
-            matter_data[i] = sub->get_matter()->get_data(main_camera.lock()->get_position());
+            substance_data[i] = sub->get_data(main_camera.lock()->get_position());
         }
         i++;
     }
 
-    std::sort(matter_data.begin(), matter_data.end(), matter_t::data_t::comparator_t());
+    std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
-    substance_buffer->write(matter_data, 0);
+    substance_buffer->write(substance_data, 0);
 
     // write lights
     std::vector<light_t> lights(work_group_size.volume());
@@ -731,7 +731,7 @@ renderer_t::create_buffers(){
     patch_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
-    substance_buffer = std::make_unique<device_buffer_t<matter_t::data_t>>(4, device, s);
+    substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);

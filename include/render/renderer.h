@@ -103,7 +103,7 @@ private:
 
     // buffers
     std::unique_ptr<device_buffer_t<u32vec2_t>> patch_buffer;
-    std::unique_ptr<device_buffer_t<matter_t::data_t>> substance_buffer;
+    std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
     std::unique_ptr<device_buffer_t<call_t>> call_buffer;
     std::unique_ptr<device_buffer_t<light_t>> light_buffer;
     std::unique_ptr<device_buffer_t<u32vec2_t>> pointer_buffer;
