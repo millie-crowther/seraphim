@@ -2,6 +2,7 @@
 #define MATTER_H
 
 #include "sdf.h"
+#include "material.h"
 #include "maths/quat.h"
 #include "scene/transform.h"
 
@@ -9,8 +10,6 @@
 
 class matter_t {
 public:
-    matter_t(std::shared_ptr<sdf3_t> sdf, const vec3_t & colour);
-
     struct data_t {
         float near;
         float far;
@@ -30,7 +29,9 @@ public:
         };
     };
 
-    vec3_t get_colour(const vec3_t & x) const;
+    matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material);
+
+    material_t get_material(const vec3_t & x);
 
     std::shared_ptr<sdf3_t> get_sdf() const;
     data_t get_data(const vec3_t & eye_position);
@@ -45,7 +46,7 @@ public:
 
 private:
     uint32_t id;
-    vec3_t colour;
+    material_t material;
     std::shared_ptr<sdf3_t> sdf;
 
     transform_t transform;

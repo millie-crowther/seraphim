@@ -47,7 +47,7 @@ renderer_t::renderer_t(
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<primitive::cuboid_t>(vec3_t(100.0)), 
-            vec3_t(0.1, 0.8, 0.8)
+            material_t(vec3_t(0.1, 0.8, 0.8), 700.0)
         )
     );
     floor_substance->get_matter()->set_position(vec3_t(0.0, -100.0, 0.0));
@@ -56,7 +56,7 @@ renderer_t::renderer_t(
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<primitive::sphere_t>(0.5), 
-            vec3_t(0.8, 0.1, 0.8)
+            material_t(vec3_t(0.8, 0.1, 0.8), 700.0)
         )
     );
 
@@ -64,7 +64,7 @@ renderer_t::renderer_t(
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<primitive::cuboid_t>(vec3_t(0.5)), 
-            vec3_t(0.8, 0.8, 0.1)
+            material_t(vec3_t(0.8, 0.8, 0.1), 700.0)
         )
     );
 

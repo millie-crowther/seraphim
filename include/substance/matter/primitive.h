@@ -18,11 +18,11 @@ namespace primitive {
             this->r = r;
         }
 
-        double phi(const vec_t<double, D> & x) const override {
+        double phi(const vec_t<double, D> & x) override {
             return x.norm() - r;
         }
 
-        vec_t<double, D> normal(const vec_t<double, D> & x) const override {
+        vec_t<double, D> normal(const vec_t<double, D> & x) override {
             return x.normalise();
         }
 
@@ -48,7 +48,7 @@ namespace primitive {
             this->r = r;
         }
 
-        double phi(const vec_t<double, D> & x) const override {
+        double phi(const vec_t<double, D> & x) override {
             auto q = x.abs() - r;
             return 
                 q.max(vec_t<double, D>()).norm() +

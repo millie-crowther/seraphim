@@ -84,7 +84,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             vec3_t n = sdf->normal(d) / 2 + 0.5;
             normals[o] = squash(vec4_t(n[0], n[1], n[2], 0.0));
 
-            vec3_t c = substance->get_matter()->get_colour(d);
+            vec3_t c = substance->get_matter()->get_material(d).colour;
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
 

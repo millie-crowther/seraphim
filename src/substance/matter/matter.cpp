@@ -12,11 +12,11 @@ matter_t::data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id
     this->transform = transform;
 }
 
-matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const vec3_t & colour){
+matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material){
     static uint32_t id = 0;
 
     this->sdf = sdf;
-    this->colour = colour;
+    this->material = material;
     this->id = id++;
 }
 
@@ -28,11 +28,6 @@ matter_t::data_t::comparator_t::operator()(const matter_t::data_t & a, const mat
 std::shared_ptr<sdf3_t>
 matter_t::get_sdf() const {
     return sdf;
-}
-
-vec3_t
-matter_t::get_colour(const vec3_t & x) const {
-    return colour;
 }
 
 matter_t::data_t
@@ -74,4 +69,9 @@ matter_t::phi(const vec3_t & x) const {
 uint32_t 
 matter_t::get_id() const {
     return id;
+}
+
+material_t
+matter_t::get_material(const vec3_t & x){
+    return material;
 }
