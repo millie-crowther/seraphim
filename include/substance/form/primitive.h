@@ -23,8 +23,8 @@ namespace primitive {
             return x.normalise();
         }
 
-        aabb3_t get_aabb() override {
-            return aabb3_t(vec3_t(-r), vec3_t(r));
+        aabb_t<double, D> get_aabb() override {
+            return aabb_t<double, D>(vec_t<double, D>(-r), vec_t<double, D>(r));
         }
     };  
 
@@ -48,8 +48,8 @@ namespace primitive {
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }        
         
-        aabb3_t get_aabb() override {
-            return aabb3_t(-r, r);
+        aabb_t<double, D> get_aabb() override {
+            return aabb_t<double, D>(-r, r);
         }
     };
 

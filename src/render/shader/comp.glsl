@@ -23,10 +23,9 @@ struct intersection_t {
     vec3 normal;
     float distance;
     substance_t substance;
-    vec3 local_x;
-    vec3 cell_position;
     float cell_radius;
     uint global_index;
+    vec3 alpha;
 };
 
 struct request_t {
@@ -129,13 +128,48 @@ vec3 get_ray_direction(vec2 xy){
 }
 
 int expected_order(vec3 x){
-    float dist = length(inverse(pc.eye_transform)[3].xyz - x);
-    float centre = length(uv(gl_GlobalInvocationID.xy));
-    return max(1, int(dist + centre * 2.5));
+    float dist = length(inverse(pc.eye_transform)[3].xyz - x) / 1;
+    float centre = length(uv(gl_GlobalInvocationID.xy)) * 2;
+    return max(1, int(dist + centre));
 }
 
 uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
+}
+
+uvec3 get_data(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request){
+    float size = pc.epsilon * order * 2;
+    vec3 x_scaled = x / size;
+    ivec3 x_grid = ivec3(floor(x_scaled));
+
+    ivec3 x_hash = x_grid * p1 + p2;
+    ivec2 os_hash = ivec2(subID, order) * p3.xy + p3.yz;
+    uint hash = x_hash.x ^ x_hash.y ^ x_hash.z ^ os_hash.x ^ os_hash.y;
+
+    // calculate some useful variables for doing lookups
+    uint index_w = (hash / 2) % work_group_size;
+    uint index_e = (hash & 1);
+    uint global_index = hash % pc.global_patch_pool_size;
+
+    vec3 cell_position = x_grid * size;
+    vec4 data_w = workspace[index_w];
+    uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
+
+    if (data.y != hash) {
+        uvec2 global_data = patches.data[global_index];
+        if (global_data.y == hash){
+            pointers.data[index_w + work_group_offset()][index_e] = global_index; 
+            data = global_data;
+        } else {
+            request = request_t(cell_position, size / 2, global_index, hash, subID, 1);
+        }
+    }
+
+    intersection.cell_radius = size / 2;
+    intersection.global_index = global_index;
+    intersection.alpha = x_scaled - x_grid;
+
+    return uvec3(hash, data);
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -155,47 +189,23 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     // find the expected size and order of magnitude of cell
     int order = expected_order(r.x); 
     
-    float size = pc.epsilon * order * 2;
-    vec3 x_scaled = r.x / size;
-    ivec3 x_grid = ivec3(floor(x_scaled));
+    uint hash = ~0;
+    uvec2 data;
 
-    ivec3 x_aligned = x_grid * order;
-    ivec3 x_hash = x_aligned << ivec3(0, 10, 20);
-    uint hash = sub.id ^ x_hash.x ^ x_hash.y ^ x_hash.z ^ (order << 5);
-
-    // calculate some useful variables for doing lookups
-    uint index_w = (hash / 2) % work_group_size;
-    uint index_e = (hash & 1);
-    uint global_index = hash % pc.global_patch_pool_size;
-
-    vec3 cell_position = x_grid * size;
-    vec4 data_w = workspace[index_w];
-    uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
-
-
-    if (inside_aabb && data.y != hash) {
-        uvec2 global_data = patches.data[global_index];
-        if (global_data.y == hash){
-            pointers.data[index_w + work_group_offset()][index_e] = global_index; 
-            data = global_data;
-        } else {
-            request = request_t(cell_position, size / 2, global_index, hash, sub.id, 1);
-        }
+    if (inside_aabb){
+        uvec3 hash_data = get_data(r.x, order, sub.id, intersection, request);
+        hash = hash_data.x;
+        data = hash_data.yz;
     }
-
-    intersection.local_x = r.x;
+    
     intersection.substance = sub;
-    intersection.cell_position = cell_position;
-    intersection.cell_radius = size / 2;
-    intersection.global_index = global_index;
 
-    vec3 alpha = x_scaled - x_grid;
-
+    vec3 alpha = intersection.alpha;
     vec4 phi = mix(sign(data.x & vertex_masks[0]), sign(data.x & vertex_masks[1]), alpha.z);
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    phi.x = size * (phi.x - 0.5) * float(data.y == hash);
+    phi.x = pc.epsilon * order * 2 * (phi.x - 0.5) * float(hash == data.y);
 
     return mix(phi_aabb, phi.x, inside_aabb);
 }
@@ -395,7 +405,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     
     // find texture coordinate
     uint k = intersection.global_index;
-    vec3 t = intersection.local_x - intersection.cell_position + intersection.cell_radius;
+    vec3 t = intersection.alpha * intersection.cell_radius * 2 + intersection.cell_radius;
     t /= intersection.cell_radius * 4;
 
     t += vec3(

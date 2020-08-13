@@ -49,6 +49,7 @@ private:
     static constexpr uint32_t max_cache_size = 1000;  
 
     std::set<uint32_t> indices;
+    std::set<uint32_t> hashes;
 
     // fields
     u32vec2_t work_group_count;
