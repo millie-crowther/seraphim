@@ -193,7 +193,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     uvec2 data;
 
     if (inside_aabb){
-        uvec3 hash_data = uvec3(1, 0, 0);
+        uvec3 hash_data = uvec3(~0, 0, 0);
         int tries = 0;
         for (; tries < max_hash_retries && hash_data.x != hash_data.z; tries++){
             hash_data = get_data(r.x, order + tries, sub.id, intersection, request);
@@ -225,14 +225,9 @@ intersection_t raycast(ray_t r, inout request_t request){
 
     for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
+        min_substanceID += int(i.distance > substances[min_substanceID].far);
 
-        if (i.distance > substances[min_substanceID].far){
-            min_substanceID++;
-        }
-
-        uint substanceID = min_substanceID;
-
-        for (; !i.hit && substanceID < substances_size; substanceID++){
+        for (uint substanceID = min_substanceID; !i.hit && substanceID < substances_size; substanceID++){
             p = min(p, phi(r, substances[substanceID], i, request));
             i.hit = i.hit || p < pc.epsilon;
         }
