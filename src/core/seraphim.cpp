@@ -79,10 +79,6 @@ seraphim_t::seraphim_t(){
 }
 
 seraphim_t::~seraphim_t(){
-    for (auto substance : substances){
-        annihilate(substance);
-    }
-
     vkDeviceWaitIdle(device->get_device());
 
     // delete renderer early to release resources at appropriate time

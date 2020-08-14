@@ -43,35 +43,6 @@ renderer_t::renderer_t(
     fragment_shader_code = resources::load_file("../src/render/shader/frag.glsl");
     vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
 
-    floor_substance = std::make_shared<substance_t>( 
-        std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
-            std::make_shared<primitive::cuboid_t>(vec3_t(100.0)), 
-            material_t(vec3_t(0.1, 0.8, 0.8), 700.0)
-        )
-    );
-    floor_substance->get_matter()->set_position(vec3_t(0.0, -100.0, 0.0));
-
-    sphere = std::make_shared<substance_t>( 
-        std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
-            std::make_shared<primitive::sphere_t>(0.5), 
-            material_t(vec3_t(0.8, 0.1, 0.8), 700.0)
-        )
-    );
-
-    cube = std::make_shared<substance_t>( 
-        std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
-            std::make_shared<primitive::cuboid_t>(vec3_t(0.5)), 
-            material_t(vec3_t(0.8, 0.8, 0.1), 700.0)
-        )
-    );
-
-    cube->get_matter()->set_position(vec3_t(-2.5, 1.0, 0.5));
-
-    substances = { sphere, floor_substance, cube };
-
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
     swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
@@ -588,20 +559,15 @@ renderer_t::render(){
     // update substances
     auto now = std::chrono::high_resolution_clock::now();
     double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    cube->get_matter()->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
-    sphere->get_matter()->set_position(vec3_t(
-        std::sin(theta) * 0.5,
-        1.0, 
-        std::cos(theta) * 0.5
-    ));
+    // cube->get_matter()->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
+    // sphere->get_matter()->set_position(vec3_t(
+    //     std::sin(theta) * 0.5,
+    //     1.0, 
+    //     std::cos(theta) * 0.5
+    // ));
 
     // write substances
     std::vector<substance_t::data_t> substance_data;
-    
-    // std::transform(substances.begin(), substances.end(), substance_data.begin(), [&](auto s){
-    //     return s->get_data(main_camera.lock()->get_position());
-    // });
-
     for (auto s : substances){
         substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
     }
