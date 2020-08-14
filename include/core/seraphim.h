@@ -37,7 +37,7 @@ private:
  
     std::shared_ptr<camera_t> test_camera;      
 
-    std::set<std::weak_ptr<substance_t>> substances;
+    std::set<std::shared_ptr<substance_t>> substances;
 
 public:
     seraphim_t();
@@ -47,6 +47,9 @@ public:
 
     renderer_t * get_renderer() const;
     window_t *   get_window()   const;
+
+    void create(std::shared_ptr<substance_t> substance);
+    void annihilate(std::shared_ptr<substance_t> substance);
 };
 
 #endif

@@ -1,21 +1,28 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include "core/hyper.h"
+#include "substance/matter/matter.h"
+
+#include <memory>
+#include <set>
 #include <thread>
 
-#include "core/hyper.h"
-
 class physics_t {
-private:
-    bool quit;
-    std::thread thread;
-
-    void tick();
-    void run();
-
 public:
     physics_t();
     ~physics_t();
+
+    void register_matter(std::shared_ptr<matter_t> matter);
+    void unregister_matter(std::shared_ptr<matter_t> matter);
+
+private:
+    bool quit;
+    std::thread thread;
+    std::set<std::shared_ptr<matter_t>> matters;
+
+    void tick();
+    void run();
 };
 
 

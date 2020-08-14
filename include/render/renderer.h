@@ -149,6 +149,9 @@ public:
     // public functions
     void render();
     void set_main_camera(std::weak_ptr<camera_t> camera);
+
+    void register_substance(std::shared_ptr<substance_t> substance);
+    void unregister_substance(std::shared_ptr<substance_t> substance);
 };
 
 #endif

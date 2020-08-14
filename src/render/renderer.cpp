@@ -758,3 +758,16 @@ renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substan
 
     return response_cache[call];
 }
+
+void 
+renderer_t::register_substance(std::shared_ptr<substance_t> substance){
+    substances.insert(substance);
+}
+
+void 
+renderer_t::unregister_substance(std::shared_ptr<substance_t> substance){
+    auto it = substances.find(substance);
+    if (it != substances.end()){
+        substances.erase(it);
+    }
+}

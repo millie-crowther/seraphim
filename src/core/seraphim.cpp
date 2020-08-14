@@ -79,6 +79,10 @@ seraphim_t::seraphim_t(){
 }
 
 seraphim_t::~seraphim_t(){
+    for (auto substance : substances){
+        annihilate(substance);
+    }
+
     vkDeviceWaitIdle(device->get_device());
 
     // delete renderer early to release resources at appropriate time
@@ -266,4 +270,22 @@ seraphim_t::run(){
 window_t *
 seraphim_t::get_window() const {
     return window.get();
+}
+
+void 
+seraphim_t::create(std::shared_ptr<substance_t> substance){
+    substances.insert(substance);
+    renderer->register_substance(substance);
+    physics->register_matter(substance->get_matter());
+}
+
+void 
+seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
+    renderer->unregister_substance(substance);
+    physics->unregister_matter(substance->get_matter());
+
+    auto it = substances.find(substance);
+    if (it != substances.end()){
+        substances.erase(it);
+    }
 }
