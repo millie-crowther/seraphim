@@ -556,16 +556,6 @@ renderer_t::present(uint32_t image_index) const {
 
 void
 renderer_t::render(){
-    // update substances
-    auto now = std::chrono::high_resolution_clock::now();
-    double theta = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count() / 1000.0;
-    // cube->get_matter()->set_rotation(quat_t::angle_axis(theta / 5.0, vec3_t::up()));
-    // sphere->get_matter()->set_position(vec3_t(
-    //     std::sin(theta) * 0.5,
-    //     1.0, 
-    //     std::cos(theta) * 0.5
-    // ));
-
     // write substances
     std::vector<substance_t::data_t> substance_data;
     for (auto s : substances){

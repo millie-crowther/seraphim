@@ -24,10 +24,11 @@ include_directories(${INCLUDE_DIR})
 set(SOURCES
     ../src/main.cpp
   
-    ../src/core/seraphim.cpp
     ../src/core/command.cpp
-    ../src/core/uuid.cpp
     ../src/core/device.cpp
+    ../src/core/scheduler.cpp
+    ../src/core/seraphim.cpp
+    ../src/core/uuid.cpp
     
     ../src/physics/physics.cpp
 

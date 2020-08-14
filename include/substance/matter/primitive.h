@@ -11,8 +11,6 @@ namespace primitive {
     private:
         double r;
 
-        static constexpr double four_thirds_pi = 4.188790204786390;
-
     public:
         n_sphere_t(double r){
             this->r = r;
@@ -27,11 +25,12 @@ namespace primitive {
         }
 
         aabb_t<double, D> get_aabb() override {
-            return aabb_t<double, D>(vec_t<double, D>(-r), vec_t<double, D>(r));
+            return aabb_t<double, D>(-r, vec_t<double, D>(r));
         }
 
         double get_volume() override {
-            return four_thirds_pi * std::pow(r, 3);
+            constexpr double coeff = std::pow(hyper::pi, double(D) / 2.0) / std::tgamma(double(D) / 2.0 + 1.0);
+            return coeff * std::pow(r, D);
         }
     };  
 
@@ -60,7 +59,7 @@ namespace primitive {
         }
 
         double get_volume() override {
-            return r.volume() * 8;
+            return (r * 2).volume();
         }
     };
 
