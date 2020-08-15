@@ -129,8 +129,8 @@ vec3 get_ray_direction(vec2 xy){
 
 int expected_order(vec3 x){
     float dist = length(inverse(pc.eye_transform)[3].xyz - x);
-    float centre = length(uv(gl_GlobalInvocationID.xy)) * 2;
-    const vec2 ks = vec2(1, 0);
+    float centre = length(uv(gl_GlobalInvocationID.xy));
+    const vec2 ks = vec2(1, 2);
     return 10 + int(dot(vec2(dist, centre), ks));
 }
 

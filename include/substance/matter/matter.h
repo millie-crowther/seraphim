@@ -21,6 +21,7 @@ public:
     double phi(const vec3_t & x) const;
 
     void apply_force(const vec3_t & force);
+    void physics_tick(double delta);
 
 private:
     material_t material;

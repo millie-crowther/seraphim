@@ -21,7 +21,6 @@ private:
     std::thread thread;
     std::set<std::shared_ptr<matter_t>> matters;
 
-    void tick();
     void run();
 };
 

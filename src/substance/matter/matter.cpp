@@ -44,5 +44,10 @@ matter_t::get_transform(){
 
 void 
 matter_t::apply_force(const vec3_t & force){
-    
+    acceleration += force / get_mass();
+}
+
+void
+matter_t::physics_tick(double delta){
+
 }
