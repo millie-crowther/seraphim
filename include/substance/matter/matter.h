@@ -10,16 +10,13 @@
 
 class matter_t {
 public:
-    matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material);
+    matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position);
 
     material_t get_material(const vec3_t & x);
     std::shared_ptr<sdf3_t> get_sdf() const;
     vec3_t get_position() const;
     double get_mass();
     transform_t & get_transform();
-
-    void set_position(const vec3_t & x);
-    void set_rotation(const quat_t & q);
 
     double phi(const vec3_t & x) const;
 

@@ -1,9 +1,10 @@
 #include "substance/matter/matter.h"
 
 
-matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material){
+matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position){
     this->sdf = sdf;
     this->material = material;
+    this->transform.set_position(initial_position);
 }
 
 std::shared_ptr<sdf3_t>
@@ -16,21 +17,10 @@ matter_t::get_position() const {
     return transform.get_position();
 }
 
-void 
-matter_t::set_position(const vec3_t & x){
-    transform.set_position(x);
-}
-
-void 
-matter_t::set_rotation(const quat_t & q){
-    transform.set_rotation(q);
-}
-
 double 
 matter_t::phi(const vec3_t & x) const {
     return sdf->phi(transform.to_local_space(x));
 }
-
 
 material_t
 matter_t::get_material(const vec3_t & x){
