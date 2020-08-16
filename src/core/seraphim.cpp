@@ -83,6 +83,8 @@ seraphim_t::seraphim_t(){
 }
 
 seraphim_t::~seraphim_t(){
+    scheduler::terminate();
+
     vkDeviceWaitIdle(device->get_device());
 
     // delete renderer early to release resources at appropriate time

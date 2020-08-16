@@ -21,6 +21,7 @@ namespace scheduler {
     };
 
     void initialise();
+    void terminate();
 
     void schedule_at(clock_t::time_point t, const task_t::function_t & f);
     void schedule_after(double delta, const task_t::function_t & f);
