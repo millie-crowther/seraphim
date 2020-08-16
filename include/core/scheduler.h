@@ -3,9 +3,10 @@
 
 #include <chrono>
 #include <functional>
-#include <queue>
 
 namespace scheduler {
+    constexpr uint32_t number_of_threads = 1;
+
     using clock_t = std::chrono::high_resolution_clock;
 
     struct task_t {
@@ -19,25 +20,11 @@ namespace scheduler {
         };
     };
 
-    namespace {
-        std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> task_queue;
-    }
+    void initialise();
 
-    template<class F>
-    void schedule_at(clock_t::time_point t, const F & f){
-        task_queue.push({ t, task_t::function_t(f) });
-    }
-
-    template<class F>
-    void schedule_after(double delta, const F & f){
-        auto t = clock_t::now() + std::chrono::microseconds(static_cast<uint32_t>(1000000 * delta));
-        schedule_at(t, f);
-    }
-
-    template<class F>
-    void schedule(const F & f){
-        schedule_at(clock_t::now(), f);
-    }
+    void schedule_at(clock_t::time_point t, const task_t::function_t & f);
+    void schedule_after(double delta, const task_t::function_t & f);
+    void schedule(const task_t::function_t & f);
 }
 
 #endif

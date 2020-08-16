@@ -9,6 +9,8 @@
 #include <fstream>
 #include <cstring>
 #include <memory>
+
+#include "core/scheduler.h"
 #include "render/renderer.h"
 
 const std::vector<const char *> validation_layers = {
@@ -70,6 +72,8 @@ seraphim_t::seraphim_t(){
 #endif
 
     test_camera = std::make_shared<camera_t>();
+
+    scheduler::initialise();
 
     renderer = std::make_unique<renderer_t>(
         device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
