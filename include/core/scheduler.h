@@ -5,7 +5,7 @@
 #include <functional>
 
 namespace scheduler {
-    constexpr uint32_t number_of_threads = 1;
+    constexpr uint32_t number_of_threads = 2;
 
     using clock_t = std::chrono::high_resolution_clock;
 
@@ -24,7 +24,6 @@ namespace scheduler {
     void terminate();
 
     void schedule_at(clock_t::time_point t, const task_t::function_t & f);
-    void schedule_after(double delta, const task_t::function_t & f);
     void schedule(const task_t::function_t & f);
 }
 
