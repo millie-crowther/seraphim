@@ -22,10 +22,8 @@ namespace scheduler {
     using clock_t = std::chrono::high_resolution_clock;
 
     struct task_t {
-        typedef std::function<void()> function_t;
-
         clock_t::time_point t;
-        std::shared_ptr<function_t> f;
+        std::shared_ptr<std::function<void()>> f;
 
         struct comparator_t {
             bool operator()(const task_t & a, const task_t & b){
@@ -96,22 +94,20 @@ namespace scheduler {
 
     template<typename F, typename... Rest>
     auto schedule_at(const clock_t::time_point & t, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        auto packed_func = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
+        auto _f = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
             std::bind(std::forward<F>(f), std::forward<Rest>(rest)...)
         );
 
-        auto _f = std::make_shared<task_t::function_t>([packed_func](){
-            (*packed_func)();
-        });
-
         if (!quit){
             std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
-            task_queue.push({ t, _f });
+            task_queue.push({ 
+                t, std::make_shared<std::function<void()>>([_f](){ (*_f)(); }) 
+            });
         }
 
         cv.notify_one();
 
-        return packed_func->get_future();
+        return _f->get_future();
     }
 
     template<typename F, typename... Rest>
