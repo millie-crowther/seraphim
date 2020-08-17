@@ -13,6 +13,8 @@
 #include "core/scheduler.h"
 #include "render/renderer.h"
 
+using namespace std::chrono_literals;
+
 const std::vector<const char *> validation_layers = {
 #if SERAPHIM_DEBUG
    // "VK_LAYER_KHRONOS_validation"
