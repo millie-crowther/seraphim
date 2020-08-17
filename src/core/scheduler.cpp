@@ -1,6 +1,7 @@
 #include "core/scheduler.h"
 
 #include <condition_variable>
+#include <iostream>
 #include <mutex>
 #include <set>
 #include <thread>
@@ -39,6 +40,8 @@ thread_pool_function(){
             cv.wait_until(cv_lock, task.t);
         }
     }
+
+    std::cout << "Auxiliary thread terminating." << std::endl;
 }
 
 void 
@@ -54,6 +57,10 @@ void
 scheduler::terminate(){
     quit = true;
     cv.notify_all();
+
+    for (auto & thread : threads){
+        thread.join();
+    }
 }
 
 bool
