@@ -16,6 +16,8 @@
 // https://github.com/vit-vit/CTPL
 //
 
+using namespace std::chrono_literals;
+
 namespace scheduler {
     constexpr uint32_t number_of_threads = 2;
 
@@ -94,20 +96,19 @@ namespace scheduler {
 
     template<typename F, typename... Rest>
     auto schedule_at(const clock_t::time_point & t, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        auto _f = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
+        auto packed = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
             std::bind(std::forward<F>(f), std::forward<Rest>(rest)...)
         );
 
+        auto _f = std::make_shared<std::function<void()>>([packed](){ (*packed)(); });
+
         if (!quit){
             std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
-            task_queue.push({ 
-                t, std::make_shared<std::function<void()>>([_f](){ (*_f)(); }) 
-            });
+            task_queue.push({ t, _f });
         }
 
         cv.notify_one();
-
-        return _f->get_future();
+        return packed->get_future();
     }
 
     template<typename F, typename... Rest>
