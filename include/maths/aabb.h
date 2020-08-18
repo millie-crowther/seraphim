@@ -42,6 +42,12 @@ public:
     vec_t<T, D> get_centre() const {
         return max / 2 + min / 2;
     }
+
+    vec_t<T, D> random() const {
+        vec_t<double, D> x = vec_t<double, D>::random(0.0, 1.0);
+        x = x.hadamard(max - min) + min;
+        return x;
+    }
 };
 
 typedef aabb_t<double, 3> aabb3_t;

@@ -12,8 +12,6 @@ protected:
     sdf_t(){}
 
 public:
-    virtual ~sdf_t(){}
-
     // virtual accessors 
     virtual double phi(const vec_t<double, D> & x) = 0;
 
@@ -22,7 +20,7 @@ public:
         return vec_t<double, D>::nabla(f, x, hyper::epsilon);
     }
 
-    bool contains(const vec_t<double, D> & x){
+    virtual bool contains(const vec_t<double, D> & x){
         return phi(x) <= 0.0;
     }
 

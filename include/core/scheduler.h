@@ -2,19 +2,16 @@
 #define SCHEDULER_H
 
 #include <chrono>
+#include <condition_variable>
 #include <functional>
 #include <future>
-#include <condition_variable>
 #include <iostream>
 #include <mutex>
-#include <set>
-#include <thread>
 #include <queue>
+#include <thread>
 
-// 
-// this file is partially copied from:
+// this file is partially modified from:
 // https://github.com/vit-vit/CTPL
-//
 
 using namespace std::chrono_literals;
 
@@ -109,11 +106,6 @@ namespace scheduler {
 
         cv.notify_one();
         return packed->get_future();
-    }
-
-    template<typename F, typename... Rest>
-    auto schedule(F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        return schedule_at(clock_t::now(), std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 
     template<typename D, typename F, typename... Rest>

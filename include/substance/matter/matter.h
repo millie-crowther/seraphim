@@ -24,9 +24,13 @@ public:
     void physics_tick(double delta);
 
 private:
+    static constexpr uint32_t number_of_samples = 1000;
+
     material_t material;
     std::shared_ptr<sdf3_t> sdf;
     transform_t transform;
+
+    std::unique_ptr<double> average_density;
 
     vec3_t velocity;
     vec3_t acceleration;

@@ -1,13 +1,18 @@
 #ifndef MATHS_VECTOR_H
 #define MATHS_VECTOR_H
 
-#include <cmath>
-#include <array>
 #include <algorithm>
+#include <array>
+#include <cmath>
+#include <functional>
 #include <iostream>
 #include <numeric>
+#include <random>
 #include <type_traits>
-#include <functional>
+
+namespace {
+    std::default_random_engine engine;
+}
 
 template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
@@ -217,6 +222,25 @@ public:
 
     static vec_t<T, N> forward(){
         return axis<2>();
+    }
+
+    static vec_t<T, N> random(const T & low, const T & high){
+        vec_t<T, N> result;
+
+        if constexpr (std::is_integral<T>::value){
+            std::uniform_int_distribution<T> distribution(low, high);
+            for (int i = 0; i < N; i++){
+                result[i] = distribution(engine);
+            }
+
+        } else if constexpr (std::is_floating_point<T>::value){
+            std::uniform_real_distribution<T> distribution(low, high);
+            for (int i = 0; i < N; i++){
+                result[i] = distribution(engine);
+            }
+        }
+
+        return result;
     }
 };
 

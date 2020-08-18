@@ -29,7 +29,22 @@ matter_t::get_material(const vec3_t & x){
 
 double
 matter_t::get_average_density(){
-    return material.density;
+    if (!average_density){
+        double density;
+        uint32_t sample = 0;
+
+        while (sample < number_of_samples){
+            vec3_t x = sdf->get_aabb().random();
+            if (sdf->contains(x)){
+                density += get_material(x).density;
+                sample++;
+            }
+        }
+
+        average_density = std::make_unique<double>(density / number_of_samples);
+    }
+
+    return *average_density;
 }
 
 double

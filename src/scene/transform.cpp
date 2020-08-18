@@ -83,11 +83,11 @@ transform_t::recalculate_matrix() {
 
     vec3_t x = rotation * position;
 
-    f32vec4_t d = f32vec4_t(
+    vec4_t d(
         -x[0],
         -x[1],
         -x[2],
-        1.0f
+        1.0
     );
 
     matrix = std::make_unique<f32mat4_t>(a, b, c, d);
