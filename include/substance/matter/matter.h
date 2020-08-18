@@ -24,18 +24,21 @@ public:
     void physics_tick(double delta);
 
 private:
-    static constexpr uint32_t number_of_samples = 1000;
+    static constexpr uint32_t number_of_samples = 10000;
 
     material_t material;
     std::shared_ptr<sdf3_t> sdf;
     transform_t transform;
 
     std::unique_ptr<double> average_density;
+    std::unique_ptr<vec3_t> centre_of_mass;
 
     vec3_t velocity;
     vec3_t acceleration;
 
+    void calculate_centre_of_mass();
     double get_average_density();
+    vec3_t get_centre_of_mass();
 };
 
 #endif
