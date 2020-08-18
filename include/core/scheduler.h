@@ -21,8 +21,22 @@ namespace scheduler {
     using clock_t = std::chrono::high_resolution_clock;
 
     struct task_t {
+        typedef std::shared_ptr<std::function<void()>> function_t;
+
         clock_t::time_point t;
         std::shared_ptr<std::function<void()>> f;
+        bool is_repeatable;
+        std::chrono::microseconds period;
+
+        task_t(){}
+
+        template<typename P>
+        task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, bool is_repeatable, const P & p){
+            this->t = t;
+            this->f = f;
+            this->is_repeatable = is_repeatable;
+            period = p;
+        }
 
         struct comparator_t {
             bool operator()(const task_t & a, const task_t & b){
@@ -54,6 +68,12 @@ namespace scheduler {
                         if (scheduler::clock_t::now() >= task.t){
                             is_task_ready = true;
                             task_queue.pop();
+
+                            if (task.is_repeatable){
+                                task.t += task.period;
+                                
+                                task_queue.push(task);
+                            }
                         }
                     }
                 }
@@ -69,6 +89,29 @@ namespace scheduler {
             }
 
             std::cout << "Auxiliary thread terminating." << std::endl;
+        }
+
+        template<typename F, typename... Rest, typename P>
+        auto schedule_task(const clock_t::time_point & t, bool is_repeatable, const P & p, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
+            auto packed = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
+                std::bind(std::forward<F>(f), std::forward<Rest>(rest)...)
+            );
+
+            auto _f = std::make_shared<std::function<void()>>([packed, is_repeatable](){ 
+                (*packed)(); 
+
+                if (is_repeatable){
+                    packed->reset();
+                }
+            });
+
+            if (!quit){
+                std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
+                task_queue.emplace(t, _f, is_repeatable, p);
+            }
+
+            cv.notify_one();
+            return packed->get_future();
         }
     }
 
@@ -93,19 +136,12 @@ namespace scheduler {
 
     template<typename F, typename... Rest>
     auto schedule_at(const clock_t::time_point & t, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        auto packed = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
-            std::bind(std::forward<F>(f), std::forward<Rest>(rest)...)
-        );
+        return schedule_task(t, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
+    }
 
-        auto _f = std::make_shared<std::function<void()>>([packed](){ (*packed)(); });
-
-        if (!quit){
-            std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
-            task_queue.push({ t, _f });
-        }
-
-        cv.notify_one();
-        return packed->get_future();
+    template<typename F, typename... Rest, typename P>
+    void schedule_every(const P & p, F && f, Rest &&... rest){
+        schedule_task(clock_t::now(), true, p, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 
     template<typename D, typename F, typename... Rest>
