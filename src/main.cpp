@@ -1,5 +1,6 @@
 #include "core/seraphim.h"
 
+#include "core/scheduler.h"
 #include "substance/matter/primitive.h"
 
 int main(){ 
@@ -35,6 +36,7 @@ int main(){
     seraphim.create(floor_substance);
     seraphim.create(sphere);
     seraphim.create(cube);
+
 
     seraphim.run();
 }

@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include "core/scheduler.h"
 
 physics_t::physics_t(){
     quit = false;
@@ -15,13 +16,15 @@ physics_t::~physics_t(){
 
 void 
 physics_t::run(){
-    auto t = std::chrono::steady_clock::now();
+    auto t = scheduler::clock_t::now();
+    auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(hyper::iota);
+    double physics_d = hyper::iota.count() / 1000.0;
+
     while (!quit){
         for (auto & m : matters){
-            m->physics_tick(1.0 / hyper::iota);
+            m->physics_tick(physics_d);
         }
-
-        t += std::chrono::microseconds(static_cast<uint32_t>(1000000.0 / hyper::iota));
+        t += clock_d;
         std::this_thread::sleep_until(t);
     }
 }

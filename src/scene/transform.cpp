@@ -17,30 +17,29 @@ transform_t::translate(const vec3_t & x){
 }
 
 void 
-transform_t::set_rotation(const quat_t & q){
-    rotation = q;
-    matrix.reset();
-}
-
-void 
 transform_t::rotate(const quat_t & q){
     rotation *= q;
     matrix.reset();
 }
 
-quat_t 
-transform_t::get_rotation() const {
-    return rotation;
-}
-
-vec3_t
-transform_t::get_position() const {
-    return position;
-}
-
 vec3_t 
 transform_t::to_local_space(const vec3_t & x) const {
     return rotation.inverse() * (position - x);
+}
+
+vec3_t
+transform_t::right() const {
+    return rotation * vec3_t::right();
+}
+
+vec3_t
+transform_t::up() const {
+    return rotation * vec3_t::up();
+}
+
+vec3_t
+transform_t::forward() const {
+    return rotation * vec3_t::forward();
 }
 
 void
@@ -100,4 +99,9 @@ transform_t::get_matrix(){
     }
 
     return matrix.get();
+}
+
+vec3_t 
+transform_t::get_position() const {
+    return position;
 }

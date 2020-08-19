@@ -33,8 +33,8 @@ private:
     std::unique_ptr<double> average_density;
     std::unique_ptr<vec3_t> centre_of_mass;
 
-    vec3_t velocity;
-    vec3_t acceleration;
+    vec3_t v;
+    vec3_t a;
 
     void calculate_centre_of_mass();
     double get_average_density();

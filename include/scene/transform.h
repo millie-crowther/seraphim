@@ -19,15 +19,16 @@ private:
 public:
     transform_t();
 
+    vec3_t get_position() const;
     void set_position(const vec3_t & x);
     void translate(const vec3_t & x);
 
-    void set_rotation(const quat_t & q);
     void rotate(const quat_t & q);
 
     // accessors
-    vec3_t get_position() const;
-    quat_t get_rotation() const;
+    vec3_t forward() const;
+    vec3_t up() const;
+    vec3_t right() const;
 
     vec3_t to_local_space(const vec3_t & x) const;
 

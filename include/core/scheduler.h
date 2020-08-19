@@ -39,57 +39,12 @@ namespace scheduler {
         }
 
         struct comparator_t {
-            bool operator()(const task_t & a, const task_t & b){
-                return a.t > b.t;
-            }
+            bool operator()(const task_t & a, const task_t & b);
         };
     };
 
-    namespace {
-        bool quit = true;
-        std::priority_queue<task_t, std::vector<task_t>, task_t::comparator_t> task_queue;
-        std::vector<std::thread> threads;
-        std::condition_variable cv;
-        std::mutex cv_mutex;
-        std::mutex task_queue_mutex;
-
-        void thread_pool_function(){
-            while (!quit){
-                bool is_queue_empty;
-                bool is_task_ready = false;
-                scheduler::task_t task;
-
-                {
-                    std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
-                    is_queue_empty = task_queue.empty();
-                    
-                    if (!is_queue_empty){
-                        task = task_queue.top();
-                        if (scheduler::clock_t::now() >= task.t){
-                            is_task_ready = true;
-                            task_queue.pop();
-
-                            if (task.is_repeatable){
-                                task.t += task.period;
-                                
-                                task_queue.push(task);
-                            }
-                        }
-                    }
-                }
-
-                std::unique_lock<std::mutex> cv_lock(cv_mutex);
-                if (is_queue_empty){
-                    cv.wait(cv_lock);
-                } else if (is_task_ready){
-                    (*task.f)();
-                } else {
-                    cv.wait_until(cv_lock, task.t);
-                }
-            }
-
-            std::cout << "Auxiliary thread terminating." << std::endl;
-        }
+    namespace __private {
+        void enqueue_task(const task_t & t);
 
         template<typename F, typename... Rest, typename P>
         auto schedule_task(const clock_t::time_point & t, bool is_repeatable, const P & p, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
@@ -105,48 +60,27 @@ namespace scheduler {
                 }
             });
 
-            if (!quit){
-                std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
-                task_queue.emplace(t, _f, is_repeatable, p);
-            }
-
-            cv.notify_one();
+            enqueue_task(task_t(t, _f, is_repeatable, p));
             return packed->get_future();
         }
     }
 
-    void initialise(){
-        quit = false;
-
-        for (uint32_t thread = 0; thread < number_of_threads; thread++){
-            threads.emplace_back(thread_pool_function);
-        }
-    }
-
-    void terminate(){
-        quit = true;
-        cv.notify_all();
-
-        for (auto & thread : threads){
-            if (thread.joinable()){
-                thread.join();
-            }
-        }
-    }
+    void initialise();
+    void terminate();
 
     template<typename F, typename... Rest>
     auto schedule_at(const clock_t::time_point & t, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        return schedule_task(t, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
+        return __private::schedule_task(t, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 
     template<typename F, typename... Rest, typename P>
     void schedule_every(const P & p, F && f, Rest &&... rest){
-        schedule_task(clock_t::now(), true, p, std::forward<F>(f), std::forward<Rest>(rest)...);
+        __private::schedule_task(clock_t::now(), true, p, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 
     template<typename D, typename F, typename... Rest>
     auto schedule_after(const D & d, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        return schedule_at(clock_t::now() + d, std::forward<F>(f), std::forward<Rest>(rest)...);
+        return __private::schedule_task(clock_t::now() + d, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 }
 

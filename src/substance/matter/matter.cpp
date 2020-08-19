@@ -76,10 +76,13 @@ matter_t::get_transform(){
 
 void 
 matter_t::apply_force(const vec3_t & force){
-    acceleration += force / get_mass();
+    a += force / get_mass();
 }
 
 void
-matter_t::physics_tick(double delta){
-
+matter_t::physics_tick(double t){
+    a[1] -= 9.8;
+    transform.translate(a * 0.5 * t * t + v * t);
+    v += a * t;
+    a = vec3_t(0.0);
 }
