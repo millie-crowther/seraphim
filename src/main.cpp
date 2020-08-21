@@ -37,6 +37,10 @@ int main(){
     seraphim.create(sphere);
     seraphim.create(cube);
 
+    std::shared_ptr<matter_t> m = floor_substance->get_matter();
+    scheduler::schedule_every(hyper::iota, [m](){
+        m->apply_force(vec3_t(0.0, 9.8, 0.0) * m->get_mass());
+    });
 
     seraphim.run();
 }

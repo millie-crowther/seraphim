@@ -35,7 +35,7 @@ namespace scheduler {
             this->t = t;
             this->f = f;
             this->is_repeatable = is_repeatable;
-            period = p;
+            period = std::chrono::duration_cast<std::chrono::microseconds>(p);
         }
 
         struct comparator_t {
