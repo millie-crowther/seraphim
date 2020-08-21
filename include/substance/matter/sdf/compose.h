@@ -19,7 +19,7 @@ namespace compose {
         }
 
         vec_t<double, D> normal(const vec_t<double, D> & x){
-            if (a->phi(x) > b->phi){
+            if (a->phi(x) > b->phi(x)){
                 return a->normal(x);
             } else {
                 return b->normal(x);

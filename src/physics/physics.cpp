@@ -55,9 +55,11 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    auto intersection = a && b;
-    vec3_t initial;
-    vec3_t minima = intersection->minimise(initial);
+//    std::shared_ptr<compose::intersection_t<3>> intersection = std::make_shared<compose::intersection_t<3>>(
+  //      a->get_sdf(), b->get_sdf()
+   // );
+   // vec3_t initial;
+   // vec3_t minima = intersection->minimise(initial);
 
     // TODO 
 }
