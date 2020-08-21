@@ -38,7 +38,15 @@ namespace compose {
                 aabb_a.get_max().min(aabb_b.get_max())
             );
         }
-    }; 
+    };
+
+    namespace operators {
+        template<uint8_t D>
+        std::shared_ptr<intersection_t<D>>
+        operator&&(std::shared_ptr<sdf_t<D>> a, std::shared_ptr<sdf_t<D>> b){
+            return std::make_shared<intersection_t<D>>(a, b);
+        }
+    } 
 }
 
 #endif

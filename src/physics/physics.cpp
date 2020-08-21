@@ -1,8 +1,12 @@
 #include "physics/physics.h"
 
+#include "core/scheduler.h"
+#include "substance/matter/sdf/compose.h"
+
 #include <chrono>
 #include <iostream>
-#include "core/scheduler.h"
+
+using namespace compose::operators;
 
 physics_t::physics_t(){
     quit = false;
@@ -27,7 +31,7 @@ physics_t::run(){
 
         for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
             for (auto b_it = std::next(a_it); b_it != matters.end(); b_it++){
-                collide(**a_it, **b_it);
+                collide(*a_it, *b_it);
             }
         }
 
@@ -50,6 +54,10 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 }
 
 void
-physics_t::collide(const matter_t & a, const matter_t & b){
+physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
+    auto intersection = a && b;
+    vec3_t initial;
+    vec3_t minima = intersection->minimise(initial);
 
+    // TODO 
 }

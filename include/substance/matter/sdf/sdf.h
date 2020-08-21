@@ -31,6 +31,10 @@ public:
     virtual double get_volume(){
         return 0.0;
     }
+
+    virtual vec_t<double, D> minimise(const vec_t<double, D> & x){
+        return vec_t<double, D>(0.0);
+    }
 };
 
 typedef sdf_t<3> sdf3_t;
