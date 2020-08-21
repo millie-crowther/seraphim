@@ -15,6 +15,7 @@ public:
 
     void register_matter(std::shared_ptr<matter_t> matter);
     void unregister_matter(std::shared_ptr<matter_t> matter);
+    void collide(const matter_t & a, const matter_t & b);
 
 private:
     bool quit;
