@@ -1,7 +1,7 @@
 #ifndef MATTER_H
 #define MATTER_H
 
-#include "sdf.h"
+#include "sdf/sdf.h"
 #include "material.h"
 #include "maths/quat.h"
 #include "scene/transform.h"

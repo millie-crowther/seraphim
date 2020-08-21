@@ -1,7 +1,7 @@
 #include "core/seraphim.h"
 
 #include "core/scheduler.h"
-#include "substance/matter/primitive.h"
+#include "substance/matter/sdf/primitive.h"
 
 int main(){ 
     auto floor_substance = std::make_shared<substance_t>( 
