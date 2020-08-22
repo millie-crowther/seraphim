@@ -1,17 +1,14 @@
 # seraphim
 
-Seraphim is a Catholic game engine inspired by TempleOS
+Seraphim is a Catholic game engine with a few weird and cool fetures: 
 
-Features:
 * Raycast rendering engine - currently being implemented but should allow for advanced reflective and refractive techniques
 * Precise and efficient physics engine using signed distance fields for collision detection - this is next up to be implemented
 * Robust metaphysics engine allowing for more complex reasoning about simulated environment - I have to read a lot more theory before I can correctly implement this, but the outline is currently in the works
 
 ## state of the engine
 
-02/07/2020 - hitting about 40 FPS with shadows when camera isnt moving, 15FPS when it is moving. next improvement is to filter the substances that shadows check against
-
-24/06/2020 - Currently hitting a cool eighteen frames per second at 720p on a my laptop's GeForce GTX 860M graphics card. Current optimisation strategy is to restructure geometry lookups to remove a `for` loop in the shader that I think is trashing performance.
+22/08/2020 - about 80 FPS at 720p. main problem with rendering is now hash collisions - currently working on basics physics simulation 
 
 ## install
 `./install.sh`
