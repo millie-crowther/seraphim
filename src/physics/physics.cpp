@@ -4,9 +4,10 @@
 #include "substance/matter/sdf/compose.h"
 
 #include <chrono>
+#include <functional>
 #include <iostream>
 
-using namespace compose::operators;
+using namespace std::placeholders;
 
 physics_t::physics_t(){
     quit = false;
@@ -55,11 +56,14 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-//    std::shared_ptr<compose::intersection_t<3>> intersection = std::make_shared<compose::intersection_t<3>>(
-  //      a->get_sdf(), b->get_sdf()
-   // );
-   // vec3_t initial;
-   // vec3_t minima = intersection->minimise(initial);
+    auto error_func = std::bind(collision_error_function, a, b, _1, _2, _3, _4);
+}
 
-    // TODO 
+double
+physics_t::collision_error_function(
+    std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b,
+    double t, 
+    double x, double y, double z
+){
+    return 0.0;
 }

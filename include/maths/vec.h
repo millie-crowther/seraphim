@@ -1,6 +1,8 @@
 #ifndef MATHS_VECTOR_H
 #define MATHS_VECTOR_H
 
+#include "core/hyper.h"
+
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -195,14 +197,14 @@ public:
 
     // factories
     template<class F, class Tx, uint8_t Nx>
-    static vec_t<T, N> nabla(const F & f, const vec_t<Tx, Nx> & x, const Tx & delta){
+    static vec_t<T, N> grad(const F & f, const vec_t<Tx, Nx> & x){
         vec_t<T, N> r;
         for (uint8_t i = 0; i < N; i++){
             vec_t<Tx, Nx> axis;
-            axis[i] = delta;
+            axis[i] = hyper::epsilon;
             r[i] = (f(x + axis) - f(x - axis));
         }
-        return r / (2 * delta);
+        return r / (2 * hyper::epsilon);
     }
 
     template<uint8_t A>

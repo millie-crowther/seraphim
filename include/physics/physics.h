@@ -22,6 +22,12 @@ private:
     std::thread thread;
     std::set<std::shared_ptr<matter_t>> matters;
 
+    static double collision_error_function(
+        std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b,
+        double t,
+        double x, double y, double z
+    );
+
     void run();
 };
 

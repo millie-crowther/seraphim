@@ -18,7 +18,7 @@ int main(){
         std::make_shared<matter_t>(
             std::make_shared<primitive::sphere_t>(0.5), 
             material_t(vec3_t(0.8, 0.1, 0.8), 700.0),
-            vec3_t(2.5, 1.0, 0.5)
+            vec3_t(2.5, 3.0, 0.5)
         )
     );
 
@@ -27,7 +27,7 @@ int main(){
         std::make_shared<matter_t>(
             std::make_shared<primitive::cuboid_t>(vec3_t(0.5)), 
             material_t(vec3_t(0.8, 0.8, 0.1), 700.0),
-            vec3_t(-2.5, 1.0, 0.5)
+            vec3_t(-2.5, 3.0, 0.5)
         )
     );
     

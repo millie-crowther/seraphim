@@ -17,7 +17,7 @@ public:
 
     virtual vec_t<double, D> normal(const vec_t<double, D> & x) {
         auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
-        return vec_t<double, D>::nabla(f, x, hyper::epsilon);
+        return vec_t<double, D>::grad(f, x);
     }
 
     virtual bool contains(const vec_t<double, D> & x){
@@ -30,10 +30,6 @@ public:
 
     virtual double get_volume(){
         return 0.0;
-    }
-
-    virtual vec_t<double, D> minimise(const vec_t<double, D> & x){
-        return vec_t<double, D>(0.0);
     }
 };
 
