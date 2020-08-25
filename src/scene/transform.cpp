@@ -29,17 +29,17 @@ transform_t::to_local_space(const vec3_t & x) const {
 
 vec3_t
 transform_t::right() const {
-    return rotation * vec3_t::right();
+    return rotation * vec::right<double>();
 }
 
 vec3_t
 transform_t::up() const {
-    return rotation * vec3_t::up();
+    return rotation * vec::up<double>();
 }
 
 vec3_t
 transform_t::forward() const {
-    return rotation * vec3_t::forward();
+    return rotation * vec::forward<double>();
 }
 
 void

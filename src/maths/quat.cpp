@@ -1,15 +1,9 @@
 #include "maths/quat.h"
 
-#include "core/hyper.h"
-
 quat_t::quat_t() : quat_t(1.0, 0.0, 0.0, 0.0){}
 
 quat_t::quat_t(double w, double x, double y, double z) : qs(w, x, y, z) {
-    if (qs.square_norm() > hyper::epsilon){
-        qs /= qs.norm(); 
-    } else {
-        qs = vec4_t(1.0, 0.0, 0.0, 0.0);
-    }
+    qs = vec::normalise(qs);
 }
 
 quat_t
@@ -58,12 +52,6 @@ quat_t::operator*(const vec3_t & x) const {
         (xy + wz) * x[0] + (0.5 - xx - zz) * x[1] + (yz + wx) * x[2],
         (xz - wy) * x[0] + (yz - wx) * x[1] + (0.5 - xx - yy) * x[2]
     ) * 2;
-}
-
-uint32_t
-quat_t::pack() const {
-    u8vec4_t q_p = (qs + 1) * 127.5;
-    return *reinterpret_cast<uint32_t *>(&q_p);
 }
 
 double 

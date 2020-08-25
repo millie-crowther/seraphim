@@ -8,7 +8,7 @@ void
 camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
     vec3_t forward = transform.forward();
     forward[1] = 0.0;
-    forward = forward.normalise();
+    forward = vec::normalise(forward);
     vec3_t right = transform.right();
 
     if (keyboard.is_key_pressed(GLFW_KEY_W)){
@@ -29,7 +29,7 @@ camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mous
     
     transform.rotate(quat_t::angle_axis(
         delta * mouse.get_velocity()[0] / 2000, 
-        vec3_t::up()
+        vec::up<double>()
     ));
 
     transform.rotate(quat_t::angle_axis(

@@ -33,7 +33,7 @@ seraphim_t::seraphim_t(){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    window = std::make_unique<window_t>(work_group_count.hadamard(work_group_size));
+    window = std::make_unique<window_t>(work_group_count * work_group_size);
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);

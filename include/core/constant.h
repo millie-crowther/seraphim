@@ -6,7 +6,7 @@
 
 using namespace std::chrono_literals;
 
-namespace hyper {
+namespace constant {
     // smallest distance
     constexpr double epsilon = 1.0 / 256.0;      // metres    
 

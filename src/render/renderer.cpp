@@ -28,7 +28,7 @@ renderer_t::renderer_t(
 
     current_frame = 0;
     push_constants.current_frame = 0;
-    push_constants.render_distance = static_cast<float>(hyper::rho);
+    push_constants.render_distance = constant::rho;
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
@@ -36,7 +36,7 @@ renderer_t::renderer_t(
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth = number_of_patches / patch_image_size / patch_image_size + 1;
     push_constants.patch_pool_size = number_of_patches;
-    push_constants.epsilon = hyper::epsilon;
+    push_constants.epsilon = constant::epsilon;
 
     set_main_camera(test_camera);
 
@@ -561,14 +561,14 @@ renderer_t::render(){
     for (auto s : substances){
         substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
     }
-    substance_data.resize(work_group_size.volume());
+    substance_data.resize(vec::volume(work_group_size));
 
     std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
 
     // write lights
-    std::vector<light_t> lights(work_group_size.volume());
+    std::vector<light_t> lights(vec::volume(work_group_size));
     lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
     light_buffer->write(lights, 0);
     
@@ -685,8 +685,8 @@ renderer_t::handle_requests(uint32_t frame){
 
 void 
 renderer_t::create_buffers(){
-    uint32_t c = work_group_count.volume();
-    uint32_t s = work_group_size.volume();
+    uint32_t c = vec::volume(work_group_count);
+    uint32_t s = vec::volume(work_group_size);
 
     patch_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);

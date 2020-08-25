@@ -20,8 +20,8 @@ physics_t::~physics_t(){
 void 
 physics_t::run(){
     auto t = scheduler::clock_t::now();
-    auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(hyper::iota);
-    double physics_d = hyper::iota.count() / 1000.0;
+    auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(constant::iota);
+    double physics_d = constant::iota.count() / 1000.0;
 
     while (!quit){
         for (auto & m : matters){
@@ -61,7 +61,7 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     };
 
     auto dfdx = [f](const vec3_t & x){
-        return vec3_t::grad(f, x);
+        return vec::grad(f, x);
     }; 
     
     auto x = (a->get_position() + b->get_position()) / 2.0;
@@ -72,6 +72,6 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     for (int i = 0; i < max_iterations && !is_colliding; i++){
         x -= dfdx(x) * std::abs(fx);
         fx = f(x);
-        is_colliding = fx < hyper::epsilon;
+        is_colliding = fx < constant::epsilon;
     }
 }

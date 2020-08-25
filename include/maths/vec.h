@@ -1,7 +1,7 @@
 #ifndef MATHS_VECTOR_H
 #define MATHS_VECTOR_H
 
-#include "core/hyper.h"
+#include "core/constant.h"
 
 #include <algorithm>
 #include <array>
@@ -9,12 +9,7 @@
 #include <functional>
 #include <iostream>
 #include <numeric>
-#include <random>
 #include <type_traits>
-
-namespace {
-    std::default_random_engine engine;
-}
 
 template<class T, uint8_t N>
 class vec_t : public std::array<T, N> {
@@ -31,155 +26,88 @@ public:
 
     template<class S>    
     vec_t(const vec_t<S, N> & x){
-        std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return T(s); });
+        std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return static_cast<T>(s); });
     }
 
-    // norms
-    T square_norm() const {
-        return *this * *this;
-    }
-
-    T norm() const {
-        return std::sqrt(square_norm());
-    }   
-
-    T chebyshev_norm() const {
-        auto f = [](const T & a, const T & b){ return std::max(std::abs(a), std::abs(b)); };
-        return std::accumulate(this->begin(), this->end(), T(0), f);
-    }
-
-    T manhattan_norm() const {
-        auto f = [](const T & a, const T & b){ return std::abs(a) + std::abs(b); };
-        return std::accumulate(this->begin(), this->end(), T(0), f);
-    }
-
-    vec_t<T, N> normalise() const {
-        T l = norm();
-        return *this / (l == T(0) ? T(1) : l);
-    }
-
-    // modifier operators   
-    template<class S> 
-    void operator+=(const S & x){
+    // vector modifier operators
+    void operator+=(const vec_t<T, N> & x){
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::plus<T>());
     }
 
-    template<class S>
-    void operator-=(const S & x){
+    void operator-=(const vec_t<T, N> & x){
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::minus<T>());
     }
 
-    void operator*=(const T & s){
-        std::transform(this->begin(), this->end(), this->begin(), std::bind1st(std::multiplies<T>(), s));
+    void operator*=(const vec_t<T, N> & x){
+        std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::multiplies<T>());
     }
 
-    void operator/=(const T & s){
-        std::transform(this->begin(), this->end(), this->begin(), std::bind2nd(std::divides<T>(), s));
-    }
-  
-    // accessors
-    T operator*(const vec_t<T, N> & x) const {
-        vec_t<T, N> h = hadamard(x);
-        return std::accumulate(h.begin(), h.end(), T(0));
+    void operator/=(const vec_t<T, N> & x){
+        std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::divides<T>());
     }
 
+    // scalar modifier operators 
+    void operator+=(const T & x){
+        *this += vec_t<T, N>(x);
+    }
+
+    void operator-=(const T & x){
+        *this -= vec_t<T, N>(x);
+    }
+
+    void operator*=(const T & x){
+        *this *= vec_t<T, N>(x);    
+    }
+
+    void operator/=(const T & x){
+        *this /= vec_t<T, N>(x);
+    }
+
+    // vector accessor operators  
     vec_t<T, N> operator+(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus<T>());
         return r;
     }
 
-    template<class S>
-    typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
-    operator-(const S & x) const {
-        vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), r.begin(), std::bind2nd(std::minus<T>(), static_cast<T>(x)));
-        return r;
-    }
-
-    template<class S>
-    typename std::enable_if<std::is_constructible<T, S>::value, vec_t<T, N>>::type
-    operator-(const vec_t<S, N> & x) const {
+    vec_t<T, N> operator-(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
         return r;
     } 
 
-    vec_t<T, N> operator-() const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::negate<T>());
-        return x;
-    }
-
-    vec_t<T, N> operator+(const T & s) const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind1st(std::plus<T>(), s));
-        return x;
-    }
-
-    vec_t<T, N> operator*(const T & s) const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind1st(std::multiplies<T>(), s));
-        return x;
-    }
-
-    vec_t<T, N> operator/(const T & s) const {
-        vec_t<T, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), std::bind2nd(std::divides<T>(), s));
-        return x;
-    }
-
-    vec_t<T, N> hadamard(const vec_t<T, N> & x) const {
+    vec_t<T, N> operator*(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies<T>());
         return r;
     }
 
-    vec_t<T, N> min(const vec_t<T, N> & x) const {
+    vec_t<T, N> operator/(const vec_t<T, N> & x) const {
         vec_t<T, N> r;
-        auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), f);
+        std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::divides<T>());
         return r;
     }
-
-    vec_t<T, N> max(const vec_t<T, N> & x) const {
-        vec_t<T, N> r;
-        auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
-        std::transform(this->begin(), this->end(), x.begin(), r.begin(), f);
-        return r;
+    
+    // scalar accessor operators
+    vec_t<T, N> operator-(const T & x) const {
+        return *this - vec_t<T, N>(x);
     }
 
-    template<class S = vec_t<T, N>>
-    typename std::enable_if<!std::is_unsigned<T>::value, S>::type 
-    abs() const {
-        vec_t<T, N> r;
-        std::transform(this->begin(), this->end(), r.begin(), [](const T & a){ return std::abs(a); });
-        return r;
-    } 
-
-    T volume() const {
-        if constexpr (std::is_unsigned<T>::value){
-            return std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>());
-        } else {
-            return std::abs(std::accumulate(this->begin(), this->end(), T(1), std::multiplies<T>()));
-        }
+    vec_t<T, N> operator+(const T & x) const {
+        return *this + vec_t<T, N>(x);    
     }
 
-    template<class S>
-    vec_t<S, N> cast() const {
-        vec_t<S, N> x;
-        std::transform(this->begin(), this->end(), x.begin(), [](const T & t){ return static_cast<S>(t); }); 
-        return x;
+    vec_t<T, N> operator*(const T & x) const {
+        return *this * vec_t<T, N>(x);
     }
 
-    template<class S = vec_t<T, 3>>
-    typename std::enable_if<N == 3, S>::type
-    operator%(const vec_t<T, 3> & v) const {
-        return vec_t<T, 3>(
-            (*this)[1] * v[2] - (*this)[2] * v[1],
-            (*this)[2] * v[0] - (*this)[0] * v[2],
-            (*this)[0] * v[1] - (*this)[1] * v[0]
-        );
+    vec_t<T, N> operator/(const T & x) const {
+        return *this / vec_t<T, N>(x);
+    }
+
+    // negation operator
+    vec_t<T, N> operator-() const {
+        return *this * vec_t<T, N>(T(-1));
     }
 
     // equality and ordering operators
@@ -194,59 +122,24 @@ public:
     bool operator!=(const vec_t<T, N> & x) const {
         return !(x == *this);
     }
-
-    // factories
-    template<class F, class Tx, uint8_t Nx>
-    static vec_t<T, N> grad(const F & f, const vec_t<Tx, Nx> & x){
-        vec_t<T, N> r;
-        for (uint8_t i = 0; i < N; i++){
-            vec_t<Tx, Nx> axis;
-            axis[i] = hyper::epsilon;
-            r[i] = (f(x + axis) - f(x - axis));
-        }
-        return r / (2 * hyper::epsilon);
-    }
-
-    template<uint8_t A>
-    static typename std::enable_if<A < N, vec_t<T, N>>::type axis(){
-        vec_t<T, N> result;
-        result[A] = T(1);
-        return result;
-    }
-
-    static vec_t<T, N> right(){
-        return axis<0>();
-    }
-
-    static vec_t<T, N> up(){
-        return axis<1>();
-    }
-
-    static vec_t<T, N> forward(){
-        return axis<2>();
-    }
-
-    static vec_t<T, N> random(const T & low, const T & high){
-        vec_t<T, N> result;
-
-        if constexpr (std::is_integral<T>::value){
-            std::uniform_int_distribution<T> distribution(low, high);
-            for (int i = 0; i < N; i++){
-                result[i] = distribution(engine);
-            }
-
-        } else if constexpr (std::is_floating_point<T>::value){
-            std::uniform_real_distribution<T> distribution(low, high);
-            for (int i = 0; i < N; i++){
-                result[i] = distribution(engine);
-            }
-        }
-
-        return result;
-    }
 };
 
 namespace vec {
+    template<class T>
+    vec_t<T, 3> right(){
+        return vec_t<T, 3>(T(1), T(0), T(0));
+    }
+    
+    template<class T>
+    vec_t<T, 3> up(){
+        return vec_t<T, 3>(T(0), T(1), T(0));
+    }
+
+    template<class T>
+    vec_t<T, 3> forward(){
+        return vec_t<T, 3>(T(0), T(0), T(1));
+    }
+
     template<class T, uint8_t N>
     vec_t<T, N>
     clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
@@ -255,6 +148,94 @@ namespace vec {
             result[i] = std::clamp(x[i], low[i], high[i]);
         }
         return result;
+    }
+
+    template<class T, uint8_t N>
+    T 
+    dot(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> h = x * y;
+        return std::accumulate(h.begin(), h.end(), T(0));
+    }
+    
+    template<class T, uint8_t N>
+    T 
+    length(const vec_t<T, N> & x){
+        return std::sqrt(dot(x, x));
+    }   
+
+    template<class T, uint8_t N>
+    vec_t<T, N> 
+    normalise(const vec_t<T, N> & x){
+        T l = length(x);
+        return x / (l == T(0) ? T(1) : l);
+    }
+
+    template<class T, uint8_t N>
+    vec_t<T, N> 
+    min(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> r;
+        auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
+        std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
+        return r;
+    }
+
+    template<class T, uint8_t N>
+    vec_t<T, N> 
+    max(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> r;
+        auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
+        std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
+        return r;
+    }
+
+    template<class T, uint8_t N>
+    vec_t<T, N>
+    max(const vec_t<T, N> & x, const T & y){
+        vec_t<T, N> r;
+        auto f = [&](const T & a){ return std::max<T>(a, y); };
+        std::transform(x.begin(), x.end(), r.begin(), f);
+        return r;
+    }
+    
+    template<class T, uint8_t N>
+    vec_t<T, N>
+    abs(const vec_t<T, N> & x){
+        vec_t<T, N> r;
+        std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
+        return r;
+    } 
+
+    template<class T, uint8_t N>
+    T 
+    volume(const vec_t<T, N> & x){
+        T product = std::accumulate(x.begin(), x.end(), T(1), std::multiplies<T>());
+        if constexpr (std::is_unsigned<T>::value){
+            return product;
+        } else {
+            return std::abs(product);
+        }
+    }
+
+    template<class T>
+    vec_t<T, 3>
+    cross(const vec_t<T, 3> & x, const vec_t<T, 3> & y){
+        return vec_t<T, 3>(
+            x[1] * y[2] - x[2] * y[1],
+            x[2] * y[0] - x[0] * y[2],
+            x[0] * y[1] - x[1] * y[0]
+        );
+    }
+
+    // factories
+    template<class T, uint8_t N, class F>
+    vec_t<T, N> grad(const F & f, const vec_t<T, N> & x){
+        vec_t<T, N> r;
+        for (uint8_t i = 0; i < N; i++){
+            vec_t<T, N> axis;
+            axis[i] = constant::epsilon;
+            r[i] = (f(x + axis) - f(x - axis));
+        }
+        return r / (2 * constant::epsilon);
     }
 }
 

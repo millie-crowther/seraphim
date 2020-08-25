@@ -2,7 +2,7 @@
 #define SDF_H
 
 #include <functional>
-#include "core/hyper.h"
+#include "core/constant.h"
 #include "maths/aabb.h"
 
 template<uint8_t D>
@@ -17,7 +17,7 @@ public:
 
     virtual vec_t<double, D> normal(const vec_t<double, D> & x) {
         auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
-        return vec_t<double, D>::grad(f, x);
+        return vec::grad(f, x);
     }
 
     virtual bool contains(const vec_t<double, D> & x){
@@ -25,7 +25,7 @@ public:
     }
 
     virtual aabb_t<double, D> get_aabb(){
-        return aabb_t<double, D>(vec_t<double, D>(-hyper::rho), vec_t<double, D>(hyper::rho));
+        return aabb_t<double, D>(vec_t<double, D>(-constant::rho), vec_t<double, D>(constant::rho));
     }
 
     virtual double get_volume(){

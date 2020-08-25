@@ -17,11 +17,11 @@ namespace primitive {
         }
 
         double phi(const vec_t<double, D> & x) override {
-            return x.norm() - r;
+            return vec::length(x) - r;
         }
 
         vec_t<double, D> normal(const vec_t<double, D> & x) override {
-            return x.normalise();
+            return vec::normalise(x);
         }
 
         aabb_t<double, D> get_aabb() override {
@@ -29,7 +29,7 @@ namespace primitive {
         }
 
         double get_volume() override {
-            constexpr double coeff = std::pow(hyper::pi, double(D) / 2.0) / std::tgamma(double(D) / 2.0 + 1.0);
+            constexpr double coeff = std::pow(constant::pi, double(D) / 2.0) / std::tgamma(double(D) / 2.0 + 1.0);
             return coeff * std::pow(r, D);
         }
     };  
@@ -48,9 +48,9 @@ namespace primitive {
         }
 
         double phi(const vec_t<double, D> & x) override {
-            auto q = x.abs() - r;
+            auto q = vec::abs(x) - r;
             return 
-                q.max(vec_t<double, D>()).norm() +
+                vec::length(vec::max(q, 0.0)) +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }        
         
@@ -59,7 +59,7 @@ namespace primitive {
         }
 
         double get_volume() override {
-            return (r * 2).volume();
+            return vec::volume(r * 2);
         }
     };
 

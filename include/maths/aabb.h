@@ -1,9 +1,14 @@
 #ifndef AABB_H
 #define AABB_H
 
-#include <limits>
-
 #include "vec.h"
+
+#include <limits>
+#include <random>
+
+namespace {
+    std::default_random_engine engine;
+}
 
 template<class T, uint8_t D>
 class aabb_t {
@@ -44,8 +49,12 @@ public:
     }
 
     vec_t<T, D> random() const {
-        vec_t<double, D> x = vec_t<double, D>::random(0.0, 1.0);
-        x = x.hadamard(max - min) + min;
+        static std::uniform_real_distribution<double> distribution(0.0, 1.0);
+        vec_t<double, D> x;
+        for (int i = 0; i < D; i++){
+            x[i] = distribution(engine);
+        }
+        x = x * (max - min) + min;
         return x;
     }
 };

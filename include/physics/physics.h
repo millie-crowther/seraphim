@@ -1,7 +1,7 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
-#include "core/hyper.h"
+#include "core/constant.h"
 #include "substance/matter/matter.h"
 
 #include <memory>

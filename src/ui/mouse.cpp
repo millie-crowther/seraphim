@@ -4,7 +4,7 @@
 
 mouse_t::mouse_t(window_t & window){
     GLFWwindow * w = window.get_window();
-    c = window.get_size().cast<double>() / 2;
+    c = window.get_size() / 2.0;
     glfwSetCursorPos(w, c[0], c[1]);
   
     if (glfwRawMouseMotionSupported()){

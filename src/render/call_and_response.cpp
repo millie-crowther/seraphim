@@ -41,11 +41,11 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
         return a.substanceID < b.substanceID;
     }
     
-    if (std::abs(a.radius - b.radius) > hyper::epsilon){
+    if (std::abs(a.radius - b.radius) > constant::epsilon){
         return a.radius < b.radius;
     }
 
-    if ((a.position - b.position).chebyshev_norm() > hyper::epsilon){
+    if (vec::length(a.position - b.position) > constant::epsilon){
         return a.position < b.position;
     } 
    
@@ -110,6 +110,6 @@ response_t::get_node() const {
 
 uint32_t
 response_t::squash(const vec4_t & x) const {
-    u8vec4_t x8 = x * 255;
+    u8vec4_t x8 = x * 255.0;
     return *reinterpret_cast<uint32_t *>(&x8);
 }

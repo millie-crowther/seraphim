@@ -26,9 +26,6 @@ public:
 
     double operator[](uint32_t i) const;
 
-    uint32_t pack() const;
-
-
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);
 };
