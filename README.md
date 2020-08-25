@@ -1,9 +1,9 @@
 # seraphim
 
-Seraphim is a Catholic game engine with a few weird and cool fetures: 
+Seraphim is a game engine with a few weird and cool fetures: 
 
 * Raycast rendering engine - currently being implemented but should allow for advanced reflective and refractive techniques
-* Precise and efficient physics engine using signed distance fields for collision detection - this is next up to be implemented
+* Precise and efficient physics engine using signed distance fields for collision detection - also currently in development
 * Robust metaphysics engine allowing for more complex reasoning about simulated environment - I have to read a lot more theory before I can correctly implement this, but the outline is currently in the works
 
 ## state of the engine
