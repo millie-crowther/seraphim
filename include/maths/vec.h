@@ -22,7 +22,7 @@ public:
     }
 
     template<class... Xs>
-    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... _xs) : std::array<T, N>({ x, _xs...}) {}
+    vec_t(typename std::enable_if<sizeof...(Xs)+1 == N, T>::type x, Xs... xs) : std::array<T, N>({ x, xs...}) {}
 
     template<class S>    
     vec_t(const vec_t<S, N> & x){
