@@ -7,8 +7,6 @@
 #include <functional>
 #include <iostream>
 
-using namespace std::placeholders;
-
 physics_t::physics_t(){
     quit = false;
     thread = std::thread(&physics_t::run, this);
@@ -56,14 +54,24 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    auto error_func = std::bind(collision_error_function, a, b, _1, _2, _3, _4);
-}
+    static const int max_iterations = 10;
 
-double
-physics_t::collision_error_function(
-    std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b,
-    double t, 
-    double x, double y, double z
-){
-    return 0.0;
+    auto f = [a, b](const vec3_t & x){
+        return std::max(a->phi(x), b->phi(x));
+    };
+
+    auto dfdx = [f](const vec3_t & x){
+        return vec3_t::grad(f, x);
+    }; 
+    
+    auto x = (a->get_position() + b->get_position()) / 2.0;
+    auto fx = f(x);
+
+    bool is_colliding = false;
+
+    for (int i = 0; i < max_iterations && !is_colliding; i++){
+        x -= dfdx(x) * std::abs(fx);
+        fx = f(x);
+        is_colliding = fx < hyper::epsilon;
+    }
 }

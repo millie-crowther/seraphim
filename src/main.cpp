@@ -1,6 +1,7 @@
 #include "core/seraphim.h"
 
 #include "core/scheduler.h"
+#include "maths/solver.h"
 #include "substance/matter/sdf/primitive.h"
 
 int main(){ 
@@ -43,4 +44,6 @@ int main(){
     });
 
     seraphim.run();
+
+    return 0;
 }

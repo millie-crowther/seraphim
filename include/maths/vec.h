@@ -246,6 +246,18 @@ public:
     }
 };
 
+namespace vec {
+    template<class T, uint8_t N>
+    vec_t<T, N>
+    clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
+        auto result = x;
+        for (int i = 0; i < N; i++){
+            result[i] = std::clamp(x[i], low[i], high[i]);
+        }
+        return result;
+    }
+}
+
 typedef vec_t<int32_t, 2> i32vec2_t;
 
 typedef vec_t<uint8_t, 2> u8vec2_t;

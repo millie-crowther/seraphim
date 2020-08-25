@@ -6,7 +6,7 @@
 #include <functional>
 
 namespace solver {
-    constexpr int max_iterations = 5;
+    constexpr int max_iterations = 50;
 
     template<uint8_t N>
     struct result_t {
@@ -15,25 +15,29 @@ namespace solver {
     };
 
     template<uint8_t N, class F, class GradF>
-    result_t<N> find_root(
+    result_t<N> minimise(
         const F & f, const GradF & grad_f, 
         const vec_t<double, N> & initial_x,
         const vec_t<double, N> & xmin, const vec_t<double, N> & xmax
     ){
-        result_t<N> result = {
-            f(initial_x),
-            initial_x
-        };
+        auto x = initial_x;
+        auto fx = f(x);
 
         for (int i = 0; i < max_iterations; i++){
+            auto E = grad_f(x) * std::abs(fx);
+            x = vec::clamp(x - E, xmin, xmax);
+            fx = f(x);
             
+            if (fx < hyper::epsilon){
+                return { fx, x };
+            } 
         }
 
-        return result; 
+        return { fx, x };
     }
     
     template<uint8_t N, class F>
-    result_t<N> find_root(
+    result_t<N> minimise(
         const F & f, const vec_t<double, N> initial_x,
         const vec_t<double, N> & xmin, const vec_t<double, N> & xmax
     ){
