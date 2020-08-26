@@ -226,7 +226,6 @@ namespace vec {
         );
     }
 
-    // factories
     template<class T, uint8_t N, class F>
     vec_t<T, N> grad(const F & f, const vec_t<T, N> & x){
         vec_t<T, N> r;
