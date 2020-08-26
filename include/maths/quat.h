@@ -1,9 +1,9 @@
 #ifndef QUATERNION_H
 #define QUATERNION_H
 
-#include <array>
+#include "matrix.h"
 
-#include "vec.h"
+#include <array>
 
 class quat_t  {
 private:

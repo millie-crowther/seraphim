@@ -1,7 +1,7 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "maths/vec.h"
+#include "maths/matrix.h"
 
 struct material_t {
     vec3_t colour;

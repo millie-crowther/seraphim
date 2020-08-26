@@ -5,7 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <memory>
 
-#include "maths/vec.h"
+#include "maths/matrix.h"
 #include "ui/keyboard.h"
 #include "ui/mouse.h"
 

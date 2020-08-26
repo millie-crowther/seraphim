@@ -1,13 +1,13 @@
 #ifndef IMAGE_H
 #define IMAGE_H
 
-#include <vector>
-#include <memory>
-
 #include "core/buffer.h"
 #include "core/command.h"
 #include "core/device.h"
-#include "maths/vec.h"
+#include "maths/matrix.h"
+
+#include <vector>
+#include <memory>
 
 class texture_t {
 private:

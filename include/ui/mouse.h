@@ -3,9 +3,10 @@
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <memory>
 
-#include "maths/vec.h"
+#include "maths/matrix.h"
+
+#include <memory>
 
 // forward declaration of window
 class window_t;

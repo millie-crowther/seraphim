@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "core/device.h"
-#include "maths/vec.h"
+#include "maths/matrix.h"
 
 class swapchain_t {
 public:

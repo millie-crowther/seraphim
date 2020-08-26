@@ -1,12 +1,11 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include <cstring>
-#include <memory>
-
 #include "core/command.h"
 #include "core/device.h"
-#include "maths/vec.h"
+
+#include <cstring>
+#include <memory>
 
 template<bool is_device_local, class T>
 class buffer_t {

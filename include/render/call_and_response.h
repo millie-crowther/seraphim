@@ -1,8 +1,6 @@
 #ifndef CALL_AND_RESPONSE_H
 #define CALL_AND_RESONSE_H
 
-#include "maths/aabb.h"
-#include "maths/vec.h"
 #include "substance/substance.h"
 
 class call_t {

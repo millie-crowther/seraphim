@@ -48,9 +48,9 @@ namespace primitive {
         }
 
         double phi(const vec_t<double, D> & x) override {
-            auto q = vec::abs(x) - r;
+            auto q = mat::abs(x) - r;
             return 
-                vec::length(vec::max(q, 0.0)) +
+                vec::length(mat::max(q, 0.0)) +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }        
         

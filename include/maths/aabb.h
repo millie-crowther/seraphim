@@ -1,7 +1,7 @@
 #ifndef AABB_H
 #define AABB_H
 
-#include "vec.h"
+#include "matrix.h"
 
 #include <limits>
 #include <random>

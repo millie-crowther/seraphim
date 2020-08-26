@@ -1,7 +1,7 @@
 #ifndef LIGHT_H
 #define LIGHT_H
 
-#include <maths/vec.h>
+#include "maths/matrix.h"
 
 class light_t {
 private:
