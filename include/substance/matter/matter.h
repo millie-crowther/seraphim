@@ -32,6 +32,7 @@ private:
 
     std::unique_ptr<double> average_density;
     std::unique_ptr<vec3_t> centre_of_mass;
+    std::unique_ptr<mat3_t> inertia_tensor;
 
     vec3_t v;
     vec3_t a;
@@ -39,6 +40,8 @@ private:
     void calculate_centre_of_mass();
     double get_average_density();
     vec3_t get_centre_of_mass();
+    mat3_t * get_inertia_tensor();
+    
 };
 
 #endif

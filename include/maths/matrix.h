@@ -30,7 +30,7 @@ public:
         std::array<matrix_t<T, M, 1>, N> columns = { x, xs... };
         for (int c = 0; c < N; c++){
             for (int r = 0; r < M; r++){
-                (*this)[c * M + r] = columns[c][r];
+                set(r, c, columns[c][r]);
             }
         }    
     }
@@ -147,32 +147,36 @@ public:
     }
 
     // getters
-    T &
-    get(uint8_t row, uint8_t column){
+    T
+    get(uint8_t row, uint8_t column) const {
         if (row >= M || column >= N){
             throw std::runtime_error("Error: Matrix index out of range.");
         }
         return (*this)[column * M + row];
     }
 
-    template<uint8_t Column>    
-    typename std::enable_if<Column < N, matrix_t<T, M, 1>>::type
-    get_column(){
+    matrix_t<T, M, 1>
+    get_column(int c) const {
         matrix_t<T, M, 1> column;
         for (int row = 0; row < M; row++){
-            column[row] = get(row, Column);
+            column[row] = get(row, c);
         }
         return column;
     }
 
-    template<uint8_t Row>    
-    typename std::enable_if<Row < M, matrix_t<T, N, 1>>::type
-    get_row(){
-        matrix_t<T, M, 1> row;
-        for (int column = 0; column < M; column++){
-            row[column] = (*this)[Row][column];
+    matrix_t<T, N, 1>
+    get_row(int r) const {
+        matrix_t<T, N, 1> row;
+        for (int column = 0; column < N; column++){
+            row[column] = get(r, column);
         }
         return row;
+    }
+
+    // setters
+    void
+    set(uint8_t row, uint8_t column, const T & x){
+        (*this)[column * M + row] = x;
     }
 };
 
@@ -322,7 +326,7 @@ namespace mat {
         
         for (int m = 0; m < X; m++){
             for (int n = 0; n < Z; n++){
-                ab.get(m, n) = vec::dot(a.get_row(m), b.get_row(n));
+                ab.set(m, n, vec::dot(a.get_row(m), b.get_row(n)));
             }
         }
 
@@ -381,5 +385,6 @@ typedef f64vec3_t vec3_t;
 typedef f64vec4_t vec4_t;
 
 typedef matrix_t<float, 4, 4> f32mat4_t;
+typedef matrix_t<double, 3, 3> mat3_t;
 
 #endif

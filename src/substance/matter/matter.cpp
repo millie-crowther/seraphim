@@ -29,10 +29,9 @@ matter_t::get_material(const vec3_t & x){
 void 
 matter_t::calculate_centre_of_mass(){
     double total_density;
-    vec3_t total_mass = vec3_t(0.0);
-    uint32_t sample = 0;
+    vec3_t total_mass;
 
-    while (sample < number_of_samples){
+    for (uint32_t sample = 0; sample < number_of_samples;){
         vec3_t x = sdf->get_aabb().random();
         if (sdf->contains(x)){
             double density = get_material(x).density;
@@ -85,4 +84,41 @@ matter_t::physics_tick(double t){
     transform.translate(a * 0.5 * t * t + v * t);
     v += a * t;
     a = vec3_t(0.0);
+}
+
+mat3_t *
+matter_t::get_inertia_tensor(){
+    if (!inertia_tensor){
+        vec3_t com = get_centre_of_mass();
+        
+        double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
+
+        for (uint32_t sample = 0; sample < number_of_samples;){
+            vec3_t x = sdf->get_aabb().random();
+            if (sdf->contains(x)){
+                double density = get_material(x).density;
+                vec3_t r = x - com;
+                
+                Ixx += density * (r[1] * r[1] + r[2] * r[2]);
+                Iyy += density * (r[0] * r[0] + r[2] * r[2]);
+                Izz += density * (r[1] * r[1] + r[2] * r[2]);
+
+                Ixy -= density * r[0] * r[1];
+                Ixz -= density * r[0] * r[2];
+                Iyz -= density * r[1] * r[2];                
+                
+                sample++;
+            }
+        }
+        
+        mat3_t I = mat3_t(
+            Ixx, Ixy, Ixz,
+            Ixy, Iyy, Iyz,
+            Ixz, Ixy, Izz 
+        ) / sdf->get_volume() * number_of_samples;
+
+        inertia_tensor = std::make_unique<mat3_t>(I);
+    }
+
+    return inertia_tensor.get();
 }
