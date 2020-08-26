@@ -4,8 +4,8 @@
 
 static void 
 window_resize_callback(GLFWwindow * glfw_window, int width, int height){
-    void * data = glfwGetWindowUserPointer(glfw_window);
-    window_t * window = reinterpret_cast<window_t *>(data);
+//    void * data = glfwGetWindowUserPointer(glfw_window);
+ //   window_t * window = reinterpret_cast<window_t *>(data);
 
     // TODO: handle resize of window
 }

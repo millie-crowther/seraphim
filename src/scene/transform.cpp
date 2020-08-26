@@ -59,34 +59,34 @@ transform_t::recalculate_matrix() {
 
     float zz = inverse[3] * inverse[3];
 
-    f32vec4_t a = f32vec4_t(
+    auto a = f32vec4_t(
         0.5f - yy - zz,
         xy - wz,
         xz + wy,
         0.0f
     ) * 2.0f;
 
-    f32vec4_t b = f32vec4_t(
+    auto b = f32vec4_t(
         xy + wz,
         0.5f - xx - zz,
         yz + wx,
         0.0f
     ) * 2.0f;
 
-    f32vec4_t c = f32vec4_t(
+    auto c = f32vec4_t(
         xz - wy,
         yz - wx,
         0.5f - xx - yy,
         0.0f
     ) * 2.0f;
 
-    vec3_t x = rotation * position;
+    f32vec3_t x = rotation * position;
 
-    vec4_t d(
+    f32vec4_t d(
         -x[0],
         -x[1],
         -x[2],
-        1.0
+        1.0f
     );
 
     matrix = std::make_unique<f32mat4_t>(a, b, c, d);

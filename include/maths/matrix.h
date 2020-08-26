@@ -25,6 +25,16 @@ public:
     matrix_t(typename std::enable_if<sizeof...(Xs) + 1 == M * N, T>::type x, Xs... xs) : 
         std::array<T, M * N>({ x, xs...}) {}
 
+    template<class... Xs>
+    matrix_t(typename std::enable_if<sizeof...(Xs) + 1 == M, matrix_t<T, M, 1>>::type x, Xs... xs){
+        std::array<matrix_t<T, M, 1>, N> columns = { x, xs... };
+        for (int c = 0; c < N; c++){
+            for (int r = 0; r < M; r++){
+                (*this)[c * M + r] = columns[c][r];
+            }
+        }    
+    }
+
     template<class S>    
     matrix_t(const matrix_t<S, M, N> & x){
         std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return T(s); });
@@ -39,7 +49,7 @@ public:
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::minus<T>());
     }
 
-    void operator*=(const matrix_t<T, M, N> & x){
+    void scale(const matrix_t<T, M, N> & x){
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::multiplies<T>());
     }
 
@@ -80,7 +90,7 @@ public:
     } 
 
     matrix_t<T, M, N> 
-    operator*(const matrix_t<T, M, N> & x) const {
+    scaled(const matrix_t<T, M, N> & x) const {
         matrix_t<T, M, N> r;
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies<T>());
         return r;
@@ -137,13 +147,32 @@ public:
     }
 
     // getters
-    matrix_t<T, M, 1>
-    get_column(int col){
+    T &
+    get(uint8_t row, uint8_t column){
+        if (row >= M || column >= N){
+            throw std::runtime_error("Error: Matrix index out of range.");
+        }
+        return (*this)[column * M + row];
+    }
+
+    template<uint8_t Column>    
+    typename std::enable_if<Column < N, matrix_t<T, M, 1>>::type
+    get_column(){
         matrix_t<T, M, 1> column;
         for (int row = 0; row < M; row++){
-            column[row] = (*this)[row][col];
+            column[row] = get(row, Column);
         }
         return column;
+    }
+
+    template<uint8_t Row>    
+    typename std::enable_if<Row < M, matrix_t<T, N, 1>>::type
+    get_row(){
+        matrix_t<T, M, 1> row;
+        for (int column = 0; column < M; column++){
+            row[column] = (*this)[Row][column];
+        }
+        return row;
     }
 };
 
@@ -285,6 +314,40 @@ namespace mat {
             return a1 / det;
         }
     } 
+
+    template<class T, uint8_t X, uint8_t Y, uint8_t Z>
+    matrix_t<T, X, Z>
+    multiply(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
+        matrix_t<T, X, Z> ab;
+        
+        for (int m = 0; m < X; m++){
+            for (int n = 0; n < Z; n++){
+                ab.get(m, n) = vec::dot(a.get_row(m), b.get_row(n));
+            }
+        }
+
+        return ab; 
+    }
+}
+
+
+// multiplication operators
+template<class T, uint8_t N>
+matrix_t<T, N, 1>
+operator*(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    return a.scaled(b);
+}
+
+template<class T, uint8_t N>
+void
+operator*=(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    a.scale(b);
+}
+
+template<class T, uint8_t X, uint8_t Y, uint8_t Z>
+matrix_t<T, X, Z>
+operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
+    return mat::multiply(a, b);
 }
 
 template<class T, uint8_t N>
@@ -317,6 +380,6 @@ typedef f64vec2_t vec2_t;
 typedef f64vec3_t vec3_t;
 typedef f64vec4_t vec4_t;
 
-typedef vec_t<vec_t<float, 4>, 4> f32mat4_t;
+typedef matrix_t<float, 4, 4> f32mat4_t;
 
 #endif
