@@ -302,6 +302,20 @@ namespace mat {
         return vec::dot(a.get_column(0), vec::cross(a.get_column(1), a.get_column(2)));
     }
 
+    template<class T, uint8_t M, uint8_t N> 
+    matrix_t<T, N, M>
+    transpose(const matrix_t<T, M, N> & a){
+        matrix_t<T, N, M> at;
+    
+        for (int row = 0; row < M; row++){
+            for (int col = 0; col < N; col++){
+                at.set(col, row) = a.get(row, col);
+            }
+        }
+        
+        return at;
+    }
+
     template<class T>
     matrix_t<T, 3, 3>
     invert(const matrix_t<T, 3, 3> & a){
@@ -315,7 +329,7 @@ namespace mat {
         if (std::abs(det) < constant::epsilon){
             throw std::runtime_error("Error: tried to invert a singular matrix.");
         } else {
-            return a1 / det;
+            return transpose(a1) / det;
         }
     } 
 
