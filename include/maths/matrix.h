@@ -67,7 +67,7 @@ public:
     }
 
     void operator*=(const T & x){
-        *this *= matrix_t<T, M, N>(x);    
+        scale(matrix_t<T, M, N>(x));    
     }
 
     void operator/=(const T & x){
@@ -178,6 +178,17 @@ public:
     set(uint8_t row, uint8_t column, const T & x){
         (*this)[column * M + row] = x;
     }
+
+    // factories
+    static matrix_t<T, M, N>
+    identity(){
+        matrix_t<T, M, N> a;
+        constexpr int size = std::min(M, N);
+        for (int i = 0; i < size; i++){
+            a.set(i, i, 1);
+        }
+        return a;
+    }
 };
 
 namespace vec {
@@ -266,6 +277,18 @@ namespace mat {
 
     template<class T, uint8_t M, uint8_t N>
     matrix_t<T, M, N>
+    outer_product(const matrix_t<T, M, 1> & a, const matrix_t<T, N, 1> & b){
+        matrix_t<T, M, N> ab;
+        for (int m = 0; m < M; m++){
+            for (int n = 0; n < N; n++){
+                ab.set(m, n, a[m] * b[n]);
+            }
+        }
+        return ab;
+    }
+
+    template<class T, uint8_t M, uint8_t N>
+    matrix_t<T, M, N>
     min(const matrix_t<T, M, N> & x, const matrix_t<T, M, N> & y){
         matrix_t<T, M, N> r;
         auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
@@ -340,7 +363,7 @@ namespace mat {
         
         for (int m = 0; m < X; m++){
             for (int n = 0; n < Z; n++){
-                ab.set(m, n, vec::dot(a.get_row(m), b.get_row(n)));
+                ab.set(m, n, vec::dot(a.get_row(m), b.get_column(n)));
             }
         }
 
@@ -350,6 +373,12 @@ namespace mat {
 
 
 // multiplication operators
+template<class T, uint8_t M, uint8_t N>
+matrix_t<T, M, N>
+operator*(const T & x, const matrix_t<T, M, N> & a){
+    return a * x;
+}
+
 template<class T, uint8_t N>
 matrix_t<T, N, 1>
 operator*(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){

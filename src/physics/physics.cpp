@@ -72,9 +72,31 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         fx = f(x);
     }
 
-    //static const double CoR = 0.9;
+    const double CoR = 0.9;
     
-    if (fx <= constant::epsilon){
-         
+    if (fx > constant::epsilon){
+         return;
     }
+
+    std::cout << "collision detected!" << std::endl;
+
+    auto n = a->phi(x) > b->phi(x) ? a->normal(x) : b->normal(x);
+    
+    auto va = a->get_local_velocity(x);
+    auto ra = a->get_offset_from_centre_of_mass(x);
+    auto ia = mat::inverse(*a->get_inertia_tensor());
+    auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
+    auto ma = 1.0 / a->get_mass();
+
+    auto vb = b->get_local_velocity(x);
+    auto rb = b->get_offset_from_centre_of_mass(x);
+    auto ib = mat::inverse(*b->get_inertia_tensor());
+    auto xb = vec::cross(ib * vec::cross(rb, n), rb);
+    auto mb = 1.0 / b->get_mass();
+
+    double j = 
+        -(1.0 + CoR) * vec::dot(vb - va, n) /
+        (ma + mb + vec::dot(xa + xb, n));
+
+    std::cout << j << std::endl;
 }
