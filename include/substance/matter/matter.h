@@ -37,6 +37,9 @@ private:
     vec3_t v;
     vec3_t a;
 
+    vec3_t omega;
+    vec3_t alpha;
+
     void calculate_centre_of_mass();
     double get_average_density();
     vec3_t get_centre_of_mass();
