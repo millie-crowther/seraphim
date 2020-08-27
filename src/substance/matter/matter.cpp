@@ -101,8 +101,8 @@ matter_t::physics_tick(double t){
 }
 
 mat3_t *
-matter_t::get_inertia_tensor(){
-    if (!inertia_tensor){
+matter_t::get_inverse_inertia_tensor(){
+    if (!inverse_inertia_tensor){
         vec3_t com = get_centre_of_mass();
         
         double Ixx, Iyy, Izz, Ixy, Ixz, Iyz;
@@ -131,8 +131,24 @@ matter_t::get_inertia_tensor(){
             Ixz, Ixy, Izz 
         ) / sdf->get_volume() * number_of_samples;
 
-        inertia_tensor = std::make_unique<mat3_t>(I);
+        inverse_inertia_tensor = std::make_unique<mat3_t>(mat::inverse(I));
     }
 
-    return inertia_tensor.get();
+    return inverse_inertia_tensor.get();
+}
+
+vec3_t
+matter_t::normal(const vec3_t & x) const {
+    return sdf->normal(transform.to_local_space(x));
+}
+
+vec3_t
+matter_t::get_local_velocity(const vec3_t & x){
+    auto r = get_offset_from_centre_of_mass(x);
+    return v + omega * r;
+}
+
+vec3_t
+matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
+    return transform.to_local_space(x) - get_centre_of_mass();
 }

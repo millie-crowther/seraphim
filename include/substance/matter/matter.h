@@ -19,9 +19,13 @@ public:
     transform_t & get_transform();
 
     double phi(const vec3_t & x) const;
+    vec3_t normal(const vec3_t & x) const;
+    vec3_t get_local_velocity(const vec3_t & x);
+    vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
 
     void apply_force(const vec3_t & force);
     void physics_tick(double delta);
+
 
 private:
     static constexpr uint32_t number_of_samples = 10000;
@@ -32,7 +36,7 @@ private:
 
     std::unique_ptr<double> average_density;
     std::unique_ptr<vec3_t> centre_of_mass;
-    std::unique_ptr<mat3_t> inertia_tensor;
+    std::unique_ptr<mat3_t> inverse_inertia_tensor;
 
     vec3_t v;
     vec3_t a;
@@ -43,8 +47,7 @@ private:
     void calculate_centre_of_mass();
     double get_average_density();
     vec3_t get_centre_of_mass();
-    mat3_t * get_inertia_tensor();
-    
+    mat3_t * get_inverse_inertia_tensor();
 };
 
 #endif

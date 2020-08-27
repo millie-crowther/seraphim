@@ -309,7 +309,7 @@ namespace mat {
     
         for (int row = 0; row < M; row++){
             for (int col = 0; col < N; col++){
-                at.set(col, row) = a.get(row, col);
+                at.set(col, row, a.get(row, col));
             }
         }
         
@@ -318,7 +318,7 @@ namespace mat {
 
     template<class T>
     matrix_t<T, 3, 3>
-    invert(const matrix_t<T, 3, 3> & a){
+    inverse(const matrix_t<T, 3, 3> & a){
         matrix_t<T, 3, 3> a1(
             vec::cross(a.get_column(1), a.get_column(2)),
             vec::cross(a.get_column(2), a.get_column(0)),

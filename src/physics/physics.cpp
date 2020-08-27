@@ -67,11 +67,14 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     auto x = (a->get_position() + b->get_position()) / 2.0;
     auto fx = f(x);
 
-    bool is_colliding = false;
-
-    for (int i = 0; i < max_iterations && !is_colliding; i++){
+    for (int i = 0; i < max_iterations && fx > constant::epsilon; i++){
         x -= dfdx(x) * std::abs(fx);
         fx = f(x);
-        is_colliding = fx < constant::epsilon;
+    }
+
+    //static const double CoR = 0.9;
+    
+    if (fx <= constant::epsilon){
+         
     }
 }
