@@ -109,7 +109,7 @@ matter_t::physics_tick(double t){
     alpha = vec3_t(0.0);
 }
 
-mat3_t *
+mat3_t 
 matter_t::get_inertia_tensor(){
     if (!inertia_tensor){
 /*
@@ -154,7 +154,11 @@ matter_t::get_inertia_tensor(){
         }
     }
 
-    return inertia_tensor.get();
+    auto i_b = *inertia_tensor;
+    auto r = transform.get_rotation().to_matrix();
+    auto i = r * i_b * mat::transpose(r); 
+
+    return i;
 }
 
 vec3_t

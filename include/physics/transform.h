@@ -23,6 +23,7 @@ public:
     void set_position(const vec3_t & x);
     void translate(const vec3_t & x);
 
+    quat_t get_rotation() const;
     void rotate(const quat_t & q);
 
     // accessors

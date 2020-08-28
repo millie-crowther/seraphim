@@ -105,3 +105,9 @@ vec3_t
 transform_t::get_position() const {
     return position;
 }
+
+quat_t
+
+transform_t::get_rotation() const {
+    return rotation;
+}

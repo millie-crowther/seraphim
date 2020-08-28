@@ -22,7 +22,7 @@ public:
     vec3_t normal(const vec3_t & x) const;
     vec3_t get_local_velocity(const vec3_t & x);
     vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
-    mat3_t * get_inertia_tensor();
+    mat3_t get_inertia_tensor();
 
     void apply_force(const vec3_t & force);
     void physics_tick(double delta);
