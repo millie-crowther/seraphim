@@ -31,6 +31,11 @@ public:
     virtual double get_volume(){
         return 0.0;
     }
+
+    virtual mat3_t get_uniform_inertia_tensor(double mass){
+        // TODO
+        return mat3_t::identity(); 
+    }
 };
 
 typedef sdf_t<3> sdf3_t;

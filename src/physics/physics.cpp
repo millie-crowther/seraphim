@@ -1,7 +1,6 @@
 #include "physics/physics.h"
 
 #include "core/scheduler.h"
-#include "substance/matter/sdf/compose.h"
 
 #include <chrono>
 #include <functional>

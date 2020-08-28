@@ -1,7 +1,7 @@
 #ifndef CALL_AND_RESPONSE_H
 #define CALL_AND_RESONSE_H
 
-#include "substance/substance.h"
+#include "metaphysics/substance.h"
 
 class call_t {
 private:

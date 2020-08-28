@@ -1,9 +1,10 @@
-#include "substance/matter/matter.h"
+#include "metaphysics/matter/matter.h"
 
-matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position){
+matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
     this->material = material;
     this->transform.set_position(initial_position);
+    this->is_uniform = is_uniform;
 }
 
 std::shared_ptr<sdf3_t>
@@ -103,6 +104,7 @@ matter_t::physics_tick(double t){
 mat3_t *
 matter_t::get_inertia_tensor(){
     if (!inertia_tensor){
+/*
         vec3_t com = get_centre_of_mass();
         
         double Ixx, Iyy, Izz, Ixy, Iyz, Ixz;
@@ -134,8 +136,14 @@ matter_t::get_inertia_tensor(){
         ); 
 
         I *= sdf->get_volume() / number_of_samples;
-
-        inertia_tensor = std::make_unique<mat3_t>(I);
+*/
+        if (is_uniform){
+            inertia_tensor = std::make_unique<mat3_t>(
+                sdf->get_uniform_inertia_tensor(get_mass())
+            );
+        } else {
+            throw std::runtime_error("Error: non uniform substances not yet supported.");
+        }
     }
 
     return inertia_tensor.get();

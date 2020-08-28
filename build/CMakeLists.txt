@@ -39,9 +39,9 @@ set(SOURCES
     ../src/render/swapchain.cpp
     ../src/render/texture.cpp
 
-    ../src/substance/substance.cpp
-    ../src/substance/form/form.cpp
-    ../src/substance/matter/matter.cpp
+    ../src/metaphysics/substance.cpp
+    ../src/metaphysics/form/form.cpp
+    ../src/metaphysics/matter/matter.cpp
     
     ../src/maths/quat.cpp
     

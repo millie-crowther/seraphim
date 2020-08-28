@@ -181,13 +181,18 @@ public:
 
     // factories
     static matrix_t<T, M, N>
-    identity(){
+    diagonal(const T & x){
         matrix_t<T, M, N> a;
         constexpr int size = std::min(M, N);
         for (int i = 0; i < size; i++){
-            a.set(i, i, 1);
+            a.set(i, i, x);
         }
         return a;
+    }
+    
+    static matrix_t<T, M, N>
+    identity(){
+        return diagonal(1);
     }
 };
 

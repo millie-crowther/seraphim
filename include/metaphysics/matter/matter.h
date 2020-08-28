@@ -10,7 +10,7 @@
 
 class matter_t {
 public:
-    matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position);
+    matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform);
 
     material_t get_material(const vec3_t & x);
     std::shared_ptr<sdf3_t> get_sdf() const;
@@ -34,6 +34,7 @@ private:
     material_t material;
     std::shared_ptr<sdf3_t> sdf;
     transform_t transform;
+    bool is_uniform;
 
     std::unique_ptr<double> average_density;
     std::unique_ptr<vec3_t> centre_of_mass;

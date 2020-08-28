@@ -1,6 +1,5 @@
 #include "render/renderer.h"
 
-#include "substance/matter/sdf/primitive.h"
 #include "ui/resources.h"
 #include "render/texture.h"
 
