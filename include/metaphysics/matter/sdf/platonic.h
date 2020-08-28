@@ -29,12 +29,14 @@ namespace platonic {
 
         mat3_t get_uniform_inertia_tensor(double mass) override {
             vec3_t r2 = r * r;
-            mat3_t I(
+            mat3_t i(
                 r2[1] + r2[2], 0.0,           0.0,
                 0.0,           r2[0] + r2[2], 0.0,
                 0.0,           0.0,           r2[0] + r2[1]
             );
-            return I * mass / 12.0;
+           
+            i *= mass / 12.0;
+            return i;
         }
     };
 
