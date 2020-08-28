@@ -1,11 +1,9 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include "scene/transform.h"
+#include "physics/transform.h"
 #include "ui/keyboard.h"
 #include "ui/mouse.h"
-
-class blaspheme_t;
 
 class camera_t {
 private:

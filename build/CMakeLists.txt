@@ -28,9 +28,9 @@ set(SOURCES
     ../src/core/device.cpp
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
-    ../src/core/uuid.cpp
     
     ../src/physics/physics.cpp
+    ../src/physics/transform.cpp
 
     ../src/render/call_and_response.cpp
     ../src/render/camera.cpp
@@ -44,8 +44,6 @@ set(SOURCES
     ../src/metaphysics/matter/matter.cpp
     
     ../src/maths/quat.cpp
-    
-    ../src/scene/transform.cpp
 
     ../src/ui/keyboard.cpp
     ../src/ui/resources.cpp

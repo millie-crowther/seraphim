@@ -4,7 +4,7 @@
 #include "maths/sdf/sdf.h"
 #include "material.h"
 #include "maths/quat.h"
-#include "scene/transform.h"
+#include "physics/transform.h"
 
 #include <memory>
 
