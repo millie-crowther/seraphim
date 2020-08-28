@@ -21,10 +21,11 @@ public:
     // operators
     vec3_t operator*(const vec3_t & q) const;
     quat_t operator*(const quat_t & r) const;
-    
     void operator*=(const quat_t & r);
-
     double operator[](uint32_t i) const;
+
+    // convertors
+    mat3_t to_matrix() const;
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);
