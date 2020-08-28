@@ -36,6 +36,10 @@ public:
         // TODO
         return mat3_t::identity(); 
     }
+
+    virtual vec3_t get_uniform_centre_of_mass(){
+        return vec3_t();
+    }
 };
 
 typedef sdf_t<3> sdf3_t;

@@ -48,6 +48,10 @@ matter_t::calculate_centre_of_mass(){
 
 vec3_t
 matter_t::get_centre_of_mass(){
+    if (is_uniform){
+        return sdf->get_uniform_centre_of_mass();
+    }
+
     if (!centre_of_mass){
         calculate_centre_of_mass();
     }
@@ -57,6 +61,10 @@ matter_t::get_centre_of_mass(){
 
 double
 matter_t::get_average_density(){
+    if (is_uniform){
+        return get_material(vec3_t()).density;
+    }
+
     if (!average_density){
         calculate_centre_of_mass();
     }
