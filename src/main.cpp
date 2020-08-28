@@ -1,8 +1,8 @@
 #include "core/seraphim.h"
 
 #include "core/scheduler.h"
-#include "metaphysics/matter/sdf/primitive.h"
-#include "metaphysics/matter/sdf/platonic.h"
+#include "maths/sdf/primitive.h"
+#include "maths/sdf/platonic.h"
 
 int main(){ 
     auto floor_substance = std::make_shared<substance_t>( 

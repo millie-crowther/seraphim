@@ -1,7 +1,7 @@
 #ifndef PLATONIC_H
 #define PLATONIC_H
 
-#include "metaphysics/matter/sdf/sdf.h"
+#include "sdf.h"
 
 namespace platonic {
     template<uint8_t D>
