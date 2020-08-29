@@ -97,5 +97,11 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         -(1.0 + CoR) * vec::dot(vb - va, n) /
         (ma + mb + vec::dot(xa + xb, n));
 
+    vec3_t dva = -j * n / a->get_mass();
+    vec3_t dwa = -j * ia * vec::cross(ra, n); 
+
+    vec3_t dvb = j * n / b->get_mass();
+    vec3_t dwb = j * ib * vec::cross(rb, n); 
+
     std::cout << j << std::endl;
 }
