@@ -176,3 +176,9 @@ vec3_t
 matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
     return transform.to_local_space(x) - get_centre_of_mass();
 }
+
+void
+matter_t::update_velocities(const vec3_t & dv, const vec3_t & dw){
+    v += dv;
+    omega += dw;
+}

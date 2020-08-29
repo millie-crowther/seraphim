@@ -26,7 +26,7 @@ public:
 
     void apply_force(const vec3_t & force);
     void physics_tick(double delta);
-
+    void update_velocities(const vec3_t & dv, const vec3_t & dw);
 
 private:
     static constexpr uint32_t number_of_samples = 10000;

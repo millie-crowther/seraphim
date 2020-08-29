@@ -77,8 +77,6 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
          return;
     }
 
-    std::cout << "collision detected!" << std::endl;
-
     auto n = a->phi(x) > b->phi(x) ? a->normal(x) : b->normal(x);
     
     auto va = a->get_local_velocity(x);
@@ -99,9 +97,9 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
     vec3_t dva = -j * n / a->get_mass();
     vec3_t dwa = -j * ia * vec::cross(ra, n); 
+    a->update_velocities(dva, dwa);
 
     vec3_t dvb = j * n / b->get_mass();
     vec3_t dwb = j * ib * vec::cross(rb, n); 
-
-    std::cout << j << std::endl;
+    b->update_velocities(dvb, dwb);
 }
