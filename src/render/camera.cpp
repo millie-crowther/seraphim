@@ -33,7 +33,7 @@ camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mous
     ));
 
     transform.rotate(quat_t::angle_axis(
-        -delta * mouse.get_velocity()[1] / 2000, 
+        delta * mouse.get_velocity()[1] / 2000, 
         transform.right()
     ));
 }

@@ -432,7 +432,9 @@ typedef f64vec2_t vec2_t;
 typedef f64vec3_t vec3_t;
 typedef f64vec4_t vec4_t;
 
+typedef matrix_t<float, 3, 3> f32mat3_t;
 typedef matrix_t<float, 4, 4> f32mat4_t;
+
 typedef matrix_t<double, 3, 3> mat3_t;
 
 #endif

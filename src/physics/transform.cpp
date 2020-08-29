@@ -45,40 +45,30 @@ transform_t::forward() const {
 void
 transform_t::recalculate_matrix() {
     quat_t inverse = rotation.inverse();
+    f32mat3_t r = inverse.to_matrix();
 
-    float wx = inverse[0] * inverse[1];
-    float wy = inverse[0] * inverse[2];
-    float wz = inverse[0] * inverse[3];
-    
-    float xx = inverse[1] * inverse[1];
-    float xy = inverse[1] * inverse[2];
-    float xz = inverse[1] * inverse[3];
-
-    float yy = inverse[2] * inverse[2];
-    float yz = inverse[2] * inverse[3];
-
-    float zz = inverse[3] * inverse[3];
+    r = mat::transpose(r);
 
     auto a = f32vec4_t(
-        0.5f - yy - zz,
-        xy - wz,
-        xz + wy,
+        r.get(0, 0),
+        r.get(1, 0),
+        r.get(2, 0),
         0.0f
-    ) * 2.0f;
+    );
 
     auto b = f32vec4_t(
-        xy + wz,
-        0.5f - xx - zz,
-        yz + wx,
+        r.get(0, 1),
+        r.get(1, 1),
+        r.get(2, 1),
         0.0f
-    ) * 2.0f;
+    );
 
     auto c = f32vec4_t(
-        xz - wy,
-        yz - wx,
-        0.5f - xx - yy,
+        r.get(0, 2),
+        r.get(1, 2),
+        r.get(2, 2),
         0.0f
-    ) * 2.0f;
+    );
 
     f32vec3_t x = rotation * position;
 
