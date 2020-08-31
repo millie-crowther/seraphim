@@ -57,7 +57,7 @@ namespace platonic {
         double e;
 
     public:
-        n_octahedron_t(double edge_length) : e(edge_length) {}
+        octahedron_t(double edge_length) : e(edge_length) {}
 
         double phi(const vec3_t & x) override {
             return vec::dot(mat::abs(x), vec3_t(std::sqrt(3))) - e / std::sqrt(6);
@@ -75,7 +75,7 @@ namespace platonic {
         mat3_t get_uniform_inertia_tensor(double mass) override {
             return mat3_t::diagonal(0.1 * mass * e * e);
         } 
-    }
+    };
 }
 
 #endif
