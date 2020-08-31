@@ -163,7 +163,7 @@ matter_t::get_inertia_tensor(){
 
 vec3_t
 matter_t::normal(const vec3_t & x) const {
-    return sdf->normal(transform.to_local_space(x));
+    return transform.get_rotation().inverse() * sdf->normal(transform.to_local_space(x));
 }
 
 vec3_t

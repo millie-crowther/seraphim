@@ -54,8 +54,9 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 10;
-    static const double CoR = 0.5;
+    static const double CoR = 0.9;
 
+    // detect collision
     auto f = [a, b](const vec3_t & x){
         return std::max(a->phi(x), b->phi(x));
     };
@@ -76,7 +77,15 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
          return;
     }
 
+    // extricate matters
     auto n = a->phi(x) > b->phi(x) ? a->normal(x) : b->normal(x);
+    auto sm = a->get_mass() + b->get_mass();
+    auto da = fx * a->get_mass() / sm;
+    auto db = fx * b->get_mass() / sm;
+    a->get_transform().translate(-da * n);
+    b->get_transform().translate( db * n);     
+ 
+    // update velocities
     
     auto va = a->get_local_velocity(x);
     auto ra = a->get_offset_from_centre_of_mass(x);
