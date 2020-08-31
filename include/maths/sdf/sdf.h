@@ -32,16 +32,19 @@ public:
         return 0.0;
     }
 
+    virtual vec_t<double, D> get_uniform_centre_of_mass(){
+        return vec_t<double, D>();
+    }
+
+    // TODO: this isn't dimension independent! maybe it should be in a sub class?
+    //       only problem is that it fucks with inheritance with sub classes that 
+    //       are already dimension independent. Fuck OOP sometimes, honestly.  
     virtual mat3_t get_uniform_inertia_tensor(double mass){
         // TODO
         return mat3_t::identity(); 
     }
-
-    virtual vec3_t get_uniform_centre_of_mass(){
-        return vec3_t();
-    }
 };
 
-typedef sdf_t<3> sdf3_t;
-
+using sdf2_t = sdf_t<2>;
+using sdf3_t = sdf_t<3>;
 #endif
