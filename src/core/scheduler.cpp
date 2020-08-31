@@ -3,9 +3,15 @@
 bool quit = true;
 std::vector<std::thread> threads;
 std::mutex cv_mutex;
-std::priority_queue<scheduler::task_t, std::vector<scheduler::task_t>, scheduler::task_t::comparator_t> task_queue;
+std::priority_queue<
+    scheduler::__private::task_t, 
+    std::vector<scheduler::__private::task_t>, 
+    scheduler::__private::task_t::comparator_t
+> task_queue;
 std::condition_variable cv;
 std::mutex task_queue_mutex;
+
+scheduler::__private::task_t::task_t(){}
 
 void
 scheduler::__private::enqueue_task(const task_t & t){
@@ -21,7 +27,7 @@ thread_pool_function(){
     while (!quit){
         bool is_queue_empty;
         bool is_task_ready = false;
-        scheduler::task_t task;
+        scheduler::__private::task_t task;
 
         {
             std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
@@ -34,9 +40,12 @@ thread_pool_function(){
                     task_queue.pop();
 
                     if (task.is_repeatable && !quit){
-                        task.t += task.period;
-                        
-                        task_queue.push(task);
+                        task_queue.emplace(
+                            task.t + task.period, 
+                            task.f,
+                            task.is_repeatable,
+                            task.period
+                        );
                     }
                 }
             }
@@ -53,6 +62,13 @@ thread_pool_function(){
     }
 
     std::cout << "Auxiliary thread terminating." << std::endl;
+}
+
+scheduler::__private::task_t::task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, bool is_repeatable, const clock_t::duration & period){
+    this->t = t;
+    this->f = f;
+    this->is_repeatable = is_repeatable;
+    this->period = period;
 }
 
 void 
@@ -77,6 +93,6 @@ scheduler::terminate(){
 }
 
 bool
-scheduler::task_t::comparator_t::operator()(const scheduler::task_t & a, const scheduler::task_t & b){
+scheduler::__private::task_t::comparator_t::operator()(const scheduler::__private::task_t & a, const scheduler::__private::task_t & b){
     return a.t > b.t;
 }
