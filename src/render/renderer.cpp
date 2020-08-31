@@ -687,11 +687,11 @@ renderer_t::create_buffers(){
     uint32_t c = vec::volume(work_group_count);
     uint32_t s = vec::volume(work_group_size);
 
-    patch_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(1, device, number_of_patches);
+    patch_buffer = std::make_unique<device_buffer_t<u32vec4_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
-    pointer_buffer = std::make_unique<device_buffer_t<u32vec2_t>>(5, device, c * s);
+    pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }

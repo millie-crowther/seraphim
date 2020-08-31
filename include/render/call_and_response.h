@@ -36,10 +36,10 @@ public:
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    u32vec2_t get_node() const;
+    u32vec4_t get_node() const;
 
 private:
-    u32vec2_t node;
+    u32vec4_t node;
     std::array<uint32_t, 8> normals;
     std::array<uint32_t, 8> colours;
 

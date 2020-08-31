@@ -98,11 +98,11 @@ layout( push_constant ) uniform push_constants {
     float epsilon;
 } pc;
 
-layout (binding = 1) buffer patch_buffer     { uvec2       data[]; } patches;
+layout (binding = 1) buffer patch_buffer     { uvec4       data[]; } patches;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
-layout (binding = 5) buffer pointer_buffer   { uvec2       data[]; } pointers;
+layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
 layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
 layout (binding = 7) buffer lighting_buffer  { vec4        data[]; } lighting;
 
@@ -138,28 +138,26 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
-uvec3 get_data(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request){
+uvec4 get_data(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request, out uint hash){
     float size = pc.epsilon * order * 2;
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
 
     ivec3 x_hash = x_grid * p1 + p2;
     ivec2 os_hash = ivec2(subID, order) * p3.xy + p3.yz;
-    uint hash = x_hash.x ^ x_hash.y ^ x_hash.z ^ os_hash.x ^ os_hash.y;
+    hash = x_hash.x ^ x_hash.y ^ x_hash.z ^ os_hash.x ^ os_hash.y;
 
     // calculate some useful variables for doing lookups
-    uint index_w = (hash / 2) % work_group_size;
-    uint index_e = (hash & 1);
+    uint index = hash % work_group_size;
     uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * size;
-    vec4 data_w = workspace[index_w];
-    uvec2 data = floatBitsToUint(mix(data_w.xy, data_w.zw, index_e));
+    uvec4 data = floatBitsToUint(workspace[index]);
 
     if (data.y != hash) {
-        uvec2 global_data = patches.data[global_index];
+        uvec4 global_data = patches.data[global_index];
         if (global_data.y == hash){
-            pointers.data[index_w + work_group_offset()][index_e] = global_index; 
+            pointers.data[index + work_group_offset()] = global_index; 
             data = global_data;
         } else {
             request = request_t(cell_position, size / 2, global_index, hash, subID, 1);
@@ -170,7 +168,7 @@ uvec3 get_data(vec3 x, int order, uint subID, inout intersection_t intersection,
     intersection.global_index = global_index;
     intersection.alpha = x_scaled - x_grid;
 
-    return uvec3(hash, data);
+    return data;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -191,16 +189,13 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     int order = expected_order(r.x); 
     
     uint hash = ~0;
-    uvec2 data;
+    uvec4 data = uvec4(0);
 
     if (inside_aabb){
-        uvec3 hash_data = uvec3(~0, 0, 0);
         int tries = 0;
-        for (; tries < max_hash_retries && hash_data.x != hash_data.z; tries++){
-            hash_data = get_data(r.x, order + tries, sub.id, intersection, request);
+        for (; tries < max_hash_retries && hash != data.y; tries++){
+            data = get_data(r.x, order + tries, sub.id, intersection, request, hash);
         }
-        hash = hash_data.x;
-        data = hash_data.yz;
     }
     
     intersection.substance = sub;
@@ -536,11 +531,7 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 
     // load patches from global memory into shared memory
-    uvec2 ptrs = pointers.data[i + work_group_offset()];
-    workspace[i] = vec4(
-        uintBitsToFloat(patches.data[ptrs.x]),
-        uintBitsToFloat(patches.data[ptrs.y])
-    );
+    workspace[i] = uintBitsToFloat(patches.data[pointers.data[i]]);
 }
 
 void main(){

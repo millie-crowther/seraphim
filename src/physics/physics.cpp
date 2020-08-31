@@ -54,6 +54,7 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 10;
+    static const double CoR = 0.5;
 
     auto f = [a, b](const vec3_t & x){
         return std::max(a->phi(x), b->phi(x));
@@ -70,8 +71,6 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         x -= dfdx(x) * std::abs(fx);
         fx = f(x);
     }
-
-    const double CoR = 0.9;
     
     if (fx > constant::epsilon){
          return;

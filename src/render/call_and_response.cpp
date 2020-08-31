@@ -89,7 +89,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         }
 
         uint32_t x_elem = contains_mask << 16;
-        node = u32vec2_t(x_elem, call.get_hash()); 
+        node = u32vec4_t(x_elem, call.get_hash(), 0u, 0u); 
     }
 }
 
@@ -103,7 +103,7 @@ response_t::get_colours() const {
     return colours;
 }
 
-u32vec2_t
+u32vec4_t
 response_t::get_node() const {
     return node;
 }
