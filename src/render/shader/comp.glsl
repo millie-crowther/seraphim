@@ -155,11 +155,9 @@ uvec4 get_data(vec3 x, int order, uint subID, inout intersection_t intersection,
     uvec4 data = floatBitsToUint(workspace[index]);
 
     if (data.y != hash) {
-        uvec4 global_data = patches.data[global_index];
-        if (global_data.y == hash){
-            pointers.data[index + work_group_offset()] = global_index; 
-            data = global_data;
-        } else {
+        pointers.data[index + work_group_offset()] = global_index; 
+        data = patches.data[global_index];
+        if (data.y != hash){
             request = request_t(cell_position, size / 2, global_index, hash, subID, 1);
         }
     }

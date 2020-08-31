@@ -51,6 +51,31 @@ namespace platonic {
     
     typedef n_cube_t<2> square_t;    
     typedef n_cube_t<3> cube_t;
+
+    class octahedron_t : public sdf3_t {
+    private:
+        double e;
+
+    public:
+        n_octahedron_t(double edge_length) : e(edge_length) {}
+
+        double phi(const vec3_t & x) override {
+            return vec::dot(mat::abs(x), vec3_t(std::sqrt(3))) - e / std::sqrt(6);
+        }
+
+        aabb3_t get_aabb() override {
+            vec3_t x(e / std::sqrt(2));
+            return aabb3_t(-x, x);
+        }
+
+        double get_volume() override {
+            return std::sqrt(2) / 3 * std::pow(e, 3);
+        }
+ 
+        mat3_t get_uniform_inertia_tensor(double mass) override {
+            return mat3_t::diagonal(0.1 * mass * e * e);
+        } 
+    }
 }
 
 #endif
