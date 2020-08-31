@@ -26,14 +26,14 @@ namespace scheduler {
 
             clock_t::time_point t;
             std::shared_ptr<std::function<void()>> f;
-            bool is_repeatable;
+            std::shared_ptr<bool> is_repeatable; 
             clock_t::duration period;
 
             task_t();
 
             task_t(
                 const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, 
-                bool is_repeatable, const clock_t::duration & period
+                std::shared_ptr<bool> is_repeatable, const clock_t::duration & period
             );
 
             struct comparator_t {
@@ -44,7 +44,7 @@ namespace scheduler {
         void enqueue_task(const task_t & t);
 
         template<typename F, typename... Rest, typename P>
-        auto schedule_task(const clock_t::time_point & t, bool is_repeatable, const P & _p, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
+        auto schedule_task(const clock_t::time_point & t, std::shared_ptr<bool> is_repeatable, const P & _p, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
             auto packed = std::make_shared<std::packaged_task<decltype(f(rest...))()>>(
                 std::bind(std::forward<F>(f), std::forward<Rest>(rest)...)
             );
@@ -68,17 +68,19 @@ namespace scheduler {
 
     template<typename F, typename... Rest>
     auto schedule_at(const clock_t::time_point & t, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        return __private::schedule_task(t, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
+        return __private::schedule_task(t, nullptr, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 
     template<typename F, typename... Rest, typename P>
-    void schedule_every(const P & p, F && f, Rest &&... rest){
-        __private::schedule_task(clock_t::now(), true, p, std::forward<F>(f), std::forward<Rest>(rest)...);
+    std::function<void()> schedule_every(const P & p, F && f, Rest &&... rest){
+        auto is_repeatable = std::make_shared<bool>(true);
+        __private::schedule_task(clock_t::now(), is_repeatable, p, std::forward<F>(f), std::forward<Rest>(rest)...);
+        return [is_repeatable](){ *is_repeatable = false; };
     }
 
     template<typename D, typename F, typename... Rest>
     auto schedule_after(const D & d, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
-        return __private::schedule_task(clock_t::now() + d, false, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
+        return __private::schedule_task(clock_t::now() + d, nullptr, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
 }
 

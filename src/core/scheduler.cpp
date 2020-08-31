@@ -38,15 +38,6 @@ thread_pool_function(){
                 if (scheduler::clock_t::now() >= task.t){
                     is_task_ready = true;
                     task_queue.pop();
-
-                    if (task.is_repeatable && !quit){
-                        task_queue.emplace(
-                            task.t + task.period, 
-                            task.f,
-                            task.is_repeatable,
-                            task.period
-                        );
-                    }
                 }
             }
         }
@@ -56,6 +47,16 @@ thread_pool_function(){
             cv.wait(cv_lock);
         } else if (is_task_ready){
             (*task.f)();
+            
+            if (task.is_repeatable && *task.is_repeatable && !quit){
+                task_queue.emplace(
+                    task.t + task.period, 
+                    task.f,
+                    task.is_repeatable,
+                    task.period
+                );
+            }
+                
         } else {
             cv.wait_until(cv_lock, task.t);
         }
@@ -64,7 +65,7 @@ thread_pool_function(){
     std::cout << "Auxiliary thread terminating." << std::endl;
 }
 
-scheduler::__private::task_t::task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, bool is_repeatable, const clock_t::duration & period){
+scheduler::__private::task_t::task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, std::shared_ptr<bool> is_repeatable, const clock_t::duration & period){
     this->t = t;
     this->f = f;
     this->is_repeatable = is_repeatable;
