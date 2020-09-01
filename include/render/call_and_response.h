@@ -31,15 +31,22 @@ public:
 
 class response_t {
 public:
+    struct patch_t {
+        uint32_t contents;
+        uint32_t hash;
+        float    phi;
+        uint32_t normal;
+    };  
+
     response_t();
     response_t(const call_t & call, std::weak_ptr<substance_t> substance);
 
     const std::array<uint32_t, 8> & get_normals() const;
     const std::array<uint32_t, 8> & get_colours() const;
-    u32vec4_t get_node() const;
+    patch_t get_patch() const;
 
 private:
-    u32vec4_t node;
+    patch_t patch;
     std::array<uint32_t, 8> normals;
     std::array<uint32_t, 8> colours;
 

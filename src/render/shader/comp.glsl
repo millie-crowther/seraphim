@@ -46,6 +46,13 @@ struct light_t {
     uint index;
 };
 
+struct patch_t {
+    uint contents;
+    uint hash;
+    float phi;
+    uint normal;
+};
+
 layout (local_size_x = 32, local_size_y = 32) in;
 
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
@@ -98,7 +105,7 @@ layout( push_constant ) uniform push_constants {
     float epsilon;
 } pc;
 
-layout (binding = 1) buffer patch_buffer     { uvec4       data[]; } patches;
+layout (binding = 1) buffer patch_buffer     { patch_t     data[]; } patches;
 layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
 layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
@@ -138,7 +145,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
-uvec4 get_data(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request, out uint hash){
+patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request, out uint hash){
     float size = pc.epsilon * order * 2;
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
@@ -152,12 +159,13 @@ uvec4 get_data(vec3 x, int order, uint subID, inout intersection_t intersection,
     uint global_index = hash % pc.global_patch_pool_size;
 
     vec3 cell_position = x_grid * size;
-    uvec4 data = floatBitsToUint(workspace[index]);
+    uvec4 udata = floatBitsToUint(workspace[index]);
+    patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
-    if (data.y != hash) {
+    if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = global_index; 
-        data = patches.data[global_index];
-        if (data.y != hash){
+        patch_ = patches.data[global_index];
+        if (patch_.hash != hash){
             request = request_t(cell_position, size / 2, global_index, hash, subID, 1);
         }
     }
@@ -166,7 +174,7 @@ uvec4 get_data(vec3 x, int order, uint subID, inout intersection_t intersection,
     intersection.global_index = global_index;
     intersection.alpha = x_scaled - x_grid;
 
-    return data;
+    return patch_;
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
@@ -187,23 +195,27 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     int order = expected_order(r.x); 
     
     uint hash = ~0;
-    uvec4 data = uvec4(0);
-
+    patch_t patch_ = patch_t(0, 0, 0, 0);
+    
     if (inside_aabb){
         int tries = 0;
-        for (; tries < max_hash_retries && hash != data.y; tries++){
-            data = get_data(r.x, order + tries, sub.id, intersection, request, hash);
+        for (; tries < max_hash_retries && hash != patch_.hash; tries++){
+            patch_ = get_patch(r.x, order + tries, sub.id, intersection, request, hash);
         }
     }
     
     intersection.substance = sub;
 
     vec3 alpha = intersection.alpha;
-    vec4 phi = mix(sign(data.x & vertex_masks[0]), sign(data.x & vertex_masks[1]), alpha.z);
+    vec4 phi = mix(
+        sign(patch_.contents & vertex_masks[0]), 
+        sign(patch_.contents & vertex_masks[1]), 
+        alpha.z
+    );
     phi.xy = mix(phi.xy, phi.zw, alpha.y);
     phi.x = mix(phi.x, phi.y, alpha.x);
 
-    phi.x = pc.epsilon * order * 2 * (phi.x - 0.5) * float(hash == data.y);
+    phi.x = pc.epsilon * order * 2 * (phi.x - 0.5) * float(hash == patch_.hash);
 
     return mix(phi_aabb, phi.x, inside_aabb);
 }
@@ -529,7 +541,9 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     shadow_size = totals.z;
 
     // load patches from global memory into shared memory
-    workspace[i] = uintBitsToFloat(patches.data[pointers.data[i]]);
+    patch_t data = patches.data[pointers.data[i]];
+    vec3 udata = uintBitsToFloat(uvec3(data.contents, data.hash, data.normal));
+    workspace[i] = vec4(udata.x, udata.y, data.phi, udata.z);
 }
 
 void main(){

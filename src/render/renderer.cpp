@@ -664,7 +664,7 @@ renderer_t::handle_requests(uint32_t frame){
 
             if (substance_iterator != substances.end()){
                 auto response = get_response(call, *substance_iterator);
-                patch_buffer->write_element(response.get_node(), call.get_index());
+                patch_buffer->write_element(response.get_patch(), call.get_index());
 
                 u32vec3_t p = u32vec3_t(
                     call.get_index() % patch_image_size,
@@ -687,7 +687,7 @@ renderer_t::create_buffers(){
     uint32_t c = vec::volume(work_group_count);
     uint32_t s = vec::volume(work_group_size);
 
-    patch_buffer = std::make_unique<device_buffer_t<u32vec4_t>>(1, device, number_of_patches);
+    patch_buffer = std::make_unique<device_buffer_t<response_t::patch_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
     substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
