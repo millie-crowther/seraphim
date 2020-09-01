@@ -24,7 +24,7 @@ transform_t::rotate(const quat_t & q){
 
 vec3_t 
 transform_t::to_local_space(const vec3_t & x) const {
-    return rotation.inverse() * (position - x);
+    return rotation.inverse() * (x - position);
 }
 
 vec3_t

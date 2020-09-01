@@ -25,8 +25,8 @@ int main(){
         )
     );
         
-    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.1));
-
+    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.01));
+/*
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -36,17 +36,20 @@ int main(){
             true
         )
     );
-    
+  */
+  
     seraphim_t seraphim;
 
     seraphim.create(floor_substance);
     seraphim.create(sphere);
-    seraphim.create(cube);
+//    seraphim.create(cube);
 
     std::shared_ptr<matter_t> m = floor_substance->get_matter();
-    scheduler::schedule_every(constant::iota, [m](){
+    auto f = [m](){
         m->apply_force(vec3_t(0.0, 9.8, 0.0) * m->get_mass());
-    });
+       // m->get_transform().set_position(vec3_t(0.0, -100.0, 0.0));
+    };
+    scheduler::schedule_every(constant::iota, f);
 
     seraphim.run();
 

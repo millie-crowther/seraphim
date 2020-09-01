@@ -156,6 +156,7 @@ matter_t::get_inertia_tensor(){
 
     auto i_b = *inertia_tensor;
     auto r = transform.get_rotation().to_matrix();
+    r = mat::inverse(r);
     auto i = r * i_b * mat::transpose(r); 
 
     return i;
@@ -163,7 +164,9 @@ matter_t::get_inertia_tensor(){
 
 vec3_t
 matter_t::normal(const vec3_t & x) const {
-    return transform.get_rotation().inverse() * sdf->normal(transform.to_local_space(x));
+    return 
+        transform.get_rotation() * 
+        sdf->normal(transform.to_local_space(x));
 }
 
 vec3_t
