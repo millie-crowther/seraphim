@@ -23,6 +23,12 @@ physics_t::run(){
     double physics_d = constant::iota.count() / 1000.0;
 
     while (!quit){
+        for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
+            for (auto b_it = std::next(a_it); b_it != matters.end(); b_it++){
+                collide(*a_it, *b_it);
+            }
+        }
+        
         for (auto & m : matters){
             m->physics_tick(physics_d);
             if (m->get_position()[1] < -100.0){
@@ -30,11 +36,6 @@ physics_t::run(){
             }
         }
 
-        for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
-            for (auto b_it = std::next(a_it); b_it != matters.end(); b_it++){
-                collide(*a_it, *b_it);
-            }
-        }
 
         t += clock_d;
         std::this_thread::sleep_until(t);
@@ -56,8 +57,8 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    static const int max_iterations = 10;
-    static const double CoR = 0.5;
+    static const int max_iterations = 100;
+    static const double CoR = 0.9;
 
     // detect collision
     auto f = [a, b](const vec3_t & x){
@@ -72,18 +73,18 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     auto fx = f(x);
     auto dfdx = dfd(x);
 
-    for (int i = 0; i < max_iterations && fx > 0; i++){
-        x -= dfdx * fx;
+    for (int i = 0; i < max_iterations; i++){
+        x -= dfdx * std::abs(fx);
         fx = f(x);
         dfdx = dfd(x);
     }
 
     if (fx > 0){
-         return;
+         return;    
     }
 
     // extricate matters
-    auto n = dfdx;//a->phi(x) > b->phi(x) ? a->normal(x) : b->normal(x);
+    auto n = dfdx;
 //*    
     auto sm = a->get_mass() + b->get_mass();
     double da = fx * b->get_mass() / sm;
@@ -108,13 +109,13 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         -(1.0 + CoR) * vec::dot(vb - va, n) /
         (ma + mb + vec::dot(xa + xb, n));
 
-    std::cout << "collision detected. j = " << j << std::endl;
-
     vec3_t dva = -j * n / a->get_mass();
     vec3_t dwa = -j * ia * vec::cross(ra, n); 
+    dwa = vec3_t();
     a->update_velocities(dva, dwa);
 
     vec3_t dvb = j * n / b->get_mass();
     vec3_t dwb = j * ib * vec::cross(rb, n); 
+    dwb = vec3_t();
     b->update_velocities(dvb, dwb);
 }
