@@ -88,8 +88,11 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
             colours[o] = squash(vec4_t(c[0], c[1], c[2], 0.0));
         }
 
+        vec3_t c = p + call.get_radius();
+        float phi = static_cast<float>(sdf->phi(c));
+
         uint32_t x_elem = contains_mask << 16;
-        patch = { x_elem, call.get_hash(), 0.0f, 0u };    
+        patch = { x_elem, call.get_hash(), phi, 0u };    
     }
 }
 

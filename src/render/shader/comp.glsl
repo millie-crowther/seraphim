@@ -217,6 +217,9 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     phi.x = pc.epsilon * order * 2 * (phi.x - 0.5) * float(hash == patch_.hash);
 
+    bool is_empty = patch_.phi > length(vec3(intersection.cell_radius));
+    phi.x = mix(phi.x, patch_.phi, is_empty);
+
     return mix(phi_aabb, phi.x, inside_aabb);
 }
 
