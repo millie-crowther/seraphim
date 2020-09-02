@@ -91,8 +91,12 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         vec3_t c = p + call.get_radius();
         float phi = static_cast<float>(sdf->phi(c));
 
+        
+        vec3_t n = sdf->normal(c) / 2.0 + 0.5;
+        uint32_t np = squash(vec4_t(n[0], n[1], n[2], 0.0));
+
         uint32_t x_elem = contains_mask << 16;
-        patch = { x_elem, call.get_hash(), phi, 0u };    
+        patch = { x_elem, call.get_hash(), phi, np };    
     }
 }
 
@@ -113,6 +117,6 @@ response_t::get_patch() const {
 
 uint32_t
 response_t::squash(const vec4_t & x) const {
-    u8vec4_t x8 = x * 255.0;
+    u8vec4_t x8 = mat::clamp(x * 255.0, 0.0, 255.0);
     return *reinterpret_cast<uint32_t *>(&x8);
 }

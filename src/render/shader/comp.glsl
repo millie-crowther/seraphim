@@ -26,6 +26,7 @@ struct intersection_t {
     float cell_radius;
     uint global_index;
     vec3 alpha;
+    vec3 patch_centre;
 };
 
 struct request_t {
@@ -173,6 +174,7 @@ patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersecti
     intersection.cell_radius = size / 2;
     intersection.global_index = global_index;
     intersection.alpha = x_scaled - x_grid;
+    intersection.patch_centre = cell_position + intersection.cell_radius;
 
     return patch_;
 }
@@ -206,21 +208,17 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     
     intersection.substance = sub;
 
-    vec3 alpha = intersection.alpha;
-    vec4 phi = mix(
-        sign(patch_.contents & vertex_masks[0]), 
-        sign(patch_.contents & vertex_masks[1]), 
-        alpha.z
-    );
-    phi.xy = mix(phi.xy, phi.zw, alpha.y);
-    phi.x = mix(phi.x, phi.y, alpha.x);
+    vec3 n = vec3((patch_.normal >> uvec3(0, 8, 16)) & 0xFF) / 127.5 - 1;
+    float e = dot(intersection.patch_centre - r.x, n) - patch_.phi;
+    float phi_plane = min(0, e) / dot(r.d, n);
 
-    phi.x = pc.epsilon * order * 2 * (phi.x - 0.5) * float(hash == patch_.hash);
+    float phi = mix(patch_.phi, phi_plane, phi_plane >= 0);
+    phi *= float(hash == patch_.hash);
 
     bool is_empty = patch_.phi > length(vec3(intersection.cell_radius));
-    phi.x = mix(phi.x, patch_.phi, is_empty);
+    phi = mix(phi.x, patch_.phi, is_empty);
 
-    return mix(phi_aabb, phi.x, inside_aabb);
+    return mix(phi_aabb, phi, inside_aabb);
 }
 
 intersection_t raycast(ray_t r, inout request_t request){

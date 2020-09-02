@@ -282,6 +282,12 @@ namespace mat {
 
     template<class T, uint8_t M, uint8_t N>
     matrix_t<T, M, N>
+    clamp(const matrix_t<T, M, N> & x, const T & low, const T & high){
+        return clamp(x, matrix_t<T, M, N>(low), matrix_t<T, M, N>(high));
+    }
+
+    template<class T, uint8_t M, uint8_t N>
+    matrix_t<T, M, N>
     outer_product(const matrix_t<T, M, 1> & a, const matrix_t<T, N, 1> & b){
         matrix_t<T, M, N> ab;
         for (int m = 0; m < M; m++){
