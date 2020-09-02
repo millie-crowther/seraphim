@@ -13,6 +13,31 @@
 
 template<class T, uint8_t M, uint8_t N>
 class matrix_t : public std::array<T, M * N> {
+private:
+    template<int K>
+    void 
+    construct(){
+        static_assert(K == M * N, "Not enough data in constructor");
+    }
+
+    template<int K, typename... Xs>
+    void
+    construct(const T & x, Xs... xs){
+        static_assert(K < M * N, "Too much data in constructor");
+        (*this)[K] = x;
+        construct<K + 1>(xs...); 
+    }
+    
+    template<int K, uint8_t P, uint8_t Q, typename... Xs>
+    void
+    construct(const matrix_t<T, P, Q> & x, Xs... xs){
+        static_assert(K + P * Q <= M * N, "Too much data in constructor");
+        for (int i = 0; i < P * Q; i++){
+            (*this)[K + i] = x[i];
+        }
+        construct<K + P * Q>(xs...); 
+    }
+    
 public:
     // constructors
     matrix_t() : matrix_t(T(0)){}
@@ -21,6 +46,11 @@ public:
         this->fill(x); 
     }
 
+    template<class X, class... Xs>
+    matrix_t(const X & x, Xs... xs){
+        construct<0>(x, xs...);
+    }
+/*
     template<class... Xs>
     matrix_t(typename std::enable_if<sizeof...(Xs) + 1 == M * N, T>::type x, Xs... xs) : 
         std::array<T, M * N>({ x, xs...}) {}
@@ -34,7 +64,7 @@ public:
             }
         }    
     }
-
+*/
     // vector modifier operators
     void operator+=(const matrix_t<T, M, N> & x){
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::plus<T>());
