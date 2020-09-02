@@ -44,7 +44,7 @@ substance_t::get_data(const vec3_t & eye_position){
 
     return data_t(
         near, far,
-        r,
+        mat::cast<float>(r),
         id,
         *matter->get_transform().get_matrix()
     );

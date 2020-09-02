@@ -35,11 +35,6 @@ public:
         }    
     }
 
-    template<class S>    
-    matrix_t(const matrix_t<S, M, N> & x){
-        std::transform(x.begin(), x.end(), this->begin(), [](const S & s){ return T(s); });
-    }
-
     // vector modifier operators
     void operator+=(const matrix_t<T, M, N> & x){
         std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::plus<T>());
@@ -379,6 +374,16 @@ namespace mat {
         }
 
         return ab; 
+    }
+    
+    template<class S, class T, uint8_t M, uint8_t N>
+    matrix_t<S, M, N>
+    cast(const matrix_t<T, M, N> & m){
+        matrix_t<S, M, N> a;
+        std::transform(m.begin(), m.end(), a.begin(), [](const T & x){
+            return static_cast<S>(x);
+        });
+        return a;
     }
 }
 

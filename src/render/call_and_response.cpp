@@ -70,7 +70,7 @@ response_t::response_t(){
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
         auto sdf = substance->get_matter()->get_sdf();
-        vec3_t p = call.get_position() - sdf->get_aabb().get_centre();
+        vec3_t p = mat::cast<double>(call.get_position()) - sdf->get_aabb().get_centre();
 
         uint32_t contains_mask = 0;
 
@@ -117,6 +117,6 @@ response_t::get_patch() const {
 
 uint32_t
 response_t::squash(const vec4_t & x) const {
-    u8vec4_t x8 = mat::clamp(x * 255.0, 0.0, 255.0);
+    u8vec4_t x8 = mat::cast<uint8_t>(mat::clamp(x * 255.0, 0.0, 255.0));
     return *reinterpret_cast<uint32_t *>(&x8);
 }

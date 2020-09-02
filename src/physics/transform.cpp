@@ -45,7 +45,7 @@ transform_t::forward() const {
 void
 transform_t::recalculate_matrix() {
     quat_t inverse = rotation.inverse();
-    f32mat3_t r = inverse.to_matrix();
+    f32mat3_t r = mat::cast<float>(inverse.to_matrix());
 
     r = mat::transpose(r);
 
@@ -70,7 +70,7 @@ transform_t::recalculate_matrix() {
         0.0f
     );
 
-    f32vec3_t x = rotation * position;
+    f32vec3_t x = mat::cast<float>(rotation * position);
 
     f32vec4_t d(
         -x[0],
