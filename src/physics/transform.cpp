@@ -49,36 +49,14 @@ transform_t::recalculate_matrix() {
 
     r = mat::transpose(r);
 
-    auto a = f32vec4_t(
-        r.get(0, 0),
-        r.get(1, 0),
-        r.get(2, 0),
-        0.0f
-    );
-
-    auto b = f32vec4_t(
-        r.get(0, 1),
-        r.get(1, 1),
-        r.get(2, 1),
-        0.0f
-    );
-
-    auto c = f32vec4_t(
-        r.get(0, 2),
-        r.get(1, 2),
-        r.get(2, 2),
-        0.0f
-    );
+    auto a = f32vec4_t(r.get_column(0), 0.0f);
+    auto b = f32vec4_t(r.get_column(1), 0.0f);
+    auto c = f32vec4_t(r.get_column(2), 0.0f);
 
     f32vec3_t x = mat::cast<float>(rotation * position);
 
-    f32vec4_t d(
-        -x[0],
-        -x[1],
-        -x[2],
-        1.0f
-    );
-
+    f32vec4_t d(-x, 1.0f);
+    
     matrix = std::make_unique<f32mat4_t>(a, b, c, d);
 }
 

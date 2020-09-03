@@ -25,7 +25,7 @@ int main(){
         )
     );
         
- //   sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.01));
+    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.001));
 
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),

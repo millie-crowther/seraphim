@@ -22,7 +22,7 @@ private:
         
         std::copy(x.begin(), x.end(), this->data() + K);
         
-        if constexpr (K + P * Q != M * N || sizeof...(Xs) > 0){
+        if constexpr (sizeof...(Xs) != 0){
             construct<K + P * Q>(xs...); 
         }
     }

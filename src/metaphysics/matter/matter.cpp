@@ -154,10 +154,9 @@ matter_t::get_inertia_tensor(){
         }
     }
 
-    auto i_b = *inertia_tensor;
-    auto r = transform.get_rotation().to_matrix();
-    r = mat::inverse(r);
-    auto i = r * i_b * mat::transpose(r); 
+    auto i = *inertia_tensor;
+//    auto r = transform.get_rotation().to_matrix();
+    //i = r * i_b * mat::transpose(r);
 
     return i;
 }
