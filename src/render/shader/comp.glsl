@@ -131,12 +131,11 @@ vec2 uv(vec2 xy){
 }
 
 vec3 get_ray_direction(vec2 xy){
-    vec2 uv = uv(xy);
-    return normalize(mat3(pc.eye_transform) * vec3(uv.x, uv.y, pc.focal_depth));
+    return normalize(mat3(pc.eye_transform) * vec3(uv(xy), pc.focal_depth));
 }
 
 int expected_order(vec3 x){
-    float dist = length(inverse(pc.eye_transform)[3].xyz - x);
+    float dist = length(pc.eye_transform[3].xyz - x);
     float centre = length(uv(gl_GlobalInvocationID.xy));
     const vec2 ks = vec2(1, 2);
     return 10 + int(dot(vec2(dist, centre), ks));
@@ -180,9 +179,10 @@ patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersecti
 }
 
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
+    mat4 inv = inverse(sub.transform);
     ray_t r = ray_t(
-        (sub.transform * vec4(global_r.x, 1)).xyz,
-        mat3(sub.transform) * global_r.d
+        (inv * vec4(global_r.x, 1)).xyz,
+        mat3(inv) * global_r.d
     );
 
     vec3 faces = -sign(r.d) * sub.radius;
@@ -200,8 +200,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     patch_t patch_ = patch_t(0, 0, 0, 0);
     
     if (inside_aabb){
-        int tries = 0;
-        for (; tries < max_hash_retries && hash != patch_.hash; tries++){
+        for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
             patch_ = get_patch(r.x, order + tries, sub.id, intersection, request, hash);
         }
     }
@@ -371,7 +370,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
     request.status = 0;
 
-    vec3 rx = inverse(pc.eye_transform)[3].xyz;
+    vec3 rx = pc.eye_transform[3].xyz;
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
     ray_t r = ray_t(rx, d);
@@ -448,7 +447,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 }
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
-    vec3 light = l.x - inverse(pc.eye_transform)[3].xyz;
+    vec3 light = l.x - pc.eye_transform[3].xyz;
     float r = sqrt(length(l.colour) / pc.epsilon);
 
     vec4 phis = transpose(normals) * light;
@@ -461,8 +460,9 @@ bool is_light_visible(light_t l, float near, float far, mat4x3 normals){
 }
 
 bool is_substance_visible(substance_t sub, mat4x3 normals_global){
-    mat4x3 normals = mat3(sub.transform) * normals_global;
-    vec3 eye = (sub.transform * inverse(pc.eye_transform))[3].xyz;
+    mat4 inv = inverse(sub.transform);
+    mat4x3 normals = mat3(inv) * normals_global;
+    vec3 eye = (inv * pc.eye_transform[3]).xyz;
     vec4 ds = transpose(normals) * eye;
 
     vec4 phis = vec4(
@@ -480,13 +480,13 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
 }
 
 bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
-    vec3 eye = inverse(pc.eye_transform)[3].xyz;
+    vec3 eye = pc.eye_transform[3].xyz;
     vec3 ed = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
     vec3 ec = ed * (near + far) / 2;
     float er = length(ed * far - ec);
     ec += eye;
 
-    vec3 sc = inverse(s.transform)[3].xyz;
+    vec3 sc = s.transform[3].xyz;
     float sr = length(s.radius);
 
     vec3 d = normalize(lc - ec);

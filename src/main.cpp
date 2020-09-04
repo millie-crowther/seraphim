@@ -4,6 +4,8 @@
 #include "maths/sdf/primitive.h"
 #include "maths/sdf/platonic.h"
 
+#include "physics/transform.h"
+
 int main(){ 
     auto floor_substance = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
@@ -25,7 +27,7 @@ int main(){
         )
     );
         
-    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.001));
+    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.01));
 
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),

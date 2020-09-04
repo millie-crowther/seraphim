@@ -31,7 +31,7 @@ public:
     vec3_t up() const;
     vec3_t right() const;
 
-    vec3_t to_local_space(const vec3_t & x) const;
+    vec3_t to_local_space(const vec3_t & x);
 
     f32mat4_t * get_matrix();
 };

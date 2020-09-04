@@ -23,8 +23,9 @@ transform_t::rotate(const quat_t & q){
 }
 
 vec3_t 
-transform_t::to_local_space(const vec3_t & x) const {
-    return rotation.inverse() * (x - position);
+transform_t::to_local_space(const vec3_t & x){
+    vec4_t lx = mat::cast<double>(*get_matrix()) * vec4_t(x, 1.0);
+    return vec3_t(lx[0], lx[1], lx[2]);
 }
 
 vec3_t
@@ -44,18 +45,12 @@ transform_t::forward() const {
 
 void
 transform_t::recalculate_matrix() {
-    quat_t inverse = rotation.inverse();
-    f32mat3_t r = mat::cast<float>(inverse.to_matrix());
+    f32mat3_t r = mat::cast<float>(rotation.to_matrix());
 
-    r = mat::transpose(r);
-
-    auto a = f32vec4_t(r.get_column(0), 0.0f);
-    auto b = f32vec4_t(r.get_column(1), 0.0f);
-    auto c = f32vec4_t(r.get_column(2), 0.0f);
-
-    f32vec3_t x = mat::cast<float>(rotation * position);
-
-    f32vec4_t d(-x, 1.0f);
+    f32vec4_t a(r.get_column(0), 0.0f);
+    f32vec4_t b(r.get_column(1), 0.0f);
+    f32vec4_t c(r.get_column(2), 0.0f);
+    f32vec4_t d(mat::cast<float>(position), 1.0f);
     
     matrix = std::make_unique<f32mat4_t>(a, b, c, d);
 }

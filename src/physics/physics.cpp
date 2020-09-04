@@ -85,13 +85,13 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
     // extricate matters
     auto n = dfdx;
-//*    
+    
     auto sm = a->get_mass() + b->get_mass();
     double da = fx * b->get_mass() / sm;
     double db = fx * a->get_mass() / sm;
     a->get_transform().translate(-da * n);
     b->get_transform().translate( db * n);     
- //*/
+ 
     // update velocities
     auto va = a->get_local_velocity(x);
     auto ra = a->get_offset_from_centre_of_mass(x);

@@ -18,7 +18,7 @@ matter_t::get_position() const {
 }
 
 double 
-matter_t::phi(const vec3_t & x) const {
+matter_t::phi(const vec3_t & x){
     return sdf->phi(transform.to_local_space(x));
 }
 
@@ -155,17 +155,10 @@ matter_t::get_inertia_tensor(){
     }
 
     auto i = *inertia_tensor;
-//    auto r = transform.get_rotation().to_matrix();
-    //i = r * i_b * mat::transpose(r);
+    auto r = transform.get_rotation().inverse().to_matrix();
+    i = r * i * mat::transpose(r);
 
     return i;
-}
-
-vec3_t
-matter_t::normal(const vec3_t & x) const {
-    return 
-        transform.get_rotation() * 
-        sdf->normal(transform.to_local_space(x));
 }
 
 vec3_t
