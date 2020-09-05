@@ -97,14 +97,14 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     auto ia = mat::inverse(a->get_inertia_tensor());
     auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
     auto ma = 1.0 / a->get_mass();
-    auto ta = a->get_material(x); // TODO: need to move into local coordinates
+    auto ta = a->get_material(a->to_local_space(x));
 
     auto vb = b->get_velocity(x);
     auto rb = b->get_offset_from_centre_of_mass(x);
     auto ib = mat::inverse(b->get_inertia_tensor());
     auto xb = vec::cross(ib * vec::cross(rb, n), rb);
     auto mb = 1.0 / b->get_mass();
-    auto tb = b->get_material(x);
+    auto tb = b->get_material(b->to_local_space(x));
 
     double CoR = std::max(ta.restitution, tb.restitution);
  

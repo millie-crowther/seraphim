@@ -23,7 +23,7 @@ transform_t::rotate(const quat_t & q){
 }
 
 vec3_t 
-transform_t::to_local_space(const vec3_t & x){
+transform_t::to_local_space(const vec3_t & x) const {
     auto r1 = rotation.inverse();
     return r1 * x - r1 * position;
 }

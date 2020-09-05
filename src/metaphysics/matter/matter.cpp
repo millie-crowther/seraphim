@@ -176,3 +176,9 @@ matter_t::update_velocities(const vec3_t & dv, const vec3_t & dw){
     v += dv;
     omega += dw;
 }
+
+vec3_t
+matter_t::to_local_space(const vec3_t & x) const {
+    return transform.to_local_space(x);
+}
+
