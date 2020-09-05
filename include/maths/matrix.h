@@ -458,5 +458,6 @@ typedef matrix_t<float, 3, 3> f32mat3_t;
 typedef matrix_t<float, 4, 4> f32mat4_t;
 
 typedef matrix_t<double, 3, 3> mat3_t;
+using mat4_t = matrix_t<double, 4, 4>;
 
 #endif

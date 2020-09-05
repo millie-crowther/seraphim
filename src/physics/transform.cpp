@@ -24,8 +24,8 @@ transform_t::rotate(const quat_t & q){
 
 vec3_t 
 transform_t::to_local_space(const vec3_t & x){
-    vec4_t lx = mat::cast<double>(*get_matrix()) * vec4_t(x, 1.0);
-    return vec3_t(lx[0], lx[1], lx[2]);
+    auto r1 = rotation.inverse();
+    return r1 * x - r1 * position;
 }
 
 vec3_t

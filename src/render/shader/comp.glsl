@@ -421,7 +421,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     t /= vec3(pc.texture_size, pc.texture_size, pc.texture_depth);
     
     vec3 n = 
-        inverse(mat3(intersection.substance.transform)) * 
+        mat3(intersection.substance.transform) * 
         normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient

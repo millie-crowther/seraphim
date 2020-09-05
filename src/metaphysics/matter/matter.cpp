@@ -96,9 +96,9 @@ matter_t::physics_tick(double t){
     transform.translate(a * 0.5 * t * t + v * t);
     
     // update rotation
-    auto w = omega * t;
-    auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
-    transform.rotate(q);
+   // auto w = omega * t;
+    //auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
+//    transform.rotate(q);
  
     // integrate accelerations into velocities
     v += a * t;
@@ -155,21 +155,20 @@ matter_t::get_inertia_tensor(){
     }
 
     auto i = *inertia_tensor;
-    auto r = transform.get_rotation().inverse().to_matrix();
+    auto r = transform.get_rotation().to_matrix();
     i = r * i * mat::transpose(r);
 
     return i;
 }
 
 vec3_t
-matter_t::get_local_velocity(const vec3_t & x){
-    auto r = get_offset_from_centre_of_mass(x);
-    return v + omega * r;
+matter_t::get_velocity(const vec3_t & x){
+    return v + omega * get_offset_from_centre_of_mass(x);
 }
 
 vec3_t
 matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
-    return transform.to_local_space(x) - get_centre_of_mass();
+    return x - (transform.get_position() + get_centre_of_mass()); 
 }
 
 void
