@@ -96,9 +96,9 @@ matter_t::physics_tick(double t){
     transform.translate(a * 0.5 * t * t + v * t);
     
     // update rotation
-   // auto w = omega * t;
-    //auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
-//    transform.rotate(q);
+    auto w = omega * t;
+    auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
+    transform.rotate(q);
  
     // integrate accelerations into velocities
     v += a * t;
