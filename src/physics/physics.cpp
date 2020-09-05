@@ -57,8 +57,7 @@ physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
 
 void
 physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    static const int max_iterations = 100;
-    static const double CoR = 0.9;
+    static const int max_iterations = 10;
 
     // detect collision
     auto f = [a, b](const vec3_t & x){
@@ -73,7 +72,7 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     auto fx = f(x);
     auto dfdx = dfd(x);
 
-    for (int i = 0; i < max_iterations; i++){
+    for (int i = 0; i < max_iterations && fx > 0; i++){
         x -= dfdx * std::abs(fx);
         fx = f(x);
         dfdx = dfd(x);
@@ -98,13 +97,17 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     auto ia = mat::inverse(a->get_inertia_tensor());
     auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
     auto ma = 1.0 / a->get_mass();
+    auto ta = a->get_material(x); // TODO: need to move into local coordinates
 
     auto vb = b->get_velocity(x);
     auto rb = b->get_offset_from_centre_of_mass(x);
     auto ib = mat::inverse(b->get_inertia_tensor());
     auto xb = vec::cross(ib * vec::cross(rb, n), rb);
     auto mb = 1.0 / b->get_mass();
-    
+    auto tb = b->get_material(x);
+
+    double CoR = std::max(ta.restitution, tb.restitution);
+ 
     double j = 
         -(1.0 + CoR) * vec::dot(vb - va, n) /
         (ma + mb + vec::dot(xa + xb, n));
