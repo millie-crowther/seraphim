@@ -19,6 +19,8 @@ public:
     transform_t & get_transform();
 
     double phi(const vec3_t & x);
+    vec3_t normal(const vec3_t & x);
+
     vec3_t get_velocity(const vec3_t & x);
     vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
     mat3_t get_inertia_tensor();
