@@ -85,38 +85,35 @@ physics_t::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
     // extricate matters
     auto n = dfdx;
-   /* 
+    
     auto sm = a->get_mass() + b->get_mass();
     double da = fx * b->get_mass() / sm;
     double db = fx * a->get_mass() / sm;
     a->get_transform().translate(-da * n);
     b->get_transform().translate( db * n);     
- */
+ 
     // update velocities
     auto va = a->get_velocity(x);
-   // auto ra = a->get_offset_from_centre_of_mass(x);
-   // auto ia = mat::inverse(a->get_inertia_tensor());
-   // auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
+    auto ra = a->get_offset_from_centre_of_mass(x);
+    auto ia = mat::inverse(a->get_inertia_tensor());
+    auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
     auto ma = 1.0 / a->get_mass();
 
     auto vb = b->get_velocity(x);
- //   auto rb = b->get_offset_from_centre_of_mass(x);
-  //  auto ib = mat::inverse(b->get_inertia_tensor());
-   // auto xb = vec::cross(ib * vec::cross(rb, n), rb);
+    auto rb = b->get_offset_from_centre_of_mass(x);
+    auto ib = mat::inverse(b->get_inertia_tensor());
+    auto xb = vec::cross(ib * vec::cross(rb, n), rb);
     auto mb = 1.0 / b->get_mass();
     
     double j = 
         -(1.0 + CoR) * vec::dot(vb - va, n) /
-        (ma + mb);// + vec::dot(xa + xb, n));
-
-    std::cout << "collision detected!" << std::endl;
-    std::cout << "\tj = " << j << std::endl;
+        (ma + mb + vec::dot(xa + xb, n));
 
     vec3_t dva = -j * n / a->get_mass();
-    vec3_t dwa;// = -j * ia * vec::cross(ra, n); 
+    vec3_t dwa = -j * ia * vec::cross(ra, n); 
     a->update_velocities(dva, dwa);
 
     vec3_t dvb = j * n / b->get_mass();
-    vec3_t dwb;// = j * ib * vec::cross(rb, n); 
+    vec3_t dwb = j * ib * vec::cross(rb, n); 
     b->update_velocities(dvb, dwb);
 }
