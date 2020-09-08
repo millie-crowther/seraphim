@@ -424,6 +424,18 @@ operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
     return mat::multiply(a, b);
 }
 
+// output operators
+template<class T, uint8_t N>
+std::ostream & 
+operator<<(std::ostream & os, const matrix_t<T, N, 1> & v){
+    os << "vec" << N << "(";
+    for (int i = 0; i < N - 1; i++){
+        os << v[i] << ", ";
+    }
+    os << v[N - 1] << ")";
+    return os;
+} 
+
 template<class T, uint8_t N>
 using vec_t = matrix_t<T, N, 1>;
 

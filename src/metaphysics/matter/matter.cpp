@@ -187,3 +187,12 @@ matter_t::normal(const vec3_t & x){
     vec3_t n = sdf->normal(transform.to_local_space(x));
     return transform.get_rotation() * n;
 }
+
+void
+matter_t::reset_velocity(){
+    v = vec3_t();
+    omega = vec3_t();
+    
+    a = vec3_t();
+    alpha = vec3_t();
+}

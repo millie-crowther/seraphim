@@ -28,7 +28,8 @@ set(SOURCES
     ../src/core/device.cpp
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
-    
+
+    ../src/physics/collision.cpp    
     ../src/physics/physics.cpp
     ../src/physics/transform.cpp
 
