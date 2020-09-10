@@ -14,7 +14,7 @@ namespace seraph { namespace physics {
         std::shared_ptr<matter_t> b;
 
         collision_t(
-            bool hit, const vec3_t & x, double fx, double t, 
+            const vec3_t & x, double fx, double t, 
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
 

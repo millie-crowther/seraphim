@@ -1,9 +1,5 @@
 #include "physics/transform.h"
 
-transform_t::transform_t(){
-    matrix = nullptr;
-}
-
 void 
 transform_t::set_position(const vec3_t & x){
     position = x;
@@ -52,7 +48,7 @@ transform_t::recalculate_matrix() {
     f32vec4_t c(r.get_column(2), 0.0f);
     f32vec4_t d(mat::cast<float>(position), 1.0f);
     
-    matrix = std::make_unique<f32mat4_t>(a, b, c, d);
+    matrix = std::make_shared<f32mat4_t>(a, b, c, d);
 }
 
 f32mat4_t *

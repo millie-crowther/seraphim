@@ -10,15 +10,12 @@
 class transform_t {
 private:
     vec3_t position;
-
     quat_t rotation;
-
-    std::unique_ptr<f32mat4_t> matrix;
+    std::shared_ptr<f32mat4_t> matrix;
+    
     void recalculate_matrix();
 
 public:
-    transform_t();
-
     vec3_t get_position() const;
     void set_position(const vec3_t & x);
     void translate(const vec3_t & x);

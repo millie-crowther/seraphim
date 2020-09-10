@@ -31,6 +31,8 @@ public:
     void update_velocities(const vec3_t & dv, const vec3_t & dw);
     void reset_velocity();
 
+    transform_t get_transform_at(double t);
+
 private:
     static constexpr uint32_t number_of_samples = 10000;
 

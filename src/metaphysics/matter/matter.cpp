@@ -89,24 +89,30 @@ matter_t::apply_force(const vec3_t & force){
 
 void
 matter_t::physics_tick(double t){
-    // add gravity
-    a[1] -= 9.8;
+    transform = get_transform_at(t);
 
-    // update position
-    transform.translate(a * 0.5 * t * t + v * t);
-    
-    // update rotation
-    auto w = omega * t;
-    auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
-    transform.rotate(q);
- 
     // integrate accelerations into velocities
     v += a * t;
     omega += alpha * t;
     
     // reset accelerations
-    a = vec3_t(0.0);
+    a = vec3_t(0.0, -9.8, 0.0);
     alpha = vec3_t(0.0);
+}
+
+transform_t
+matter_t::get_transform_at(double t){
+    transform_t tf = transform;
+    
+    // update position
+    tf.translate(a * 0.5 * t * t + v * t);
+    
+    // update rotation
+    auto w = alpha * 0.5 * t * t + omega * t;
+    auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
+    tf.rotate(q);
+
+    return tf;
 }
 
 mat3_t 
