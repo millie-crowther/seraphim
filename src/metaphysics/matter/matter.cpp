@@ -17,11 +17,6 @@ matter_t::get_position() const {
     return transform.get_position();
 }
 
-double 
-matter_t::phi(const vec3_t & x){
-    return sdf->phi(transform.to_local_space(x));
-}
-
 material_t
 matter_t::get_material(const vec3_t & x){
     return material;
@@ -186,12 +181,6 @@ matter_t::update_velocities(const vec3_t & dv, const vec3_t & dw){
 vec3_t
 matter_t::to_local_space(const vec3_t & x) const {
     return transform.to_local_space(x);
-}
-
-vec3_t
-matter_t::normal(const vec3_t & x){
-    vec3_t n = sdf->normal(transform.to_local_space(x));
-    return transform.get_rotation() * n;
 }
 
 void

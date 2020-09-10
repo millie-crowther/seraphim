@@ -73,8 +73,10 @@ seraph::physics::collision_correct(const collision_t & collision){
     auto fx = collision.fx;
     auto a = collision.a;
     auto b = collision.b;
-    auto x = collision.x; 
-    auto n = a->normal(x);
+    auto x = collision.x;
+     
+    auto x_a = a->get_transform().to_local_space(x);
+    auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
     
     auto sm = a->get_mass() + b->get_mass();
     double da = fx * b->get_mass() / sm;
