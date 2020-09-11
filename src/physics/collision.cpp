@@ -3,10 +3,10 @@
 using namespace seraph::physics;
 
 collision_t::collision_t(
-    const vec3_t & x, double fx, double t, 
+    const vec3_t & x, double fx,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
-    this->hit = fx <= 0.0;
+    this->hit = fx <= 0;
     this->x = x;
     this->fx = fx;
     this->t = t;
@@ -27,23 +27,25 @@ collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 50;
 
+    // TODO: reuse variables
+
     // detect collision
-    auto f = [a, b](const vec3_t & x, double t){
-        vec3_t x_a   = a->get_transform_at(t).to_local_space(x);
+    auto f = [a, b](const vec3_t & x){
+        vec3_t x_a   = a->get_transform().to_local_space(x);
         double phi_a = a->get_sdf()->phi(x_a); 
         
-        vec3_t x_b   = b->get_transform_at(t).to_local_space(x);
+        vec3_t x_b   = b->get_transform().to_local_space(x);
         double phi_b = b->get_sdf()->phi(x_b); 
 
         return std::max(phi_a, phi_b);
     };
 
-    auto dfdx = [a, b](const vec3_t & x, double t){
-        transform_t ta    = a->get_transform_at(t);
+    auto dfdx = [a, b](const vec3_t & x){
+        transform_t ta    = a->get_transform();
         vec3_t      x_a   = ta.to_local_space(x);
         double      phi_a = a->get_sdf()->phi(x_a); 
         
-        transform_t tb    = b->get_transform_at(t);
+        transform_t tb    = b->get_transform();
         vec3_t      x_b   = tb.to_local_space(x);
         double      phi_b = b->get_sdf()->phi(x_b); 
         
@@ -54,35 +56,43 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
         }
     }; 
     
-    auto x = (a->get_position() + b->get_position()) / 2.0;
-    double t = 0.0;
-    auto fx = f(x, t);
-    auto dfdx_ = dfdx(x, t);
+    vec3_t x = (a->get_position() + b->get_position()) / 2.0;
+    double depth = constant::epsilon;
+  
+    while (true) {
+        vec3_t x1 = x;
+        vec3_t dfdx_ = dfdx(x1);
+        double fx = f(x1);
+        
+        for (int i = 0; i < max_iterations && fx > -depth; i++){
+            x1 -= dfdx_ * (fx + depth);
+            
+            fx = f(x1);
+            dfdx_ = dfdx(x1);
+        }
 
-    for (int i = 0; i < max_iterations && fx > 0; i++){
-        x -= dfdx_ * fx;
-        fx = f(x, t);
-        dfdx_ = dfdx(x, t);
-    }
-
-    return collision_t(x, fx, /* TODO */ 0.0, a, b);
+        if (fx <= 0){
+            x = x1;
+            depth *= 2.0;
+        } else {
+            return collision_t(x, f(x), a, b);
+        }
+    };
 }
 
 void
 seraph::physics::collision_correct(const collision_t & collision){
-    auto fx = collision.fx;
     auto a = collision.a;
     auto b = collision.b;
     auto x = collision.x;
      
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
-    
-    auto sm = a->get_mass() + b->get_mass();
-    double da = fx * b->get_mass() / sm;
-    double db = fx * a->get_mass() / sm;
-    a->get_transform().translate(-da * n);
-    b->get_transform().translate( db * n);     
+   
+    // extricate matters
+    double depth = collision.fx;
+    a->get_transform().translate( depth * n);
+    b->get_transform().translate(-depth * n);     
  
     // calculate collision impulse magnitude
     auto va = a->get_velocity(x);
@@ -107,12 +117,13 @@ seraph::physics::collision_correct(const collision_t & collision){
     double jr = 
         -(1.0 + CoR) * vec::dot(vr, n) /
         (ma + mb + vec::dot(xa + xb, n));
-
+/*
     std::cout << "collision detected!" << std::endl;
     std::cout << "\t f(x) = " << fx << std::endl;
     std::cout << "\t n    = " << n  << std::endl;
     std::cout << "\t |vr| = " << vec::length(vr) << std::endl;
-    
+    std::cout << "\t t    = " << collision.t << std::endl;   
+ */
     // calculate frictional force
     vec3_t t  = vec::normalise(vr - vec::dot(vr, n) * n);
     double js = mu_s * jr;
