@@ -181,7 +181,7 @@ matter_t::get_velocity(const vec3_t & x){
 
 vec3_t
 matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
-    return x - (transform.get_position() + get_centre_of_mass()); 
+    return x - transform.to_global_space(get_centre_of_mass()); 
 }
 
 void

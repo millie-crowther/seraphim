@@ -73,7 +73,7 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
         double fx = f(x);
         
         for (int i = 0; i < max_iterations && fx > 0.0; i++){
-            x -= dfdx_ * fx;
+            x -= dfdx_ * std::abs(fx);
             
             fx = f(x);
             dfdx_ = dfdx(x);
@@ -86,6 +86,7 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 
     if (cs.empty()){
         return collision_t::null();
+
     } else {
         vec3_t x;
         double fx; 
@@ -93,11 +94,13 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
         for (auto & c : cs){
             if (c.hit){
                 x += c.x;
-                fx = std::min(fx, c.fx);
+                fx += c.fx;
             }
         }
 
         x /= cs.size();
+        fx /= cs.size();
+
         return collision_t(true, x, fx, a, b);
     }       
 }
@@ -110,31 +113,25 @@ seraph::physics::collision_correct(const collision_t & collision){
      
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
-   
-    // extricate matters by translation
+  
+    std::cout << "x = " << x << std::endl;
+    std::cout << "n = " << n << std::endl;
+ 
+    // extricate matters 
     double depth = collision.fx;
     double sm = a->get_mass() + b->get_mass();
     a->get_transform().translate( depth * n * b->get_mass() / sm);
     b->get_transform().translate(-depth * n * a->get_mass() / sm);     
 
-    // extricate matters by rotation
-    auto ra = a->get_offset_from_centre_of_mass(x);
-//    vec3_t axis_a = vec::cross(ra, n);
- //   double theta_a = -depth / vec::length(ra) * b->get_mass() / sm;
-  //  a->get_transform().rotate(quat_t::angle_axis(theta_a, axis_a));
- 
-    auto rb = b->get_offset_from_centre_of_mass(x);
-   // vec3_t axis_b = vec::cross(rb, n);
-    //double theta_b = depth / vec::length(rb) * a->get_mass() / sm;
-   // b->get_transform().rotate(quat_t::angle_axis(theta_b, axis_b));
-
     // calculate collision impulse magnitude
+    auto ra = a->get_offset_from_centre_of_mass(x);
     auto va = a->get_velocity(x);
     auto ia = mat::inverse(a->get_inertia_tensor());
     auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
     auto ma = 1.0 / a->get_mass();
     auto mata = a->get_material(a->to_local_space(x));
 
+    auto rb = b->get_offset_from_centre_of_mass(x);
     auto vb = b->get_velocity(x);
     auto ib = mat::inverse(b->get_inertia_tensor());
     auto xb = vec::cross(ib * vec::cross(rb, n), rb);
@@ -149,13 +146,7 @@ seraph::physics::collision_correct(const collision_t & collision){
     double jr = 
         -(1.0 + CoR) * vec::dot(vr, n) /
         (ma + mb + vec::dot(xa + xb, n));
-/*
-    std::cout << "collision detected!" << std::endl;
-    std::cout << "\t f(x) = " << fx << std::endl;
-    std::cout << "\t n    = " << n  << std::endl;
-    std::cout << "\t |vr| = " << vec::length(vr) << std::endl;
-    std::cout << "\t t    = " << collision.t << std::endl;   
- */
+    
     // calculate frictional force
     vec3_t t  = vec::normalise(vr - vec::dot(vr, n) * n);
     double js = mu_s * jr;

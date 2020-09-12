@@ -42,7 +42,7 @@ int main(){
     seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-    seraphim.create(sphere);
+//    seraphim.create(sphere);
     seraphim.create(cube);
 
     seraphim.run();
