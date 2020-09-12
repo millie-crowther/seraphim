@@ -273,69 +273,58 @@ namespace vec {
         }
         return r / (2 * constant::epsilon);
     }
-}
-
-namespace mat {
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    clamp(const matrix_t<T, M, N> & x, const matrix_t<T, M, N> & low, const matrix_t<T, M, N> & high){
+    
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    clamp(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & low, const matrix_t<T, N, 1> & high){
         auto result = x;
-        for (int i = 0; i < M * N; i++){
+        for (int i = 0; i < N; i++){
             result[i] = std::clamp(x[i], low[i], high[i]);
         }
         return result;
     }
 
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    clamp(const matrix_t<T, M, N> & x, const T & low, const T & high){
-        return clamp(x, matrix_t<T, M, N>(low), matrix_t<T, M, N>(high));
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    clamp(const matrix_t<T, N, 1> & x, const T & low, const T & high){
+        return clamp(x, matrix_t<T, N, 1>(low), matrix_t<T, N, 1>(high));
     }
 
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    outer_product(const matrix_t<T, M, 1> & a, const matrix_t<T, N, 1> & b){
-        matrix_t<T, M, N> ab;
-        for (int m = 0; m < M; m++){
-            for (int n = 0; n < N; n++){
-                ab.set(m, n, a[m] * b[n]);
-            }
-        }
-        return ab;
-    }
-
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    min(const matrix_t<T, M, N> & x, const matrix_t<T, M, N> & y){
-        matrix_t<T, M, N> r;
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    min(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & y){
+        matrix_t<T, N, 1> r;
         auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
         std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
         return r;
     }
 
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    max(const matrix_t<T, M, N> & x, const matrix_t<T, M, N> & y){
-        matrix_t<T, M, N> r;
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    max(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & y){
+        matrix_t<T, N, 1> r;
         auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
         std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
         return r;
     }
 
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    max(const matrix_t<T, M, N> & x, const T & y){
-        return max(x, matrix_t<T, M, N>(y));
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    max(const matrix_t<T, N, 1> & x, const T & y){
+        return max(x, matrix_t<T, N, 1>(y));
     }
     
-    template<class T, uint8_t M, uint8_t N>
-    matrix_t<T, M, N>
-    abs(const matrix_t<T, M, N> & x){
-        matrix_t<T, M, N> r;
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1>
+    abs(const matrix_t<T, N, 1> & x){
+        matrix_t<T, N, 1> r;
         std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
     }
 
+}
+
+namespace mat {
     template<class T>
     T 
     determinant(const matrix_t<T, 3, 3> & a){

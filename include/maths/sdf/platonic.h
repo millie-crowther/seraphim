@@ -13,9 +13,9 @@ namespace platonic {
         n_cuboid_t(const vec_t<double, D> & _r) : r(_r) {}
 
         double phi(const vec_t<double, D> & x) override {
-            auto q = mat::abs(x) - r;
+            auto q = vec::abs(x) - r;
             return 
-                vec::length(mat::max(q, 0.0)) +
+                vec::length(vec::max(q, 0.0)) +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }
 
@@ -60,7 +60,7 @@ namespace platonic {
         octahedron_t(double edge_length) : e(edge_length) {}
 
         double phi(const vec3_t & x) override {
-            return vec::dot(mat::abs(x), vec3_t(std::sqrt(3))) - e / std::sqrt(6);
+            return vec::dot(vec::abs(x), vec3_t(std::sqrt(3))) - e / std::sqrt(6);
         }
 
         aabb3_t get_aabb() override {

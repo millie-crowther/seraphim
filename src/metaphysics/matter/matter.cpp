@@ -23,7 +23,7 @@ matter_t::get_material(const vec3_t & x){
 }
 
 void 
-matter_t::calculate_centre_of_mass(){
+matter_t::calculate_centre_of_mass(){/*
     double total_density;
     vec3_t total_mass;
 
@@ -38,7 +38,7 @@ matter_t::calculate_centre_of_mass(){
     }
 
     average_density = std::make_unique<double>(total_density / number_of_samples);
-    centre_of_mass = std::make_unique<vec3_t>(total_mass / total_density);
+    centre_of_mass = std::make_unique<vec3_t>(total_mass / total_density);*/
 }
 
 vec3_t

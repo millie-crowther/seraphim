@@ -6,10 +6,6 @@
 #include <limits>
 #include <random>
 
-namespace {
-    std::default_random_engine engine;
-}
-
 template<class T, uint8_t D>
 class aabb_t {
 private:
@@ -27,19 +23,11 @@ public:
         this->max = max;
     }
 
-    void capture_sphere(const vec_t<T, D> & c, const T & r){
-        min = min.min(c - vec_t<T, D>(std::abs(r)));
-        max = max.max(c + vec_t<T, D>(std::abs(r)));
+    void capture_point(const vec_t<T, D> & c){
+        min = vec::min(min, c);
+        max = vec::max(max, c); 
     }
-
-    vec_t<T, D> get_min() const {
-        return min;
-    }
-
-    vec_t<T, D> get_max() const {
-        return max;
-    }
-
+    
     vec_t<T, D> get_size() const {
         return max / 2 - min / 2;
     }
@@ -48,14 +36,37 @@ public:
         return max / 2 + min / 2;
     }
 
-    vec_t<T, D> random() const {
-        static std::uniform_real_distribution<double> distribution(0.0, 1.0);
-        vec_t<double, D> x;
-        for (int i = 0; i < D; i++){
-            x[i] = distribution(engine);
+    vec_t<T, D> get_vertex(uint8_t i) const {
+        vec_t<T, D> v = min;
+        for (uint8_t j = 0; j < D; j++){
+            if (i & (1 << j)){
+                v[i] = max[i];
+            }
         }
-        x = x * (max - min) + min;
-        return x;
+        return v;
+    }
+    
+
+    template<class TF>
+    aabb_t<T, D> transform(const TF & tf){
+        aabb_t<T, D> a;
+
+        for (uint8_t i = 0; i < std::pow(2, D); i++){
+            a.capture_point(tf(get_vertex(i)));
+        } 
+
+        return a;
+    }
+
+    aabb_t<T, D> operator&&(const aabb_t<T, D> & a) const {
+        return aabb_t<T, D>(
+            vec::max(min, a.min),
+            vec::min(max, a.max)
+        );
+    }
+
+    bool is_valid() const {
+        return false;//vec::all(min < max);
     }
 };
 

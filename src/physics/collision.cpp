@@ -89,21 +89,31 @@ seraph::physics::collision_correct(const collision_t & collision){
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
    
-    // extricate matters
+    // extricate matters by translation
     double depth = collision.fx;
-    a->get_transform().translate( depth * n);
-    b->get_transform().translate(-depth * n);     
+    double sm = a->get_mass() + b->get_mass();
+    a->get_transform().translate( depth * n * b->get_mass() / sm);
+    b->get_transform().translate(-depth * n * a->get_mass() / sm);     
+
+    // extricate matters by rotation
+    auto ra = a->get_offset_from_centre_of_mass(x);
+//    vec3_t axis_a = vec::cross(ra, n);
+ //   double theta_a = -depth / vec::length(ra) * b->get_mass() / sm;
+  //  a->get_transform().rotate(quat_t::angle_axis(theta_a, axis_a));
  
+    auto rb = b->get_offset_from_centre_of_mass(x);
+   // vec3_t axis_b = vec::cross(rb, n);
+    //double theta_b = depth / vec::length(rb) * a->get_mass() / sm;
+   // b->get_transform().rotate(quat_t::angle_axis(theta_b, axis_b));
+
     // calculate collision impulse magnitude
     auto va = a->get_velocity(x);
-    auto ra = a->get_offset_from_centre_of_mass(x);
     auto ia = mat::inverse(a->get_inertia_tensor());
     auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
     auto ma = 1.0 / a->get_mass();
     auto mata = a->get_material(a->to_local_space(x));
 
     auto vb = b->get_velocity(x);
-    auto rb = b->get_offset_from_centre_of_mass(x);
     auto ib = mat::inverse(b->get_inertia_tensor());
     auto xb = vec::cross(ib * vec::cross(rb, n), rb);
     auto mb = 1.0 / b->get_mass();

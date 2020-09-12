@@ -117,6 +117,6 @@ response_t::get_patch() const {
 
 uint32_t
 response_t::squash(const vec4_t & x) const {
-    u8vec4_t x8 = mat::cast<uint8_t>(mat::clamp(x * 255.0, 0.0, 255.0));
+    u8vec4_t x8 = mat::cast<uint8_t>(vec::clamp(x * 255.0, 0.0, 255.0));
     return *reinterpret_cast<uint32_t *>(&x8);
 }
