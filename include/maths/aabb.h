@@ -66,7 +66,7 @@ public:
     }
 
     bool is_valid() const {
-        return false;//vec::all(min < max);
+        return vec::all(min <= max);
     }
 };
 

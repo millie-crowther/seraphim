@@ -312,6 +312,11 @@ namespace vec {
         std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
     }
+        
+    template<uint8_t N>
+    bool all(const matrix_t<bool, N, 1> & x){
+        return std::all_of(x.begin(), x.end());
+    }
 }
 
 namespace mat {
@@ -390,6 +395,26 @@ bool operator==(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> * b){
 template<class T, uint8_t M, uint8_t N>
 bool operator!=(const matrix_t<T, M, N> & a, const matrix_t<T, M, N> & b){
     return !(a == b);
+}
+
+// ordering operators
+template<uint8_t N>
+matrix_t<bool, N, 1> operator!(const matrix_t<bool, N, 1> & x){
+    matrix_t<bool, N, 1> nx;
+    std::transform(x.begin(), x.end(), nx.begin(), std::logical_not<bool>());
+    return nx;
+}
+
+template<class T, uint8_t N>
+matrix_t<bool, N, 1> operator<(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    matrix_t<bool, N, 1> x;
+    std::transform(a.begin(), a.end(), b.begin(), x.begin(), std::less<T>());
+    return x;
+}
+
+template<class T, uint8_t N>
+matrix_t<bool, N, 1> operator<=(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    return !(b < a);
 }
 
 // multiplication operators
