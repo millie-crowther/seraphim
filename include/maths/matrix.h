@@ -315,7 +315,10 @@ namespace vec {
         
     template<uint8_t N>
     bool all(const matrix_t<bool, N, 1> & x){
-        return std::all_of(x.begin(), x.end());
+        for (auto b : x){
+            if (!b) return false;
+        }
+        return true;
     }
 }
 

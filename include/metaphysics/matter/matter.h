@@ -17,6 +17,7 @@ public:
     vec3_t get_position() const;
     double get_mass();
     transform_t & get_transform();
+    aabb3_t get_aabb() const;
 
     vec3_t get_velocity(const vec3_t & x);
     vec3_t get_offset_from_centre_of_mass(const vec3_t & x);

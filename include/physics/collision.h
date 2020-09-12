@@ -14,13 +14,15 @@ namespace seraph { namespace physics {
         std::shared_ptr<matter_t> b;
 
         collision_t(
-            const vec3_t & x, double fx,
+            bool hit, const vec3_t & x, double fx, 
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
 
         struct comparator_t {
             bool operator()(const collision_t & a, const collision_t & b);
         };
+
+        static collision_t null();
     };
 
     collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);

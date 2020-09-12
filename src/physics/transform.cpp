@@ -66,7 +66,11 @@ transform_t::get_position() const {
 }
 
 quat_t
-
 transform_t::get_rotation() const {
     return rotation;
+}
+
+vec3_t
+transform_t::to_global_space(const vec3_t & x) const {
+    return rotation * x + position;
 }

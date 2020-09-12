@@ -22,6 +22,17 @@ matter_t::get_material(const vec3_t & x){
     return material;
 }
 
+aabb3_t
+matter_t::get_aabb() const {
+    aabb3_t aabb;
+    
+    for (uint8_t i = 0; i < 8; i++){
+        aabb.capture_point(transform.to_global_space(aabb.get_vertex(i)));
+    }
+
+    return aabb;
+}
+
 void 
 matter_t::calculate_centre_of_mass(){/*
     double total_density;

@@ -3,15 +3,19 @@
 using namespace seraph::physics;
 
 collision_t::collision_t(
-    const vec3_t & x, double fx,  
+    bool hit, const vec3_t & x, double fx,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
-    this->hit = fx <= 0;
+    this->hit = hit;
     this->x = x;
     this->fx = fx;
     this->t = t;
     this->a = a;
     this->b = b;
+}
+
+collision_t collision_t::null(){
+    return collision_t(false, vec3_t(), 0.0, nullptr, nullptr);
 }
 
 bool
@@ -26,6 +30,11 @@ collision_t::comparator_t::operator()(const collision_t & a, const collision_t &
 collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 50;
+
+    auto aabb = a->get_aabb() && b->get_aabb();
+    if (!aabb.is_valid()){
+        return collision_t::null();
+    }
 
     // TODO: reuse variables
 
@@ -75,7 +84,8 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
             x = x1;
             depth *= 2.0;
         } else {
-            return collision_t(x, f(x), a, b);
+            fx = f(x);
+            return collision_t(fx <= 0, x, fx, a, b);
         }
     };
 }

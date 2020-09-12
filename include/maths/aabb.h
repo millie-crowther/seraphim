@@ -40,29 +40,14 @@ public:
         vec_t<T, D> v = min;
         for (uint8_t j = 0; j < D; j++){
             if (i & (1 << j)){
-                v[i] = max[i];
+                v[j] = max[j];
             }
         }
         return v;
     }
     
-
-    template<class TF>
-    aabb_t<T, D> transform(const TF & tf){
-        aabb_t<T, D> a;
-
-        for (uint8_t i = 0; i < std::pow(2, D); i++){
-            a.capture_point(tf(get_vertex(i)));
-        } 
-
-        return a;
-    }
-
     aabb_t<T, D> operator&&(const aabb_t<T, D> & a) const {
-        return aabb_t<T, D>(
-            vec::max(min, a.min),
-            vec::min(max, a.max)
-        );
+        return aabb_t<T, D>(vec::max(min, a.min), vec::min(max, a.max));
     }
 
     bool is_valid() const {
