@@ -40,7 +40,7 @@ public:
     matrix_t(const T & x){
         this->fill(x); 
     }
-
+    
     template<class X, class... Xs>
     matrix_t(const X & x, Xs... xs){
         construct<0>(x, xs...);
@@ -137,15 +137,12 @@ public:
     }
 
     // equality and ordering operators
-    bool 
-    operator<(const matrix_t<T, M, N> & x) const {
-        return std::lexicographical_compare(this->begin(), this->end(), x.begin(), x.end());
-    }
-/*
     struct comparator_t {
-        bool operator()(const matrix_t<T,
+        bool operator()(const matrix_t<T, M, N> & a, const matrix_t<T, M, N> & b){
+            return std::lexicographical_compare(a.begin(), a.end(), b.begin(), b.end());
+        }
     };
-*/
+
     // getters
     T
     get(uint8_t row, uint8_t column) const {

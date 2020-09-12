@@ -46,7 +46,7 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
     }
 
     if (a.position != b.position){
-        return a.position < b.position;
+        return f32vec3_t::comparator_t()(a.position, b.position);
     } 
    
     return false;  
