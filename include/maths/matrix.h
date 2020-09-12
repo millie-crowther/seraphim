@@ -141,17 +141,11 @@ public:
     operator<(const matrix_t<T, M, N> & x) const {
         return std::lexicographical_compare(this->begin(), this->end(), x.begin(), x.end());
     }
-
-    bool 
-    operator==(const matrix_t<T, M, N> & x) const {
-        return std::equal(this->begin(), this->end(), x.begin());
-    }
-
-    bool 
-    operator!=(const matrix_t<T, M, N> & x) const {
-        return !(x == *this);
-    }
-
+/*
+    struct comparator_t {
+        bool operator()(const matrix_t<T,
+    };
+*/
     // getters
     T
     get(uint8_t row, uint8_t column) const {
@@ -321,7 +315,6 @@ namespace vec {
         std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
     }
-
 }
 
 namespace mat {
@@ -387,6 +380,20 @@ namespace mat {
     }
 }
 
+// equality operators
+template<class T, uint8_t N>
+bool operator==(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> * b){
+    if constexpr (std::is_floating_point<T>::value){
+        return vec::length(a - b) < constant::epsilon;
+    } else {
+        return std::equal(a.begin(), a.end(), b.begin());
+    }
+}
+
+template<class T, uint8_t M, uint8_t N>
+bool operator!=(const matrix_t<T, M, N> & a, const matrix_t<T, M, N> & b){
+    return !(a == b);
+}
 
 // multiplication operators
 template<class T, uint8_t M, uint8_t N>

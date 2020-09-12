@@ -45,7 +45,7 @@ call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
         return a.radius < b.radius;
     }
 
-    if (vec::length(a.position - b.position) > constant::epsilon){
+    if (a.position != b.position){
         return a.position < b.position;
     } 
    
