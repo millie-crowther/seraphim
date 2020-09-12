@@ -26,8 +26,9 @@ aabb3_t
 matter_t::get_aabb() const {
     aabb3_t aabb;
     
-    for (uint8_t i = 0; i < 8; i++){
-        aabb.capture_point(transform.to_global_space(aabb.get_vertex(i)));
+    for (uint8_t i = 0; i < 8; i++){   
+        vec3_t x = transform.to_global_space(sdf->get_aabb().get_vertex(i));
+        aabb.capture_point(x);
     }
 
     return aabb;

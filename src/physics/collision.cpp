@@ -31,7 +31,7 @@ collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 50;
 
-    auto aabb = a->get_aabb() && b->get_aabb();
+    aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
         return collision_t::null();
     }
@@ -64,30 +64,42 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
             return tb.get_rotation() * b->get_sdf()->normal(x_b); 
         }
     }; 
-    
-    vec3_t x = (a->get_position() + b->get_position()) / 2.0;
-    double depth = constant::epsilon;
   
-    while (true) {
-        vec3_t x1 = x;
-        vec3_t dfdx_ = dfdx(x1);
-        double fx = f(x1);
+    std::vector<collision_t> cs;
+
+    for (uint8_t i = 0; i < 8; i++){
+        vec3_t x = aabb.get_vertex(i);
+        vec3_t dfdx_ = dfdx(x);
+        double fx = f(x);
         
-        for (int i = 0; i < max_iterations && fx > -depth; i++){
-            x1 -= dfdx_ * (fx + depth);
+        for (int i = 0; i < max_iterations && fx > 0.0; i++){
+            x -= dfdx_ * fx;
             
-            fx = f(x1);
-            dfdx_ = dfdx(x1);
+            fx = f(x);
+            dfdx_ = dfdx(x);
         }
 
         if (fx <= 0){
-            x = x1;
-            depth *= 2.0;
-        } else {
-            fx = f(x);
-            return collision_t(fx <= 0, x, fx, a, b);
+            cs.emplace_back(true, x, fx, a, b);
         }
-    };
+    }
+
+    if (cs.empty()){
+        return collision_t::null();
+    } else {
+        vec3_t x;
+        double fx; 
+        
+        for (auto & c : cs){
+            if (c.hit){
+                x += c.x;
+                fx = std::min(fx, c.fx);
+            }
+        }
+
+        x /= cs.size();
+        return collision_t(true, x, fx, a, b);
+    }       
 }
 
 void
