@@ -89,19 +89,16 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 
     } else {
         vec3_t x;
-        double fx; 
         
         for (auto & c : cs){
             if (c.hit){
                 x += c.x;
-                fx += c.fx;
             }
         }
 
         x /= cs.size();
-        fx /= cs.size();
 
-        return collision_t(true, x, fx, a, b);
+        return collision_t(true, x, f(x), a, b);
     }       
 }
 
@@ -114,27 +111,29 @@ seraph::physics::collision_correct(const collision_t & collision){
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
   
-    std::cout << "x = " << x << std::endl;
-    std::cout << "n = " << n << std::endl;
- 
-    // extricate matters 
-    double depth = collision.fx;
+    // extricate matters by translation
+    double depth = std::abs(collision.fx);
     double sm = a->get_mass() + b->get_mass();
-    a->get_transform().translate( depth * n * b->get_mass() / sm);
-    b->get_transform().translate(-depth * n * a->get_mass() / sm);     
+    a->get_transform().translate(-depth * n * b->get_mass() / sm);
+    b->get_transform().translate( depth * n * a->get_mass() / sm);     
+
+    // extraicate matters by rotation
+    auto ra = a->get_offset_from_centre_of_mass(x);
+    auto axis_a = vec::cross(ra, n);    
+
+    auto rb = b->get_offset_from_centre_of_mass(x);
+    auto axis_b = vec::cross(rb, n);
 
     // calculate collision impulse magnitude
-    auto ra = a->get_offset_from_centre_of_mass(x);
     auto va = a->get_velocity(x);
     auto ia = mat::inverse(a->get_inertia_tensor());
-    auto xa = vec::cross(ia * vec::cross(ra, n), ra); 
+    auto xa = vec::cross(ia * axis_a, ra); 
     auto ma = 1.0 / a->get_mass();
     auto mata = a->get_material(a->to_local_space(x));
 
-    auto rb = b->get_offset_from_centre_of_mass(x);
     auto vb = b->get_velocity(x);
     auto ib = mat::inverse(b->get_inertia_tensor());
-    auto xb = vec::cross(ib * vec::cross(rb, n), rb);
+    auto xb = vec::cross(ib * axis_b, rb);
     auto mb = 1.0 / b->get_mass();
     auto matb = b->get_material(b->to_local_space(x));
 

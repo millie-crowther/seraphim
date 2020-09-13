@@ -176,7 +176,7 @@ matter_t::get_inertia_tensor(){
 
 vec3_t
 matter_t::get_velocity(const vec3_t & x){
-    return v + omega * get_offset_from_centre_of_mass(x);
+    return v + vec::cross(omega, get_offset_from_centre_of_mass(x));
 }
 
 vec3_t
