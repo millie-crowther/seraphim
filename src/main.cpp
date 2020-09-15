@@ -37,12 +37,10 @@ int main(){
         )
     );
         
-//    cube->get_matter()->update_velocities(vec3_t(), vec3_t(0.1));
-  
     seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-    //seraphim.create(sphere);
+//    seraphim.create(sphere);
     seraphim.create(cube);
 
     seraphim.run();

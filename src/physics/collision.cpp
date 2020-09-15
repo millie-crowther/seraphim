@@ -76,7 +76,7 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
                 return collision_t(true, x, fx, a, b);
             }
 
-            x -= dfdx(x) * (fx + depth);
+            x -= dfdx(x) * (std::abs(fx) + depth);
         }
     }
 

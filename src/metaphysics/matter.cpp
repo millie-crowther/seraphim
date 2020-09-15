@@ -38,7 +38,7 @@ double
 matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_global){
     auto i1 = mat::inverse(get_inertia_tensor());
     auto r = transform.to_local_space(r_global) - get_centre_of_mass();
-    auto n = transform.get_rotation().inverse() * r_global;
+    auto n = transform.get_rotation().inverse() * n_global;
 
     return vec::dot(n, vec::cross(i1 * vec::cross(r, n), r));
 }
@@ -47,7 +47,7 @@ void
 matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
     auto i1 = mat::inverse(get_inertia_tensor());
     auto r = transform.to_local_space(r_global) - get_centre_of_mass();
-    auto n = transform.get_rotation().inverse() * r_global;
+    auto n = transform.get_rotation().inverse() * n_global;
    
     v += jr / get_mass() * n;
     omega += jr * i1 * vec::cross(r, n);    
