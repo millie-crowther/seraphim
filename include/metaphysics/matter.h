@@ -26,10 +26,12 @@ public:
 
     void apply_force(const vec3_t & force);
     void physics_tick(double delta);
-    void update_velocities(const vec3_t & dv, const vec3_t & dw);
     void reset_velocity();
 
     transform_t get_transform_at(double t);
+
+    double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
+    void update_velocity(double jr, const vec3_t & x, const vec3_t & n);
 
 private:
     static constexpr uint32_t number_of_samples = 10000;

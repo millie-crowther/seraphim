@@ -22,27 +22,27 @@ int main(){
         std::make_shared<matter_t>(
             std::make_shared<primitive::sphere_t>(0.5), 
             material_t(vec3_t(0.8, 0.1, 0.8), 700.0, 0.5, 0.2, 0.1),
-            vec3_t(2.5, 3.0, 0.5),
+            vec3_t(1.5, 3.0, 0.5),
             true
         )
     );
         
-    sphere->get_matter()->update_velocities(vec3_t(), vec3_t(0.1));
-
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<platonic::cube_t>(0.5), 
             material_t(vec3_t(0.8, 0.8, 0.1), 700.0, 0.5, 0.2, 0.1),
-            vec3_t(-1.5, 3.0, 0.5),
+            vec3_t(-2.432, 3.423, 1.543),
             true
         )
     );
+        
+//    cube->get_matter()->update_velocities(vec3_t(), vec3_t(0.1));
   
     seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-    seraphim.create(sphere);
+    //seraphim.create(sphere);
     seraphim.create(cube);
 
     seraphim.run();

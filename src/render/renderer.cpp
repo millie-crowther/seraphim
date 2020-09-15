@@ -134,12 +134,6 @@ renderer_t::~renderer_t(){
         vkDestroySemaphore(device->get_device(), render_finished_semas[i], nullptr);
         vkDestroyFence(device->get_device(), in_flight_fences[i], nullptr);
     }
-
-    std::cout << "total patches: " << number_of_patches << std::endl;
-    std::cout << "number of hits: " << indices.size() << std::endl;
-    std::cout << "number of hashes: " << hashes.size() << std::endl;
-    std::cout << "occupancy rate: " << float(indices.size()) / float(number_of_patches) * 100.0f << "%" << std::endl;
-    std::cout << "hash hit rate: " << float(indices.size()) / float(hashes.size()) * 100.0f << "%" << std::endl;
 }
   
 void 

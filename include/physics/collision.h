@@ -2,7 +2,7 @@
 #define COLLISION_H
 
 #include "maths/matrix.h"
-#include "metaphysics/matter/matter.h"
+#include "metaphysics/matter.h"
 
 namespace seraph { namespace physics {
     struct collision_t {

@@ -2,7 +2,7 @@
 #define PHYSICS_H
 
 #include "core/constant.h"
-#include "metaphysics/matter/matter.h"
+#include "metaphysics/matter.h"
 
 #include <memory>
 #include <set>

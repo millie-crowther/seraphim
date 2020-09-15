@@ -41,8 +41,8 @@ set(SOURCES
     ../src/render/texture.cpp
 
     ../src/metaphysics/substance.cpp
-    ../src/metaphysics/form/form.cpp
-    ../src/metaphysics/matter/matter.cpp
+    ../src/metaphysics/form.cpp
+    ../src/metaphysics/matter.cpp
     
     ../src/maths/quat.cpp
 

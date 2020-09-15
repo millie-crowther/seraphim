@@ -3,8 +3,8 @@
 
 #include <memory>
 
-#include "form/form.h"
-#include "matter/matter.h"
+#include "form.h"
+#include "matter.h"
 
 class substance_t {
 public:

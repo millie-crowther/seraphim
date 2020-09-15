@@ -1,4 +1,4 @@
-#include "metaphysics/matter/matter.h"
+#include "metaphysics/matter.h"
 
 matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
@@ -34,23 +34,28 @@ matter_t::get_aabb() const {
     return aabb;
 }
 
+double
+matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_global){
+    auto i1 = mat::inverse(get_inertia_tensor());
+    auto r = transform.to_local_space(r_global) - get_centre_of_mass();
+    auto n = transform.get_rotation().inverse() * r_global;
+
+    return vec::dot(n, vec::cross(i1 * vec::cross(r, n), r));
+}
+
+void
+matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
+    auto i1 = mat::inverse(get_inertia_tensor());
+    auto r = transform.to_local_space(r_global) - get_centre_of_mass();
+    auto n = transform.get_rotation().inverse() * r_global;
+   
+    v += jr / get_mass() * n;
+    omega += jr * i1 * vec::cross(r, n);    
+}
+
 void 
-matter_t::calculate_centre_of_mass(){/*
-    double total_density;
-    vec3_t total_mass;
-
-    for (uint32_t sample = 0; sample < number_of_samples;){
-        vec3_t x = sdf->get_aabb().random();
-        if (sdf->contains(x)){
-            double density = get_material(x).density;
-            total_density += density;
-            total_mass += x * density;
-            sample++;
-        }
-    }
-
-    average_density = std::make_unique<double>(total_density / number_of_samples);
-    centre_of_mass = std::make_unique<vec3_t>(total_mass / total_density);*/
+matter_t::calculate_centre_of_mass(){
+    throw std::runtime_error("Error: autocalc of centre of mass not yet implemented.");
 }
 
 vec3_t
@@ -124,54 +129,15 @@ matter_t::get_transform_at(double t){
 
 mat3_t 
 matter_t::get_inertia_tensor(){
-    if (!inertia_tensor){
-/*
-        vec3_t com = get_centre_of_mass();
-        
-        double Ixx, Iyy, Izz, Ixy, Iyz, Ixz;
-
-        for (uint32_t sample = 0; sample < number_of_samples;){
-            vec3_t x = sdf->get_aabb().random();
-            if (sdf->contains(x)){
-                double density = get_material(x).density;
-                
-                vec3_t r = x - com;
-                
-                Ixx += density * (r[1] * r[1] + r[2] * r[2]);
-                Iyy += density * (r[0] * r[0] + r[2] * r[2]);
-                Izz += density * (r[1] * r[1] + r[2] * r[2]);
-
-                Ixy -= density * r[0] * r[1];
-                Ixz -= density * r[0] * r[2];
-                Iyz -= density * r[1] * r[2];                
-                
-                sample++;
-            }
-        }
-        
-               
-        mat3_t I(
-            Ixx, Ixy, Ixz,
-            Ixy, Iyy, Iyz,
-            Ixz, Ixy, Izz 
-        ); 
-
-        I *= sdf->get_volume() / number_of_samples;
-*/
-        if (is_uniform){
-            inertia_tensor = std::make_unique<mat3_t>(
-                sdf->get_uniform_inertia_tensor(get_mass())
-            );
-        } else {
-            throw std::runtime_error("Error: non uniform substances not yet supported.");
-        }
+    if (is_uniform){
+        return sdf->get_uniform_inertia_tensor(get_mass());
     }
 
-    auto i = *inertia_tensor;
-    auto r = transform.get_rotation().to_matrix();
-    i = r * i * mat::transpose(r);
+    if (!inertia_tensor){
+        throw std::runtime_error("Error: non uniform substances not yet supported.");
+    }
 
-    return i;
+    return *inertia_tensor;
 }
 
 vec3_t
@@ -182,12 +148,6 @@ matter_t::get_velocity(const vec3_t & x){
 vec3_t
 matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
     return x - transform.to_global_space(get_centre_of_mass()); 
-}
-
-void
-matter_t::update_velocities(const vec3_t & dv, const vec3_t & dw){
-    v += dv;
-    omega += dw;
 }
 
 vec3_t
