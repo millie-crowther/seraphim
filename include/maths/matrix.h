@@ -446,14 +446,14 @@ operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
 }
 
 // output operators
-template<class T, uint8_t N>
+template<class T, uint8_t M, uint8_t N>
 std::ostream & 
-operator<<(std::ostream & os, const matrix_t<T, N, 1> & v){
-    os << "vec" << N << "(";
-    for (int i = 0; i < N - 1; i++){
+operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
+    os << "mat" << static_cast<int>(M) << 'x' << static_cast<int>(N) << '(';
+    for (int i = 0; i < M * N - 1; i++){
         os << v[i] << ", ";
     }
-    os << v[N - 1] << ")";
+    os << v[M * N - 1] << ")";
     return os;
 } 
 

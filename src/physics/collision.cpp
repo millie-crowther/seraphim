@@ -67,20 +67,28 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 
     vec3_t x = aabb.get_centre();
     double s = vec::length(aabb.get_size());
-   
+    collision_t c = collision_t::null();
+
     for (double depth = constant::epsilon; depth < s; depth *= 2){ 
+        bool found = false;
+
         for (int i = 0; i < max_iterations; i++){
             double fx = f(x);
 
             if (fx <= -depth){
-                return collision_t(true, x, fx, a, b);
+                c = collision_t(true, x, fx, a, b);
+                found = true;
             }
 
-            x -= dfdx(x) * (std::abs(fx) + depth);
+            x -= dfdx(x) * (fx + depth);
+        }
+
+        if (!found){
+            return c;
         }
     }
 
-    return collision_t::null();
+    return c;
 }
 
 void

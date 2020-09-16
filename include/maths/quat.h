@@ -29,6 +29,7 @@ public:
 
     // factories
     static quat_t angle_axis(double angle, const vec3_t& axis);
+    static quat_t euler_angles(const vec3_t & e);
 };
 
 #endif

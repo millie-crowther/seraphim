@@ -5,6 +5,10 @@ matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, con
     this->material = material;
     this->transform.set_position(initial_position);
     this->is_uniform = is_uniform;
+
+    if (initial_position[1] > -50.0){
+ //       omega = vec3_t(0.01);
+    }
 }
 
 std::shared_ptr<sdf3_t>
@@ -36,7 +40,7 @@ matter_t::get_aabb() const {
 
 double
 matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_global){
-    auto i1 = mat::inverse(get_inertia_tensor());
+    auto i1 = get_inverse_inertia_tensor();
     auto r = transform.to_local_space(r_global) - get_centre_of_mass();
     auto n = transform.get_rotation().inverse() * n_global;
 
@@ -45,12 +49,12 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_glo
 
 void
 matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
-    auto i1 = mat::inverse(get_inertia_tensor());
-    auto r = transform.to_local_space(r_global) - get_centre_of_mass();
+ //   auto i1 = get_inverse_inertia_tensor();
+  //  auto r = transform.to_local_space(r_global) - get_centre_of_mass();
     auto n = transform.get_rotation().inverse() * n_global;
    
     v += jr / get_mass() * n;
-    omega += jr * i1 * vec::cross(r, n);    
+//    omega += jr * i1 * vec::cross(r, n);    
 }
 
 void 
@@ -94,14 +98,12 @@ matter_t::get_transform(){
     return transform;
 }
 
-void 
-matter_t::apply_force(const vec3_t & force){
-    a += force / get_mass();
-}
-
 void
 matter_t::physics_tick(double t){
-    transform = get_transform_at(t);
+    transform.translate(a * 0.5 * t * t + v * t);
+    
+    // update rotation
+    transform.rotate(quat_t::euler_angles(omega * t));
 
     // integrate accelerations into velocities
     v += a * t;
@@ -112,32 +114,21 @@ matter_t::physics_tick(double t){
     alpha = vec3_t(0.0);
 }
 
-transform_t
-matter_t::get_transform_at(double t){
-    transform_t tf = transform;
-    
-    // update position
-    tf.translate(a * 0.5 * t * t + v * t);
-    
-    // update rotation
-    auto w = alpha * 0.5 * t * t + omega * t;
-    auto q = quat_t::angle_axis(vec::length(w), vec::normalise(w));
-    tf.rotate(q);
-
-    return tf;
-}
-
 mat3_t 
-matter_t::get_inertia_tensor(){
-    if (is_uniform){
-        return sdf->get_uniform_inertia_tensor(get_mass());
-    }
+matter_t::get_inverse_inertia_tensor(){
+    if (!inverse_inertia_tensor){
+        if (is_uniform){
+            inverse_inertia_tensor = std::make_unique<mat3_t>(
+                sdf->get_uniform_inertia_tensor(get_mass())
+            );
+        } else {
+            throw std::runtime_error("Error: non uniform substances not yet supported.");
+        }
 
-    if (!inertia_tensor){
-        throw std::runtime_error("Error: non uniform substances not yet supported.");
+        *inverse_inertia_tensor = mat::inverse(*inverse_inertia_tensor);
     }
-
-    return *inertia_tensor;
+    
+    return *inverse_inertia_tensor;
 }
 
 vec3_t

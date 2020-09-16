@@ -13,6 +13,11 @@ quat_t::angle_axis(double angle, const vec3_t & a){
 }
 
 quat_t
+quat_t::euler_angles(const vec3_t & e){
+    return angle_axis(vec::length(e), vec::normalise(e));
+}
+
+quat_t
 quat_t::inverse() const {
     return quat_t(qs[0], -qs[1], -qs[2], -qs[3]);
 }
