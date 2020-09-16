@@ -7,7 +7,7 @@ matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, con
     this->is_uniform = is_uniform;
 
     if (initial_position[1] > -50.0){
- //       omega = vec3_t(0.01);
+        omega = vec3_t(0.1);
     }
 }
 
@@ -43,18 +43,18 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_glo
     auto i1 = get_inverse_inertia_tensor();
     auto r = transform.to_local_space(r_global) - get_centre_of_mass();
     auto n = transform.get_rotation().inverse() * n_global;
+    auto rn = vec::cross(r, n);
 
-    return vec::dot(n, vec::cross(i1 * vec::cross(r, n), r));
+    return vec::dot(rn, i1 * rn);
 }
 
 void
-matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
- //   auto i1 = get_inverse_inertia_tensor();
-  //  auto r = transform.to_local_space(r_global) - get_centre_of_mass();
-    auto n = transform.get_rotation().inverse() * n_global;
-   
+matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n){
+    auto i1 = get_inverse_inertia_tensor();
+    auto r = r_global - transform.to_global_space(get_centre_of_mass());
+ 
     v += jr / get_mass() * n;
-//    omega += jr * i1 * vec::cross(r, n);    
+    omega += jr * i1 * vec::cross(r, n); 
 }
 
 void 
@@ -100,7 +100,7 @@ matter_t::get_transform(){
 
 void
 matter_t::physics_tick(double t){
-    transform.translate(a * 0.5 * t * t + v * t);
+    transform.translate(v * t);
     
     // update rotation
     transform.rotate(quat_t::euler_angles(omega * t));

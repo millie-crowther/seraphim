@@ -29,7 +29,7 @@ collision_t::comparator_t::operator()(const collision_t & a, const collision_t &
 
 collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    static const int max_iterations = 10;
+    static const int max_iterations = 20;
 
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
@@ -68,23 +68,20 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
     vec3_t x = aabb.get_centre();
     double s = vec::length(aabb.get_size());
     collision_t c = collision_t::null();
+    bool found = true;
 
-    for (double depth = constant::epsilon; depth < s; depth *= 2){ 
-        bool found = false;
+    for (double depth = constant::epsilon; depth < s && found; depth *= 2){ 
+        found = false;
 
-        for (int i = 0; i < max_iterations; i++){
+        for (int i = 0; i < max_iterations && !found; i++){
             double fx = f(x);
 
-            if (fx <= -depth){
+            if (fx < c.fx){
                 c = collision_t(true, x, fx, a, b);
                 found = true;
             }
 
             x -= dfdx(x) * (fx + depth);
-        }
-
-        if (!found){
-            return c;
         }
     }
 
@@ -99,7 +96,7 @@ seraph::physics::collision_correct(const collision_t & collision){
      
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
-  
+
     // extricate matters by translation
     double depth = std::abs(collision.fx);
     double sm = a->get_mass() + b->get_mass();

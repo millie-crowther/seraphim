@@ -20,8 +20,12 @@ transform_t::rotate(const quat_t & q){
 
 vec3_t 
 transform_t::to_local_space(const vec3_t & x) const {
-    auto r1 = rotation.inverse();
-    return r1 * x - r1 * position;
+    return rotation.inverse() * (x - position);
+}
+
+vec3_t
+transform_t::to_global_space(const vec3_t & x) const {
+    return rotation * x + position;
 }
 
 vec3_t
@@ -68,9 +72,4 @@ transform_t::get_position() const {
 quat_t
 transform_t::get_rotation() const {
     return rotation;
-}
-
-vec3_t
-transform_t::to_global_space(const vec3_t & x) const {
-    return rotation * x + position;
 }
