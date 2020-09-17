@@ -473,8 +473,16 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     );
 
     vec3 f = mat3(sub.transform) * get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
-    bool is_behind  = all(greaterThan(sub.radius + eye * sign(f), vec3(0)));
-    bool is_visible = all(greaterThan(phis, ds)) && sub.id != ~0 && sub.near < pc.render_distance && !is_behind;
+    
+    // TODO: fix this line
+    bool is_behind  = false;//all(greaterThan(sub.radius + eye * sign(f), vec3(0)));
+    bool is_eye_inside = false;//all(lessThanEqual(eye, sub.radius));
+
+    bool is_visible = 
+        sub.id != ~0 && sub.near < pc.render_distance && 
+        (all(greaterThan(phis, ds)) || is_eye_inside) && !is_behind;
+
+    
 
     return is_visible;
 }
