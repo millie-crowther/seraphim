@@ -60,7 +60,18 @@ namespace platonic {
         octahedron_t(double edge_length) : e(edge_length) {}
 
         double phi(const vec3_t & x) override {
-            return vec::dot(vec::abs(x), vec3_t(std::sqrt(3))) - e / std::sqrt(6);
+            double s = e / std::sqrt(2);
+            vec3_t p = vec::abs(x);
+            float m = p[0] + p[1] + p[2] - s;
+            
+            vec3_t q;
+                 if (3.0 * p[0] < m ) q = vec3_t(p[0], p[1], p[2]);
+            else if (3.0 * p[1] < m ) q = vec3_t(p[1], p[2], p[0]);
+            else if (3.0 * p[2] < m ) q = vec3_t(p[2], p[0], p[1]);
+            else return m * 0.57735027;
+                
+            float k = std::clamp(0.5 * (q[2] - q[1] + s), 0.0, s); 
+            return vec::length(vec3_t(q[0], q[1] - s + k, q[2] - k));            
         }
 
         aabb3_t get_aabb() override {

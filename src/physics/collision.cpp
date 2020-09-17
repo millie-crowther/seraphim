@@ -103,7 +103,7 @@ seraph::physics::collision_correct(const collision_t & collision){
     a->get_transform().translate(-depth * n * b->get_mass() / sm);
     b->get_transform().translate( depth * n * a->get_mass() / sm);     
 
-    // TODO: extricate matters by rotation
+    // extricate matters by rotation
     vec3_t ra = a->get_offset_from_centre_of_mass(x);
     vec3_t axis_a = vec::normalise(vec::cross(ra, n));
     double theta_a = -depth / vec::length(ra) * b->get_mass() / sm;;
