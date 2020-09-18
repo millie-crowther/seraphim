@@ -1,7 +1,7 @@
 #include "render/camera.h"
 
 camera_t::camera_t(){
-    transform.set_position(vec3_t(0.0, 0.5, -3.0));
+    transform.set_position(vec3_t(0.0, 0.5, -5.0));
 }
 
 void 

@@ -49,12 +49,17 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_glo
 }
 
 void
-matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n){
+matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
+    v += jr / get_mass() * n_global;
+    
     auto i1 = get_inverse_inertia_tensor();
-    auto r = get_offset_from_centre_of_mass(r_global);
- 
-    v += jr / get_mass() * n;
-    omega += jr * i1 * vec::cross(r, n); 
+    auto r = transform.to_local_space(r_global);
+    auto n = transform.get_rotation().inverse() * n_global;
+    auto rn = i1 * vec::cross(r, n);
+    rn = transform.get_rotation() * rn;
+
+    // TODO: i1 is local space and rn is global space. need to fix!!!
+    omega += jr * rn; 
 }
 
 void 

@@ -320,6 +320,21 @@ namespace vec {
         }
         return true;
     }
+
+    template<class T, uint8_t N>
+    matrix_t<T, N, 1> sign(const matrix_t<T, N, 1> & x){
+        matrix_t<T, N, 1> r;
+
+        for (int i = 0; i < N; i++){
+            if constexpr (std::is_unsigned<T>::value){
+                r[i] = x[i] == 0 ? T(0) : T(1);
+            } else {
+                r[i] = x[i] > 0 ? 1 : (x[i] < 0 ? -1 : 0);
+            }
+        }
+
+        return r;
+    }
 }
 
 namespace mat {

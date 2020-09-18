@@ -8,7 +8,7 @@ namespace platonic {
     class n_cuboid_t : public sdf_t<D> {
     private:
         vec_t<double, D> r;
-    
+ 
     public:
         n_cuboid_t(const vec_t<double, D> & _r) : r(_r) {}
 
@@ -72,6 +72,10 @@ namespace platonic {
                 
             float k = std::clamp(0.5 * (q[2] - q[1] + s), 0.0, s); 
             return vec::length(vec3_t(q[0], q[1] - s + k, q[2] - k));            
+        }
+
+        vec3_t normal(const vec3_t & x) override {
+            return vec::normalise(vec::sign(x));
         }
 
         aabb3_t get_aabb() override {
