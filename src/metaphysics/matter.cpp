@@ -7,7 +7,7 @@ matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, con
     this->is_uniform = is_uniform;
 
     if (initial_position[1] > -50.0){
-        omega = vec3_t(0.1);
+        omega = vec3_t(0.25);
     }
 }
 
@@ -59,7 +59,7 @@ matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_g
     rn = transform.get_rotation() * rn;
 
     // TODO: i1 is local space and rn is global space. need to fix!!!
-    omega += jr * rn; 
+//    omega += jr * rn; 
 }
 
 void 
@@ -112,7 +112,7 @@ matter_t::physics_tick(double t){
 
     // integrate accelerations into velocities
     v += a * t;
-    omega += alpha * t;
+//    omega += alpha * t;
     
     // reset accelerations
     a = vec3_t(0.0, -9.8, 0.0);

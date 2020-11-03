@@ -562,7 +562,7 @@ renderer_t::render(){
 
     // write lights
     std::vector<light_t> lights(vec::volume(work_group_size));
-    lights[0] = light_t(f32vec3_t(-3.0f, 3.0f, -3.0f), f32vec4_t(50.0f));
+    lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
     light_buffer->write(lights, 0);
     
     if (auto camera = main_camera.lock()){

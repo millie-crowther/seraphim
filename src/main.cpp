@@ -51,7 +51,7 @@ int main(){
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<primitive::torus_t>(0.5, 0.25),
-            material_t(vec3_t(0.3, 0.8, 0.6), 700.0, 0.4, 0.2, 0.1),
+            material_t(vec3_t(0.3, 0.6, 0.8), 700.0, 0.4, 0.2, 0.1),
             vec3_t(-4.0, 3.0, 0.0),
             true
         )
@@ -64,8 +64,6 @@ int main(){
     seraphim.create(torus);
     seraphim.create(cube);
     seraphim.create(octahedron);
-
-    cube->get_matter()->get_transform().rotate(quat_t::angle_axis(3.14159/2, vec::forward<double>()));
 
     seraphim.run();
 
