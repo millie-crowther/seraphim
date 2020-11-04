@@ -27,7 +27,7 @@ namespace srph { namespace nelder_mead {
     };
 
     template<int N, class F>
-    result_t<N> minimise(const F & f, const std::array<vec_t<double, N>, N + 1> & ys, double epsilon){
+    result_t<N> minimise(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
         std::vector<result_t<N>> xs;
         for (const auto & y : ys){
             xs.emplace_back(y, f(y));
