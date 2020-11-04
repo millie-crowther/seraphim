@@ -3,18 +3,21 @@
 
 #include "maths/matrix.h"
 
-namespace seraph { namespace maths { namespace nelder_mead {
+namespace srph { namespace nelder_mead {
     constexpr double alpha = 1.0;
     constexpr double gamma = 2.0;
     constexpr double rho   = 0.5;
     constexpr double sigma = 0.5;
+    constexpr int    max_i = 1000;
 
     template<int N>
     struct result_t {
+        bool hit;
         vec_t<double, N> x;
         double fx; 
 
-        result_t(const vec_t<double, N> & _x, double _fx) : x(_x), fx(_fx){}
+        result_t() : hit(false){}
+        result_t(const vec_t<double, N> & _x, double _fx) : x(_x), fx(_fx), hit(true){}
         
         struct comparator_t {
             bool operator()(const result_t<N> & a, const result_t<N> & b){
@@ -24,22 +27,19 @@ namespace seraph { namespace maths { namespace nelder_mead {
     };
 
     template<int N, class F>
-    result_t<N> optimise(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
+    result_t<N> minimise(const F & f, const std::array<vec_t<double, N>, N + 1> & ys, double epsilon){
         std::vector<result_t<N>> xs;
         for (const auto & y : ys){
             xs.emplace_back(y, f(y));
         }
 
-        bool quit = false;
-        while (!quit){
+        while (int i = 0; i < max_i; i++){
             // order
             std::sort(xs.begin(), xs.end(), result_t<N>::comparator_t()); 
 
             // calculate centroid
             vec_t<double, N> x0;
-            for (const auto & x : xs){
-                x0 += x.x;
-            }
+            for (const auto & x : xs) x0 += x.x;
             x0 /= N;
 
             // reflection
@@ -72,15 +72,26 @@ namespace seraph { namespace maths { namespace nelder_mead {
             }   
 
             // shrink
-            auto x1 = xs[0].x;
-            for (auto & r : xs){
-                r.x = x1 + sigma * (r.x - x1);
-                r.fx = f(r.x);
+            for (int j = 1; j < N + 1; j++){
+                xs[j].x = xs[0].x + sigma * (xs[j].x - xs[0].x);
+                xs[j].fx = f(xs[j].x);
+            }
+
+            // terminate
+            auto minx = xs[0].x;
+            auto maxx = xs[0].x;
+            for (int j = 1; j < N + 1; j++){
+                minx = vec::min(minx, xs[j].x);
+                maxx = vec::max(maxx, xs[j].x);
+            }
+
+            if (minx == maxx){
+                return xs[0];
             }
         }
 
-        return result_t(vec3_t::forward(), 0.0);  
+        return result_t<N>(); 
     }  
-}}}
+}}
 
 #endif
