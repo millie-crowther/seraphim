@@ -18,10 +18,6 @@ namespace seraph { namespace physics {
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
 
-        struct comparator_t {
-            bool operator()(const collision_t & a, const collision_t & b);
-        };
-
         static collision_t null();
     };
 

@@ -18,15 +18,6 @@ collision_t collision_t::null(){
     return collision_t(false, vec3_t(), 0.0, nullptr, nullptr);
 }
 
-bool
-collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
-    if (a.hit != b.hit){
-        return a.hit && !b.hit;
-    } else {
-        return a.t < b.t;
-    }
-}
-
 collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     static const int max_iterations = 20;
