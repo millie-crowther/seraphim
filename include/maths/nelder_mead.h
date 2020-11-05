@@ -16,8 +16,8 @@ namespace srph { namespace nelder_mead {
         vec_t<double, N> x;
         double fx; 
 
-        result_t() : hit(false){}
-        result_t(const vec_t<double, N> & _x, double _fx) : x(_x), fx(_fx), hit(true){}
+        result_t() : hit(false), fx(0.0){}
+        result_t(const vec_t<double, N> & _x, double _fx) : hit(true), x(_x), fx(_fx){}
         
         struct comparator_t {
             bool operator()(const result_t<N> & a, const result_t<N> & b){
@@ -33,20 +33,33 @@ namespace srph { namespace nelder_mead {
             xs.emplace_back(y, f(y));
         }
 
-        while (int i = 0; i < max_i; i++){
+        for(int i = 0; i < max_i; i++){
+            std::cout << "iteration : " << i << std::endl;
             // order
-            std::sort(xs.begin(), xs.end(), result_t<N>::comparator_t()); 
+            std::sort(xs.begin(), xs.end(), typename result_t<N>::comparator_t()); 
+            
+            std::cout << "\tf(x)s     = ";
+            for (auto x : xs) std::cout << x.fx << ' ';
+            std::cout << std::endl;
+
+            std::cout << "\txs        = ";
+            for (auto x : xs) std::cout << x.x << ' ';
+            std::cout << std::endl;
+
 
             // calculate centroid
             vec_t<double, N> x0;
-            for (const auto & x : xs) x0 += x.x;
+            for (int j = 0; j < N; j++){
+                x0 += xs[j].x;
+            }
             x0 /= N;
 
             // reflection
             auto xr = x0 + alpha * (x0 - xs[N].x);
-            auto fxr = f(xr);
+            double fxr = f(xr);
             if (xs[0].fx <= fxr && fxr < xs[N - 1].fx){
                 xs[N] = result_t<N>(xr, fxr);
+                std::cout << "\treflection" << std::endl;
                 continue;
             }
 
@@ -60,14 +73,16 @@ namespace srph { namespace nelder_mead {
                 } else {
                     xs[N] = result_t<N>(xr, fxr);
                 }
-                continue
+                std::cout << "\texpansion" << std::endl;
+                continue;
             }
 
             // contraction
             auto xc = x0 + rho * (xs[N].x - x0);
-            auto fxc = f(xc);
+            double fxc = f(xc);
             if (fxc < xs[N].fx){
                 xs[N] = result_t<N>(xc, fxc);
+                std::cout << "\tcontraction" << std::endl;
                 continue;
             }   
 
@@ -76,6 +91,7 @@ namespace srph { namespace nelder_mead {
                 xs[j].x = xs[0].x + sigma * (xs[j].x - xs[0].x);
                 xs[j].fx = f(xs[j].x);
             }
+            std::cout << "\tshrink" << std::endl;
 
             // terminate
             auto minx = xs[0].x;
