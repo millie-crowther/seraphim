@@ -59,7 +59,7 @@ matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_g
     rn = transform.get_rotation() * rn;
 
     // TODO: i1 is local space and rn is global space. need to fix!!!
-//    omega += jr * rn; 
+    omega += jr * rn; 
 }
 
 void 
