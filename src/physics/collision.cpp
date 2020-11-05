@@ -73,11 +73,35 @@ seraph::physics::collision_correct(const collision_t & collision){
         1.0 / b->get_mass() + b->get_inverse_angular_mass(x, n)
     );
     
-    // TODO: calculate frictional force
-   // double mu_s = std::max(mata.static_friction, matb.static_friction);
-   // double mu_d = std::max(mata.dynamic_friction, matb.dynamic_friction);
-    
     // update velocities accordingly
     a->update_velocity(-jr, x, n);
     b->update_velocity( jr, x, n);
+    
+    // calculate frictional force
+    for (auto m : { a, b }){
+        auto mat = m->get_material(m->to_local_space(x));
+        
+        double js = mat.static_friction * jr;
+        double jd = mat.dynamic_friction * jr;
+
+        vec3_t fe = m->get_resultant_force();
+        vec3_t vrfe = vr;
+        if (std::abs(vec::dot(vr, n)) < constant::epsilon){
+            vrfe = fe;
+        }
+
+        vec3_t t;
+        if (std::abs(vec::dot(fe, n)) > constant::epsilon){
+            t = vec::normalise(vrfe - vec::dot(vrfe, n) * n);         
+        }
+
+        double k = jd;
+        if (m->get_mass() * vec::dot(vr, t) <= js){
+            k = m->get_mass() * vec::dot(vr, t);
+        }
+
+        vec3_t jf = -k * t;
+
+        std::cout << "jf = " << jf << std::endl;
+    }
 }
