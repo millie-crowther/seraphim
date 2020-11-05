@@ -16,8 +16,8 @@ namespace srph { namespace nelder_mead {
         vec_t<double, N> x;
         double fx; 
 
-        result_t() : hit(false), fx(0.0){}
-        result_t(const vec_t<double, N> & _x, double _fx) : hit(true), x(_x), fx(_fx){}
+        //result_t(){}
+        result_t(bool _hit, const vec_t<double, N> & _x, double _fx) : hit(_hit), x(_x), fx(_fx){}
         
         struct comparator_t {
             bool operator()(const result_t<N> & a, const result_t<N> & b){
@@ -30,22 +30,25 @@ namespace srph { namespace nelder_mead {
     result_t<N> minimise(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
         std::vector<result_t<N>> xs;
         for (const auto & y : ys){
-            xs.emplace_back(y, f(y));
+            xs.emplace_back(false, y, f(y));
         }
+        std::sort(xs.begin(), xs.end(), typename result_t<N>::comparator_t()); 
 
         for(int i = 0; i < max_i; i++){
-            std::cout << "iteration : " << i << std::endl;
+            // terminate
+            auto minx = xs[0].x;
+            auto maxx = xs[0].x;
+            for (int j = 1; j < N + 1; j++){
+                minx = vec::min(minx, xs[j].x);
+                maxx = vec::max(maxx, xs[j].x);
+            }
+
+            if (minx == maxx){
+                return result_t(true, xs[0].x, xs[0].fx);
+            }
+
             // order
             std::sort(xs.begin(), xs.end(), typename result_t<N>::comparator_t()); 
-            
-            std::cout << "\tf(x)s     = ";
-            for (auto x : xs) std::cout << x.fx << ' ';
-            std::cout << std::endl;
-
-            std::cout << "\txs        = ";
-            for (auto x : xs) std::cout << x.x << ' ';
-            std::cout << std::endl;
-
 
             // calculate centroid
             vec_t<double, N> x0;
@@ -58,8 +61,7 @@ namespace srph { namespace nelder_mead {
             auto xr = x0 + alpha * (x0 - xs[N].x);
             double fxr = f(xr);
             if (xs[0].fx <= fxr && fxr < xs[N - 1].fx){
-                xs[N] = result_t<N>(xr, fxr);
-                std::cout << "\treflection" << std::endl;
+                xs[N] = result_t<N>(false, xr, fxr);
                 continue;
             }
 
@@ -69,11 +71,10 @@ namespace srph { namespace nelder_mead {
                 auto fxe = f(xe);
                 
                 if (fxe < fxr){
-                    xs[N] = result_t<N>(xe, fxe);
+                    xs[N] = result_t<N>(false, xe, fxe);
                 } else {
-                    xs[N] = result_t<N>(xr, fxr);
+                    xs[N] = result_t<N>(false, xr, fxr);
                 }
-                std::cout << "\texpansion" << std::endl;
                 continue;
             }
 
@@ -81,8 +82,7 @@ namespace srph { namespace nelder_mead {
             auto xc = x0 + rho * (xs[N].x - x0);
             double fxc = f(xc);
             if (fxc < xs[N].fx){
-                xs[N] = result_t<N>(xc, fxc);
-                std::cout << "\tcontraction" << std::endl;
+                xs[N] = result_t<N>(false, xc, fxc);
                 continue;
             }   
 
@@ -91,22 +91,9 @@ namespace srph { namespace nelder_mead {
                 xs[j].x = xs[0].x + sigma * (xs[j].x - xs[0].x);
                 xs[j].fx = f(xs[j].x);
             }
-            std::cout << "\tshrink" << std::endl;
-
-            // terminate
-            auto minx = xs[0].x;
-            auto maxx = xs[0].x;
-            for (int j = 1; j < N + 1; j++){
-                minx = vec::min(minx, xs[j].x);
-                maxx = vec::max(maxx, xs[j].x);
-            }
-
-            if (minx == maxx){
-                return xs[0];
-            }
         }
 
-        return result_t<N>(); 
+        return xs[0]; 
     }  
 }}
 

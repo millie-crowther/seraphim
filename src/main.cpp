@@ -3,34 +3,9 @@
 #include "core/scheduler.h"
 #include "maths/sdf/primitive.h"
 #include "maths/sdf/platonic.h"
-
 #include "physics/transform.h"
 
-#include "maths/nelder_mead.h"
-
-double rosenbrock(const vec2_t & xy){
-    return std::pow(1 - xy[0], 2) + 100 * std::pow(xy[1] - xy[0] * xy[0], 2); 
-}
-
-double easy(const vec2_t & xy){
-    return vec::length(xy);
-} 
-
 int main(){
-    std::cout << "zello" << std::endl; 
-    std::array<vec2_t, 3> xs = {
-        vec2_t(5, 5), vec2_t(5, -5),
-        vec2_t(-5, 0)
-    };
-
-    std::cout << "1" << std::endl;    
-    auto result = srph::nelder_mead::minimise(easy, xs);
-    std::cout << "hit  = " << std::boolalpha << result.hit << std::endl;
-    std::cout << "x    = " << result.x  << std::endl;
-    std::cout << "f(x) = " << result.fx << std::endl;
-
-    return 0;
-
     auto floor_substance = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(

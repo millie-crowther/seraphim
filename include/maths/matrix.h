@@ -509,12 +509,9 @@ operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
 // equality operators
 template<class T, int N>
 bool operator==(const vec_t<T, N> & a, const vec_t<T, N> & b){
-    std::cout << "ASasdfDF" << std::endl;
     if constexpr (std::is_floating_point<T>::value){
-        std::cout << "floating point" << std::endl;
         return vec::length(a - b) < constant::epsilon;
     } else {
-        std::cout << "ASDF" << std::endl;
         return std::equal(a.begin(), a.end(), b.begin());
     }
 }
