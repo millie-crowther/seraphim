@@ -1,5 +1,7 @@
 #include "physics/collision.h"
 
+#include "maths/nelder_mead.h"
+
 using namespace seraph::physics;
 
 collision_t::collision_t(
@@ -20,16 +22,11 @@ collision_t collision_t::null(){
 
 collision_t
 seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    static const int max_iterations = 20;
-
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
         return collision_t::null();
     }
 
-    // TODO: reuse variables
-
-    // detect collision
     auto f = [a, b](const vec3_t & x){
         vec3_t x_a   = a->get_transform().to_local_space(x);
         double phi_a = a->get_sdf()->phi(x_a); 
@@ -39,44 +36,14 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 
         return std::max(phi_a, phi_b);
     };
+    
+    std::array<vec3_t, 4> xs = {
+        aabb.get_vertex(0), aabb.get_vertex(3),
+        aabb.get_vertex(5), aabb.get_vertex(6)
+    };
 
-    auto dfdx = [a, b](const vec3_t & x){
-        transform_t ta    = a->get_transform();
-        vec3_t      x_a   = ta.to_local_space(x);
-        double      phi_a = a->get_sdf()->phi(x_a); 
-        
-        transform_t tb    = b->get_transform();
-        vec3_t      x_b   = tb.to_local_space(x);
-        double      phi_b = b->get_sdf()->phi(x_b); 
-                
-        if (phi_a > phi_b){
-            return ta.get_rotation() * a->get_sdf()->normal(x_a); 
-        } else {
-            return tb.get_rotation() * b->get_sdf()->normal(x_b); 
-        }
-    }; 
-
-    vec3_t x = aabb.get_centre();
-    double s = vec::length(aabb.get_size());
-    collision_t c = collision_t::null();
-    bool found = true;
-
-    for (double depth = constant::epsilon; depth < s && found; depth += constant::epsilon){ 
-        found = false;
-
-        for (int i = 0; i < max_iterations && !found; i++){
-            double fx = f(x);
-
-            if (fx < c.fx){
-                c = collision_t(true, x, fx, a, b);
-                found = true;
-            }
-
-            x -= dfdx(x) * (fx + depth);
-        }
-    }
-
-    return c;
+    auto result = srph::nelder_mead::minimise(f, xs);
+    return collision_t(result.fx <= 0, result.x, result.fx, a, b);
 }
 
 void
