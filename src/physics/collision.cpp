@@ -55,26 +55,11 @@ seraph::physics::collision_correct(const collision_t & collision){
     auto x_a = a->get_transform().to_local_space(x);
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
 
-    // extricate matters by translation
+    // extricate matters 
     double depth = std::max(constant::epsilon, collision.fx);
     double sm = a->get_mass() + b->get_mass();
     a->get_transform().translate(-depth * n * b->get_mass() / sm);
     b->get_transform().translate( depth * n * a->get_mass() / sm);     
-
-    // extricate matters by rotation
-    /*vec3_t ra = a->get_offset_from_centre_of_mass(x);
-    vec3_t axis_a = vec::normalise(vec::cross(ra, n));
-    double theta_a = -depth / vec::length(ra) * b->get_mass() / sm;;
-    if (ra != vec3_t(0.0) && ra != n){
-        a->get_transform().rotate(quat_t::angle_axis(theta_a, axis_a));
-    }
-         
-    vec3_t rb = b->get_offset_from_centre_of_mass(x);
-    vec3_t axis_b = vec::normalise(vec::cross(rb, n));
-    double theta_b = depth / vec::length(rb) * a->get_mass() / sm;
-    if (rb != vec3_t(0.0) && rb != n){
-        b->get_transform().rotate(quat_t::angle_axis(theta_b, axis_b));
-    }*/
 
     // calculate collision impulse magnitude
     auto mata = a->get_material(a->to_local_space(x));

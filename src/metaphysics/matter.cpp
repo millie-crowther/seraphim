@@ -5,10 +5,6 @@ matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, con
     this->material = material;
     this->transform.set_position(initial_position);
     this->is_uniform = is_uniform;
-
-    if (initial_position[1] > -50.0){
-        omega = vec3_t(0.25);
-    }
 }
 
 std::shared_ptr<sdf3_t>
