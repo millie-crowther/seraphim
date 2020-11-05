@@ -26,8 +26,9 @@ public:
     void physics_tick(double delta);
     void reset_velocity();
 
+    vec3_t get_acceleration() const;
     double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
-    void update_velocity(double jr, const vec3_t & x, const vec3_t & n);
+    void apply_impulse_at(const vec3_t & j, const vec3_t & x);
 
 private:
     static constexpr uint32_t number_of_samples = 10000;

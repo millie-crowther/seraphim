@@ -34,6 +34,11 @@ matter_t::get_aabb() const {
     return aabb;
 }
 
+vec3_t
+matter_t::get_acceleration() const {
+    return a;
+}
+
 double
 matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_global){
     auto i1 = get_inverse_inertia_tensor();
@@ -45,17 +50,16 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_glo
 }
 
 void
-matter_t::update_velocity(double jr, const vec3_t & r_global, const vec3_t & n_global){
-    v += jr / get_mass() * n_global;
+matter_t::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
+    v += j / get_mass();
     
     auto i1 = get_inverse_inertia_tensor();
     auto r = transform.to_local_space(r_global);
-    auto n = transform.get_rotation().inverse() * n_global;
+    auto n = transform.get_rotation().inverse() * vec::normalise(j);
     auto rn = i1 * vec::cross(r, n);
     rn = transform.get_rotation() * rn;
 
-    // TODO: i1 is local space and rn is global space. need to fix!!!
-    omega += jr * rn; 
+    omega += vec::length(j) * rn; 
 }
 
 void 
@@ -108,7 +112,7 @@ matter_t::physics_tick(double t){
 
     // integrate accelerations into velocities
     v += a * t;
-//    omega += alpha * t;
+    omega += alpha * t;
     
     // reset accelerations
     a = vec3_t(0.0, -9.8, 0.0);

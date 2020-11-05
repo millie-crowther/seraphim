@@ -74,8 +74,8 @@ seraph::physics::collision_correct(const collision_t & collision){
     );
     
     // update velocities accordingly
-    a->update_velocity(-jr, x, n);
-    b->update_velocity( jr, x, n);
+    a->apply_impulse_at(-jr * n, x);
+    b->apply_impulse_at( jr * n, x);
     
     // calculate frictional force
     for (auto m : { a, b }){
@@ -84,14 +84,14 @@ seraph::physics::collision_correct(const collision_t & collision){
         double js = mat.static_friction * jr;
         double jd = mat.dynamic_friction * jr;
 
-        vec3_t fe = m->get_resultant_force();
+        vec3_t fe = m->get_acceleration();
         vec3_t vrfe = vr;
         if (std::abs(vec::dot(vr, n)) < constant::epsilon){
             vrfe = fe;
         }
 
         vec3_t t;
-        if (std::abs(vec::dot(fe, n)) > constant::epsilon){
+        if (std::abs(vec::dot(vrfe, n)) > constant::epsilon){
             t = vec::normalise(vrfe - vec::dot(vrfe, n) * n);         
         }
 
@@ -102,6 +102,6 @@ seraph::physics::collision_correct(const collision_t & collision){
 
         vec3_t jf = -k * t;
 
-        std::cout << "jf = " << jf << std::endl;
+        m->apply_impulse_at(jf, x);
     }
 }
