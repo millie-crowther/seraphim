@@ -16,12 +16,14 @@ double easy(const vec2_t & xy){
     return vec::length(xy);
 } 
 
-int main(){ 
+int main(){
+    std::cout << "zello" << std::endl; 
     std::array<vec2_t, 3> xs = {
         vec2_t(5, 5), vec2_t(5, -5),
         vec2_t(-5, 0)
     };
-    
+
+    std::cout << "1" << std::endl;    
     auto result = srph::nelder_mead::minimise(easy, xs);
     std::cout << "hit  = " << std::boolalpha << result.hit << std::endl;
     std::cout << "x    = " << result.x  << std::endl;

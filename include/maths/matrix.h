@@ -14,14 +14,16 @@
 template<class T, int M, int N>
 class matrix_t : protected std::array<T, M * N> {
 private:
+    using super_t = std::array<T, M * N>; 
+
     template<int K, int P, int Q, typename... Xs>
     void
     construct(const matrix_t<T, P, Q> & x, Xs... xs){
         static_assert(K + P * Q <= M * N, "Too much data in matrix constructor");
         static_assert(K + P * Q == M * N || sizeof...(Xs) > 0, "Not enough data in matrix constructor");
-        
+       
         std::copy(x.begin(), x.end(), this->data() + K);
-        
+ 
         if constexpr (sizeof...(Xs) != 0){
             construct<K + P * Q>(xs...); 
         }
@@ -145,10 +147,10 @@ public:
 
     // getters
     T operator[](int i) const {
-        return (*this)[i];
+        return super_t::operator[](i);
     }
 
-    T get(uint8_t row, uint8_t column) const {
+    T get(int row, int column) const {
         if (row >= M || column >= N){
             throw std::runtime_error("Error: Matrix index out of range.");
         }
@@ -174,29 +176,29 @@ public:
     }
 
     // setters
-    void set(uint8_t row, uint8_t column, const T & x){
+    void set(int row, int column, const T & x){
         (*this)[column * M + row] = x;
     }
 
     T & operator[](int i){
-        return (*this)[i];
+        return super_t::operator[](i);
     }
 
     // iterators
     typename std::array<T, M * N>::iterator begin(){
-        return this->begin();
+        return super_t::begin();
     }
 
     typename std::array<T, M * N>::iterator end(){
-        return this->end();
+        return super_t::end();
     }
 
     typename std::array<T, M * N>::const_iterator begin() const {
-        return this->begin();
+        return super_t::begin();
     }
 
     typename std::array<T, M * N>::const_iterator end() const {
-        return this->end();
+        return super_t::end();
     }
 
     // factories
@@ -216,7 +218,7 @@ public:
     }
 };
 
-template<class T, uint8_t N>
+template<class T, int N>
 using vec_t = matrix_t<T, N, 1>;
 
 typedef vec_t<int32_t, 2> i32vec2_t;
@@ -507,6 +509,7 @@ operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
 // equality operators
 template<class T, int N>
 bool operator==(const vec_t<T, N> & a, const vec_t<T, N> & b){
+    std::cout << "ASasdfDF" << std::endl;
     if constexpr (std::is_floating_point<T>::value){
         std::cout << "floating point" << std::endl;
         return vec::length(a - b) < constant::epsilon;
