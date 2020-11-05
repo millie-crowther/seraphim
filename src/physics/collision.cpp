@@ -56,7 +56,7 @@ seraph::physics::collision_correct(const collision_t & collision){
     auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
 
     // extricate matters 
-    double depth = std::max(constant::epsilon, collision.fx);
+    double depth = std::max(constant::epsilon, std::abs(collision.fx));
     double sm = a->get_mass() + b->get_mass();
     a->get_transform().translate(-depth * n * b->get_mass() / sm);
     b->get_transform().translate( depth * n * a->get_mass() / sm);     
