@@ -47,39 +47,39 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 }
 
 void
-seraph::physics::collision_correct(const collision_t & collision){
-    auto a = collision.a;
-    auto b = collision.b;
-    auto x = collision.x;
-     
-    auto x_a = a->get_transform().to_local_space(x);
-    auto n = a->get_transform().get_rotation() * a->get_sdf()->normal(x_a);
+seraph::physics::collision_correct(const collision_t & c){
+    auto x_a = c.a->get_transform().to_local_space(c.x);
+    auto x_b = c.b->get_transform().to_local_space(c.x);
+
+    auto n = vec::normalise(
+        c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a) -
+        c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b) 
+    );
 
     // extricate matters 
-    double depth = std::max(constant::epsilon, std::abs(collision.fx));
-    double sm = a->get_mass() + b->get_mass();
-    a->get_transform().translate(-depth * n * b->get_mass() / sm);
-    b->get_transform().translate( depth * n * a->get_mass() / sm);     
+    double sm = c.a->get_mass() + c.b->get_mass();
+    c.a->get_transform().translate( c.fx * n * c.b->get_mass() / sm);
+    c.b->get_transform().translate(-c.fx * n * c.a->get_mass() / sm);     
 
     // calculate collision impulse magnitude
-    auto mata = a->get_material(a->to_local_space(x));
-    auto matb = b->get_material(b->to_local_space(x));
+    auto mata = c.a->get_material(c.a->to_local_space(c.x));
+    auto matb = c.b->get_material(c.b->to_local_space(c.x));
 
     double CoR = std::max(mata.restitution, matb.restitution);
-    auto vr = b->get_velocity(x) - a->get_velocity(x);
+    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
  
     double jr = -(1.0 + CoR) * vec::dot(vr, n) / (
-        1.0 / a->get_mass() + a->get_inverse_angular_mass(x, n) +
-        1.0 / b->get_mass() + b->get_inverse_angular_mass(x, n)
+        1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
+        1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, n)
     );
     
     // update velocities accordingly
-    a->apply_impulse_at(-jr * n, x);
-    b->apply_impulse_at( jr * n, x);
+    c.a->apply_impulse_at(-jr * n, c.x);
+    c.b->apply_impulse_at( jr * n, c.x);
     
     // calculate frictional force
-    for (auto m : { a, b }){
-        auto mat = m->get_material(m->to_local_space(x));
+    for (auto m : { c.a, c.b }){
+        auto mat = m->get_material(m->to_local_space(c.x));
         
         double js = mat.static_friction * jr;
         double jd = mat.dynamic_friction * jr;
@@ -100,8 +100,6 @@ seraph::physics::collision_correct(const collision_t & collision){
             k = m->get_mass() * vec::dot(vr, t);
         }
 
-        vec3_t jf = -k * t;
-
-        m->apply_impulse_at(jf, x);
+        m->apply_impulse_at(-k * t, c.x);
     }
 }
