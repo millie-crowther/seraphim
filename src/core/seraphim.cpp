@@ -19,7 +19,7 @@ const std::vector<const char *> validation_layers = {
 #endif
 };
 
-seraphim_t::seraphim_t(){
+srph::seraphim_t::seraphim_t(){
 #if SERAPHIM_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else 
@@ -82,7 +82,7 @@ seraphim_t::seraphim_t(){
     physics = std::make_unique<physics_t>();
 }
 
-seraphim_t::~seraphim_t(){
+srph::seraphim_t::~seraphim_t(){
     scheduler::terminate();
 
     vkDeviceWaitIdle(device->get_device());
@@ -117,12 +117,12 @@ seraphim_t::~seraphim_t(){
 }
 
 renderer_t * 
-seraphim_t::get_renderer() const {
+srph::seraphim_t::get_renderer() const {
     return renderer.get();
 }
 
 std::vector<const char *>
-seraphim_t::get_required_extensions(){
+srph::seraphim_t::get_required_extensions(){
     uint32_t      extension_count = 0;
     const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
@@ -136,7 +136,7 @@ seraphim_t::get_required_extensions(){
 }
 
 void
-seraphim_t::create_instance(){
+srph::seraphim_t::create_instance(){
 #if SERAPHIM_DEBUG
     if (!check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
@@ -212,7 +212,7 @@ debug_callback(
 }
 
 bool
-seraphim_t::setup_debug_callback(){
+srph::seraphim_t::setup_debug_callback(){
     VkDebugReportCallbackCreateInfoEXT create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT 
@@ -228,7 +228,7 @@ seraphim_t::setup_debug_callback(){
 }
 
 bool
-seraphim_t::check_validation_layers(){
+srph::seraphim_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -244,7 +244,7 @@ seraphim_t::check_validation_layers(){
 #endif
 
 void
-seraphim_t::run(){
+srph::seraphim_t::run(){
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto   previous   = std::chrono::steady_clock::now();
@@ -270,19 +270,19 @@ seraphim_t::run(){
 }
 
 window_t *
-seraphim_t::get_window() const {
+srph::seraphim_t::get_window() const {
     return window.get();
 }
 
 void 
-seraphim_t::create(std::shared_ptr<substance_t> substance){
+srph::seraphim_t::create(std::shared_ptr<substance_t> substance){
     substances.insert(substance);
     renderer->register_substance(substance);
     physics->register_matter(substance->get_matter());
 }
 
 void 
-seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
+srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
     renderer->unregister_substance(substance);
     physics->unregister_matter(substance->get_matter());
 
