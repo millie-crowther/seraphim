@@ -8,7 +8,7 @@ namespace srph { namespace nelder_mead {
     constexpr double gamma = 2.0;
     constexpr double rho   = 0.5;
     constexpr double sigma = 0.5;
-    constexpr int    max_i = 1000;
+    constexpr int    max_i = 100;
 
     template<int N>
     struct result_t {

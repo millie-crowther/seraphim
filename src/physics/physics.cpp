@@ -7,7 +7,7 @@
 #include <functional>
 #include <iostream>
 
-using namespace seraph::physics;
+using namespace srph;
 
 physics_t::physics_t(){
     quit = false;

@@ -4,7 +4,7 @@
 #include "maths/matrix.h"
 #include "metaphysics/matter.h"
 
-namespace seraph { namespace physics {
+namespace srph {
     struct collision_t {
         bool hit;
         vec3_t x;
@@ -23,7 +23,7 @@ namespace seraph { namespace physics {
 
     collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);
     void collision_correct(const collision_t & collision);
-}}
+}
 
 
 

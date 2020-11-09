@@ -31,8 +31,6 @@ public:
     void apply_impulse_at(const vec3_t & j, const vec3_t & x);
 
 private:
-    static constexpr uint32_t number_of_samples = 10000;
-
     material_t material;
     std::shared_ptr<sdf3_t> sdf;
     transform_t transform;

@@ -2,9 +2,9 @@
 
 #include "maths/nelder_mead.h"
 
-using namespace seraph::physics;
+using namespace srph;
 
-collision_t::collision_t(
+srph::collision_t::collision_t(
     bool hit, const vec3_t & x, double fx,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
@@ -16,12 +16,13 @@ collision_t::collision_t(
     this->b = b;
 }
 
-collision_t collision_t::null(){
+collision_t 
+srph::collision_t::null(){
     return collision_t(false, vec3_t(), 0.0, nullptr, nullptr);
 }
 
 collision_t
-seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
+srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
         return collision_t::null();
@@ -47,7 +48,7 @@ seraph::physics::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> 
 }
 
 void
-seraph::physics::collision_correct(const collision_t & c){
+srph::collision_correct(const collision_t & c){
     auto x_a = c.a->get_transform().to_local_space(c.x);
     auto x_b = c.b->get_transform().to_local_space(c.x);
 
