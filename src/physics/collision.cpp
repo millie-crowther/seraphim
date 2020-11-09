@@ -2,8 +2,6 @@
 
 #include "maths/nelder_mead.h"
 
-using namespace srph;
-
 srph::collision_t::collision_t(
     bool hit, const vec3_t & x, double fx,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
@@ -16,16 +14,11 @@ srph::collision_t::collision_t(
     this->b = b;
 }
 
-collision_t 
-srph::collision_t::null(){
-    return collision_t(false, vec3_t(), 0.0, nullptr, nullptr);
-}
-
-collision_t
+srph::collision_t
 srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
-        return collision_t::null();
+        return srph::collision_t(false, vec3_t(), 0, nullptr, nullptr);
     }
 
     auto f = [a, b](const vec3_t & x){
@@ -44,7 +37,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     };
 
     auto result = srph::nelder_mead::minimise(f, xs);
-    return collision_t(result.fx <= 0, result.x, result.fx, a, b);
+    return srph::collision_t(result.fx <= 0, result.x, result.fx, a, b);
 }
 
 void
