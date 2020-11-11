@@ -15,7 +15,7 @@ int main(){
             true
         )
     );
-
+//*
     auto sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -25,7 +25,7 @@ int main(){
             true
         )
     );
-        
+ // */      
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -35,7 +35,7 @@ int main(){
             true
         )
     );
-
+//*
     auto octahedron = std::make_shared<substance_t>(
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -55,7 +55,7 @@ int main(){
             true
         )
     );
-    
+ // */  
     srph::seraphim_t seraphim;
 
     seraphim.create(floor_substance);

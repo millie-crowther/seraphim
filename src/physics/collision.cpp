@@ -44,16 +44,13 @@ void
 srph::collision_correct(const collision_t & c){
     auto x_a = c.a->get_transform().to_local_space(c.x);
     auto x_b = c.b->get_transform().to_local_space(c.x);
-
-    auto n = vec::normalise(
-        c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a) -
-        c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b) 
-    );
+    auto n_a = c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a);
+    auto n_b = c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b);
 
     // extricate matters 
     double sm = c.a->get_mass() + c.b->get_mass();
-    c.a->get_transform().translate( c.fx * n * c.b->get_mass() / sm);
-    c.b->get_transform().translate(-c.fx * n * c.a->get_mass() / sm);     
+    c.a->get_transform().translate(c.fx * n_a * c.b->get_mass() / sm);
+    c.b->get_transform().translate(c.fx * n_b * c.a->get_mass() / sm);     
 
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));
@@ -62,6 +59,7 @@ srph::collision_correct(const collision_t & c){
     double CoR = std::max(mata.restitution, matb.restitution);
     auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
  
+    auto n = vec::normalise(n_a - n_b);
     double jr = -(1.0 + CoR) * vec::dot(vr, n) / (
         1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
         1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, n)
