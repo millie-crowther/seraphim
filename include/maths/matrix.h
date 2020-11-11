@@ -256,46 +256,39 @@ using mat4_t = matrix_t<double, 4, 4>;
 
 namespace vec {
     template<class T>
-    matrix_t<T, 3, 1> 
-    right(){
-        return matrix_t<T, 3, 1>(T(1), T(0), T(0));
+    vec_t<T, 3> right(){
+        return vec_t<T, 3>(T(1), T(0), T(0));
     }
     
     template<class T>
-    matrix_t<T, 3, 1> 
-    up(){
-        return matrix_t<T, 3, 1>(T(0), T(1), T(0));
+    vec_t<T, 3> up(){
+        return vec_t<T, 3>(T(0), T(1), T(0));
     }
 
     template<class T>
-    matrix_t<T, 3, 1> 
-    forward(){
-        return matrix_t<T, 3, 1>(T(0), T(0), T(1));
+    vec_t<T, 3> forward(){
+        return vec_t<T, 3>(T(0), T(0), T(1));
     }
 
     template<class T, int N>
-    T 
-    dot(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & y){
-        matrix_t<T, N, 1> h = x * y;
+    T dot(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> h = x * y;
         return std::accumulate(h.begin(), h.end(), T(0));
     }
     
     template<class T, int N>
-    T 
-    length(const matrix_t<T, N, 1> & x){
+    T length(const vec_t<T, N> & x){
         return std::sqrt(dot(x, x));
     }   
 
     template<class T, int N>
-    matrix_t<T, N, 1> 
-    normalise(const matrix_t<T, N, 1> & x){
+    vec_t<T, N> normalise(const matrix_t<T, N, 1> & x){
         T l = length(x);
         return x / (l == T(0) ? T(1) : l);
     }
 
     template<class T, int N>
-    T 
-    volume(const matrix_t<T, N, 1> & x){
+    T volume(const vec_t<T, N> & x){
         T product = std::accumulate(x.begin(), x.end(), T(1), std::multiplies<T>());
         if constexpr (std::is_unsigned<T>::value){
             return product;
@@ -305,9 +298,8 @@ namespace vec {
     }
 
     template<class T>
-    matrix_t<T, 3, 1>
-    cross(const matrix_t<T, 3, 1> & x, const matrix_t<T, 3, 1> & y){
-        return matrix_t<T, 3, 1>(
+    vec_t<T, 3> cross(const vec_t<T, 3> & x, const vec_t<T, 3> & y){
+        return vec_t<T, 3>(
             x[1] * y[2] - x[2] * y[1],
             x[2] * y[0] - x[0] * y[2],
             x[0] * y[1] - x[1] * y[0]
@@ -315,9 +307,8 @@ namespace vec {
     }
 
     template<class T, int N, class F>
-    matrix_t<T, N, 1> 
-    grad(const F & f, const matrix_t<T, N, 1> & x){
-        matrix_t<T, N, 1> r;
+    vec_t<T, N> grad(const F & f, const vec_t<T, N> & x){
+        vec_t<T, N> r;
         for (uint8_t i = 0; i < N; i++){
             matrix_t<T, N, 1> axis;
             axis[i] = constant::epsilon;
@@ -327,8 +318,7 @@ namespace vec {
     }
     
     template<class T, int N>
-    matrix_t<T, N, 1>
-    clamp(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & low, const matrix_t<T, N, 1> & high){
+    vec_t<T, N> clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
         auto result = x;
         for (int i = 0; i < N; i++){
             result[i] = std::clamp(x[i], low[i], high[i]);
@@ -337,39 +327,34 @@ namespace vec {
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1>
-    clamp(const matrix_t<T, N, 1> & x, const T & low, const T & high){
-        return clamp(x, matrix_t<T, N, 1>(low), matrix_t<T, N, 1>(high));
+    vec_t<T, N> clamp(const vec_t<T, N> & x, const T & low, const T & high){
+        return clamp(x, vec_t<T, N>(low), vec_t<T, N>(high));
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1>
-    min(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & y){
-        matrix_t<T, N, 1> r;
+    vec_t<T, N> min(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> r;
         auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
         std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
         return r;
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1>
-    max(const matrix_t<T, N, 1> & x, const matrix_t<T, N, 1> & y){
-        matrix_t<T, N, 1> r;
+    vec_t<T, N> max(const vec_t<T, N> & x, const vec_t<T, N> & y){
+        vec_t<T, N> r;
         auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
         std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
         return r;
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1>
-    max(const matrix_t<T, N, 1> & x, const T & y){
-        return max(x, matrix_t<T, N, 1>(y));
+    vec_t<T, N> max(const vec_t<T, N> & x, const T & y){
+        return max(x, vec_t<T, N>(y));
     }
     
     template<class T, int N>
-    matrix_t<T, N, 1>
-    abs(const matrix_t<T, N, 1> & x){
-        matrix_t<T, N, 1> r;
+    vec_t<T, N> abs(const vec_t<T, N> & x){
+        vec_t<T, N> r;
         std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
         return r;
     }
@@ -383,8 +368,8 @@ namespace vec {
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1> sign(const matrix_t<T, N, 1> & x){
-        matrix_t<T, N, 1> r;
+    vec_t<T, N> sign(const vec_t<T, N> & x){
+        vec_t<T, N> r;
 
         for (int i = 0; i < N; i++){
             if constexpr (std::is_unsigned<T>::value){

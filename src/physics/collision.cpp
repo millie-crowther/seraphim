@@ -47,6 +47,8 @@ srph::collision_correct(const collision_t & c){
     auto n_a = c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a);
     auto n_b = c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b);
 
+    std::cout << "n_b = " << n_b << std::endl;
+
     // extricate matters 
     double sm = c.a->get_mass() + c.b->get_mass();
     c.a->get_transform().translate(c.fx * n_a * c.b->get_mass() / sm);
