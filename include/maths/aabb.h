@@ -36,9 +36,9 @@ public:
         return max / 2 + min / 2;
     }
 
-    vec_t<T, D> get_vertex(uint8_t i) const {
+    vec_t<T, D> get_vertex(int i) const {
         vec_t<T, D> v = min;
-        for (uint8_t j = 0; j < D; j++){
+        for (int j = 0; j < D; j++){
             if (i & (1 << j)){
                 v[j] = max[j];
             }

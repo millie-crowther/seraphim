@@ -15,7 +15,7 @@ int main(){
             true
         )
     );
-//*
+
     auto sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -25,17 +25,17 @@ int main(){
             true
         )
     );
- // */      
+      
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
             std::make_shared<platonic::cube_t>(0.5), 
             material_t(vec3_t(0.8, 0.8, 0.1), 700.0, 0.2, 0.2, 0.1),
-            vec3_t(-2.0, 3.0, 0),
+            vec3_t(-2.0, 1.5, 0),
             true
         )
     );
-//*
+
     auto octahedron = std::make_shared<substance_t>(
         std::make_shared<form_t>(),
         std::make_shared<matter_t>(
@@ -55,14 +55,14 @@ int main(){
             true
         )
     );
- // */  
+  
     srph::seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-   // seraphim.create(sphere);
-  //  seraphim.create(torus);
+    seraphim.create(sphere);
+    seraphim.create(torus);
     seraphim.create(cube);
-  //  seraphim.create(octahedron);
+    seraphim.create(octahedron);
 
     seraphim.run();
 
