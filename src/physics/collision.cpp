@@ -71,6 +71,9 @@ srph::collision_correct(const collision_t & c){
     
     // calculate frictional force
     for (auto m : { c.a, c.b }){
+        auto x = m->get_transform().to_local_space(c.x);
+        auto n = m->get_transform().get_rotation() * m->get_sdf()->normal(x);
+        
         auto mat = m->get_material(m->to_local_space(c.x));
         
         double js = mat.static_friction * jr;
