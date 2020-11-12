@@ -260,7 +260,7 @@ srph::seraphim_t::run(){
         test_camera->update(delta, window->get_keyboard(), window->get_mouse());
 
         if (current_frame % frequency == frequency - 1){    
-            std::cout << "FPS: " << 1.0 / delta << std::endl;
+           // std::cout << "Render FPS: " << 1.0 / delta << std::endl;
         }
 
         renderer->render();

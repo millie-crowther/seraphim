@@ -21,9 +21,20 @@ void
 srph::physics_t::run(){
     auto t = scheduler::clock_t::now();
     auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(constant::iota);
-    double physics_d = constant::iota.count() / 1000.0;
+
+    uint32_t current_frame = 0;
+    uint32_t frequency = 100;
+    auto previous = std::chrono::steady_clock::now();
 
     while (!quit){
+        auto now = std::chrono::steady_clock::now();
+        double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+        previous = now;
+        if (current_frame % frequency == frequency - 1){
+            std::cout << "Physics FPS: " << 1.0 / delta << std::endl;
+        }
+        current_frame++;
+
         std::vector<collision_t> collisions;
 
         for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
@@ -39,7 +50,7 @@ srph::physics_t::run(){
         std::for_each(collisions.begin(), collisions.end(), collision_correct);
         
         for (auto & m : matters){
-            m->physics_tick(physics_d);
+            m->physics_tick(delta);
             if (m->get_position()[1] < -90.0){
                 m->get_transform().set_position(vec3_t(0.0, -100.0, 0.0));
                 m->reset_velocity();

@@ -11,7 +11,7 @@ namespace constant {
     constexpr double epsilon = 1.0 / 256.0;      // metres    
 
     // shortest time period 
-    constexpr auto iota    = 16.66666ms; // i.e. 60 Hz
+    constexpr auto iota    = 10ms; 
 
     // largest distance
     constexpr double rho     = 2048;             // metres    

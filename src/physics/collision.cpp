@@ -47,9 +47,10 @@ srph::collision_correct(const collision_t & c){
     auto n_a = c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a);
     auto n_b = c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b);
 
+//*    
     n_a = vec3_t(0, 1, 0);
     n_b = vec3_t(0, -1, 0);
-
+//*/
     // extricate matters 
     double sm = c.a->get_mass() + c.b->get_mass();
     for (auto m : { c.a, c.b }){
@@ -76,7 +77,8 @@ srph::collision_correct(const collision_t & c){
     c.b->apply_impulse_at( jr * n, c.x);
     
     // calculate frictional force
-    /*for (auto m : { c.a, c.b }){
+    //*
+    for (auto m : { c.a, c.b }){
         auto x = m->get_transform().to_local_space(c.x);
         auto n = m->get_transform().get_rotation() * m->get_sdf()->normal(x);
         
@@ -102,5 +104,6 @@ srph::collision_correct(const collision_t & c){
         }
 
         m->apply_impulse_at(-k * t, c.x);
-    }*/
+    }
+    //*/
 }
