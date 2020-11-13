@@ -47,6 +47,15 @@ srph::collision_correct(const collision_t & c){
     auto n_a = c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a);
     auto n_b = c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b);
 
+    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
+ 
+    auto n = vec::normalise(n_a - n_b);
+   
+    auto vrn = vec::dot(vr, n);
+    if (vrn > -constant::epsilon){
+        return;
+    } 
+
     double sm = c.a->get_mass() + c.b->get_mass();
     for (auto m : { c.a, c.b }){
         auto x = m->get_transform().to_local_space(c.x);
@@ -66,15 +75,6 @@ srph::collision_correct(const collision_t & c){
     auto matb = c.b->get_material(c.b->to_local_space(c.x));
 
     double CoR = std::max(mata.restitution, matb.restitution);
-    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
- 
-    auto n = vec::normalise(n_a - n_b);
-   
-    auto vrn = vec::dot(vr, n);
-    if (vrn > -constant::epsilon){
-        return;
-    } 
-
 
     double jr = -(1.0 + CoR) * vec::dot(vr, n) / (
         1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
