@@ -384,6 +384,19 @@ namespace vec {
 }
 
 namespace mat {
+    template<class T, int M, int N>
+    matrix_t<T, M, N> outer_product(const vec_t<T, M> & x, const vec_t<T, N> & y){
+        matrix_t<T, M, N> m;
+
+        for (int i = 0; i < M; i++){
+            for (int j = 0; j < N; j++){
+                m.set(i, j, x[i] * y[j]);
+            }
+        }
+
+        return m;
+    }
+
     template<class T>
     T 
     determinant(const matrix_t<T, 3, 3> & a){

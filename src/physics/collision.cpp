@@ -22,10 +22,10 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     }
 
     auto f = [a, b](const vec3_t & x){
-        vec3_t x_a   = a->get_transform().to_local_space(x);
+        vec3_t x_a   = a->to_local_space(x);
         double phi_a = a->get_sdf()->phi(x_a); 
         
-        vec3_t x_b   = b->get_transform().to_local_space(x);
+        vec3_t x_b   = b->to_local_space(x);
         double phi_b = b->get_sdf()->phi(x_b); 
 
         return std::max(phi_a, phi_b);
@@ -37,39 +37,49 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     };
 
     auto result = srph::nelder_mead::minimise(f, xs);
-    return srph::collision_t(result.fx <= 0, result.x, result.fx, a, b);
+    return srph::collision_t(result.fx < constant::epsilon, result.x, result.fx, a, b);
 }
 
 void
-srph::collision_correct(const collision_t & c){
-    auto x_a = c.a->get_transform().to_local_space(c.x);
-    auto x_b = c.b->get_transform().to_local_space(c.x);
-    auto n_a = c.a->get_transform().get_rotation() * c.a->get_sdf()->normal(x_a);
-    auto n_b = c.b->get_transform().get_rotation() * c.b->get_sdf()->normal(x_b);
-
-    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
- 
+srph::resting_contact_correct(const collision_t & c){
+    auto x_a = c.a->to_local_space(c.x);
+    auto x_b = c.b->to_local_space(c.x);
+    auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
+    auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
+    
     auto n = vec::normalise(n_a - n_b);
-   
-    auto vrn = vec::dot(vr, n);
-    if (vrn > -constant::epsilon){
-        return;
-    } 
 
+    auto aa = c.a->get_acceleration();
+    auto ab = c.b->get_acceleration();
+
+    double a = vec::dot(aa, n) - vec::dot(ab, n);    
+    
+    if (a > 0){
+        auto d = a * n / 2;
+        c.a->constrain_acceleration(-d); 
+        c.b->constrain_acceleration( d); 
+    }
+}
+
+void 
+srph::colliding_contact_correct(const collision_t & c){
+    auto x_a = c.a->to_local_space(c.x);
+    auto x_b = c.b->to_local_space(c.x);
+    auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
+    auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
+    
+    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
+    auto n = vec::normalise(n_a - n_b);
+    
     double sm = c.a->get_mass() + c.b->get_mass();
     for (auto m : { c.a, c.b }){
-        auto x = m->get_transform().to_local_space(c.x);
-        auto n = m->get_transform().get_rotation() * m->get_sdf()->normal(x);
+        auto x = m->to_local_space(c.x);
+        auto n = m->get_rotation() * m->get_sdf()->normal(x);
         
         // extricate matters 
-        m->get_transform().translate(c.fx * n * (1 - m->get_mass() / sm));
+        m->translate(c.fx * n * (1 - m->get_mass() / sm));
     }
     
-//*    
-    n_a = vec3_t(0, 1, 0);
-    n_b = vec3_t(0, -1, 0);
-//*/
-
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));
     auto matb = c.b->get_material(c.b->to_local_space(c.x));
@@ -80,20 +90,16 @@ srph::collision_correct(const collision_t & c){
         1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
         1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, n)
     );
-   
-    
  
     // update velocities accordingly
     c.a->apply_impulse_at(-jr * n, c.x);
     c.b->apply_impulse_at( jr * n, c.x);
    
     for (auto m : { c.a, c.b }){
-        auto x = m->get_transform().to_local_space(c.x);
-        auto n = m->get_transform().get_rotation() * m->get_sdf()->normal(x);
+        auto x = m->to_local_space(c.x);
+        auto n = m->get_rotation() * m->get_sdf()->normal(x);
         
         // calculate frictional force
-    
-        //*    
         auto mat = m->get_material(m->to_local_space(c.x));
  
         double js = mat.static_friction * jr;
@@ -107,12 +113,31 @@ srph::collision_correct(const collision_t & c){
         if (std::abs(vec::dot(fe, n)) < constant::epsilon && ti == 1) ti++;
 
         vec3_t t = vec::normalise(ts[ti] - vec::dot(ts[ti], n) * n);
-    //    std::cout << "t = " << t << std::endl;
-
         auto mvrt = m->get_mass() * vec::dot(vr, t);
         double k = mvrt <= js ? mvrt : jd;
 
         m->apply_impulse_at(-k * t, c.x);
-    //*/
+    }
+}
+
+void
+srph::collision_correct(const collision_t & c){
+    auto x_a = c.a->to_local_space(c.x);
+    auto x_b = c.b->to_local_space(c.x);
+    auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
+    auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
+
+    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
+ 
+    auto n = vec::normalise(n_a - n_b);
+   
+    auto vrn = vec::dot(vr, n);
+
+    if (vrn > constant::epsilon){
+        return;
+    } else if (vrn > -constant::epsilon){
+        resting_contact_correct(c);
+    } else {
+        colliding_contact_correct(c);
     }
 }

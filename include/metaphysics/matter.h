@@ -16,19 +16,28 @@ public:
     std::shared_ptr<sdf3_t> get_sdf() const;
     vec3_t get_position() const;
     double get_mass();
-    transform_t & get_transform();
     aabb3_t get_aabb() const;
 
+    void translate(const vec3_t & x);
+    void rotate(const quat_t & q);
+
+    quat_t get_rotation() const;
+
     vec3_t get_velocity(const vec3_t & x);
+    vec3_t get_acceleration();
+    void constrain_acceleration(const vec3_t & da);
+    
     vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
     vec3_t to_local_space(const vec3_t & x) const;
 
     void physics_tick(double delta);
-    void reset_velocity();
 
-    vec3_t get_acceleration() const;
     double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
+    
+    void apply_impulse(const vec3_t & j);
     void apply_impulse_at(const vec3_t & j, const vec3_t & x);
+
+    f32mat4_t * get_matrix();
 
 private:
     material_t material;
@@ -38,7 +47,9 @@ private:
 
     std::unique_ptr<double> average_density;
     std::unique_ptr<vec3_t> centre_of_mass;
-    std::unique_ptr<mat3_t> inverse_inertia_tensor;
+    
+    std::unique_ptr<mat3_t> i;
+    std::unique_ptr<mat3_t> inv_tf_i;
 
     vec3_t v;
     vec3_t a;
@@ -49,7 +60,9 @@ private:
     void calculate_centre_of_mass();
     double get_average_density();
     vec3_t get_centre_of_mass();
-    mat3_t get_inverse_inertia_tensor();
+
+    mat3_t * get_i();
+    mat3_t * get_inv_tf_i();
 };
 
 #endif

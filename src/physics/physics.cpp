@@ -51,10 +51,6 @@ srph::physics_t::run(){
         
         for (auto & m : matters){
             m->physics_tick(delta);
-            if (m->get_position()[1] < -90.0){
-                m->get_transform().set_position(vec3_t(0.0, -100.0, 0.0));
-                m->reset_velocity();
-            }
         }
 
         t += clock_d;

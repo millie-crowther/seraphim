@@ -12,6 +12,11 @@ matter_t::get_sdf() const {
     return sdf;
 }
 
+quat_t
+matter_t::get_rotation() const {
+    return transform.get_rotation();
+}
+
 vec3_t 
 matter_t::get_position() const {
     return transform.get_position();
@@ -34,14 +39,9 @@ matter_t::get_aabb() const {
     return aabb;
 }
 
-vec3_t
-matter_t::get_acceleration() const {
-    return a;
-}
-
 double
 matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_global){
-    auto i1 = get_inverse_inertia_tensor();
+    auto i1 = mat::inverse(*get_i());
     auto r = transform.to_local_space(r_global) - get_centre_of_mass();
     auto n = transform.get_rotation().inverse() * n_global;
     auto rn = vec::cross(r, n);
@@ -50,10 +50,20 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n_glo
 }
 
 void
+matter_t::apply_impulse(const vec3_t & j){
+    apply_impulse_at(j, vec3_t());
+}
+
+f32mat4_t *
+matter_t::get_matrix(){
+    return transform.get_matrix();
+}
+
+void
 matter_t::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
     v += j / get_mass();
     
-    auto i1 = get_inverse_inertia_tensor();
+    auto i1 = mat::inverse(*get_i());
     auto r = transform.to_local_space(r_global);
     auto n = transform.get_rotation().inverse() * vec::normalise(j);
     auto rn = i1 * vec::cross(r, n);
@@ -80,6 +90,11 @@ matter_t::get_centre_of_mass(){
     return *centre_of_mass;
 }
 
+void
+matter_t::constrain_acceleration(const vec3_t & da){
+    a += da;
+}
+
 double
 matter_t::get_average_density(){
     if (is_uniform){
@@ -98,9 +113,16 @@ matter_t::get_mass(){
     return get_average_density() * sdf->get_volume();
 }
 
-transform_t & 
-matter_t::get_transform(){
-    return transform;
+void
+matter_t::translate(const vec3_t & x){
+    transform.translate(x);
+    inv_tf_i.reset();
+}
+
+void 
+matter_t::rotate(const quat_t & q){
+    transform.rotate(q);
+    inv_tf_i.reset();
 }
 
 void
@@ -117,28 +139,59 @@ matter_t::physics_tick(double t){
     // reset accelerations
     a = vec3_t(0.0, -9.8, 0.0);
     alpha = vec3_t(0.0);
+
+    if (transform.get_position()[1] < -90.0){
+        transform.set_position(vec3_t(0.0, -100.0, 0.0));
+        v = vec3_t();
+        omega = vec3_t();
+        alpha = vec3_t();
+        a = vec3_t();
+    }    
 }
 
-mat3_t 
-matter_t::get_inverse_inertia_tensor(){
-    if (!inverse_inertia_tensor){
+mat3_t *
+matter_t::get_inv_tf_i(){
+    if (!inv_tf_i){
+        inv_tf_i = std::make_unique<mat3_t>(*i);
+
+        // rotate
+        auto r = transform.get_rotation().to_matrix();
+        *inv_tf_i = r * *inv_tf_i * mat::transpose(r);
+        
+        // translate
+        auto t = transform.get_position();
+        *inv_tf_i += get_mass() * (mat3_t::diagonal(vec::dot(t, t)) - mat::outer_product(t, t));
+        
+        // invert
+        *inv_tf_i = mat::inverse(*inv_tf_i);
+    }
+
+    return inv_tf_i.get();
+}
+
+mat3_t *
+matter_t::get_i(){
+    if (!i){
         if (is_uniform){
-            inverse_inertia_tensor = std::make_unique<mat3_t>(
+            i = std::make_unique<mat3_t>(
                 sdf->get_uniform_inertia_tensor(get_mass())
             );
         } else {
             throw std::runtime_error("Error: non uniform substances not yet supported.");
         }
-
-        *inverse_inertia_tensor = mat::inverse(*inverse_inertia_tensor);
     }
     
-    return *inverse_inertia_tensor;
+    return i.get();
 }
 
 vec3_t
 matter_t::get_velocity(const vec3_t & x){
     return v + vec::cross(omega, get_offset_from_centre_of_mass(x));
+}
+
+vec3_t
+matter_t::get_acceleration(){
+    return a;
 }
 
 vec3_t
@@ -149,13 +202,4 @@ matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
 vec3_t
 matter_t::to_local_space(const vec3_t & x) const {
     return transform.to_local_space(x);
-}
-
-void
-matter_t::reset_velocity(){
-    v = vec3_t();
-    omega = vec3_t();
-    
-    a = vec3_t();
-    alpha = vec3_t();
 }

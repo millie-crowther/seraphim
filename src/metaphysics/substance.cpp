@@ -37,7 +37,7 @@ substance_t::get_id() const {
 substance_t::data_t
 substance_t::get_data(const vec3_t & eye_position){
     vec3_t r = matter->get_sdf()->get_aabb().get_size();
-    vec3_t eye = matter->get_transform().to_local_space(eye_position);
+    vec3_t eye = matter->to_local_space(eye_position);
 
     float near = vec::length(vec::max((vec::abs(eye) - r), 0.0));
     float far  = vec::length(vec::abs(eye) + r);
@@ -46,7 +46,7 @@ substance_t::get_data(const vec3_t & eye_position){
         near, far,
         mat::cast<float>(r),
         id,
-        *matter->get_transform().get_matrix()
+        *matter->get_matrix()
     );
 }
 

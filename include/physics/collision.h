@@ -21,6 +21,8 @@ namespace srph {
 
     collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);
     void collision_correct(const collision_t & collision);
+    void resting_contact_correct(const collision_t & collision);
+    void colliding_contact_correct(const collision_t & collision);
 }
 
 
