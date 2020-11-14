@@ -70,7 +70,7 @@ srph::colliding_contact_correct(const collision_t & c){
     auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
     auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
     
-    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
+    auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
     auto n = vec::normalise(n_a - n_b);
     
     double sm = c.a->get_mass() + c.b->get_mass();
@@ -88,7 +88,7 @@ srph::colliding_contact_correct(const collision_t & c){
 
     double CoR = std::max(mata.restitution, matb.restitution);
 
-    double jr = -(1.0 + CoR) * vec::dot(vr, n) / (
+    double jr = (1.0 + CoR) * vec::dot(vr, n) / (
         1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
         1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, n)
     );
@@ -97,8 +97,13 @@ srph::colliding_contact_correct(const collision_t & c){
     c.a->apply_impulse_at(-jr * n, c.x);
     c.b->apply_impulse_at( jr * n, c.x);
    
-    for (auto m : { c.a, c.b }){
-        auto vr = m->get_velocity(c.x);
+    std::vector<std::shared_ptr<matter_t>> ms = { c.a, c.b };
+    auto fs = vec2_t(1.0, -1.0);
+
+    for (int i = 0; i < 2; i++){
+        auto m = ms[i];
+        vec3_t vr = vr * fs[i];
+
         auto x = m->to_local_space(c.x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
         
