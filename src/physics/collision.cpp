@@ -42,6 +42,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
 void
 srph::resting_contact_correct(const collision_t & c){
+    /*
     auto x_a = c.a->to_local_space(c.x);
     auto x_b = c.b->to_local_space(c.x);
     auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
@@ -59,6 +60,7 @@ srph::resting_contact_correct(const collision_t & c){
         c.a->constrain_acceleration(-d); 
         c.b->constrain_acceleration( d); 
     }
+    */
 }
 
 void 
@@ -96,6 +98,7 @@ srph::colliding_contact_correct(const collision_t & c){
     c.b->apply_impulse_at( jr * n, c.x);
    
     for (auto m : { c.a, c.b }){
+        auto vr = m->get_velocity(c.x);
         auto x = m->to_local_space(c.x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
         
@@ -104,15 +107,9 @@ srph::colliding_contact_correct(const collision_t & c){
  
         double js = mat.static_friction * jr;
         double jd = mat.dynamic_friction * jr;
-
-        vec3_t fe = m->get_mass() * m->get_acceleration();
-        std::vector<vec3_t> ts = { vr, fe, vec3_t() };
         
-        int ti = 0;
-        if (std::abs(vec::dot(vr, n)) < constant::epsilon           ) ti++;
-        if (std::abs(vec::dot(fe, n)) < constant::epsilon && ti == 1) ti++;
+        vec3_t t = vec::normalise(vr - vec::dot(vr, n) * n);
 
-        vec3_t t = vec::normalise(ts[ti] - vec::dot(ts[ti], n) * n);
         auto mvrt = m->get_mass() * vec::dot(vr, t);
         double k = mvrt <= js ? mvrt : jd;
 
@@ -133,11 +130,9 @@ srph::collision_correct(const collision_t & c){
    
     auto vrn = vec::dot(vr, n);
 
-    if (vrn > constant::epsilon){
-        return;
-    } else if (vrn > -constant::epsilon){
-        resting_contact_correct(c);
-    } else {
+    if (vrn < -constant::epsilon){
         colliding_contact_correct(c);
+    } else if (vrn < constant::epsilon){
+        resting_contact_correct(c);
     }
 }

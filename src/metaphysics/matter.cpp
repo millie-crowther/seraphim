@@ -109,7 +109,6 @@ matter_t::get_mass(){
 void
 matter_t::translate(const vec3_t & x){
     transform.translate(x);
-    inv_tf_i.reset();
 }
 
 void 
@@ -126,19 +125,13 @@ matter_t::physics_tick(double t){
     transform.rotate(quat_t::euler_angles(omega * t));
 
     // integrate accelerations into velocities
-    v += a * t;
+    v += (a + vec3_t(0.0, -9.8, 0.0)) * t;
     omega += alpha * t;
     
-    // reset accelerations
-    a = vec3_t(0.0, -9.8, 0.0);
-    alpha = vec3_t(0.0);
-
     if (transform.get_position()[1] < -90.0){
         transform.set_position(vec3_t(0.0, -100.0, 0.0));
         v = vec3_t();
         omega = vec3_t();
-        alpha = vec3_t();
-        a = vec3_t();
     }    
 }
 
