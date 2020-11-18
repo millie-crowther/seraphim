@@ -75,15 +75,18 @@ srph::colliding_contact_correct(const collision_t & c){
     auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
     auto n = vec::normalise(n_a - n_b);
     
+    // extricate matters 
     double sm = c.a->get_mass() + c.b->get_mass();
     for (auto m : { c.a, c.b }){
         auto x = m->to_local_space(c.x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
-        
-        // extricate matters 
-        m->translate(c.fx * n * (1 - m->get_mass() / sm));
+       
+        auto depth = -std::abs(m->get_sdf()->phi(x));
+        m->translate(depth * n * (1 - m->get_mass() / sm));
     }
     
+    // find face
+
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));
     auto matb = c.b->get_material(c.b->to_local_space(c.x));

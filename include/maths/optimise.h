@@ -16,7 +16,7 @@ namespace srph { namespace optimise {
         vec_t<double, N> x;
         double fx; 
 
-        //result_t(){}
+        result_t(){}
         result_t(bool _hit, const vec_t<double, N> & _x, double _fx) : hit(_hit), x(_x), fx(_fx){}
         
         struct comparator_t {
@@ -32,6 +32,8 @@ namespace srph { namespace optimise {
 
         for (int i = 0; i < max_i; i++){
             double fx = f(x);
+            std::cout << fx << std::endl;
+
             if (std::abs(fx) < constant::epsilon){
                 return result_t<N>(true, x, fx);
             }

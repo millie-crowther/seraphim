@@ -110,7 +110,7 @@ public:
         std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::divides<T>());
         return r;
     }
-    
+
     // scalar accessor operators
     matrix_t<T, M, N> 
     operator-(const T & x) const {
@@ -502,6 +502,11 @@ template<class T, int X, int Y, int Z>
 matrix_t<T, X, Z>
 operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
     return mat::multiply(a, b);
+}
+
+template<class T, int M, int N>
+matrix_t<T, M, N> operator/(const T & t, const matrix_t<T, M, N> & a){
+    return matrix_t<T, M, N>(t) / a;
 }
 
 // equality operators
