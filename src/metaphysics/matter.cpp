@@ -49,13 +49,26 @@ matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){
 
 void
 matter_t::apply_impulse(const vec3_t & j){
-    apply_impulse_at(j, vec3_t());
+    v += j / get_mass();
 }
 
 f32mat4_t *
 matter_t::get_matrix(){
     return transform.get_matrix();
 }
+
+void 
+matter_t::apply_force(const vec3_t & f){
+    a += f / get_mass();
+}
+
+void 
+matter_t::apply_force_at(const vec3_t & f, const vec3_t & x){
+    a += f / get_mass();
+
+    auto r = get_offset_from_centre_of_mass(x); 
+    alpha += *get_inv_tf_i() * vec::cross(r, f);
+}    
 
 void
 matter_t::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
@@ -119,14 +132,19 @@ matter_t::rotate(const quat_t & q){
 
 void
 matter_t::physics_tick(double t){
+    // integrate accelerations into velocities
+    v += a * t;
+    omega += alpha * t;
+    
+    // update position
     transform.translate(v * t);
     
     // update rotation
     transform.rotate(quat_t::euler_angles(omega * t));
 
-    // integrate accelerations into velocities
-    v += (a + vec3_t(0.0, -9.8, 0.0)) * t;
-    omega += alpha * t;
+    // reset accelerations
+    a = vec3_t(0.0, -9.8, 0.0);
+    alpha = vec3_t();
     
     if (transform.get_position()[1] < -90.0){
         transform.set_position(vec3_t(0.0, -100.0, 0.0));

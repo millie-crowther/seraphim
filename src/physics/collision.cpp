@@ -92,7 +92,7 @@ srph::colliding_contact_correct(const collision_t & c){
         1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, n) +
         1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, n)
     );
- 
+
     // update velocities accordingly
     c.a->apply_impulse_at(-jr * n, c.x);
     c.b->apply_impulse_at( jr * n, c.x);
@@ -102,7 +102,7 @@ srph::colliding_contact_correct(const collision_t & c){
 
     for (int i = 0; i < 2; i++){
         auto m = ms[i];
-        vec3_t vr = vr * fs[i];
+        vec3_t v = vr * fs[i];
 
         auto x = m->to_local_space(c.x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
@@ -112,12 +112,13 @@ srph::colliding_contact_correct(const collision_t & c){
  
         double js = mat.static_friction * jr;
         double jd = mat.dynamic_friction * jr;
-        
-        vec3_t t = vec::normalise(vr - vec::dot(vr, n) * n);
+    
+        vec3_t t = vec::normalise(v - vec::dot(v, n) * n);
 
-        auto mvrt = m->get_mass() * vec::dot(vr, t);
-        double k = mvrt <= js ? mvrt : jd;
+        auto mvt = m->get_mass() * vec::dot(v, t);
+        bool is_static = mvt <= js || std::abs(vec::dot(v, t)) < constant::epsilon;
 
+        double k = is_static ? mvt : jd;
         m->apply_impulse_at(-k * t, c.x);
     }
 }

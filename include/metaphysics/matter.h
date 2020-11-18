@@ -39,6 +39,9 @@ public:
 
     f32mat4_t * get_matrix();
 
+    void apply_force(const vec3_t & f);
+    void apply_force_at(const vec3_t & f, const vec3_t & x);
+
 private:
     material_t material;
     std::shared_ptr<sdf3_t> sdf;
