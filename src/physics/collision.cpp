@@ -1,6 +1,6 @@
 #include "physics/collision.h"
 
-#include "maths/nelder_mead.h"
+#include "maths/optimise.h"
 
 srph::collision_t::collision_t(
     bool hit, const vec3_t & x, double fx,  
@@ -36,7 +36,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         aabb.get_vertex(5), aabb.get_vertex(6)
     };
 
-    auto result = srph::nelder_mead::minimise(f, xs);
+    auto result = srph::optimise::nelder_mead_minimise(f, xs);
     return srph::collision_t(result.fx < constant::epsilon, result.x, result.fx, a, b);
 }
 
@@ -69,7 +69,9 @@ srph::colliding_contact_correct(const collision_t & c){
     auto x_b = c.b->to_local_space(c.x);
     auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
     auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
-    
+   
+    n_b = vec3_t(0.0, -1.0, 0.0);
+ 
     auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
     auto n = vec::normalise(n_a - n_b);
     
