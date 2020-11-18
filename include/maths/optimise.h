@@ -39,7 +39,7 @@ namespace srph { namespace optimise {
             x -= fx / dfdx(x);
         }
 
-        return result_t<N>(false, x, fx);
+        return result_t<N>(false, x, f(x));
     }
 
     template<int N, class F>

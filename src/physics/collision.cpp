@@ -36,7 +36,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         aabb.get_vertex(5), aabb.get_vertex(6)
     };
 
-    auto result = srph::optimise::nelder_mead_minimise(f, xs);
+    auto result = srph::optimise::nelder_mead(f, xs);
     return srph::collision_t(result.fx < constant::epsilon, result.x, result.fx, a, b);
 }
 
