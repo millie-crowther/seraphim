@@ -12,14 +12,13 @@ namespace srph { namespace optimise {
 
     template<int N>
     struct result_t {
-        bool hit;
         vec_t<double, N> x;
         double fx; 
 
         result_t(){}
-        result_t(bool _hit, const vec_t<double, N> & _x, double _fx) : hit(_hit), x(_x), fx(_fx){}
+        result_t(const vec_t<double, N> & _x, double _fx) : x(_x), fx(_fx){}
         
-        struct comparator_t {
+        struct default_comparator_t {
             bool operator()(const result_t<N> & a, const result_t<N> & b){
                 return a.fx < b.fx;
             }
@@ -44,13 +43,16 @@ namespace srph { namespace optimise {
         return result_t<N>(false, x, f(x));
     }
 
-    template<int N, class F>
-    result_t<N> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
+    template<int N, class F, class C>
+    result_t<N> nelder_mead(
+        const F & f, const std::array<vec_t<double, N>, N + 1> & ys,
+        const C & c
+    ){
         std::vector<result_t<N>> xs;
         for (const auto & y : ys){
-            xs.emplace_back(false, y, f(y));
+            xs.emplace_back(y, f(y));
         }
-        std::sort(xs.begin(), xs.end(), typename result_t<N>::comparator_t()); 
+        std::sort(xs.begin(), xs.end(), c); 
 
         for(int i = 0; i < max_i; i++){
             // terminate
@@ -62,11 +64,11 @@ namespace srph { namespace optimise {
             }
 
             if (minx == maxx){
-                return result_t(true, xs[0].x, xs[0].fx);
+                return result_t(xs[0].x, xs[0].fx);
             }
 
             // order
-            std::sort(xs.begin(), xs.end(), typename result_t<N>::comparator_t()); 
+            std::sort(xs.begin(), xs.end(), c); 
 
             // calculate centroid
             vec_t<double, N> x0;
@@ -79,7 +81,7 @@ namespace srph { namespace optimise {
             auto xr = x0 + alpha * (x0 - xs[N].x);
             double fxr = f(xr);
             if (xs[0].fx <= fxr && fxr < xs[N - 1].fx){
-                xs[N] = result_t<N>(false, xr, fxr);
+                xs[N] = result_t<N>(xr, fxr);
                 continue;
             }
 
@@ -89,9 +91,9 @@ namespace srph { namespace optimise {
                 auto fxe = f(xe);
                 
                 if (fxe < fxr){
-                    xs[N] = result_t<N>(false, xe, fxe);
+                    xs[N] = result_t<N>(xe, fxe);
                 } else {
-                    xs[N] = result_t<N>(false, xr, fxr);
+                    xs[N] = result_t<N>(xr, fxr);
                 }
                 continue;
             }
@@ -100,7 +102,7 @@ namespace srph { namespace optimise {
             auto xc = x0 + rho * (xs[N].x - x0);
             double fxc = f(xc);
             if (fxc < xs[N].fx){
-                xs[N] = result_t<N>(false, xc, fxc);
+                xs[N] = result_t<N>(xc, fxc);
                 continue;
             }   
 
