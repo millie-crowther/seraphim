@@ -25,34 +25,13 @@ namespace srph { namespace optimise {
         };
     };
 
-    template<int N, class F, class D>
-    result_t<N> newton_raphson(const F & f, const D & dfdx, const vec_t<double, N> & x0){
-        vec_t<double, N> x = x0;
-
-        for (int i = 0; i < max_i; i++){
-            double fx = f(x);
-            std::cout << fx << std::endl;
-
-            if (std::abs(fx) < constant::epsilon){
-                return result_t<N>(true, x, fx);
-            }
-
-            x -= fx / dfdx(x);
-        }
-
-        return result_t<N>(false, x, f(x));
-    }
-
-    template<int N, class F, class C>
-    result_t<N> nelder_mead(
-        const F & f, const std::array<vec_t<double, N>, N + 1> & ys,
-        const C & c
-    ){
+    template<int N, class F>
+    result_t<N> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
         std::vector<result_t<N>> xs;
         for (const auto & y : ys){
             xs.emplace_back(y, f(y));
         }
-        std::sort(xs.begin(), xs.end(), c); 
+        std::sort(xs.begin(), xs.end(), typename result_t<N>::default_comparator_t()); 
 
         for(int i = 0; i < max_i; i++){
             // terminate
@@ -68,7 +47,7 @@ namespace srph { namespace optimise {
             }
 
             // order
-            std::sort(xs.begin(), xs.end(), c); 
+            std::sort(xs.begin(), xs.end(), typename result_t<N>::default_comparator_t()); 
 
             // calculate centroid
             vec_t<double, N> x0;
@@ -115,8 +94,6 @@ namespace srph { namespace optimise {
 
         return xs[0]; 
     } 
-
-     
 }}
 
 #endif

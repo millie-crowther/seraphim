@@ -3,12 +3,12 @@
 #include "maths/optimise.h"
 
 srph::collision_t::collision_t(
-    bool hit, const vec3_t & x, double fx,  
+    bool hit, const vec3_t & x, double depth,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
     this->hit = hit;
     this->x = x;
-    this->fx = fx;
+    this->depth = std::abs(depth);
     this->t = t;
     this->a = a;
     this->b = b;
@@ -28,7 +28,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         vec3_t x_b   = b->to_local_space(x);
         double phi_b = b->get_sdf()->phi(x_b); 
 
-        return std::max(phi_a, phi_b);
+        return  std::max(phi_a, phi_b);
     };
     
     std::array<vec3_t, 4> xs = {
@@ -36,8 +36,8 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
         aabb.get_vertex(5), aabb.get_vertex(6)
     };
 
-    auto result = srph::optimise::nelder_mead(f, xs, srph::optimise::result_t<3>::default_comparator_t());
-    return srph::collision_t(result.fx < constant::epsilon, result.x, result.fx, a, b);
+    auto result = srph::optimise::nelder_mead(f, xs);
+    return srph::collision_t(result.fx < 0, result.x, result.fx, a, b);
 }
 
 void
@@ -65,33 +65,23 @@ srph::resting_contact_correct(const collision_t & c){
 
 void 
 srph::colliding_contact_correct(const collision_t & c){
-    auto x_a = c.a->to_local_space(c.x);
-    auto x_b = c.b->to_local_space(c.x);
-    auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
-    auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
- 
-    auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
-    
-    //auto nb2 = n_b;
-   
-    n_b = vec3_t(0.0, -1.0, 0.0);
-    
-    auto n = vec::normalise(n_a - n_b);
- 
-
     // extricate matters 
     double sm = c.a->get_mass() + c.b->get_mass();
     for (auto m : { c.a, c.b }){
         auto x = m->to_local_space(c.x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
        
-        auto depth = -std::abs(m->get_sdf()->phi(x));
-        m->translate(depth * n * (1 - m->get_mass() / sm));
+        m->translate(-c.depth * n * (1 - m->get_mass() / sm));
     }
     
-    //n_b = vec3_t(0.0, -1.0, 0.0);
+    auto x_a = c.a->to_local_space(c.x);
+    auto x_b = c.b->to_local_space(c.x);
+    auto n_a = c.a->get_rotation() * c.a->get_sdf()->normal(x_a);
+    auto n_b = c.b->get_rotation() * c.b->get_sdf()->normal(x_b);
+ 
+    auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
 
-    //n = vec::normalise(n_a - nb2);
+    auto n = vec::normalise(n_a - n_b);
 
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));

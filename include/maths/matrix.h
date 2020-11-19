@@ -275,7 +275,21 @@ namespace vec {
         vec_t<T, N> h = x * y;
         return std::accumulate(h.begin(), h.end(), T(0));
     }
-    
+   
+    template<int P, class T, int N>
+    T p_norm(vec_t<T, N> x){
+        std::transform(x.begin(), x.end(), x.begin(), [](T & xi){ 
+            if constexpr (P & 1 == 0){
+                return std::pow(xi, P); 
+            } else {
+                return std::abs(std::pow(xi, P));
+            }
+        });
+        
+        auto sum = std::accumulate(x.begin(), x.end(), T(0));
+        return std::pow(sum, 1.0 / static_cast<double>(P));    
+    }
+ 
     template<class T, int N>
     T length(const vec_t<T, N> & x){
         return std::sqrt(dot(x, x));
