@@ -2,6 +2,11 @@
 
 #include "maths/optimise.h"
 
+#include <random>
+
+std::default_random_engine generator;
+std::uniform_real_distribution<double> distribution(-1.0, 1.0);
+
 srph::collision_t::collision_t(
     bool hit, const vec3_t & x, double depth,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
@@ -48,10 +53,18 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
     auto result = srph::optimise::nelder_mead(f, xs);
 
-    auto x = result.x;
+    vec3_t x = result.x;
     if (result.fx < 0){
+        for (int i = 0; i < 4; i++){
+            vec3_t y(
+                distribution(generator), distribution(generator), distribution(generator)
+            );  
+
+            xs[i] = aabb.get_centre() + y * aabb.get_size();
+        }
+
         x = srph::optimise::nelder_mead(f1, xs).x;
-    }
+    } 
 
     return srph::collision_t(result.fx < 0, x, result.fx, a, b);
 }
