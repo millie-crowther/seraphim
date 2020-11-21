@@ -30,6 +30,16 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
         return  std::max(phi_a, phi_b);
     };
+
+    auto f1 = [a, b](const vec3_t & x){
+        vec3_t x_a   = a->to_local_space(x);
+        double phi_a = a->get_sdf()->phi(x_a) + constant::epsilon; 
+        
+        vec3_t x_b   = b->to_local_space(x);
+        double phi_b = b->get_sdf()->phi(x_b) + constant::epsilon; 
+
+        return phi_a * phi_a + phi_b * phi_b;
+    };
     
     std::array<vec3_t, 4> xs = {
         aabb.get_vertex(0), aabb.get_vertex(3),
@@ -37,7 +47,13 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     };
 
     auto result = srph::optimise::nelder_mead(f, xs);
-    return srph::collision_t(result.fx < 0, result.x, result.fx, a, b);
+
+    auto x = result.x;
+    if (result.fx < 0){
+        x = srph::optimise::nelder_mead(f1, xs).x;
+    }
+
+    return srph::collision_t(result.fx < 0, x, result.fx, a, b);
 }
 
 void
