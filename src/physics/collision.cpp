@@ -2,11 +2,6 @@
 
 #include "maths/optimise.h"
 
-#include <random>
-
-std::default_random_engine generator;
-std::uniform_real_distribution<double> distribution(-1.0, 1.0);
-
 srph::collision_t::collision_t(
     bool hit, const vec3_t & x, double depth,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
@@ -60,6 +55,8 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
 void
 srph::resting_contact_correct(const collision_t & c){
+    std::cout << "resting contact" << std::endl;
+
     /*
     auto x_a = c.a->to_local_space(c.x);
     auto x_b = c.b->to_local_space(c.x);
@@ -99,7 +96,13 @@ srph::colliding_contact_correct(const collision_t & c){
  
     auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
 
+  //  std::cout << "vr = " << vr << std::endl;
+
     auto n = vec::normalise(n_a - n_b);
+
+    n = n_a;
+
+    n = vec3_t(0.0, 1.0, 0.0);
 
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));
@@ -152,7 +155,7 @@ srph::collision_correct(const collision_t & c){
     auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
  
     auto n = vec::normalise(n_a - n_b);
-   
+ 
     auto vrn = vec::dot(vr, n);
 
     if (vrn < -constant::epsilon){
