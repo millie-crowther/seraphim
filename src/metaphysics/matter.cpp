@@ -190,8 +190,8 @@ matter_t::get_velocity(const vec3_t & x){
 }
 
 vec3_t
-matter_t::get_acceleration(){
-    return a;
+matter_t::get_acceleration(const vec3_t & x){
+    return a + vec::cross(alpha, get_offset_from_centre_of_mass(x));
 }
 
 vec3_t

@@ -7,8 +7,15 @@
 namespace srph {
     struct collision_t {
         bool hit;
+
         vec3_t x;
-        double t;
+        vec3_t x_a;
+        vec3_t x_b;
+
+        vec3_t n;
+        vec3_t n_a;
+        vec3_t n_b;
+
         double depth;
         std::shared_ptr<matter_t> a;
         std::shared_ptr<matter_t> b;

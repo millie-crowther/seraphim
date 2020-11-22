@@ -24,7 +24,7 @@ public:
     quat_t get_rotation() const;
 
     vec3_t get_velocity(const vec3_t & x);
-    vec3_t get_acceleration();
+    vec3_t get_acceleration(const vec3_t & x);
     void constrain_acceleration(const vec3_t & da);
     
     vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
