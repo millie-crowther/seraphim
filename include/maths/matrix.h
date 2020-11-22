@@ -16,16 +16,16 @@ class matrix_t : protected std::array<T, M * N> {
 private:
     using super_t = std::array<T, M * N>; 
 
-    template<int K, int P, int Q, typename... Xs>
+    template<int K, int P, typename... Xs>
     void
-    construct(const matrix_t<T, P, Q> & x, Xs... xs){
-        static_assert(K + P * Q <= M * N, "Too much data in matrix constructor");
-        static_assert(K + P * Q == M * N || sizeof...(Xs) > 0, "Not enough data in matrix constructor");
+    construct(const matrix_t<T, P, 1> & x, Xs... xs){
+        static_assert(K + P <= M * N, "Too much data in matrix constructor");
+        static_assert(K + P == M * N || sizeof...(Xs) > 0, "Not enough data in matrix constructor");
        
         std::copy(x.begin(), x.end(), this->data() + K);
  
         if constexpr (sizeof...(Xs) != 0){
-            construct<K + P * Q>(xs...); 
+            construct<K + P>(xs...); 
         }
     }
  
@@ -278,11 +278,13 @@ namespace vec {
    
     template<int P, class T, int N>
     T p_norm(vec_t<T, N> x){
-        std::transform(x.begin(), x.end(), x.begin(), [](T & xi){ 
-            if constexpr (P & 1 == 0){
-                return std::pow(xi, P); 
+        static_assert(P > 0, "Error: P-norm must have a positive P-value");
+
+        std::transform(x.begin(), x.end(), x.begin(), [](const T & y){ 
+            if constexpr ((P & 1) == 0){
+                return std::pow(y, P); 
             } else {
-                return std::abs(std::pow(xi, P));
+                return std::abs(std::pow(y, P));
             }
         });
         
@@ -318,17 +320,6 @@ namespace vec {
             x[2] * y[0] - x[0] * y[2],
             x[0] * y[1] - x[1] * y[0]
         );
-    }
-
-    template<class T, int N, class F>
-    vec_t<T, N> grad(const F & f, const vec_t<T, N> & x){
-        vec_t<T, N> r;
-        for (uint8_t i = 0; i < N; i++){
-            matrix_t<T, N, 1> axis;
-            axis[i] = constant::epsilon;
-            r[i] = (f(x + axis) - f(x - axis));
-        }
-        return r / (2 * constant::epsilon);
     }
     
     template<class T, int N>

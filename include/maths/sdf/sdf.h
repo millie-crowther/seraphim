@@ -16,8 +16,13 @@ public:
     virtual double phi(const vec_t<double, D> & x) = 0;
 
     virtual vec_t<double, D> normal(const vec_t<double, D> & x) {
-        auto f = std::bind(&sdf_t<D>::phi, this, std::placeholders::_1);
-        return vec::grad(f, x);
+        vec_t<double, D> n;
+        for (int i = 0; i < D; i++){
+            vec_t<double, D> axis;
+            axis[i] = constant::epsilon;
+            n[i] = phi(x + axis) - phi(x - axis);
+        }   
+        return vec::normalise(n);
     }
 
     virtual bool contains(const vec_t<double, D> & x){
