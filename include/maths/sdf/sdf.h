@@ -15,7 +15,7 @@ public:
     // virtual accessors 
     virtual double phi(const vec_t<double, D> & x) = 0;
 
-    virtual vec_t<double, D> normal(const vec_t<double, D> & x) {
+    virtual vec_t<double, D> normal(const vec_t<double, D> & x){
         vec_t<double, D> n;
         for (int i = 0; i < D; i++){
             vec_t<double, D> axis;
@@ -23,6 +23,23 @@ public:
             n[i] = phi(x + axis) - phi(x - axis);
         }   
         return vec::normalise(n);
+    }
+
+    matrix_t<double, D, D> jacobian(const vec_t<double, D> & x){
+        matrix_t<double, D, D> j;
+
+        for (int column = 0; column < D; column++){
+            vec_t<double, D> axis;
+            axis[column] = constant::epsilon;
+            auto n = normal(x + axis) - normal(x - axis);
+            n /= 2 * constant::epsilon;
+
+            for (int row = 0; row < D; row++){
+                j.set(row, column, n[row]);
+            }
+        }
+
+        return j;
     }
 
     virtual bool contains(const vec_t<double, D> & x){

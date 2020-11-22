@@ -96,13 +96,11 @@ srph::colliding_contact_correct(const collision_t & c){
  
     auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
 
-  //  std::cout << "vr = " << vr << std::endl;
+    // choose the normal from the flattest surface
+    auto ja = c.a->get_sdf()->jacobian(x_a);
+    auto jb = c.b->get_sdf()->jacobian(x_b);
 
-    auto n = vec::normalise(n_a - n_b);
-
-    n = n_a;
-
-    n = vec3_t(0.0, 1.0, 0.0);
+    auto n = vec::p_norm<1>(ja) <= vec::p_norm<1>(jb) ? n_a : -n_b;
 
     // calculate collision impulse magnitude
     auto mata = c.a->get_material(c.a->to_local_space(c.x));
