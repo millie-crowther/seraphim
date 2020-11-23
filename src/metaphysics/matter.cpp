@@ -150,6 +150,8 @@ matter_t::physics_tick(double t){
         transform.set_position(vec3_t(0.0, -100.0, 0.0));
         v = vec3_t();
         omega = vec3_t();
+        a = vec3_t();
+        alpha = vec3_t();
     }    
 }
 

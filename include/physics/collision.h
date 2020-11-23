@@ -27,10 +27,10 @@ namespace srph {
         
         void correct();
         void resting_correct();
+        void colliding_correct();
     };
 
     collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);
-    void colliding_contact_correct(const collision_t & collision);
 }
 
 

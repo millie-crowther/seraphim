@@ -66,56 +66,55 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 
 void
 srph::collision_t::resting_correct(){
-    std::cout << "resting contact" << std::endl;
-
     auto aa = a->get_acceleration(x);
     auto ab = b->get_acceleration(x);
 
     double ca = vec::dot(aa, n) - vec::dot(ab, n);    
     
     if (ca > 0){
-        auto d = ca * n / 2;
-        a->constrain_acceleration(-d); 
-        b->constrain_acceleration( d); 
+        double sm = a->get_mass() + b->get_mass(); 
+        auto d = ca * n;
+        a->constrain_acceleration(-d * b->get_mass() / sm); 
+        b->constrain_acceleration( d * a->get_mass() / sm); 
     }
 }
 
 void 
-srph::colliding_contact_correct(const collision_t & c){
+srph::collision_t::colliding_correct(){
     // extricate matters 
-    double sm = c.a->get_mass() + c.b->get_mass();
-    c.a->translate(-c.depth * c.n_a * c.b->get_mass() / sm);
-    c.b->translate(-c.depth * c.n_b * c.a->get_mass() / sm);
+    double sm = a->get_mass() + b->get_mass();
+    a->translate(-depth * n_a * b->get_mass() / sm);
+    b->translate(-depth * n_b * a->get_mass() / sm);
     
-    auto vr = c.a->get_velocity(c.x) - c.b->get_velocity(c.x);
+    auto vr = a->get_velocity(x) - b->get_velocity(x);
 
     // calculate collision impulse magnitude
-    auto mata = c.a->get_material(c.x_a);
-    auto matb = c.b->get_material(c.x_b);
+    auto mata = a->get_material(x_a);
+    auto matb = b->get_material(x_b);
 
     double CoR = std::max(mata.restitution, matb.restitution);
 
-    double jr = (1.0 + CoR) * vec::dot(vr, c.n) / (
-        1.0 / c.a->get_mass() + c.a->get_inverse_angular_mass(c.x, c.n) +
-        1.0 / c.b->get_mass() + c.b->get_inverse_angular_mass(c.x, c.n)
+    double jr = (1.0 + CoR) * vec::dot(vr, n) / (
+        1.0 / a->get_mass() + a->get_inverse_angular_mass(x, n) +
+        1.0 / b->get_mass() + b->get_inverse_angular_mass(x, n)
     );
 
     // update velocities accordingly
-    c.a->apply_impulse_at(-jr * c.n, c.x);
-    c.b->apply_impulse_at( jr * c.n, c.x);
+    a->apply_impulse_at(-jr * n, x);
+    b->apply_impulse_at( jr * n, x);
    
-    std::vector<std::shared_ptr<matter_t>> ms = { c.a, c.b };
+    std::vector<std::shared_ptr<matter_t>> ms = { a, b };
     auto fs = vec2_t(1.0, -1.0);
 
     for (int i = 0; i < 2; i++){
         auto m = ms[i];
         vec3_t v = vr * fs[i];
 
-        auto x = m->to_local_space(c.x);
+        auto x = m->to_local_space(this->x);
         auto n = m->get_rotation() * m->get_sdf()->normal(x);
         
         // calculate frictional force
-        auto mat = m->get_material(m->to_local_space(c.x));
+        auto mat = m->get_material(x);
         double js = mat.static_friction * jr;
         double jd = mat.dynamic_friction * jr;
  
@@ -125,7 +124,7 @@ srph::colliding_contact_correct(const collision_t & c){
         bool is_static = mvt <= js || std::abs(vec::dot(v, t)) < constant::epsilon;
 
         double k = is_static ? mvt : jd;
-        m->apply_impulse_at(-k * t, c.x);
+        m->apply_impulse_at(-k * t, this->x);
     }
 }
 
@@ -135,7 +134,7 @@ srph::collision_t::correct(){
     auto vrn = vec::dot(vr, n);
 
     if (vrn < -constant::epsilon){
-        colliding_contact_correct(*this);
+        colliding_correct();
     } else if (vrn < constant::epsilon){
         resting_correct();
     }
