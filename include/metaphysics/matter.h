@@ -23,7 +23,10 @@ public:
 
     quat_t get_rotation() const;
 
+    bool is_inert() const;
+
     vec3_t get_velocity(const vec3_t & x);
+
     vec3_t get_acceleration(const vec3_t & x);
     void constrain_acceleration(const vec3_t & da);
     

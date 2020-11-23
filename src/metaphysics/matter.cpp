@@ -22,6 +22,12 @@ matter_t::get_position() const {
     return transform.get_position();
 }
 
+
+bool matter_t::is_inert() const {
+//    std::cout << "v = " << vec::max_norm(v) << " < epsilon = " << constant::epsilon << std::endl;
+    return std::max(vec::length(v), vec::length(omega)) < constant::epsilon;
+}
+
 material_t
 matter_t::get_material(const vec3_t & x){
     return material;
