@@ -130,16 +130,13 @@ srph::colliding_contact_correct(const collision_t & c){
 }
 
 void
-srph::collision_correct(collision_t & c){
-    auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
- 
-    auto n = c.n;
- 
+srph::collision_t::correct(){
+    auto vr = b->get_velocity(x) - a->get_velocity(x);
     auto vrn = vec::dot(vr, n);
 
     if (vrn < -constant::epsilon){
-        colliding_contact_correct(c);
+        colliding_contact_correct(*this);
     } else if (vrn < constant::epsilon){
-        c.resting_correct();
+        resting_correct();
     }
 }

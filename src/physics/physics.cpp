@@ -47,7 +47,9 @@ srph::physics_t::run(){
             }
         }
 
-        std::for_each(collisions.begin(), collisions.end(), collision_correct);
+        for (auto & c : collisions){
+            c.correct();
+        }
         
         for (auto & m : matters){
             m->physics_tick(delta);
