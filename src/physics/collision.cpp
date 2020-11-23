@@ -65,20 +65,18 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
 }
 
 void
-srph::resting_contact_correct(const collision_t & c){
+srph::collision_t::resting_correct(){
     std::cout << "resting contact" << std::endl;
-    
-    auto n = c.n;
 
-    auto aa = c.a->get_acceleration(c.x);
-    auto ab = c.b->get_acceleration(c.x);
+    auto aa = a->get_acceleration(x);
+    auto ab = b->get_acceleration(x);
 
-    double a = vec::dot(aa, n) - vec::dot(ab, n);    
+    double ca = vec::dot(aa, n) - vec::dot(ab, n);    
     
-    if (a > 0){
-        auto d = a * n / 2;
-        c.a->constrain_acceleration(-d); 
-        c.b->constrain_acceleration( d); 
+    if (ca > 0){
+        auto d = ca * n / 2;
+        a->constrain_acceleration(-d); 
+        b->constrain_acceleration( d); 
     }
 }
 
@@ -132,7 +130,7 @@ srph::colliding_contact_correct(const collision_t & c){
 }
 
 void
-srph::collision_correct(const collision_t & c){
+srph::collision_correct(collision_t & c){
     auto vr = c.b->get_velocity(c.x) - c.a->get_velocity(c.x);
  
     auto n = c.n;
@@ -142,6 +140,6 @@ srph::collision_correct(const collision_t & c){
     if (vrn < -constant::epsilon){
         colliding_contact_correct(c);
     } else if (vrn < constant::epsilon){
-        resting_contact_correct(c);
+        c.resting_correct();
     }
 }

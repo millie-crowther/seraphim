@@ -24,11 +24,11 @@ namespace srph {
             bool hit, const vec3_t & x, double fx,
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
+        void resting_correct();
     };
 
     collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);
-    void collision_correct(const collision_t & collision);
-    void resting_contact_correct(const collision_t & collision);
+    void collision_correct(collision_t & collision);
     void colliding_contact_correct(const collision_t & collision);
 }
 
