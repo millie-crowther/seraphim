@@ -7,18 +7,19 @@
 #include <functional>
 #include <iostream>
 
-srph::physics_t::physics_t(){
+using namespace srph;
+
+physics_t::physics_t(){
     quit = false;
     thread = std::thread(&physics_t::run, this);
 }
 
-srph::physics_t::~physics_t(){
+physics_t::~physics_t(){
     quit = true;
     thread.join();
 }
 
-void 
-srph::physics_t::run(){
+void physics_t::run(){
     auto t = scheduler::clock_t::now();
     auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(constant::iota);
 
@@ -65,13 +66,11 @@ srph::physics_t::run(){
     }
 }
 
-void 
-srph::physics_t::register_matter(std::shared_ptr<matter_t> matter){
+void physics_t::register_matter(std::shared_ptr<matter_t> matter){
     matters.insert(matter);
 }
     
-void 
-srph::physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
+void physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
     auto it = matters.find(matter);
     if (it != matters.end()){
         matters.erase(it);

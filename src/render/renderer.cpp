@@ -107,8 +107,7 @@ renderer_t::renderer_t(
     create_command_buffers();
 }
 
-void
-renderer_t::cleanup_swapchain(){
+void renderer_t::cleanup_swapchain(){
     for (auto framebuffer : framebuffers){
 	    vkDestroyFramebuffer(device->get_device(), framebuffer, nullptr);
     }
@@ -138,8 +137,7 @@ renderer_t::~renderer_t(){
     }
 }
   
-void 
-renderer_t::create_compute_pipeline(){
+void renderer_t::create_compute_pipeline(){
     VkPushConstantRange push_const_range = {};
     push_const_range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     push_const_range.size = sizeof(push_constant_t);
@@ -177,8 +175,7 @@ renderer_t::create_compute_pipeline(){
     vkDestroyShaderModule(device->get_device(), module, nullptr);    
 }
 
-void
-renderer_t::recreate_swapchain(){
+void renderer_t::recreate_swapchain(){
     vkDeviceWaitIdle(device->get_device());
   
     cleanup_swapchain();    
@@ -190,8 +187,7 @@ renderer_t::recreate_swapchain(){
     create_command_buffers();
 }
 
-void
-renderer_t::create_render_pass(){
+void renderer_t::create_render_pass(){
     VkAttachmentDescription colour_attachment = {};
     colour_attachment.format = swapchain->get_image_format();
     colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -235,8 +231,7 @@ renderer_t::create_render_pass(){
     }
 }
 
-void 
-renderer_t::create_graphics_pipeline(){
+void renderer_t::create_graphics_pipeline(){
     VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
     VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
 
@@ -389,8 +384,7 @@ renderer_t::create_graphics_pipeline(){
     vkDestroyShaderModule(device->get_device(), frag_shader_module, nullptr);
 }
 
-void
-renderer_t::create_framebuffers(){
+void renderer_t::create_framebuffers(){
     VkExtent2D extents = swapchain->get_extents();
     framebuffers.resize(swapchain->get_size());
 
@@ -414,8 +408,7 @@ renderer_t::create_framebuffers(){
     }
 }
 
-void
-renderer_t::create_command_buffers(){
+void renderer_t::create_command_buffers(){
     command_buffers.clear();
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++){
@@ -443,8 +436,7 @@ renderer_t::create_command_buffers(){
     }
 }
 
-void 
-renderer_t::create_descriptor_pool(){
+void renderer_t::create_descriptor_pool(){
     std::vector<VkDescriptorPoolSize> pool_sizes = {
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,         swapchain->get_size() },
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,          swapchain->get_size() },
@@ -475,8 +467,7 @@ renderer_t::create_descriptor_pool(){
     }
 }
 
-void
-renderer_t::create_descriptor_set_layout(){
+void renderer_t::create_descriptor_set_layout(){
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
     image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -507,8 +498,7 @@ renderer_t::create_descriptor_set_layout(){
     }
 }
 
-void
-renderer_t::create_sync(){
+void renderer_t::create_sync(){
     image_available_semas.resize(frames_in_flight);
     compute_done_semas.resize(frames_in_flight);
     render_finished_semas.resize(frames_in_flight);
@@ -534,8 +524,7 @@ renderer_t::create_sync(){
     }
 }
 
-void 
-renderer_t::present(uint32_t image_index) const {
+void renderer_t::present(uint32_t image_index) const {
     VkSwapchainKHR swapchain_handle = swapchain->get_handle();
     VkPresentInfoKHR present_info   = {};
     present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -549,8 +538,7 @@ renderer_t::present(uint32_t image_index) const {
     vkQueuePresentKHR(present_queue, &present_info);
 }
 
-void
-renderer_t::render(){
+void renderer_t::render(){
     // write substances
     std::vector<substance_t::data_t> substance_data;
     for (auto s : substances){
@@ -620,8 +608,7 @@ renderer_t::render(){
     current_frame = (current_frame + 1) % frames_in_flight; 
 }
 
-VkShaderModule
-renderer_t::create_shader_module(std::string code){
+VkShaderModule renderer_t::create_shader_module(std::string code){
     const char * c_string = code.c_str();
     
     VkShaderModuleCreateInfo create_info = {};
@@ -636,13 +623,11 @@ renderer_t::create_shader_module(std::string code){
     return shader_module;
 }
 
-void 
-renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
+void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
     main_camera = camera;
 }
 
-void 
-renderer_t::handle_requests(uint32_t frame){
+void renderer_t::handle_requests(uint32_t frame){
     vkDeviceWaitIdle(device->get_device()); 
 
     std::vector<call_t> calls(number_of_calls);
@@ -678,8 +663,7 @@ renderer_t::handle_requests(uint32_t frame){
     }   
 }
 
-void 
-renderer_t::create_buffers(){
+void renderer_t::create_buffers(){
     uint32_t c = vec::volume(work_group_count);
     uint32_t s = vec::volume(work_group_size);
 
@@ -693,8 +677,7 @@ renderer_t::create_buffers(){
 }
 
 
-response_t
-renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
+response_t renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
     if (response_cache.size() > max_cache_size){
         response_cache.erase(*prev_calls.begin());
         prev_calls.pop_front();     
@@ -710,13 +693,11 @@ renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substan
     return response_cache[call];
 }
 
-void 
-renderer_t::register_substance(std::shared_ptr<substance_t> substance){
+void renderer_t::register_substance(std::shared_ptr<substance_t> substance){
     substances.insert(substance);
 }
 
-void 
-renderer_t::unregister_substance(std::shared_ptr<substance_t> substance){
+void renderer_t::unregister_substance(std::shared_ptr<substance_t> substance){
     auto it = substances.find(substance);
     if (it != substances.end()){
         substances.erase(it);

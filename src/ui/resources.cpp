@@ -7,8 +7,7 @@
 
 using namespace srph;
 
-std::string
-resources::load_file(std::string filename){
+std::string resources::load_file(std::string filename){
     std::ifstream file(filename);
     std::stringstream buffer;
     buffer << file.rdbuf();

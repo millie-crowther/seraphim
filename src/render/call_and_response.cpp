@@ -7,38 +7,31 @@ call_t::call_t(){
     status = 0;
 }
 
-bool 
-call_t::is_valid() const {
+bool call_t::is_valid() const {
     return index != static_cast<uint32_t>(~0);
 }
 
-f32vec3_t 
-call_t::get_position() const {
+f32vec3_t call_t::get_position() const {
     return position;
 }
 
-float
-call_t::get_radius() const {
+float call_t::get_radius() const {
     return radius;
 }
 
-uint32_t 
-call_t::get_index() const {
+uint32_t call_t::get_index() const {
     return index;
 }
 
-uint32_t
-call_t::get_hash() const {
+uint32_t call_t::get_hash() const {
     return hash;
 }
 
-uint32_t
-call_t::get_substance_ID() const {
+uint32_t call_t::get_substance_ID() const {
     return substanceID;
 }
 
-bool
-call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
+bool call_t::comparator_t::operator()(const call_t & a, const call_t & b) const {
     if (a.substanceID != b.substanceID){
         return a.substanceID < b.substanceID;
     }
@@ -65,9 +58,7 @@ vec3_t vertices[8] = {
     vec3_t(2.0, 2.0, 2.0)
 };
 
-response_t::response_t(){
-
-}
+response_t::response_t(){}
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
@@ -102,23 +93,19 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
     }
 }
 
-const std::array<uint32_t, 8> &
-response_t::get_normals() const {
+const std::array<uint32_t, 8> & response_t::get_normals() const {
     return normals;
 }
 
-const std::array<uint32_t, 8> &
-response_t::get_colours() const {
+const std::array<uint32_t, 8> & response_t::get_colours() const {
     return colours;
 }
 
-response_t::patch_t
-response_t::get_patch() const {
+response_t::patch_t response_t::get_patch() const {
     return patch;
 }
 
-uint32_t
-response_t::squash(const vec4_t & x) const {
+uint32_t response_t::squash(const vec4_t & x) const {
     u8vec4_t x8 = mat::cast<uint8_t>(vec::clamp(x * 255.0, 0.0, 255.0));
     return *reinterpret_cast<uint32_t *>(&x8);
 }

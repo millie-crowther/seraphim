@@ -26,8 +26,7 @@ srph::collision_t::collision_t(
     }
 }
 
-srph::collision_t
-srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
+srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
         return srph::collision_t(false, vec3_t(), 0, nullptr, nullptr);
@@ -65,8 +64,7 @@ srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
     return srph::collision_t(result.fx < 0, x, result.fx, a, b);
 }
 
-void
-srph::collision_t::resting_correct(){
+void srph::collision_t::resting_correct(){
     auto aa = a->get_acceleration(x);
     auto ab = b->get_acceleration(x);
 
@@ -80,8 +78,7 @@ srph::collision_t::resting_correct(){
     }
 }
 
-void 
-srph::collision_t::colliding_correct(){
+void srph::collision_t::colliding_correct(){
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n_a * b->get_mass() / sm);
@@ -123,8 +120,7 @@ srph::collision_t::colliding_correct(){
     b->apply_impulse_at(kb * t, x);
 }
 
-void
-srph::collision_t::correct(){
+void srph::collision_t::correct(){
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){
