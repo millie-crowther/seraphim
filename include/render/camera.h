@@ -5,17 +5,19 @@
 #include "ui/keyboard.h"
 #include "ui/mouse.h"
 
-class camera_t {
-private:
-    transform_t transform;
+namespace srph {
+    class camera_t {
+    private:
+        transform_t transform;
 
-public:
-    camera_t();
+    public:
+        camera_t();
 
-    void update(double delta, const keyboard_t & keyboard, const mouse_t & mouse);
+        void update(double delta, const keyboard_t & keyboard, const mouse_t & mouse);
 
-    f32mat4_t get_matrix();
-    vec3_t get_position() const;
-};
+        f32mat4_t get_matrix();
+        vec3_t get_position() const;
+    };
+}
 
 #endif

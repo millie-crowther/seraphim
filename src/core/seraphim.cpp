@@ -13,6 +13,8 @@
 #include "core/scheduler.h"
 #include "render/renderer.h"
 
+using namespace srph;
+
 const std::vector<const char *> validation_layers = {
 #if SERAPHIM_DEBUG
    // "VK_LAYER_KHRONOS_validation"
@@ -116,13 +118,11 @@ srph::seraphim_t::~seraphim_t(){
     std::cout << "Seraphim engine exiting gracefully." << std::endl;
 }
 
-renderer_t * 
-srph::seraphim_t::get_renderer() const {
+renderer_t * srph::seraphim_t::get_renderer() const {
     return renderer.get();
 }
 
-std::vector<const char *>
-srph::seraphim_t::get_required_extensions(){
+std::vector<const char *> srph::seraphim_t::get_required_extensions(){
     uint32_t      extension_count = 0;
     const char ** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
 
@@ -135,8 +135,7 @@ srph::seraphim_t::get_required_extensions(){
     return required_extensions;
 }
 
-void
-srph::seraphim_t::create_instance(){
+void srph::seraphim_t::create_instance(){
 #if SERAPHIM_DEBUG
     if (!check_validation_layers()){
 	    throw std::runtime_error("Requested validation layers not available.");
@@ -201,8 +200,7 @@ srph::seraphim_t::create_instance(){
 }
 
 #if SERAPHIM_DEBUG
-static VKAPI_ATTR VkBool32 VKAPI_CALL 
-debug_callback(
+static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
     VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
     uint64_t obj, size_t location, int32_t code,
     const char * layer_prefix, const char * msg, void * user_data
@@ -211,8 +209,7 @@ debug_callback(
     return VK_FALSE;
 }
 
-bool
-srph::seraphim_t::setup_debug_callback(){
+bool srph::seraphim_t::setup_debug_callback(){
     VkDebugReportCallbackCreateInfoEXT create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
     create_info.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT 
@@ -227,8 +224,7 @@ srph::seraphim_t::setup_debug_callback(){
     return func != nullptr && func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
 }
 
-bool
-srph::seraphim_t::check_validation_layers(){
+bool srph::seraphim_t::check_validation_layers(){
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -243,8 +239,7 @@ srph::seraphim_t::check_validation_layers(){
 }
 #endif
 
-void
-srph::seraphim_t::run(){
+void srph::seraphim_t::run(){
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto   previous   = std::chrono::steady_clock::now();
@@ -269,20 +264,17 @@ srph::seraphim_t::run(){
     }
 }
 
-window_t *
-srph::seraphim_t::get_window() const {
+srph::window_t * srph::seraphim_t::get_window() const {
     return window.get();
 }
 
-void 
-srph::seraphim_t::create(std::shared_ptr<substance_t> substance){
+void srph::seraphim_t::create(std::shared_ptr<substance_t> substance){
     substances.insert(substance);
     renderer->register_substance(substance);
     physics->register_matter(substance->get_matter());
 }
 
-void 
-srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
+void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
     renderer->unregister_substance(substance);
     physics->unregister_matter(substance->get_matter());
 

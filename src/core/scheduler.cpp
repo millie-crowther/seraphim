@@ -1,20 +1,21 @@
 #include "core/scheduler.h"
 
+using namespace srph::scheduler;
+
 bool quit = true;
 std::vector<std::thread> threads;
 std::mutex cv_mutex;
 std::priority_queue<
-    scheduler::__private::task_t, 
-    std::vector<scheduler::__private::task_t>, 
-    scheduler::__private::task_t::comparator_t
+    __private::task_t, 
+    std::vector<__private::task_t>, 
+    __private::task_t::comparator_t
 > task_queue;
 std::condition_variable cv;
 std::mutex task_queue_mutex;
 
-scheduler::__private::task_t::task_t(){}
+__private::task_t::task_t(){}
 
-void
-scheduler::__private::enqueue_task(const task_t & t){
+void __private::enqueue_task(const task_t & t){
     if (!quit){
         std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
         task_queue.emplace(t);
@@ -22,12 +23,11 @@ scheduler::__private::enqueue_task(const task_t & t){
     cv.notify_one();
 }
 
-void 
-thread_pool_function(){
+void thread_pool_function(){
     while (!quit){
         bool is_queue_empty;
         bool is_task_ready = false;
-        scheduler::__private::task_t task;
+        __private::task_t task;
 
         {
             std::lock_guard<std::mutex> task_queue_lock(task_queue_mutex);
@@ -35,7 +35,7 @@ thread_pool_function(){
             
             if (!is_queue_empty){
                 task = task_queue.top();
-                if (scheduler::clock_t::now() >= task.t){
+                if (srph::scheduler::clock_t::now() >= task.t){
                     is_task_ready = true;
                     task_queue.pop();
                 }
@@ -65,15 +65,14 @@ thread_pool_function(){
     std::cout << "Auxiliary thread terminating." << std::endl;
 }
 
-scheduler::__private::task_t::task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, std::shared_ptr<bool> is_repeatable, const clock_t::duration & period){
+__private::task_t::task_t(const clock_t::time_point & t, std::shared_ptr<std::function<void()>> f, std::shared_ptr<bool> is_repeatable, const clock_t::duration & period){
     this->t = t;
     this->f = f;
     this->is_repeatable = is_repeatable;
     this->period = period;
 }
 
-void 
-scheduler::initialise(){
+void srph::scheduler::initialise(){
     quit = false;
 
     for (uint32_t thread = 0; thread < number_of_threads; thread++){
@@ -81,8 +80,7 @@ scheduler::initialise(){
     }
 }
 
-void 
-scheduler::terminate(){
+void srph::scheduler::terminate(){
     quit = true;
     cv.notify_all();
 
@@ -93,7 +91,6 @@ scheduler::terminate(){
     }
 }
 
-bool
-scheduler::__private::task_t::comparator_t::operator()(const scheduler::__private::task_t & a, const scheduler::__private::task_t & b){
+bool __private::task_t::comparator_t::operator()(const __private::task_t & a, const __private::task_t & b){
     return a.t > b.t;
 }

@@ -1,5 +1,7 @@
 #include "render/call_and_response.h"
 
+using namespace srph;
+
 call_t::call_t(){
     index = ~0;  
     status = 0;

@@ -1,11 +1,12 @@
 #include "core/command.h"
 
+using namespace srph;
+
 command_buffer_t::~command_buffer_t(){
     vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
-void 
-command_buffer_t::submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage){
+void command_buffer_t::submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence, VkPipelineStageFlags stage){
     VkSubmitInfo submit_info = {};
     submit_info.pWaitDstStageMask = &stage;
     submit_info.commandBufferCount = 1;

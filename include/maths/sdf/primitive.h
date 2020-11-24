@@ -5,7 +5,7 @@
 
 #include "sdf.h"
 
-namespace primitive {
+namespace srph { namespace primitive {
     template<uint8_t D>
     class n_sphere_t : public sdf_t<D> {
     private:
@@ -72,6 +72,6 @@ namespace primitive {
             );
         }
     }; 
-}
+}}
 
 #endif

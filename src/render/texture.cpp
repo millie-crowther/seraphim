@@ -4,6 +4,8 @@
 
 #include "core/buffer.h"
 
+using namespace srph;
+
 texture_t::texture_t(
     uint32_t binding, device_t * device,
     u32vec3_t size, VkImageUsageFlags usage,
@@ -89,23 +91,19 @@ texture_t::texture_t(
     staging_buffer = std::make_unique<host_buffer_t<std::array<uint32_t, 8>>>(~0, device, staging_buffer_size);
 }
 
-VkFormat
-texture_t::get_format(){
+VkFormat texture_t::get_format(){
     return format;
 }
 
-VkSampler 
-texture_t::get_sampler() const {
+VkSampler texture_t::get_sampler() const {
     return sampler;
 }
 
-VkImageLayout
-texture_t::get_image_layout() const {
+VkImageLayout texture_t::get_image_layout() const {
     return layout;
 }
 
-VkImageView
-texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
+VkImageView texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
@@ -131,13 +129,11 @@ texture_t::~texture_t(){
     vkDestroySampler(device->get_device(), sampler, nullptr);
 }
 
-VkImageView
-texture_t::get_image_view(){
+VkImageView texture_t::get_image_view(){
     return image_view;
 }
 
-void
-texture_t::check_format_supported(
+void texture_t::check_format_supported(
     VkPhysicalDevice physical_device, VkFormat candidate, 
     VkImageTiling tiling, VkFormatFeatureFlags features
 ){
@@ -152,8 +148,7 @@ texture_t::check_format_supported(
     }  
 }
 
-VkWriteDescriptorSet 
-texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
+VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     VkWriteDescriptorSet descriptor_write = {};
     descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descriptor_write.dstBinding = binding;
@@ -166,13 +161,11 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     return descriptor_write;
 }
 
-VkImage 
-texture_t::get_image() const {
+VkImage texture_t::get_image() const {
     return image;
 }
 
-void 
-texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
+void texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
     uint32_t offset = (index++ % staging_buffer->get_size());
     staging_buffer->write_element(x, offset);
     
@@ -190,8 +183,7 @@ texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
     updates.push_back(region);
 }
 
-VkDescriptorSetLayoutBinding 
-texture_t::get_descriptor_layout_binding() const {
+VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const {
     VkDescriptorSetLayoutBinding layout_binding = {};
     layout_binding.binding = binding;
     layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -200,8 +192,7 @@ texture_t::get_descriptor_layout_binding() const {
     return layout_binding;
 }
 
-void 
-texture_t::record_write(VkCommandBuffer command_buffer){
+void texture_t::record_write(VkCommandBuffer command_buffer){
     vkCmdCopyBufferToImage(
         command_buffer, staging_buffer->get_buffer(), image, 
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 

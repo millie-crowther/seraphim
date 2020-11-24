@@ -7,6 +7,8 @@
 #include <ctime>
 #include <stdexcept>
 
+using namespace srph;
+
 renderer_t::renderer_t(
     device_t * device,
     VkSurfaceKHR surface, window_t * window,

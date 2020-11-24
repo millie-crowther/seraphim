@@ -15,7 +15,7 @@
 
 using namespace std::chrono_literals;
 
-namespace scheduler {
+namespace srph { namespace scheduler {
     constexpr uint32_t number_of_threads = 2;
 
     using clock_t = std::chrono::high_resolution_clock;
@@ -82,6 +82,6 @@ namespace scheduler {
     auto schedule_after(const D & d, F && f, Rest &&... rest) -> std::future<decltype(f(rest...))> {
         return __private::schedule_task(clock_t::now() + d, nullptr, 0s, std::forward<F>(f), std::forward<Rest>(rest)...);
     }
-}
+}}
 
 #endif

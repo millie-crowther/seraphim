@@ -5,6 +5,8 @@
 #include "maths/sdf/platonic.h"
 #include "physics/transform.h"
 
+using namespace srph;
+
 int main(){
     double mu_s = 0.2;
     double mu_d = 0.1;

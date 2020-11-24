@@ -6,7 +6,7 @@
 
 using namespace std::chrono_literals;
 
-namespace constant {
+namespace srph { namespace constant {
     // smallest distance
     constexpr double epsilon = 1.0 / 256.0;      // metres    
 
@@ -17,6 +17,6 @@ namespace constant {
     constexpr double rho     = 2048;             // metres    
     
     constexpr double pi      = 3.14159265358979323;             
-}
+}}
 
 #endif

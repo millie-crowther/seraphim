@@ -1,10 +1,12 @@
 #ifndef FORM_H
 #define FORM_H
 
-class form_t {
-private:
+namespace srph {
+    class form_t {
+    private:
 
-public:
-};
+    public:
+    };
+}
 
 #endif

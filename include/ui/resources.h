@@ -3,8 +3,8 @@
 
 #include <string>
 
-namespace resources {
+namespace srph { namespace resources {
     std::string load_file(std::string filename); 
-}
+}}
 
 #endif 

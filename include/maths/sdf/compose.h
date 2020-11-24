@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace compose {
+namespace srph { namespace compose {
     template<uint8_t D>
     class intersection_t : public sdf_t<D> {
     private:
@@ -47,6 +47,6 @@ namespace compose {
             return std::make_shared<intersection_t<D>>(a, b);
         }
     } 
-}
+}}
 
 #endif

@@ -3,7 +3,7 @@
 
 #include "sdf.h"
 
-namespace platonic {
+namespace srph { namespace platonic {
     template<uint8_t D>
     class n_cuboid_t : public sdf_t<D> {
     private:
@@ -91,6 +91,6 @@ namespace platonic {
             return mat3_t::diagonal(0.1 * mass * e * e);
         } 
     };
-}
+}}
 
 #endif

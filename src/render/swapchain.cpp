@@ -2,6 +2,8 @@
 
 #include "render/texture.h"
 
+using namespace srph;
+
 swapchain_t::swapchain_t(
     device_t * device, u32vec2_t size,
     VkSurfaceKHR surface
@@ -77,8 +79,7 @@ swapchain_t::~swapchain_t(){
     vkDestroySwapchainKHR(device->get_device(), handle, nullptr);
 }
 
-VkSurfaceFormatKHR
-swapchain_t::select_surface_format(VkSurfaceKHR surface){
+VkSurfaceFormatKHR swapchain_t::select_surface_format(VkSurfaceKHR surface){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(
         device->get_physical_device(), surface, &count, nullptr
@@ -107,8 +108,7 @@ swapchain_t::select_surface_format(VkSurfaceKHR surface){
     return formats[0];
 }
 
-VkExtent2D
-swapchain_t::select_swap_extent(u32vec2_t size, VkSurfaceKHR surface){
+VkExtent2D swapchain_t::select_swap_extent(u32vec2_t size, VkSurfaceKHR surface){
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
         device->get_physical_device(), surface, &capabilities
@@ -133,8 +133,7 @@ swapchain_t::select_swap_extent(u32vec2_t size, VkSurfaceKHR surface){
     }
 }
 
-VkPresentModeKHR
-swapchain_t::select_present_mode(VkSurfaceKHR surface){
+VkPresentModeKHR swapchain_t::select_present_mode(VkSurfaceKHR surface){
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(
         device->get_physical_device(), surface, &count, nullptr
@@ -156,27 +155,22 @@ swapchain_t::select_present_mode(VkSurfaceKHR surface){
 }
 
 
-VkFormat 
-swapchain_t::get_image_format() const {
+VkFormat swapchain_t::get_image_format() const {
     return image_format;
 }
 
-VkExtent2D 
-swapchain_t::get_extents() const {
+VkExtent2D swapchain_t::get_extents() const {
     return extents;
 }
 
-VkSwapchainKHR 
-swapchain_t::get_handle() const {
+VkSwapchainKHR swapchain_t::get_handle() const {
     return handle;
 }
 
-uint32_t 
-swapchain_t::get_size() const {
+uint32_t swapchain_t::get_size() const {
     return image_views.size();
 }
 
-VkImageView 
-swapchain_t::get_image_view(uint32_t i) const {
+VkImageView swapchain_t::get_image_view(uint32_t i) const {
     return image_views[i];
 }

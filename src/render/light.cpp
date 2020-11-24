@@ -1,5 +1,7 @@
 #include "render/light.h"
 
+using namespace srph;
+
 light_t::light_t(){
     id = ~0;
 }

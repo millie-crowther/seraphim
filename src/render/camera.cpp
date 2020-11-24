@@ -1,11 +1,12 @@
 #include "render/camera.h"
 
+using namespace srph;
+
 camera_t::camera_t(){
     transform.set_position(vec3_t(0.0, 0.5, -5.0));
 }
 
-void 
-camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
+void camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
     vec3_t forward = transform.forward();
     forward[1] = 0.0;
     forward = vec::normalise(forward);
@@ -38,12 +39,10 @@ camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mous
     ));
 }
 
-f32mat4_t 
-camera_t::get_matrix(){
+f32mat4_t camera_t::get_matrix(){
     return *transform.get_matrix();
 }
 
-vec3_t 
-camera_t::get_position() const {
+vec3_t camera_t::get_position() const {
     return transform.get_position();
 }

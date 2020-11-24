@@ -2,8 +2,9 @@
 
 #include <exception>
 
-static void 
-window_resize_callback(GLFWwindow * glfw_window, int width, int height){
+using namespace srph;
+
+static void window_resize_callback(GLFWwindow * glfw_window, int width, int height){
 //    void * data = glfwGetWindowUserPointer(glfw_window);
  //   window_t * window = reinterpret_cast<window_t *>(data);
 
@@ -35,32 +36,26 @@ window_t::~window_t(){
     }
 }
 
-u32vec2_t 
-window_t::get_size() const {
+u32vec2_t window_t::get_size() const {
     return size;
 }
 
-GLFWwindow * 
-window_t::get_window() const {
+GLFWwindow * window_t::get_window() const {
     return window;
 }
 
-bool 
-window_t::should_close() const {
+bool window_t::should_close() const {
     return glfwWindowShouldClose(window) || keyboard->is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
-void 
-window_t::set_title(const std::string & title){
+void window_t::set_title(const std::string & title){
     glfwSetWindowTitle(window, title.c_str());
 }
 
-keyboard_t &
-window_t::get_keyboard() const {
+keyboard_t & window_t::get_keyboard() const {
     return *keyboard;
 }
 
-mouse_t &
-window_t::get_mouse() const {
+mouse_t & window_t::get_mouse() const {
     return *mouse;
 }
