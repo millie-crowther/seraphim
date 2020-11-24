@@ -18,8 +18,7 @@ namespace srph {
         using super_t = std::array<T, M * N>; 
 
         template<int K, int P, typename... Xs>
-        void
-        construct(const matrix_t<T, P, 1> & x, Xs... xs){
+        void construct(const matrix_t<T, P, 1> & x, Xs... xs){
             static_assert(K + P <= M * N, "Too much data in matrix constructor");
             static_assert(K + P == M * N || sizeof...(Xs) > 0, "Not enough data in matrix constructor");
            
@@ -31,8 +30,7 @@ namespace srph {
         }
      
         template<int K, typename... Xs>
-        void
-        construct(const T & x, Xs... xs){
+        void construct(const T & x, Xs... xs){
             construct<K>(matrix_t<T, 1, 1>(x), xs...);
         }
         
@@ -84,58 +82,49 @@ namespace srph {
         }
 
         // vector accessor operators  
-        matrix_t<T, M, N> 
-        operator+(const matrix_t<T, M, N> & x) const {
+        matrix_t<T, M, N> operator+(const matrix_t<T, M, N> & x) const {
             matrix_t<T, M, N> r;
             std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus<T>());
             return r;
         }
 
-        matrix_t<T, M, N> 
-        operator-(const matrix_t<T, M, N> & x) const {
+        matrix_t<T, M, N> operator-(const matrix_t<T, M, N> & x) const {
             matrix_t<T, M, N> r;
             std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
             return r;
         } 
 
-        matrix_t<T, M, N> 
-        scaled(const matrix_t<T, M, N> & x) const {
+        matrix_t<T, M, N> scaled(const matrix_t<T, M, N> & x) const {
             matrix_t<T, M, N> r;
             std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies<T>());
             return r;
         }
 
-        matrix_t<T, M, N> 
-        operator/(const matrix_t<T, M, N> & x) const {
+        matrix_t<T, M, N> operator/(const matrix_t<T, M, N> & x) const {
             matrix_t<T, M, N> r;
             std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::divides<T>());
             return r;
         }
 
         // scalar accessor operators
-        matrix_t<T, M, N> 
-        operator-(const T & x) const {
+        matrix_t<T, M, N> operator-(const T & x) const {
             return *this - matrix_t<T, M, N>(x);
         }
 
-        matrix_t<T, M, N> 
-        operator+(const T & x) const {
+        matrix_t<T, M, N> operator+(const T & x) const {
             return *this + matrix_t<T, M, N>(x);    
         }
 
-        matrix_t<T, M, N> 
-        operator*(const T & x) const {
+        matrix_t<T, M, N> operator*(const T & x) const {
             return *this * matrix_t<T, M, N>(x);
         }
 
-        matrix_t<T, M, N> 
-        operator/(const T & x) const {
+        matrix_t<T, M, N> operator/(const T & x) const {
             return *this / matrix_t<T, M, N>(x);
         }
 
         // negation operator
-        matrix_t<T, M, N> 
-        operator-() const {
+        matrix_t<T, M, N> operator-() const {
             return *this * matrix_t<T, M, N>(T(-1));
         }
 
@@ -158,8 +147,7 @@ namespace srph {
             return (*this)[column * M + row];
         }
 
-        matrix_t<T, M, 1>
-        get_column(int c) const {
+        matrix_t<T, M, 1> get_column(int c) const {
             matrix_t<T, M, 1> column;
             for (int row = 0; row < M; row++){
                 column[row] = get(row, c);
@@ -167,8 +155,7 @@ namespace srph {
             return column;
         }
 
-        matrix_t<T, N, 1>
-        get_row(int r) const {
+        matrix_t<T, N, 1> get_row(int r) const {
             matrix_t<T, N, 1> row;
             for (int column = 0; column < N; column++){
                 row[column] = get(r, column);
@@ -203,8 +190,7 @@ namespace srph {
         }
 
         // factories
-        static matrix_t<T, M, N>
-        diagonal(const T & x){
+        static matrix_t<T, M, N> diagonal(const T & x){
             matrix_t<T, M, N> a;
             constexpr int size = std::min(M, N);
             for (int i = 0; i < size; i++){
@@ -213,8 +199,7 @@ namespace srph {
             return a;
         }
         
-        static matrix_t<T, M, N>
-        identity(){
+        static matrix_t<T, M, N> identity(){
             return diagonal(1);
         }
     };
@@ -256,17 +241,17 @@ namespace srph {
     using mat4_t = matrix_t<double, 4, 4>;
 
     namespace vec {
-        template<class T>
+        template<class T> 
         vec_t<T, 3> right(){
             return vec_t<T, 3>(T(1), T(0), T(0));
         }
         
-        template<class T>
+        template<class T> 
         vec_t<T, 3> up(){
             return vec_t<T, 3>(T(0), T(1), T(0));
         }
 
-        template<class T>
+        template<class T> 
         vec_t<T, 3> forward(){
             return vec_t<T, 3>(T(0), T(0), T(1));
         }
@@ -362,10 +347,10 @@ namespace srph {
             return max(x, vec_t<T, N>(y));
         }
         
-        template<class T, int N>
-        vec_t<T, N> abs(const vec_t<T, N> & x){
-            vec_t<T, N> r;
-            std::transform(x.begin(), x.end(), r.begin(), [](const T & a){ return std::abs(a); });
+        template<class V>
+        V abs(const V & x){
+            V r;
+            std::transform(x.begin(), x.end(), r.begin(), [](const auto & a){return std::abs(a);});
             return r;
         }
             
@@ -377,17 +362,17 @@ namespace srph {
             return true;
         }
 
-        template<class T, int N>
-        vec_t<T, N> sign(const vec_t<T, N> & x){
-            vec_t<T, N> r;
+        template<class V>
+        V sign(const V & x){
+            V r;
 
-            for (int i = 0; i < N; i++){
-                if constexpr (std::is_unsigned<T>::value){
-                    r[i] = x[i] == 0 ? T(0) : T(1);
+            std::transform(x.begin(), x.end(), r.begin(), [](const auto & y){
+                if constexpr (std::is_unsigned<decltype(y)>::value){
+                    return y == 0 ? 0 : 1;
                 } else {
-                    r[i] = x[i] > 0 ? 1 : (x[i] < 0 ? -1 : 0);
+                    return y > 0 ? 1 : (y < 0 ? -1 : 0);
                 }
-            }
+            });
 
             return r;
         }
@@ -418,14 +403,12 @@ namespace srph {
         }
 
         template<class T>
-        T 
-        determinant(const matrix_t<T, 3, 3> & a){
+        T determinant(const matrix_t<T, 3, 3> & a){
             return vec::dot(a.get_column(0), vec::cross(a.get_column(1), a.get_column(2)));
         }
 
         template<class T, int M, int N> 
-        matrix_t<T, N, M>
-        transpose(const matrix_t<T, M, N> & a){
+        matrix_t<T, N, M> transpose(const matrix_t<T, M, N> & a){
             matrix_t<T, N, M> at;
         
             for (int row = 0; row < M; row++){
@@ -438,8 +421,7 @@ namespace srph {
         }
 
         template<class T>
-        matrix_t<T, 3, 3>
-        inverse(const matrix_t<T, 3, 3> & a){
+        matrix_t<T, 3, 3> inverse(const matrix_t<T, 3, 3> & a){
             matrix_t<T, 3, 3> a1(
                 vec::cross(a.get_column(1), a.get_column(2)),
                 vec::cross(a.get_column(2), a.get_column(0)),
@@ -455,8 +437,7 @@ namespace srph {
         } 
 
         template<class T, int X, int Y, int Z>
-        matrix_t<T, X, Z>
-        multiply(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
+        matrix_t<T, X, Z> multiply(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
             matrix_t<T, X, Z> ab;
             
             for (int m = 0; m < X; m++){
@@ -469,8 +450,7 @@ namespace srph {
         }
         
         template<class S, class T, int M, int N>
-        matrix_t<S, M, N>
-        cast(const matrix_t<T, M, N> & m){
+        matrix_t<S, M, N> cast(const matrix_t<T, M, N> & m){
             matrix_t<S, M, N> a;
             std::transform(m.begin(), m.end(), a.begin(), [](const T & x){
                 return static_cast<S>(x);
@@ -501,26 +481,22 @@ namespace srph {
 
     // multiplication operators
     template<class T, int M, int N>
-    matrix_t<T, M, N>
-    operator*(const T & x, const matrix_t<T, M, N> & a){
+    matrix_t<T, M, N> operator*(const T & x, const matrix_t<T, M, N> & a){
         return a * x;
     }
 
     template<class T, int N>
-    matrix_t<T, N, 1>
-    operator*(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    matrix_t<T, N, 1> operator*(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
         return a.scaled(b);
     }
 
     template<class T, uint8_t N>
-    void
-    operator*=(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    void operator*=(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
         a.scale(b);
     }
 
     template<class T, int X, int Y, int Z>
-    matrix_t<T, X, Z>
-    operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
+    matrix_t<T, X, Z> operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
         return mat::multiply(a, b);
     }
 
@@ -546,8 +522,7 @@ namespace srph {
         
     // output operators
     template<class T, int M, int N>
-    std::ostream & 
-    operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
+    std::ostream & operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
         os << "mat" << M << 'x' << N << '(';
         for (int i = 0; i < M * N - 1; i++){
             os << v[i] << ", ";
