@@ -22,6 +22,7 @@ srph::collision_t::collision_t(
         auto jb = b->get_sdf()->jacobian(x_b);
 
         n = vec::p_norm<1>(ja) <= vec::p_norm<1>(jb) ? n_a : -n_b;
+        vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }
 
@@ -85,8 +86,6 @@ srph::collision_t::colliding_correct(){
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n_a * b->get_mass() / sm);
     b->translate(-depth * n_b * a->get_mass() / sm);
-    
-    auto vr = a->get_velocity(x) - b->get_velocity(x);
 
     // calculate collision impulse magnitude
     auto mata = a->get_material(x_a);
@@ -103,7 +102,6 @@ srph::collision_t::colliding_correct(){
     b->apply_impulse_at( jr * n, x);
 
     // apply friction force
-    
     vec3_t t = vr - vec::dot(vr, n) * n;
     if (t == vec3_t()){
         // no surface friction because impact vector is perpendicular to surface
@@ -124,12 +122,11 @@ srph::collision_t::colliding_correct(){
 
 void
 srph::collision_t::correct(){
-    auto vr = b->get_velocity(x) - a->get_velocity(x);
     auto vrn = vec::dot(vr, n);
 
-    if (vrn < -constant::epsilon){
+    if (vrn > constant::epsilon){
         colliding_correct();
-    } else if (vrn < constant::epsilon){
+    } else if (vrn > -constant::epsilon){
         resting_correct();
     }
 }

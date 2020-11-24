@@ -16,6 +16,8 @@ namespace srph {
         vec3_t n_a;
         vec3_t n_b;
 
+        vec3_t vr;
+
         double depth;
         std::shared_ptr<matter_t> a;
         std::shared_ptr<matter_t> b;
