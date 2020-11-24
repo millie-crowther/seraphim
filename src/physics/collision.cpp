@@ -99,33 +99,27 @@ srph::collision_t::colliding_correct(){
         1.0 / b->get_mass() + b->get_inverse_angular_mass(x, n)
     );
 
-    // update velocities accordingly
     a->apply_impulse_at(-jr * n, x);
     b->apply_impulse_at( jr * n, x);
-   
-    std::vector<std::shared_ptr<matter_t>> ms = { a, b };
-    auto fs = vec2_t(1.0, -1.0);
 
-    for (int i = 0; i < 2; i++){
-        auto m = ms[i];
-        vec3_t v = vr * fs[i];
-
-        auto x = m->to_local_space(this->x);
-        auto n = m->get_rotation() * m->get_sdf()->normal(x);
-        
-        // calculate frictional force
-        auto mat = m->get_material(x);
-        double js = mat.static_friction * jr;
-        double jd = mat.dynamic_friction * jr;
- 
-        vec3_t t = vec::normalise(v - vec::dot(v, n) * n);
-
-        auto mvt = m->get_mass() * vec::dot(v, t);
-        bool is_static = mvt <= js || std::abs(vec::dot(v, t)) < constant::epsilon;
-
-        double k = is_static ? mvt : jd;
-        m->apply_impulse_at(-k * t, this->x);
+    // apply friction force
+    
+    vec3_t t = vr - vec::dot(vr, n) * n;
+    if (t == vec3_t()){
+        // no surface friction because impact vector is perpendicular to surface
+        return;
     }
+    t = vec::normalise(t);
+    
+    double vrt = vec::dot(vr, t); 
+    auto mvta = a->get_mass() * vrt;
+    auto mvtb = b->get_mass() * vrt;
+
+    double ka = -(mvta <= mata.static_friction * jr) ? mvta : mata.dynamic_friction * jr;
+    double kb =  (mvtb <= matb.static_friction * jr) ? mvtb : matb.dynamic_friction * jr;
+
+    a->apply_impulse_at(ka * t, x);
+    b->apply_impulse_at(kb * t, x);
 }
 
 void
