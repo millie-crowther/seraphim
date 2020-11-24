@@ -113,8 +113,11 @@ srph::collision_t::colliding_correct(){
     auto mvta = a->get_mass() * vrt;
     auto mvtb = b->get_mass() * vrt;
 
-    double ka = -(mvta <= mata.static_friction * jr) ? mvta : mata.dynamic_friction * jr;
-    double kb =  (mvtb <= matb.static_friction * jr) ? mvtb : matb.dynamic_friction * jr;
+    double js = std::max(mata.static_friction,  matb.static_friction ) * jr;
+    double jd = std::max(mata.dynamic_friction, matb.dynamic_friction) * jr;
+
+    double ka = -(mvta <= js) ? mvta : jd;
+    double kb =  (mvtb <= js) ? mvtb : jd;
 
     a->apply_impulse_at(ka * t, x);
     b->apply_impulse_at(kb * t, x);
