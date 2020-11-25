@@ -243,19 +243,22 @@ void srph::seraphim_t::run(){
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto   previous   = std::chrono::steady_clock::now();
+    double r_time;
 
     while (!window->should_close()){
 	    glfwPollEvents();
 
         auto now   = std::chrono::steady_clock::now();
         double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+        r_time += 1.0 / delta;
         previous = now;
 
         window->get_mouse().update(delta, *window);
         test_camera->update(delta, window->get_keyboard(), window->get_mouse());
 
         if (current_frame % frequency == frequency - 1){    
-           // std::cout << "Render FPS: " << 1.0 / delta << std::endl;
+           // std::cout << "Render FPS: " << r_time / frequency << std::endl;
+            r_time = 0;
         }
 
         renderer->render();

@@ -26,13 +26,17 @@ void physics_t::run(){
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto previous = std::chrono::steady_clock::now();
-
+    double p_time;
+       
     while (!quit){
         auto now = std::chrono::steady_clock::now();
         double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+        p_time += 1.0 / delta;        
+
         previous = now;
         if (current_frame % frequency == frequency - 1){
-            std::cout << "Physics FPS: " << 1.0 / delta << std::endl;
+            std::cout << "Physics FPS: " << p_time / frequency << std::endl;
+            p_time = 0;
         }
         current_frame++;
 
