@@ -15,8 +15,8 @@ srph::collision_t::collision_t(
     if (hit){
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
-        n_a = a->get_rotation() * a->get_sdf()->normal(x_a);
-        n_b = b->get_rotation() * b->get_sdf()->normal(x_b);
+        auto n_a = a->get_rotation() * a->get_sdf()->normal(x_a);
+        auto n_b = b->get_rotation() * b->get_sdf()->normal(x_b);
         
         auto ja = a->get_sdf()->jacobian(x_a);
         auto jb = b->get_sdf()->jacobian(x_b);
@@ -83,8 +83,8 @@ void srph::collision_t::resting_correct(){
 void srph::collision_t::colliding_correct(){
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
-    a->translate(-depth * n_a * b->get_mass() / sm);
-    b->translate(-depth * n_b * a->get_mass() / sm);
+    a->translate(-depth * n * b->get_mass() / sm);
+    b->translate( depth * n * a->get_mass() / sm);
 
     // calculate collision impulse magnitude
     auto mata = a->get_material(x_a);

@@ -13,9 +13,6 @@ namespace srph {
         vec3_t x_b;
 
         vec3_t n;
-        vec3_t n_a;
-        vec3_t n_b;
-
         vec3_t vr;
 
         double depth;
