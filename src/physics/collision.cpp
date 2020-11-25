@@ -39,7 +39,7 @@ srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<mat
         vec3_t x_b   = b->to_local_space(x);
         double phi_b = b->get_sdf()->phi(x_b); 
 
-        return  std::max(phi_a, phi_b);
+        return std::max(phi_a, phi_b);
     };
 
     auto f1 = [a, b](const vec3_t & x){
@@ -49,7 +49,7 @@ srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<mat
         vec3_t x_b   = b->to_local_space(x);
         double phi_b = b->get_sdf()->phi(x_b) + constant::epsilon; 
 
-        return phi_a * phi_a + phi_b * phi_b;
+        return std::abs(phi_a) + std::abs(phi_b);
     };
     
     std::array<vec3_t, 4> xs = {
@@ -65,6 +65,7 @@ srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<mat
 }
 
 void srph::collision_t::resting_correct(){
+    /*  
     auto aa = a->get_acceleration(x);
     auto ab = b->get_acceleration(x);
 
@@ -76,6 +77,7 @@ void srph::collision_t::resting_correct(){
         a->constrain_acceleration(-d * b->get_mass() / sm); 
         b->constrain_acceleration( d * a->get_mass() / sm); 
     }
+    */
 }
 
 void srph::collision_t::colliding_correct(){
