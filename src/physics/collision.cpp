@@ -15,13 +15,16 @@ srph::collision_t::collision_t(
     if (hit){
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
-        auto n_a = a->get_rotation() * a->get_sdf()->normal(x_a);
-        auto n_b = b->get_rotation() * b->get_sdf()->normal(x_b);
         
         auto ja = a->get_sdf()->jacobian(x_a);
         auto jb = b->get_sdf()->jacobian(x_b);
 
-        n = vec::p_norm<1>(ja) <= vec::p_norm<1>(jb) ? n_a : -n_b;
+        if (vec::p_norm<1>(ja) <= vec::p_norm<1>(jb)){
+            n = a->get_rotation() * a->get_sdf()->normal(x_a);
+        } else {
+            n = b->get_rotation() * b->get_sdf()->normal(x_b);
+        }
+   
         vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }
