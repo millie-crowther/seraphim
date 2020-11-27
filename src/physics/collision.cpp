@@ -62,7 +62,10 @@ srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<mat
 
     auto result = srph::optimise::nelder_mead(f, xs);
 
-    vec3_t x = result.fx < 0 ? srph::optimise::nelder_mead(f1, xs).x : result.x;
+    vec3_t x = result.x;
+    if (result.fx < 0){
+        x = srph::optimise::nelder_mead(f1, xs).x;
+    } 
 
     return srph::collision_t(result.fx < 0, x, result.fx, a, b);
 }

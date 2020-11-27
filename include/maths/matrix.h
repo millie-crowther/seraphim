@@ -311,7 +311,17 @@ namespace srph {
                 x[0] * y[1] - x[1] * y[0]
             );
         }
-        
+       
+        template<class T>
+        vec_t<T, 3> tangent(const vec_t<T, 3> & x){
+            auto nx = normalise(x);
+            if (1 - std::abs(nx[0]) > constant::epsilon){
+                return cross(nx, right<T>());
+            } else {
+                return cross(nx, up<T>());
+            }
+        }
+ 
         template<class T, int N>
         vec_t<T, N> clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
             auto result = x;
