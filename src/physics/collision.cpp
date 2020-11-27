@@ -3,14 +3,35 @@
 #include "maths/optimise.h"
 
 srph::collision_t::collision_t(
-    bool hit, const vec3_t & x, double depth,  
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
-    this->hit = hit;
-    this->x = x;
-    this->depth = std::abs(depth);
     this->a = a;
     this->b = b;
+    
+    aabb3_t aabb = a->get_aabb() && b->get_aabb();
+    if (!aabb.is_valid()){
+        hit = false;
+    } else {
+        auto f = [a, b](const vec3_t & x){
+            vec3_t x_a   = a->to_local_space(x);
+            double phi_a = a->get_sdf()->phi(x_a); 
+            
+            vec3_t x_b   = b->to_local_space(x);
+            double phi_b = b->get_sdf()->phi(x_b); 
+
+            return std::max(phi_a, phi_b);
+        };
+        
+        std::array<vec3_t, 4> xs = {
+            aabb.get_vertex(0), aabb.get_vertex(3),
+            aabb.get_vertex(5), aabb.get_vertex(6)
+        };
+
+        auto result = srph::optimise::nelder_mead(f, xs);
+        x = result.x;
+        hit = result.fx < 0;
+        depth = std::abs(result.fx);
+    }
 
     if (hit){
         x_a = a->to_local_space(x);
@@ -27,47 +48,6 @@ srph::collision_t::collision_t(
    
         vr = a->get_velocity(x) - b->get_velocity(x);
     }
-}
-
-srph::collision_t srph::collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b){
-    aabb3_t aabb = a->get_aabb() && b->get_aabb();
-    if (!aabb.is_valid()){
-        return srph::collision_t(false, vec3_t(), 0, nullptr, nullptr);
-    }
-
-    auto f = [a, b](const vec3_t & x){
-        vec3_t x_a   = a->to_local_space(x);
-        double phi_a = a->get_sdf()->phi(x_a); 
-        
-        vec3_t x_b   = b->to_local_space(x);
-        double phi_b = b->get_sdf()->phi(x_b); 
-
-        return std::max(phi_a, phi_b);
-    };
-
-    auto f1 = [a, b](const vec3_t & x){
-        vec3_t x_a   = a->to_local_space(x);
-        double phi_a = a->get_sdf()->phi(x_a) + constant::epsilon; 
-        
-        vec3_t x_b   = b->to_local_space(x);
-        double phi_b = b->get_sdf()->phi(x_b) + constant::epsilon; 
-
-        return std::abs(phi_a) + std::abs(phi_b);
-    };
-    
-    std::array<vec3_t, 4> xs = {
-        aabb.get_vertex(0), aabb.get_vertex(3),
-        aabb.get_vertex(5), aabb.get_vertex(6)
-    };
-
-    auto result = srph::optimise::nelder_mead(f, xs);
-
-    vec3_t x = result.x;
-    if (result.fx < 0){
-        x = srph::optimise::nelder_mead(f1, xs).x;
-    } 
-
-    return srph::collision_t(result.fx < 0, x, result.fx, a, b);
 }
 
 void srph::collision_t::resting_correct(){

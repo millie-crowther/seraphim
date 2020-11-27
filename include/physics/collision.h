@@ -20,7 +20,6 @@ namespace srph {
         std::shared_ptr<matter_t> b;
 
         collision_t(
-            bool hit, const vec3_t & x, double fx,
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
         
@@ -28,8 +27,6 @@ namespace srph {
         void resting_correct();
         void colliding_correct();
     };
-
-    collision_t collide(std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b);
 }
 
 
