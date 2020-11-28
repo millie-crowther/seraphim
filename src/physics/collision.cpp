@@ -8,20 +8,20 @@ srph::collision_t::collision_t(
     this->a = a;
     this->b = b;
     
+    auto f = [a, b](const vec3_t & x){
+        vec3_t x_a   = a->to_local_space(x);
+        double phi_a = a->get_sdf()->phi(x_a); 
+        
+        vec3_t x_b   = b->to_local_space(x);
+        double phi_b = b->get_sdf()->phi(x_b); 
+
+        return std::max(phi_a, phi_b);
+    };
+    
     aabb3_t aabb = a->get_aabb() && b->get_aabb();
     if (!aabb.is_valid()){
         hit = false;
     } else {
-        auto f = [a, b](const vec3_t & x){
-            vec3_t x_a   = a->to_local_space(x);
-            double phi_a = a->get_sdf()->phi(x_a); 
-            
-            vec3_t x_b   = b->to_local_space(x);
-            double phi_b = b->get_sdf()->phi(x_b); 
-
-            return std::max(phi_a, phi_b);
-        };
-        
         std::array<vec3_t, 4> xs = {
             aabb.get_vertex(0), aabb.get_vertex(3),
             aabb.get_vertex(5), aabb.get_vertex(6)
@@ -34,6 +34,7 @@ srph::collision_t::collision_t(
     }
 
     if (hit){
+        // choose best normal based on smallest second derivative
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
         
@@ -45,7 +46,43 @@ srph::collision_t::collision_t(
         } else {
             n = b->get_rotation() * b->get_sdf()->normal(x_b);
         }
-   
+
+        // find contact surface
+        auto t1 = vec::tangent(n);
+        auto t2 = vec::cross(n, t1);
+
+        aabb2_t box;
+
+        for (int i = 0; i < 8; i++){
+            auto v = aabb.get_vertex(i) - x;
+            box.capture_point(vec2_t(vec::dot(v, t1), vec::dot(v, t2)));
+        }
+  
+        int n = 4;
+    
+        vec3_t c;
+        int cs = 0;
+
+        for (int i = 0; i <= n; i++){
+            for (int j = 0; j <= n; j++){
+                vec2_t ij = box.get_min() + box.get_size() * vec2_t(i, j) * 2.0 / n;
+                vec3_t v = x + t1 * ij[0] + t2 * ij[1];
+                
+                vec3_t va = a->to_local_space(v);
+                vec3_t vb = b->to_local_space(v);
+
+                if (a->get_sdf()->phi(va) < 0 && b->get_sdf()->phi(vb) < 0){
+                    c += v;
+                    cs++;
+                }
+            }
+        }
+
+        if (cs != 0){
+            x = c / cs;
+        }
+        
+        // find relative velocity at point 
         vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }

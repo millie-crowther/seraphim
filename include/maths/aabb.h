@@ -33,6 +33,10 @@ namespace srph {
             return max / 2 - min / 2;
         }
 
+        vec_t<T, D> get_min() const {
+            return min;
+        }
+
         vec_t<T, D> get_centre() const {
             return max / 2 + min / 2;
         }
@@ -56,8 +60,9 @@ namespace srph {
             return vec::all(min <= max);
         }
     };
-
-    typedef aabb_t<double, 3> aabb3_t;
+    
+    using aabb2_t = aabb_t<double, 2>;
+    using aabb3_t = aabb_t<double, 3>;
 }
 
 #endif
