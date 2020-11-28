@@ -356,10 +356,9 @@ namespace srph {
         }
         
         template<class V>
-        V abs(const V & x){
-            V r;
-            std::transform(x.begin(), x.end(), r.begin(), [](const auto & a){return std::abs(a);});
-            return r;
+        V abs(V x){
+            std::transform(x.begin(), x.end(), x.begin(), [](const auto & a){return std::abs(a);});
+            return x;
         }
             
         template<class B>
