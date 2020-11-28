@@ -120,10 +120,10 @@ void matter_t::rotate(const quat_t & q){
 
 void matter_t::physics_tick(double t){
     // update position
-    transform.translate(0.5 * a * t * t + v * t);
+    transform.translate((0.5 * a * t + v) * t);
     
     // update rotation
-    transform.rotate(quat_t::euler_angles(0.5 * alpha * t * t + omega * t));
+    transform.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
 
     // integrate accelerations into velocities
     v += a * t;

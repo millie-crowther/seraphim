@@ -29,8 +29,8 @@ srph::collision_t::collision_t(
 
         auto result = srph::optimise::nelder_mead(f, xs);
         x = result.x;
-        hit = result.fx < 0;
         depth = std::abs(result.fx);
+        hit = result.fx < 0;
     }
 
     if (hit){
@@ -51,19 +51,7 @@ srph::collision_t::collision_t(
 }
 
 void srph::collision_t::resting_correct(){
-    /*  
-    auto aa = a->get_acceleration(x);
-    auto ab = b->get_acceleration(x);
 
-    double ca = vec::dot(aa, n) - vec::dot(ab, n);    
-    
-    if (ca > 0){
-        double sm = a->get_mass() + b->get_mass(); 
-        auto d = ca * n;
-        a->constrain_acceleration(-d * b->get_mass() / sm); 
-        b->constrain_acceleration( d * a->get_mass() / sm); 
-    }
-    */
 }
 
 void srph::collision_t::colliding_correct(){

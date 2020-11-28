@@ -336,25 +336,23 @@ namespace srph {
             return clamp(x, vec_t<T, N>(low), vec_t<T, N>(high));
         }
 
-        template<class T, int N>
-        vec_t<T, N> min(const vec_t<T, N> & x, const vec_t<T, N> & y){
-            vec_t<T, N> r;
-            auto f = [](const T & a, const T & b){ return std::min<T>(a, b); };
-            std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
-            return r;
+        template<class V>
+        V min(V x, const V & y){
+            auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
+            std::transform(x.begin(), x.end(), y.begin(), x.begin(), f);
+            return x;
         }
 
-        template<class T, int N>
-        vec_t<T, N> max(const vec_t<T, N> & x, const vec_t<T, N> & y){
-            vec_t<T, N> r;
-            auto f = [](const T & a, const T & b){ return std::max<T>(a, b); };
-            std::transform(x.begin(), x.end(), y.begin(), r.begin(), f);
-            return r;
+        template<class V>
+        V max(V x, const V & y){
+            auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
+            std::transform(x.begin(), x.end(), y.begin(), x.begin(), f);
+            return x;
         }
 
-        template<class T, int N>
-        vec_t<T, N> max(const vec_t<T, N> & x, const T & y){
-            return max(x, vec_t<T, N>(y));
+        template<class V>
+        V max(const V & x, const decltype(*x.begin()) & y){
+            return vec::max(x, V(y));
         }
         
         template<class V>
