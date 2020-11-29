@@ -83,12 +83,27 @@ srph::collision_t::collision_t(
         }
         
         // find relative velocity at point 
+        std::cout << "vb.y = " << b->get_velocity(x)[1] << std::endl;
         vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }
 
 void srph::collision_t::resting_correct(){
-
+    std::cout << "resting contact" << std::endl;
+    /*
+    auto aa = a->get_acceleration(x);
+    auto ab = b->get_acceleration(x);
+    double ca = vec::dot(aa, n) - vec::dot(ab, n);    
+   
+ 
+    if (ca > 0){
+        std::cout << "resting correct" << std::endl;
+        double sm = a->get_mass() + b->get_mass(); 
+        auto d = ca * n / sm;
+        a->constrain_acceleration(-d * b->get_mass()); 
+        b->constrain_acceleration( d * a->get_mass()); 
+    } 
+    */
 }
 
 void srph::collision_t::colliding_correct(){

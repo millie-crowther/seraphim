@@ -65,9 +65,9 @@ int main(){
 
     seraphim.create(floor_substance);
     seraphim.create(sphere);
-    seraphim.create(torus);
-    seraphim.create(cube);
-    seraphim.create(octahedron);
+//    seraphim.create(torus);
+  //  seraphim.create(cube);
+   // seraphim.create(octahedron);
 
     seraphim.run();
 
