@@ -5,8 +5,10 @@ using namespace srph;
 matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
     this->material = material;
-    this->transform.set_position(initial_position);
     this->is_uniform = is_uniform;
+    
+    transform.set_position(initial_position);
+    previous_position = initial_position;
 }
 
 std::shared_ptr<sdf3_t> matter_t::get_sdf() const {
@@ -21,9 +23,23 @@ vec3_t matter_t::get_position() const {
     return transform.get_position();
 }
 
-bool matter_t::is_inert() const {
-//    std::cout << "v = " << v << std::endl;
-    return std::max(vec::length(v), vec::length(omega)) < constant::epsilon;
+bool matter_t::is_inert(double delta){
+    // check if linear velocity is zero 
+    // NOTE: velocity is measured by comparing positions to compensate
+    //       for matter extrication during collision response.
+    auto d = transform.get_position() - previous_position;
+    previous_position = transform.get_position();
+
+    if (vec::length(d) / delta > constant::epsilon){
+        return false;
+    }
+
+    std::cout << vec::length(a) << std::endl;
+
+    return 
+        vec::length(omega) < constant::epsilon &&
+        vec::length(a) < constant::epsilon &&
+        vec::length(alpha) < constant::epsilon;
 }
 
 material_t matter_t::get_material(const vec3_t & x){

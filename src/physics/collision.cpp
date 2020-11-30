@@ -83,7 +83,6 @@ srph::collision_t::collision_t(
         }
         
         // find relative velocity at point 
-        std::cout << "vb.y = " << b->get_velocity(x)[1] << std::endl;
         vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }
@@ -107,11 +106,6 @@ void srph::collision_t::resting_correct(){
 }
 
 void srph::collision_t::colliding_correct(){
-    // extricate matters 
-    double sm = a->get_mass() + b->get_mass();
-    a->translate(-depth * n * b->get_mass() / sm);
-    b->translate( depth * n * a->get_mass() / sm);
-
     // calculate collision impulse magnitude
     auto mata = a->get_material(x_a);
     auto matb = b->get_material(x_b);
@@ -149,6 +143,11 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
+    // extricate matters 
+    double sm = a->get_mass() + b->get_mass();
+    a->translate(-depth * n * b->get_mass() / sm);
+    b->translate( depth * n * a->get_mass() / sm);
+
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){

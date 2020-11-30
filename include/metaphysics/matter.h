@@ -24,7 +24,7 @@ namespace srph {
 
         quat_t get_rotation() const;
 
-        bool is_inert() const;
+        bool is_inert(double delta);
 
         vec3_t get_velocity(const vec3_t & x);
 
@@ -50,6 +50,7 @@ namespace srph {
         material_t material;
         std::shared_ptr<sdf3_t> sdf;
         transform_t transform;
+        vec3_t previous_position;
         bool is_uniform;
 
         std::unique_ptr<double> average_density;
