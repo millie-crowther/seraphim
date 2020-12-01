@@ -34,8 +34,6 @@ bool matter_t::is_inert(double delta){
         return false;
     }
 
-    std::cout << vec::length(a) << std::endl;
-
     return 
         vec::length(omega) < constant::epsilon &&
         vec::length(a) < constant::epsilon &&

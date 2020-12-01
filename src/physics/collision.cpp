@@ -122,24 +122,23 @@ void srph::collision_t::colliding_correct(){
 
     // apply friction force
     vec3_t t = vr - vec::dot(vr, n) * n;
-    if (t == vec3_t()){
+    if (t != vec3_t()){
         // no surface friction because impact vector is perpendicular to surface
-        return;
+        t = vec::normalise(t);
+        
+        double vrt = vec::dot(vr, t); 
+        auto mvta = a->get_mass() * vrt;
+        auto mvtb = b->get_mass() * vrt;
+
+        double js = std::max(mata.static_friction,  matb.static_friction ) * jr;
+        double jd = std::max(mata.dynamic_friction, matb.dynamic_friction) * jr;
+
+        double ka = -(mvta <= js) ? mvta : jd;
+        double kb =  (mvtb <= js) ? mvtb : jd;
+
+        a->apply_impulse_at(ka * t, x);
+        b->apply_impulse_at(kb * t, x);
     }
-    t = vec::normalise(t);
-    
-    double vrt = vec::dot(vr, t); 
-    auto mvta = a->get_mass() * vrt;
-    auto mvtb = b->get_mass() * vrt;
-
-    double js = std::max(mata.static_friction,  matb.static_friction ) * jr;
-    double jd = std::max(mata.dynamic_friction, matb.dynamic_friction) * jr;
-
-    double ka = -(mvta <= js) ? mvta : jd;
-    double kb =  (mvtb <= js) ? mvtb : jd;
-
-    a->apply_impulse_at(ka * t, x);
-    b->apply_impulse_at(kb * t, x);
 }
 
 void srph::collision_t::correct(){
@@ -147,7 +146,7 @@ void srph::collision_t::correct(){
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n * b->get_mass() / sm);
     b->translate( depth * n * a->get_mass() / sm);
-
+    
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){
