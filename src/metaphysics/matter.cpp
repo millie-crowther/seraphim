@@ -44,13 +44,15 @@ material_t matter_t::get_material(const vec3_t & x){
     return material;
 }
 
-aabb3_t matter_t::get_aabb() const {
+aabb3_t matter_t::get_moving_aabb(double t) const {
     aabb3_t aabb;
     
     for (uint8_t i = 0; i < 8; i++){   
         vec3_t x = transform.to_global_space(sdf->get_aabb().get_vertex(i));
         aabb.capture_point(x);
     }
+
+    aabb.enlarge(0.5 * vec::length(a) * t * t + vec::length(v) * t);
 
     return aabb;
 }

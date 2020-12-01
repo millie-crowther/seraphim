@@ -3,6 +3,7 @@
 #include "maths/optimise.h"
 
 srph::collision_t::collision_t(
+    double delta_t, 
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
     this->a = a;
@@ -18,7 +19,7 @@ srph::collision_t::collision_t(
         return std::max(phi_a, phi_b);
     };
     
-    aabb3_t aabb = a->get_aabb() && b->get_aabb();
+    aabb3_t aabb = a->get_moving_aabb(delta_t) && b->get_moving_aabb(delta_t);
     if (!aabb.is_valid()){
         hit = false;
     } else {

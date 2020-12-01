@@ -59,6 +59,11 @@ namespace srph {
         bool is_valid() const {
             return vec::all(min <= max);
         }
+
+        void enlarge(const T & t){
+            min -= t;
+            max += t;
+        }
     };
     
     using aabb2_t = aabb_t<double, 2>;

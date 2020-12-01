@@ -20,6 +20,7 @@ namespace srph {
         std::shared_ptr<matter_t> b;
 
         collision_t(
+            double delta,
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
         
