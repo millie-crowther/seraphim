@@ -25,8 +25,8 @@ void physics_t::run(){
 
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
-    auto previous = std::chrono::steady_clock::now();
-    double p_time;
+    auto previous = std::chrono::steady_clock::now() - clock_d;
+    double p_time = 0.0;
        
     while (!quit){
         auto now = std::chrono::steady_clock::now();
@@ -76,8 +76,8 @@ void physics_t::run(){
                 }
             } 
         }
- 
-        t += clock_d;
+
+        t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
     }
 }

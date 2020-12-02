@@ -35,9 +35,7 @@ srph::collision_t::collision_t(
         
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
-    }
-
-    if (intersecting){
+        
         // choose best normal based on smallest second derivative
         auto ja = a->get_sdf()->jacobian(x_a);
         auto jb = b->get_sdf()->jacobian(x_b);
@@ -47,7 +45,9 @@ srph::collision_t::collision_t(
         } else {
             n = b->get_rotation() * b->get_sdf()->normal(x_b);
         }
+    }
 
+    if (intersecting){
         // find contact surface
         auto t1 = vec::tangent(n);
         auto t2 = vec::cross(n, t1);
@@ -90,7 +90,7 @@ srph::collision_t::collision_t(
     // check to see if anticipated
     if (aabb.is_valid() && !intersecting){
         auto vrn = vec::dot(vr, n);
-        
+       
         if (vrn > 0){
             double distance = a->get_sdf()->phi(x_a) + b->get_sdf()->phi(x_b);
 
