@@ -5,8 +5,11 @@
 #include "metaphysics/matter.h"
 
 namespace srph {
-    struct collision_t {
-        bool hit;
+    class collision_t {
+    private:
+        bool is_intersecting;
+        bool is_anticipated;
+        double t;
 
         vec3_t x;
         vec3_t x_a;
@@ -19,11 +22,14 @@ namespace srph {
         std::shared_ptr<matter_t> a;
         std::shared_ptr<matter_t> b;
 
+    public:
         collision_t(
             double delta,
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
-        
+       
+        bool is_colliding() const;
+ 
         void correct();
         void resting_correct();
         void colliding_correct();
