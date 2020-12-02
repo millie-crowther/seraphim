@@ -7,8 +7,8 @@
 namespace srph {
     class collision_t {
     private:
-        bool is_intersecting;
-        bool is_anticipated;
+        bool intersecting;
+        bool anticipated;
         double t;
 
         vec3_t x;
@@ -28,11 +28,16 @@ namespace srph {
             std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
         );
        
-        bool is_colliding() const;
- 
+        bool is_intersecting() const;
+        bool is_anticipated() const;
+
         void correct();
         void resting_correct();
         void colliding_correct();
+
+        struct comparator_t {
+            bool operator()(const collision_t & a, const collision_t & b);
+        };
     };
 }
 

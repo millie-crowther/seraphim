@@ -8,9 +8,8 @@ srph::collision_t::collision_t(
 ){
     this->a = a;
     this->b = b;
-    is_intersecting = false;
-    is_anticipated = false;
-    t = 1.0;
+    intersecting = false;
+    anticipated = false;
     
     auto f = [a, b](const vec3_t & x){
         vec3_t x_a   = a->to_local_space(x);
@@ -32,10 +31,10 @@ srph::collision_t::collision_t(
         auto result = srph::optimise::nelder_mead(f, xs);
         x = result.x;
         depth = std::abs(result.fx);
-        is_intersecting = result.fx < 0;
+        intersecting = result.fx < 0;
     }
 
-    if (is_intersecting){
+    if (intersecting || anticipated){
         // choose best normal based on smallest second derivative
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
@@ -89,8 +88,12 @@ srph::collision_t::collision_t(
     }
 }
 
-bool srph::collision_t::is_colliding() const {
-    return is_intersecting || is_anticipated;
+bool srph::collision_t::is_intersecting() const {
+    return intersecting;
+}
+
+bool srph::collision_t::is_anticipated() const {
+    return anticipated;
 }
 
 void srph::collision_t::resting_correct(){
@@ -149,7 +152,7 @@ void srph::collision_t::colliding_correct(){
 
 void srph::collision_t::correct(){
     // extricate matters 
-    if (is_intersecting){
+    if (intersecting){
         double sm = a->get_mass() + b->get_mass();
         a->translate(-depth * n * b->get_mass() / sm);
         b->translate( depth * n * a->get_mass() / sm);
@@ -162,4 +165,8 @@ void srph::collision_t::correct(){
     } else if (vrn > -constant::epsilon){
         resting_correct();
     }
+}
+
+bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
+    return a.t < b.t;
 }

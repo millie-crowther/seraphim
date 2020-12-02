@@ -40,20 +40,28 @@ void physics_t::run(){
         }
         current_frame++;
 
-        std::vector<collision_t> collisions;
+        std::vector<collision_t> intersecting;
+        std::vector<collision_t> anticipated;
 
         for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
             for (auto b_it = std::next(a_it); b_it != matters.end(); b_it++){
                 collision_t c(delta, *a_it, *b_it);
-                if (c.is_colliding()){
-                    collisions.push_back(c);
+                
+                if (c.is_intersecting()){
+                    intersecting.push_back(c);
+                } else if (c.is_anticipated()){
+                    anticipated.push_back(c);
                 }
             }
         }
 
-        for (auto & c : collisions){
+        for (auto & c : intersecting){
             c.correct();
         }
+
+        if (!anticipated.empty()){
+            std::sort(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
+        } 
         
         for (auto & m : matters){
             m->physics_tick(delta);
