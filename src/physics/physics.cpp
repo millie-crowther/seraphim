@@ -65,7 +65,7 @@ void physics_t::run(){
         for (auto & m : matters){
             if (m->get_position()[1] > -90.0){
                 if (m->is_inert(delta)){
-                   // std::cout << "inert!" << std::endl;
+                    std::cout << "inert!" << std::endl;
                 }
             } 
         }

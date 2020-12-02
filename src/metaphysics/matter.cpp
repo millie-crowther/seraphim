@@ -24,17 +24,15 @@ vec3_t matter_t::get_position() const {
 }
 
 bool matter_t::is_inert(double delta){
-    // check if linear velocity is zero 
-    // NOTE: velocity is measured by comparing positions to compensate
-    //       for matter extrication during collision response.
-    auto d = transform.get_position() - previous_position;
-    previous_position = transform.get_position();
-
-    if (vec::length(d) / delta > constant::epsilon){
-        return false;
-    }
+    std::cout << "---" << std::endl;
+    std::cout << "v = " << vec::length(v) << std::endl;
+    std::cout << "a = " << vec::length(a) << std::endl;
+    std::cout << "w = " << vec::length(omega) << std::endl;
+    std::cout << "b = " << vec::length(alpha) << std::endl;
+    std::cout << "e = " << constant::epsilon << std::endl;
 
     return 
+        vec::length(v) < constant::epsilon &&
         vec::length(omega) < constant::epsilon &&
         vec::length(a) < constant::epsilon &&
         vec::length(alpha) < constant::epsilon;
