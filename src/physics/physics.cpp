@@ -31,14 +31,8 @@ void physics_t::run(){
     while (!quit){
         auto now = std::chrono::steady_clock::now();
         double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
-        p_time += 1.0 / delta;        
 
         previous = now;
-        if (current_frame % frequency == frequency - 1){
-            std::cout << "Physics FPS: " << p_time / frequency << std::endl;
-            p_time = 0;
-        }
-        current_frame++;
 
         std::vector<collision_t> intersecting;
         std::vector<collision_t> anticipated;
@@ -61,8 +55,7 @@ void physics_t::run(){
 
         if (!anticipated.empty()){
             std::sort(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
-        
-            std::cout << "anticipated collision!" << std::endl;
+            delta = anticipated[0].get_estimated_time();
         } 
         
         for (auto & m : matters){
@@ -76,6 +69,13 @@ void physics_t::run(){
                 }
             } 
         }
+
+        p_time += 1.0 / delta;        
+        if (current_frame % frequency == frequency - 1){
+            std::cout << "Physics FPS: " << p_time / frequency << std::endl;
+            p_time = 0;
+        }
+        current_frame++;
 
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);

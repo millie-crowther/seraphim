@@ -30,6 +30,7 @@ namespace srph {
        
         bool is_intersecting() const;
         bool is_anticipated() const;
+        double get_estimated_time() const;
 
         void correct();
         void resting_correct();

@@ -110,6 +110,10 @@ bool srph::collision_t::is_anticipated() const {
     return anticipated;
 }
 
+double srph::collision_t::get_estimated_time() const {
+    return t;
+}
+
 void srph::collision_t::resting_correct(){
     std::cout << "resting contact" << std::endl;
     /*
