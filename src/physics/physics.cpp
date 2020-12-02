@@ -61,6 +61,8 @@ void physics_t::run(){
 
         if (!anticipated.empty()){
             std::sort(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
+        
+            std::cout << "anticipated collision!" << std::endl;
         } 
         
         for (auto & m : matters){

@@ -3,14 +3,14 @@
 #include "maths/optimise.h"
 
 srph::collision_t::collision_t(
-    double delta_t, 
+    double delta_t,
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
 ){
     this->a = a;
     this->b = b;
     intersecting = false;
-    anticipated = false;
-    
+    anticipated = false;   
+ 
     auto f = [a, b](const vec3_t & x){
         vec3_t x_a   = a->to_local_space(x);
         double phi_a = a->get_sdf()->phi(x_a); 
@@ -20,7 +20,7 @@ srph::collision_t::collision_t(
 
         return std::max(phi_a, phi_b);
     };
-    
+   
     aabb3_t aabb = a->get_moving_aabb(delta_t) && b->get_moving_aabb(delta_t);
     if (aabb.is_valid()){
         std::array<vec3_t, 4> xs = {
@@ -32,13 +32,13 @@ srph::collision_t::collision_t(
         x = result.x;
         depth = std::abs(result.fx);
         intersecting = result.fx < 0;
-    }
-
-    if (intersecting || anticipated){
-        // choose best normal based on smallest second derivative
+        
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
-        
+    }
+
+    if (intersecting){
+        // choose best normal based on smallest second derivative
         auto ja = a->get_sdf()->jacobian(x_a);
         auto jb = b->get_sdf()->jacobian(x_b);
 
@@ -82,9 +82,23 @@ srph::collision_t::collision_t(
         if (cs != 0){
             x = c / cs;
         }
+    }
         
-        // find relative velocity at point 
-        vr = a->get_velocity(x) - b->get_velocity(x);
+    // find relative velocity at point 
+    vr = a->get_velocity(x) - b->get_velocity(x);
+
+    // check to see if anticipated
+    if (aabb.is_valid() && !intersecting){
+        auto vrn = vec::dot(vr, n);
+        
+        if (vrn > 0){
+            double distance = a->get_sdf()->phi(x_a) + b->get_sdf()->phi(x_b);
+
+            if (distance > 0){
+                t = distance / vrn;
+                anticipated = t <= delta_t;
+            }
+        }
     }
 }
 
@@ -152,17 +166,15 @@ void srph::collision_t::colliding_correct(){
 
 void srph::collision_t::correct(){
     // extricate matters 
-    if (intersecting){
-        double sm = a->get_mass() + b->get_mass();
-        a->translate(-depth * n * b->get_mass() / sm);
-        b->translate( depth * n * a->get_mass() / sm);
-    }
+    double sm = a->get_mass() + b->get_mass();
+    a->translate(-depth * n * b->get_mass() / sm);
+    b->translate( depth * n * a->get_mass() / sm);
     
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){
         colliding_correct();
-    } else if (vrn > -constant::epsilon){
+    } else {
         resting_correct();
     }
 }
