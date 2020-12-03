@@ -29,6 +29,12 @@ void physics_t::run(){
     double p_time = 0.0;
        
     while (!quit){
+        for (auto & m : matters){
+            if (m->get_position()[1] > -90.0){
+                m->reset_acceleration();
+            }
+        }
+        
         auto now = std::chrono::steady_clock::now();
         double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
 
@@ -68,12 +74,6 @@ void physics_t::run(){
                     std::cout << "inert!" << std::endl;
                 }
             } 
-        }
-
-        for (auto & m : matters){
-            if (m->get_position()[1] > -90.0){
-                m->reset_acceleration();
-            }
         }
 
         p_time += 1.0 / delta;        
