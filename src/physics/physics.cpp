@@ -41,9 +41,9 @@ void physics_t::run(){
         std::vector<collision_t> intersecting;
         std::vector<collision_t> anticipated;
 
-        for (auto a_it = matters.begin(); a_it != matters.end(); a_it++){
-            for (auto b_it = std::next(a_it); b_it != matters.end(); b_it++){
-                collision_t c(delta, *a_it, *b_it);
+        for (uint32_t i = 0; i < matters.size(); i++){
+            for (uint32_t j = i + 1; j < matters.size(); j++){
+                collision_t c(delta, matters[i], matters[j]);
                 
                 if (c.is_intersecting()){
                     intersecting.push_back(c);
@@ -62,7 +62,7 @@ void physics_t::run(){
             delta = std::min(delta, next_collision->get_estimated_time());
         } 
         
-        for (auto & m : matters){
+        for (auto m : matters){
             m->physics_tick(delta);
         } 
         
