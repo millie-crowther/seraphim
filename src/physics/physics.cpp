@@ -80,11 +80,11 @@ void physics_t::run(){
 }
 
 void physics_t::register_matter(std::shared_ptr<matter_t> matter){
-    matters.insert(matter);
+    matters.push_back(matter);
 }
     
 void physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
-    auto it = matters.find(matter);
+    auto it = std::find(matters.begin(), matters.end(), matter);
     if (it != matters.end()){
         matters.erase(it);
     }
