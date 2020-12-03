@@ -37,19 +37,22 @@ void physics_t::run(){
         
         {
             std::lock_guard<std::mutex> lock(matters_mutex);
-
+            
+            // reset acceleration and apply gravity force
             for (auto & m : matters){
                 if (m->get_position()[1] > -90.0){
                     m->reset_acceleration();
                 }
             }
 
+            // collide awake substances with each other
             for (uint32_t i = 0; i < matters.size(); i++){
                 for (uint32_t j = i + 1; j < matters.size(); j++){
                     collisions.emplace_back(delta, matters[i], matters[j]);
                 }
             }
             
+            // collide awake substances with asleep substances
             for (auto awake_matter : matters){
                 for (auto asleep_matter : asleep_matters){
                     collisions.emplace_back(delta, asleep_matter, awake_matter);
@@ -57,6 +60,7 @@ void physics_t::run(){
             }
         }
         
+        // correct all present collisions and anticipate the next one
         for (auto & c : collisions){
             if (c.is_intersecting()){
                 c.correct();
@@ -68,10 +72,12 @@ void physics_t::run(){
         {
             std::lock_guard<std::mutex> lock(matters_mutex);
  
+            // apply acceleration and velocity changes to matters
             for (auto m : matters){
                 m->physics_tick(delta);
             } 
 
+            // try to put matters to sleep
             for (uint32_t i = 0; i < matters.size();){
                 auto m = matters[i]; 
             
