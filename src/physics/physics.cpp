@@ -52,6 +52,24 @@ void physics_t::run(){
                 }
             }
         }
+        
+        for (auto awake_matter : matters){
+            for (auto asleep_matter : asleep_matters){
+
+                collision_t c(delta, awake_matter, asleep_matter);
+                
+                if (c.is_intersecting()){
+                    intersecting.push_back(c);
+                } else if (c.is_anticipated()){
+                    anticipated.push_back(c);
+                }
+            }
+        }
+
+
+        std::cout << "-----" << std::endl;
+        std::cout << "int = " << intersecting.size() << std::endl;
+        std::cout << "ant = " << anticipated.size() << std::endl;
 
         for (auto & c : intersecting){
             c.correct();
@@ -65,13 +83,19 @@ void physics_t::run(){
         for (auto m : matters){
             m->physics_tick(delta);
         } 
+
+        for (uint32_t i = 0; i < matters.size();){
+            auto m = matters[i]; 
         
-        for (auto & m : matters){
-            if (m->get_position()[1] > -90.0){
-                if (m->is_inert()){
-                //    std::cout << "inert!" << std::endl;
-                }
-            } 
+            if (
+                m->get_position()[1] > -90.0 && 
+                m->is_inert()){
+                asleep_matters.push_back(m);
+                matters[i] = matters[matters.size() - 1];
+                matters.pop_back();
+            } else { 
+                i++;
+            }
         }
 
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
