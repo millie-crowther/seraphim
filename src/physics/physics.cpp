@@ -22,13 +22,11 @@ physics_t::~physics_t(){
 void physics_t::run(){
     auto t = scheduler::clock_t::now();
     auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(constant::iota);
-
-    uint32_t current_frame = 0;
-    uint32_t frequency = 100;
     auto previous = std::chrono::steady_clock::now() - clock_d;
-    double p_time = 0.0;
        
     while (!quit){
+        frames++;
+
         for (auto & m : matters){
             if (m->get_position()[1] > -90.0){
                 m->reset_acceleration();
@@ -71,17 +69,10 @@ void physics_t::run(){
         for (auto & m : matters){
             if (m->get_position()[1] > -90.0){
                 if (m->is_inert()){
-                    std::cout << "inert!" << std::endl;
+                //    std::cout << "inert!" << std::endl;
                 }
             } 
         }
-
-        p_time += 1.0 / delta;        
-        if (current_frame % frequency == frequency - 1){
-            std::cout << "Physics FPS: " << p_time / frequency << std::endl;
-            p_time = 0;
-        }
-        current_frame++;
 
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
@@ -97,4 +88,10 @@ void physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
     if (it != matters.end()){
         matters.erase(it);
     }
+}
+
+int physics_t::get_frame_count(){
+    int f = frames;
+    frames = 0;
+    return f;
 }

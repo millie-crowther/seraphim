@@ -40,6 +40,10 @@ namespace srph {
 
         std::set<std::shared_ptr<substance_t>> substances;
 
+        bool fps_monitor_quit;
+        void monitor_fps();
+        std::thread fps_monitor_thread;
+
     public:
         seraphim_t();
         ~seraphim_t();

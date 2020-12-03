@@ -539,6 +539,8 @@ void renderer_t::present(uint32_t image_index) const {
 }
 
 void renderer_t::render(){
+    frames++;
+
     // write substances
     std::vector<substance_t::data_t> substance_data;
     for (auto s : substances){
@@ -702,4 +704,10 @@ void renderer_t::unregister_substance(std::shared_ptr<substance_t> substance){
     if (it != substances.end()){
         substances.erase(it);
     }
+}
+
+int renderer_t::get_frame_count(){
+    int f = frames;
+    frames = 0;
+    return f;
 }

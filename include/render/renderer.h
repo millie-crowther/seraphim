@@ -69,6 +69,7 @@ namespace srph {
         VkPipeline compute_pipeline;
         VkPipelineLayout compute_pipeline_layout;
 
+        int frames;
         int current_frame;
         std::vector<VkSemaphore> image_available_semas;
         std::vector<VkSemaphore> compute_done_semas;
@@ -149,6 +150,8 @@ namespace srph {
 
         void register_substance(std::shared_ptr<substance_t> substance);
         void unregister_substance(std::shared_ptr<substance_t> substance);
+
+        int get_frame_count();
     };
 }
 

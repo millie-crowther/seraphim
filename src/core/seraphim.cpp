@@ -82,9 +82,14 @@ srph::seraphim_t::seraphim_t(){
     );
 
     physics = std::make_unique<physics_t>();
+
+    fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
 }
 
 srph::seraphim_t::~seraphim_t(){
+    fps_monitor_quit = true;
+    fps_monitor_thread.join(); 
+
     scheduler::terminate();
 
     vkDeviceWaitIdle(device->get_device());
@@ -120,6 +125,23 @@ srph::seraphim_t::~seraphim_t(){
 
 renderer_t * srph::seraphim_t::get_renderer() const {
     return renderer.get();
+}
+
+void seraphim_t::monitor_fps(){
+    auto t = scheduler::clock_t::now();
+    int interval = 1; // seconds
+    fps_monitor_quit = false;
+
+    while (!fps_monitor_quit){
+        double physics_fps = static_cast<double>(physics->get_frame_count()) / interval;
+        double render_fps = static_cast<double>(renderer->get_frame_count()) / interval;
+
+        std::cout << 
+            "Render: "  << render_fps  << " FPS; " << 
+            "Physics: " << physics_fps << " FPS" << std::endl;
+        t += std::chrono::seconds(interval);
+        std::this_thread::sleep_until(t);       
+    }
 }
 
 std::vector<const char *> srph::seraphim_t::get_required_extensions(){

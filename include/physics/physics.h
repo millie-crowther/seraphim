@@ -17,10 +17,13 @@ namespace srph {
         void register_matter(std::shared_ptr<matter_t> matter);
         void unregister_matter(std::shared_ptr<matter_t> matter);
 
+        int get_frame_count();
+
     private:
         bool quit;
         std::thread thread;
         std::set<std::shared_ptr<matter_t>> matters;
+        int frames;
 
         void run();
     };
