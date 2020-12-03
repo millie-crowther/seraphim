@@ -88,12 +88,13 @@ srph::seraphim_t::seraphim_t(){
 
 srph::seraphim_t::~seraphim_t(){
     fps_monitor_quit = true;
-    fps_monitor_thread.join(); 
 
     scheduler::terminate();
 
     vkDeviceWaitIdle(device->get_device());
 
+    fps_monitor_thread.join(); 
+    
     // delete renderer early to release resources at appropriate time
     renderer.reset();
 
