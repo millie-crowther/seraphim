@@ -23,6 +23,8 @@ namespace srph {
         bool quit;
         std::thread thread;
 
+        std::mutex matters_mutex;
+
         std::vector<std::shared_ptr<matter_t>> matters;
         std::vector<std::shared_ptr<matter_t>> asleep_matters;
 

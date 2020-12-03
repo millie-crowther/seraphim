@@ -25,7 +25,13 @@ void physics_t::run(){
     auto previous = std::chrono::steady_clock::now() - clock_d;
        
     while (!quit){
+        //std::lock_guard<std::mutex> lock(matters_mutex);
         frames++;
+        
+        auto now = std::chrono::steady_clock::now();
+        double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+
+        previous = now;
 
         for (auto & m : matters){
             if (m->get_position()[1] > -90.0){
@@ -33,47 +39,28 @@ void physics_t::run(){
             }
         }
         
-        auto now = std::chrono::steady_clock::now();
-        double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
-
-        previous = now;
-
-        std::vector<collision_t> intersecting;
-        std::vector<collision_t> anticipated;
+        std::vector<collision_t> collisions;
 
         for (uint32_t i = 0; i < matters.size(); i++){
             for (uint32_t j = i + 1; j < matters.size(); j++){
-                collision_t c(delta, matters[i], matters[j]);
-                
-                if (c.is_intersecting()){
-                    intersecting.push_back(c);
-                } else if (c.is_anticipated()){
-                    anticipated.push_back(c);
-                }
+                collisions.emplace_back(delta, matters[i], matters[j]);
             }
         }
         
         for (auto awake_matter : matters){
             for (auto asleep_matter : asleep_matters){
-
-                collision_t c(delta, asleep_matter, awake_matter);
-                
-                if (c.is_intersecting()){
-                    intersecting.push_back(c);
-                } else if (c.is_anticipated()){
-                    anticipated.push_back(c);
-                }
+                collisions.emplace_back(delta, asleep_matter, awake_matter);
             }
         }
 
-        for (auto & c : intersecting){
-            c.correct();
+        
+        for (auto & c : collisions){
+            if (c.is_intersecting()){
+                c.correct();
+            } else if (c.is_anticipated()){
+                delta = std::min(delta, c.get_estimated_time());
+            }
         }
-
-        if (!anticipated.empty()){
-            auto next_collision = std::min_element(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
-            delta = std::min(delta, next_collision->get_estimated_time());
-        } 
         
         for (auto m : matters){
             m->physics_tick(delta);
@@ -97,13 +84,21 @@ void physics_t::run(){
 }
 
 void physics_t::register_matter(std::shared_ptr<matter_t> matter){
+    std::lock_guard<std::mutex> lock(matters_mutex);
     matters.push_back(matter);
 }
     
 void physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
+    std::lock_guard<std::mutex> lock(matters_mutex);
+    
     auto it = std::find(matters.begin(), matters.end(), matter);
     if (it != matters.end()){
         matters.erase(it);
+    } else {
+        it = std::find(asleep_matters.begin(), asleep_matters.end(), matter);
+        if (it != asleep_matters.end()){
+            asleep_matters.erase(it);
+        }
     }
 }
 
