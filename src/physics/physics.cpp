@@ -33,26 +33,29 @@ void physics_t::run(){
 
         previous = now;
 
-        for (auto & m : matters){
-            if (m->get_position()[1] > -90.0){
-                m->reset_acceleration();
-            }
-        }
-        
         std::vector<collision_t> collisions;
-
-        for (uint32_t i = 0; i < matters.size(); i++){
-            for (uint32_t j = i + 1; j < matters.size(); j++){
-                collisions.emplace_back(delta, matters[i], matters[j]);
-            }
-        }
         
-        for (auto awake_matter : matters){
-            for (auto asleep_matter : asleep_matters){
-                collisions.emplace_back(delta, asleep_matter, awake_matter);
+        {
+            std::lock_guard<std::mutex> lock(matters_mutex);
+
+            for (auto & m : matters){
+                if (m->get_position()[1] > -90.0){
+                    m->reset_acceleration();
+                }
+            }
+
+            for (uint32_t i = 0; i < matters.size(); i++){
+                for (uint32_t j = i + 1; j < matters.size(); j++){
+                    collisions.emplace_back(delta, matters[i], matters[j]);
+                }
+            }
+            
+            for (auto awake_matter : matters){
+                for (auto asleep_matter : asleep_matters){
+                    collisions.emplace_back(delta, asleep_matter, awake_matter);
+                }
             }
         }
-
         
         for (auto & c : collisions){
             if (c.is_intersecting()){
@@ -61,20 +64,24 @@ void physics_t::run(){
                 delta = std::min(delta, c.get_estimated_time());
             }
         }
-        
-        for (auto m : matters){
-            m->physics_tick(delta);
-        } 
+       
+        {
+            std::lock_guard<std::mutex> lock(matters_mutex);
+ 
+            for (auto m : matters){
+                m->physics_tick(delta);
+            } 
 
-        for (uint32_t i = 0; i < matters.size();){
-            auto m = matters[i]; 
-        
-            if (m->is_inert()){
-                asleep_matters.push_back(m);
-                matters[i] = matters[matters.size() - 1];
-                matters.pop_back();
-            } else { 
-                i++;
+            for (uint32_t i = 0; i < matters.size();){
+                auto m = matters[i]; 
+            
+                if (m->is_inert()){
+                    asleep_matters.push_back(m);
+                    matters[i] = matters[matters.size() - 1];
+                    matters.pop_back();
+                } else { 
+                    i++;
+                }
             }
         }
 
