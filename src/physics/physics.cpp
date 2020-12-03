@@ -56,7 +56,7 @@ void physics_t::run(){
         for (auto awake_matter : matters){
             for (auto asleep_matter : asleep_matters){
 
-                collision_t c(delta, awake_matter, asleep_matter);
+                collision_t c(delta, asleep_matter, awake_matter);
                 
                 if (c.is_intersecting()){
                     intersecting.push_back(c);
@@ -65,11 +65,6 @@ void physics_t::run(){
                 }
             }
         }
-
-
-        std::cout << "-----" << std::endl;
-        std::cout << "int = " << intersecting.size() << std::endl;
-        std::cout << "ant = " << anticipated.size() << std::endl;
 
         for (auto & c : intersecting){
             c.correct();
@@ -87,9 +82,7 @@ void physics_t::run(){
         for (uint32_t i = 0; i < matters.size();){
             auto m = matters[i]; 
         
-            if (
-                m->get_position()[1] > -90.0 && 
-                m->is_inert()){
+            if (m->is_inert()){
                 asleep_matters.push_back(m);
                 matters[i] = matters[matters.size() - 1];
                 matters.pop_back();
