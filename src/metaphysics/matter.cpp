@@ -23,14 +23,7 @@ vec3_t matter_t::get_position() const {
     return transform.get_position();
 }
 
-bool matter_t::is_inert(double delta){
-    std::cout << "---" << std::endl;
-    std::cout << "v = " << vec::length(v) << std::endl;
-    std::cout << "a = " << vec::length(a) << std::endl;
-    std::cout << "w = " << vec::length(omega) << std::endl;
-    std::cout << "b = " << vec::length(alpha) << std::endl;
-    std::cout << "e = " << constant::epsilon << std::endl;
-
+bool matter_t::is_inert(){
     return 
         vec::length(v) < constant::epsilon &&
         vec::length(omega) < constant::epsilon &&
@@ -133,6 +126,11 @@ void matter_t::rotate(const quat_t & q){
     inv_tf_i.reset();
 }
 
+void matter_t::reset_acceleration() {
+    a = vec3_t(0.0, -9.8, 0.0);
+    alpha = vec3_t();
+}
+
 void matter_t::physics_tick(double t){
     // update position
     transform.translate((0.5 * a * t + v) * t);
@@ -143,10 +141,6 @@ void matter_t::physics_tick(double t){
     // integrate accelerations into velocities
     v += a * t;
     omega += alpha * t;
-    
-    // reset accelerations
-    a = vec3_t(0.0, -9.8, 0.0);
-    alpha = vec3_t();
     
     if (transform.get_position()[1] < -90.0){
         transform.set_position(vec3_t(0.0, -100.0, 0.0));

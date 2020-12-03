@@ -61,13 +61,19 @@ void physics_t::run(){
         for (auto & m : matters){
             m->physics_tick(delta);
         } 
-
+        
         for (auto & m : matters){
             if (m->get_position()[1] > -90.0){
-                if (m->is_inert(delta)){
+                if (m->is_inert()){
                     std::cout << "inert!" << std::endl;
                 }
             } 
+        }
+
+        for (auto & m : matters){
+            if (m->get_position()[1] > -90.0){
+                m->reset_acceleration();
+            }
         }
 
         p_time += 1.0 / delta;        
