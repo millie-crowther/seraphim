@@ -58,8 +58,8 @@ void physics_t::run(){
         }
 
         if (!anticipated.empty()){
-            std::sort(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
-            delta = anticipated[0].get_estimated_time();
+            auto next_collision = std::min_element(anticipated.begin(), anticipated.end(), collision_t::comparator_t());
+            delta = std::min(delta, next_collision->get_estimated_time());
         } 
         
         for (auto & m : matters){
