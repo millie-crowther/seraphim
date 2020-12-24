@@ -67,7 +67,7 @@ int main(){
     seraphim.create(sphere);
 //    seraphim.create(torus);
   //  seraphim.create(cube);
-   // seraphim.create(octahedron);
+    seraphim.create(octahedron);
 
     seraphim.run();
 

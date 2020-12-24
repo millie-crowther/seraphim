@@ -82,6 +82,7 @@ void physics_t::run(){
                 auto m = matters[i]; 
             
                 if (m->is_inert()){
+                    std::cout << "Matter going to sleep!" << std::endl;
                     asleep_matters.push_back(m);
                     matters[i] = matters[matters.size() - 1];
                     matters.pop_back();
