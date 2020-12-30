@@ -49,32 +49,29 @@ srph::collision_t::collision_t(
 
     if (intersecting){
         // find contact surface
-        auto t1 = vec::tangent(n);
-        auto t2 = vec::cross(n, t1);
-
-        aabb2_t box;
-
-        for (int i = 0; i < 8; i++){
-            auto v = aabb.get_vertex(i) - x;
-            box.capture_point(vec2_t(vec::dot(v, t1), vec::dot(v, t2)));
-        }
-  
         int n = 4;
     
         vec3_t c;
         int cs = 0;
 
-        for (int i = 0; i <= n; i++){
-            for (int j = 0; j <= n; j++){
-                vec2_t ij = box.get_min() + box.get_size() * vec2_t(i, j) * 2.0 / n;
-                vec3_t v = x + t1 * ij[0] + t2 * ij[1];
-                
-                vec3_t va = a->to_local_space(v);
-                vec3_t vb = b->to_local_space(v);
+        auto min = aabb.get_min();
+        auto max = aabb.get_max();
+        auto size = aabb.get_size() * 2.0 / n;
 
-                if (a->get_sdf()->phi(va) < 0 && b->get_sdf()->phi(vb) < 0){
-                    c += v;
-                    cs++;
+        for (double i = min[0]; i <= max[0]; i += size[0]){
+            for (double j = min[1]; j <= max[1]; j += size[1]){
+                for (double k = min[2]; k <= max[2]; k += size[2]){
+                    vec3_t v = vec3_t(i, j, k);
+                    
+                    vec3_t va = a->to_local_space(v);
+                    vec3_t vb = b->to_local_space(v);
+
+                    auto maxphi = std::max(a->get_sdf()->phi(va), b->get_sdf()->phi(vb));
+
+                    if (maxphi < 0){
+                        c += v;
+                        cs++;
+                    }
                 }
             }
         }

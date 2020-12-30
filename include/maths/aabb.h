@@ -33,6 +33,10 @@ namespace srph {
             return max / 2 - min / 2;
         }
 
+        vec_t<T, D> get_max() const {
+            return max;
+        }
+
         vec_t<T, D> get_min() const {
             return min;
         }
