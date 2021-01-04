@@ -25,8 +25,20 @@ namespace srph { namespace optimise {
         };
     };
 
-  //  template<int N, class F, class F1>
-   // result_t<N>
+    template<class X, class F, class F1>
+    result_t<X> newton_raphson(const X & _x, const F & f, const F1 & n){
+        X x = _x;
+        
+        while (true){
+            auto fx = f(x);
+
+            if (fx <= constant::epsilon){
+                return result_t(x, fx);
+            }
+            
+            x -= fx * n(x);
+        }
+    }
 
     template<int N, class F>
     result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
