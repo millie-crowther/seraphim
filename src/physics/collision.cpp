@@ -2,6 +2,12 @@
 
 #include "maths/optimise.h"
 
+#include <random>
+
+using namespace srph;
+
+std::default_random_engine generator;
+
 srph::collision_t::collision_t(
     double delta_t,
     std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
@@ -46,41 +52,55 @@ srph::collision_t::collision_t(
             n = b->get_rotation() * b->get_sdf()->normal(x_b);
         }
     }
-
+/*
     if (intersecting){
         // find contact surface
-        int n = 4;
+        int n_samples = 0;
     
         vec3_t c;
         int cs = 0;
 
-        auto min = aabb.get_min();
-        auto max = aabb.get_max();
-        auto size = aabb.get_size() * 2.0 / n;
+        std::uniform_real_distribution<double> distribution(0.0, 2.0);
 
-        for (double i = min[0]; i <= max[0]; i += size[0]){
-            for (double j = min[1]; j <= max[1]; j += size[1]){
-                for (double k = min[2]; k <= max[2]; k += size[2]){
-                    vec3_t v = vec3_t(i, j, k);
-                    
-                    vec3_t va = a->to_local_space(v);
-                    vec3_t vb = b->to_local_space(v);
+        for (int i = 0; i < n_samples; i++){
+            vec3_t v(
+                distribution(generator), 
+                distribution(generator),
+                distribution(generator)
+            );
+            v.scale(aabb.get_size());
+            v += aabb.get_min();
 
-                    auto maxphi = std::max(a->get_sdf()->phi(va), b->get_sdf()->phi(vb));
+            auto va = a->to_local_space(v);
+            auto vb = b->to_local_space(v);
 
-                    if (maxphi < 0){
-                        c += v;
-                        cs++;
-                    }
-                }
+            double maxphi = std::max(a->get_sdf()->phi(va), b->get_sdf()->phi(vb));
+            if (maxphi <= constant::epsilon){
+                c += v;
+                cs++;
             }
         }
 
         if (cs != 0){
+        //    std::cout << "cs = " << cs << std::endl;
+
             x = c / cs;
+  //          std::cout << "xb = " << b->to_local_space(x) << std::endl;
+            x_a = a->to_local_space(x);
+            x_b = b->to_local_space(x);
+            
+            // choose best normal based on smallest second derivative
+            auto ja = a->get_sdf()->jacobian(x_a);
+            auto jb = b->get_sdf()->jacobian(x_b);
+
+            if (vec::p_norm<1>(ja) <= vec::p_norm<1>(jb)){
+                n = a->get_rotation() * a->get_sdf()->normal(x_a);
+            } else {
+                n = b->get_rotation() * b->get_sdf()->normal(x_b);
+            }
         }
     }
-        
+  */      
     // find relative velocity at point 
     vr = a->get_velocity(x) - b->get_velocity(x);
 

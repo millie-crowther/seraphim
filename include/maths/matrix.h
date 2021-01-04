@@ -266,17 +266,18 @@ namespace srph {
         T p_norm(matrix_t<T, M, N> x){
             static_assert(P > 0, "Error: P-norm must have a positive P-value");
 
-            if constexpr (P != 1 || !std::is_unsigned<T>::value){
+        //    if constexpr (P != 1 || !std::is_unsigned<T>::value){
                 std::transform(x.begin(), x.end(), x.begin(), [](const T & y){ 
-                    if constexpr (P == 1){
-                        return std::abs(y); 
-                    } else if constexpr ((P & 1) == 0 || std::is_unsigned<T>::value){
-                        return std::pow(y, P); 
-                    } else {
+        //            if constexpr (P == 1){
+          //              return std::abs(y); 
+        //            } 
+                   // else if constexpr ((P & 1) == 0 || std::is_unsigned<T>::value){
+                     //   return std::pow(y, P); 
+            //        } else {
                         return std::abs(std::pow(y, P));
-                    }
+              //      }
                 });
-            }
+          //  }
             
             auto sum = std::accumulate(x.begin(), x.end(), T(0));
             return std::pow(sum, 1.0 / static_cast<double>(P));    
@@ -498,7 +499,7 @@ namespace srph {
     }
 
     template<class T, uint8_t N>
-    void operator*=(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    void operator*=(vec_t<T, N> & a, const vec_t<T, N> & b){
         a.scale(b);
     }
 
