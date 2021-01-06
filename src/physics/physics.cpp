@@ -101,9 +101,21 @@ void physics_t::correct(collision_t & c){
     auto points = &contact_points[pair];
 
     // remove all points which are no longer contact points
-    for (unsigned int i = 0; i < points->size(); i++){
-        
+    for (unsigned int i = 0; i < points->size();){
+        auto x1 = pair.first->to_local_space(points->at(i));
+        auto x2 = pair.second->to_local_space(points->at(i)); 
+
+        if (!pair.first->get_sdf()->contains(x1) || !pair.second->get_sdf()->contains(x2)){
+            points->at(i) = points->at(points->size() - 1);
+            points->pop_back();
+        } else {
+            i++;
+        }
     }
+
+    // trim point list randomly until of fixed size
+    
+
     c.correct();
 }
 
