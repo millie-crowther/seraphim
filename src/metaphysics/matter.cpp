@@ -26,6 +26,15 @@ vec3_t matter_t::get_position() const {
 }
 
 bool matter_t::is_inert(){
+//    std::cout << "-----" << std::endl;
+//    std::cout << "\tv = " << vec::length(v) << std::endl;
+//    std::cout << "\to = " << vec::length(omega) << std::endl;
+
+
+//    if (std::max(vec::length(v), vec::length(omega)) < constant::epsilon){
+//        std::cout << "beep" << std::endl;
+//    }
+
     return 
         vec::length(v) < constant::epsilon &&
         vec::length(omega) < constant::epsilon &&

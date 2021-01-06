@@ -28,12 +28,12 @@ srph::collision_t::collision_t(
     };
    
     aabb3_t aabb = a->get_moving_aabb(delta_t) && b->get_moving_aabb(delta_t);
-    if (aabb.is_valid()){
-        std::array<vec3_t, 4> xs = {
-            aabb.get_vertex(0), aabb.get_vertex(3),
-            aabb.get_vertex(5), aabb.get_vertex(6)
-        };
+    std::array<vec3_t, 4> xs = {
+        aabb.get_vertex(0), aabb.get_vertex(3),
+        aabb.get_vertex(5), aabb.get_vertex(6)
+    };
 
+    if (aabb.is_valid()){
         auto result = srph::optimise::nelder_mead(f, xs);
         x = result.x;
         depth = std::abs(result.fx);
@@ -49,35 +49,44 @@ srph::collision_t::collision_t(
         if (vec::p_norm<1>(ja) <= vec::p_norm<1>(jb)){
             n = a->get_rotation() * a->get_sdf()->normal(x_a);
         } else {
-            n = b->get_rotation() * b->get_sdf()->normal(x_b);
+            n = b->get_rotation() * -b->get_sdf()->normal(x_b);
         }
     }
-/*
+
     if (intersecting){
+        /*
         // find contact surface
-        int n_samples = 0;
-    
         vec3_t c;
-        int cs = 0;
+        double cs = 0;
 
-        std::uniform_real_distribution<double> distribution(0.0, 2.0);
+        aabb3_t aabb3d = a->get_moving_aabb(0) && b->get_moving_aabb(0);
+        aabb3d.enlarge(constant::epsilon);
 
-        for (int i = 0; i < n_samples; i++){
-            vec3_t v(
-                distribution(generator), 
-                distribution(generator),
-                distribution(generator)
-            );
-            v.scale(aabb.get_size());
-            v += aabb.get_min();
 
-            auto va = a->to_local_space(v);
-            auto vb = b->to_local_space(v);
+        auto minx = aabb3d.get_min();
+        auto maxx = aabb3d.get_max();
+        auto delta = aabb3d.get_size() * 2.0 / 10.0;
 
-            double maxphi = std::max(a->get_sdf()->phi(va), b->get_sdf()->phi(vb));
-            if (maxphi <= constant::epsilon){
-                c += v;
-                cs++;
+        for (double i = minx[0]; i <= maxx[0]; i += delta[0]){
+            for (double j = minx[1]; j <= maxx[1]; j += delta[1]){
+                for (double k = minx[2]; k <= maxx[2];){
+                    auto v = vec3_t(i, j, k);
+
+                    auto va = a->to_local_space(v);
+                    auto vb = b->to_local_space(v);
+                   
+                    double pa = a->get_sdf()->phi(va);
+                    double pb = b->get_sdf()->phi(vb);
+
+                    double maxphi = std::max(pa, pb);
+        
+                    if (maxphi < constant::epsilon){
+                        c += v; 
+                        cs += 1.0;
+                    }
+
+                    k += std::max(maxphi, delta[2]);
+                }
             }
         }
 
@@ -85,22 +94,11 @@ srph::collision_t::collision_t(
         //    std::cout << "cs = " << cs << std::endl;
 
             x = c / cs;
-  //          std::cout << "xb = " << b->to_local_space(x) << std::endl;
-            x_a = a->to_local_space(x);
-            x_b = b->to_local_space(x);
-            
-            // choose best normal based on smallest second derivative
-            auto ja = a->get_sdf()->jacobian(x_a);
-            auto jb = b->get_sdf()->jacobian(x_b);
-
-            if (vec::p_norm<1>(ja) <= vec::p_norm<1>(jb)){
-                n = a->get_rotation() * a->get_sdf()->normal(x_a);
-            } else {
-                n = b->get_rotation() * b->get_sdf()->normal(x_b);
-            }
+            std::cout << "xb = " << b->to_local_space(x) << std::endl;
         }
+        //*/
     }
-  */      
+       
     // find relative velocity at point 
     vr = a->get_velocity(x) - b->get_velocity(x);
 
