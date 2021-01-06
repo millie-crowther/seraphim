@@ -29,6 +29,7 @@ namespace srph {
         bool is_anticipated() const;
         double get_estimated_time() const;
         vec3_t get_position() const;
+        std::pair<matter_t *, matter_t *> get_matters() const;
 
         void correct();
         void resting_correct();

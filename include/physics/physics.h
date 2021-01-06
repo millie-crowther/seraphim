@@ -1,6 +1,8 @@
 #ifndef PHYSICS_H
 #define PHYSICS_H
 
+#include "collision.h"
+
 #include "core/constant.h"
 #include "metaphysics/matter.h"
 
@@ -21,6 +23,8 @@ namespace srph {
         int get_frame_count();
 
     private:
+        void correct(collision_t & c);
+
         bool quit;
         std::thread thread;
 

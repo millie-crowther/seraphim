@@ -88,6 +88,10 @@ vec3_t srph::collision_t::get_position() const {
     return x;
 }
 
+std::pair<matter_t *, matter_t *> srph::collision_t::get_matters() const {
+    return std::make_pair(a, b);
+}
+
 void srph::collision_t::resting_correct(){
     auto aa = a->get_acceleration(x);
     auto ab = b->get_acceleration(x);

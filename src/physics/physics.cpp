@@ -1,7 +1,6 @@
 #include "physics/physics.h"
 
 #include "core/scheduler.h"
-#include "physics/collision.h"
 
 #include <chrono>
 #include <functional>
@@ -63,7 +62,7 @@ void physics_t::run(){
         // correct all present collisions and anticipate the next one
         for (auto & c : collisions){
             if (c.is_intersecting()){
-                c.correct();
+                correct(c);
             } else if (c.is_anticipated()){
                 delta = std::min(delta, c.get_estimated_time());
             }
@@ -95,6 +94,17 @@ void physics_t::run(){
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
     }
+}
+
+void physics_t::correct(collision_t & c){
+    auto pair = c.get_matters();
+    auto points = &contact_points[pair];
+
+    // remove all points which are no longer contact points
+    for (unsigned int i = 0; i < points->size(); i++){
+        
+    }
+    c.correct();
 }
 
 void physics_t::register_matter(std::shared_ptr<matter_t> matter){
