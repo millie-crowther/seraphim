@@ -4,6 +4,7 @@
 #include "core/constant.h"
 #include "metaphysics/matter.h"
 
+#include <map>
 #include <memory>
 #include <set>
 #include <thread>
@@ -27,6 +28,8 @@ namespace srph {
 
         std::vector<std::shared_ptr<matter_t>> matters;
         std::vector<std::shared_ptr<matter_t>> asleep_matters;
+
+        std::map<std::pair<matter_t *, matter_t *>, std::vector<vec3_t>> contact_points; 
 
         int frames;
 

@@ -19,18 +19,16 @@ namespace srph {
         vec3_t vr;
 
         double depth;
-        std::shared_ptr<matter_t> a;
-        std::shared_ptr<matter_t> b;
+        matter_t * a;
+        matter_t * b;
 
     public:
-        collision_t(
-            double delta_t,
-            std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
-        );
+        collision_t(double delta_t, matter_t * a, matter_t * b);
        
         bool is_intersecting() const;
         bool is_anticipated() const;
         double get_estimated_time() const;
+        vec3_t get_position() const;
 
         void correct();
         void resting_correct();

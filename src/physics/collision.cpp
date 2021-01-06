@@ -2,15 +2,13 @@
 
 #include "maths/optimise.h"
 
-#include <random>
+#include <map>
 
 using namespace srph;
 
-std::default_random_engine generator;
-
 srph::collision_t::collision_t(
     double delta_t,
-    std::shared_ptr<matter_t> a, std::shared_ptr<matter_t> b
+    matter_t * a, matter_t * b
 ){
     this->a = a;
     this->b = b;
@@ -54,49 +52,6 @@ srph::collision_t::collision_t(
     }
 
     if (intersecting){
-        /*
-        // find contact surface
-        vec3_t c;
-        double cs = 0;
-
-        aabb3_t aabb3d = a->get_moving_aabb(0) && b->get_moving_aabb(0);
-        aabb3d.enlarge(constant::epsilon);
-
-
-        auto minx = aabb3d.get_min();
-        auto maxx = aabb3d.get_max();
-        auto delta = aabb3d.get_size() * 2.0 / 10.0;
-
-        for (double i = minx[0]; i <= maxx[0]; i += delta[0]){
-            for (double j = minx[1]; j <= maxx[1]; j += delta[1]){
-                for (double k = minx[2]; k <= maxx[2];){
-                    auto v = vec3_t(i, j, k);
-
-                    auto va = a->to_local_space(v);
-                    auto vb = b->to_local_space(v);
-                   
-                    double pa = a->get_sdf()->phi(va);
-                    double pb = b->get_sdf()->phi(vb);
-
-                    double maxphi = std::max(pa, pb);
-        
-                    if (maxphi < constant::epsilon){
-                        c += v; 
-                        cs += 1.0;
-                    }
-
-                    k += std::max(maxphi, delta[2]);
-                }
-            }
-        }
-
-        if (cs != 0){
-        //    std::cout << "cs = " << cs << std::endl;
-
-            x = c / cs;
-            std::cout << "xb = " << b->to_local_space(x) << std::endl;
-        }
-        //*/
     }
        
     // find relative velocity at point 
@@ -127,6 +82,10 @@ bool srph::collision_t::is_anticipated() const {
 
 double srph::collision_t::get_estimated_time() const {
     return t;
+}
+
+vec3_t srph::collision_t::get_position() const {
+    return x;
 }
 
 void srph::collision_t::resting_correct(){

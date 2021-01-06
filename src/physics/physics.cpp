@@ -48,14 +48,14 @@ void physics_t::run(){
             // collide awake substances with each other
             for (uint32_t i = 0; i < matters.size(); i++){
                 for (uint32_t j = i + 1; j < matters.size(); j++){
-                    collisions.emplace_back(delta, matters[i], matters[j]);
+                    collisions.emplace_back(delta, matters[i].get(), matters[j].get());
                 }
             }
             
             // collide awake substances with asleep substances
             for (auto awake_matter : matters){
                 for (auto asleep_matter : asleep_matters){
-                    collisions.emplace_back(delta, asleep_matter, awake_matter);
+                    collisions.emplace_back(delta, asleep_matter.get(), awake_matter.get());
                 }
             }
         }
