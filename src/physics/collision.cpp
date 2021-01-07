@@ -141,12 +141,19 @@ void srph::collision_t::colliding_correct(){
     }
 }
 
-void srph::collision_t::correct(){
+void srph::collision_t::correct(const vec3_t & adjusted_x){
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n * b->get_mass() / sm);
     b->translate( depth * n * a->get_mass() / sm);
     
+    x = adjusted_x;
+    x_a = a->to_local_space(x);
+    x_b = b->to_local_space(x);
+    vr = a->get_velocity(x) - b->get_velocity(x);
+   // std::cout << "xb = " << x_b << std::endl;
+        
+ 
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){

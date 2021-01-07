@@ -31,7 +31,7 @@ namespace srph {
         vec3_t get_position() const;
         std::pair<matter_t *, matter_t *> get_matters() const;
 
-        void correct();
+        void correct(const vec3_t & adjusted_x);
         void resting_correct();
         void colliding_correct();
 

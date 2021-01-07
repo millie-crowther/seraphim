@@ -23,6 +23,7 @@ namespace srph {
         int get_frame_count();
 
     private:
+        static constexpr int max_contact_points = 16;
         void correct(collision_t & c);
 
         bool quit;
