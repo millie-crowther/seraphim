@@ -50,9 +50,6 @@ srph::collision_t::collision_t(
             n = b->get_rotation() * -b->get_sdf()->normal(x_b);
         }
     }
-
-    if (intersecting){
-    }
        
     // find relative velocity at point 
     vr = a->get_velocity(x) - b->get_velocity(x);
@@ -147,7 +144,7 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
     a->translate(-depth * n * b->get_mass() / sm);
     b->translate( depth * n * a->get_mass() / sm);
     
-    x = adjusted_x;
+//    x = adjusted_x;
     x_a = a->to_local_space(x);
     x_b = b->to_local_space(x);
     vr = a->get_velocity(x) - b->get_velocity(x);
@@ -156,7 +153,7 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
  
     auto vrn = vec::dot(vr, n);
 
-    if (vrn > constant::epsilon){
+    if (vrn > constant::kappa){
         colliding_correct();
     } else {
         resting_correct();

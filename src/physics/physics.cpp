@@ -109,8 +109,8 @@ void physics_t::correct(collision_t & c){
         auto x2 = pair.second->to_local_space(points->at(i)); 
 
         if (
-            pair.first->get_sdf()->phi(x1)  > constant::epsilon || 
-            pair.second->get_sdf()->phi(x2) > constant::epsilon
+            pair.first->get_sdf()->phi(x1)  > 0 || 
+            pair.second->get_sdf()->phi(x2) > 0 
         ){
             points->at(i) = points->at(points->size() - 1);
             points->pop_back();
@@ -134,7 +134,7 @@ void physics_t::correct(collision_t & c){
                 distance = min_distance;
             }
         }
-        //*/
+        // */
 
         std::uniform_int_distribution<int> distr(0, points->size() - 1);
         int min_i = distr(engine);
