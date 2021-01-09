@@ -8,9 +8,7 @@ using namespace std::chrono_literals;
 
 namespace srph { namespace constant {
     // smallest distance
-    constexpr double epsilon = 1.0 / 256.0;        
-
-    constexpr double kappa   = 1.0 / 4.0;   // physics epsilon
+    constexpr double epsilon = 1.0 / 300.0;        
 
     // shortest time period 
     constexpr auto iota    = 10ms; 

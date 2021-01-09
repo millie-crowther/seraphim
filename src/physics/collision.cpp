@@ -153,7 +153,7 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
  
     auto vrn = vec::dot(vr, n);
 
-    if (vrn > constant::kappa){
+    if (vrn > constant::epsilon){
         colliding_correct();
     } else {
         resting_correct();

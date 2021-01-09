@@ -55,6 +55,16 @@ namespace srph {
 
             return v;
         }
+
+        aabb_t<T, D> get_subdivision(int i) const {
+            vec_t<T, D> _min = min;
+            for (int j = 0; j < D; j++){
+                if (i & (1 << j)){
+                    _min[j] = max[j] / 2 + min[j] / 2;
+                }
+            }
+            return aabb_t<T, D>(_min, _min + get_size());
+        }
         
         aabb_t<T, D> operator&&(const aabb_t<T, D> & a) const {
             return aabb_t<T, D>(vec::max(min, a.min), vec::min(max, a.max));

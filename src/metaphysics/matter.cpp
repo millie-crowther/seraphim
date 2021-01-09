@@ -36,10 +36,10 @@ bool matter_t::is_inert(){
 //    }
 
     return 
-        vec::length(v) < constant::kappa &&
-        vec::length(omega) < constant::kappa &&
-        vec::length(a) < constant::kappa &&
-        vec::length(alpha) < constant::kappa;
+        vec::length(v) < constant::epsilon &&
+        vec::length(omega) < constant::epsilon &&
+        vec::length(a) < constant::epsilon &&
+        vec::length(alpha) < constant::epsilon;
 }
 
 material_t matter_t::get_material(const vec3_t & x){
