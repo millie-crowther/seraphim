@@ -56,14 +56,21 @@ namespace srph {
             return v;
         }
 
-        aabb_t<T, D> get_subdivision(int i) const {
-            vec_t<T, D> _min = min;
-            for (int j = 0; j < D; j++){
-                if (i & (1 << j)){
-                    _min[j] = max[j] / 2 + min[j] / 2;
+        std::pair<aabb_t<T, D>, aabb_t<T, D>> bisect() const {
+            auto aabbs = std::make_pair(*this, *this);
+            auto s = get_size();                  
+
+            int max_i = 0;
+            for (int i = 1; i < D; i++){
+                if (s[i] > s[max_i]){
+                    max_i = i;
                 }
             }
-            return aabb_t<T, D>(_min, _min + get_size());
+
+            aabbs.first .max[max_i] -= s[max_i];
+            aabbs.second.min[max_i] += s[max_i];
+
+            return aabbs;
         }
         
         aabb_t<T, D> operator&&(const aabb_t<T, D> & a) const {
@@ -82,6 +89,7 @@ namespace srph {
     
     using aabb2_t = aabb_t<double, 2>;
     using aabb3_t = aabb_t<double, 3>;
+    using aabb4_t = aabb_t<double, 4>;
 }
 
 #endif

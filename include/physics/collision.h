@@ -7,6 +7,8 @@
 namespace srph {
     class collision_t {
     private:
+        static constexpr double density = constant::epsilon * 2;
+
         bool intersecting;
         bool anticipated;
         double t;
@@ -21,6 +23,8 @@ namespace srph {
         double depth;
         matter_t * a;
         matter_t * b;
+
+        void minimise(const aabb4_t & region);
 
     public:
         collision_t(double delta_t, matter_t * a, matter_t * b);

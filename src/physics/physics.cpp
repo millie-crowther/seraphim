@@ -22,11 +22,9 @@ physics_t::~physics_t(){
 
 void physics_t::run(){
     auto t = scheduler::clock_t::now();
-    auto clock_d = std::chrono::duration_cast<scheduler::clock_t::duration>(constant::iota);
-    auto previous = std::chrono::steady_clock::now() - clock_d;
+    auto previous = std::chrono::steady_clock::now();
        
     while (!quit){
-        //std::lock_guard<std::mutex> lock(matters_mutex);
         frames++;
         
         auto now = std::chrono::steady_clock::now();

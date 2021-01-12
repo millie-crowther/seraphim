@@ -3,6 +3,7 @@
 #include "maths/optimise.h"
 
 #include <map>
+#include <queue>
 
 using namespace srph;
 
@@ -50,7 +51,7 @@ srph::collision_t::collision_t(
             n = b->get_rotation() * -b->get_sdf()->normal(x_b);
         }
     }
-       
+    
     // find relative velocity at point 
     vr = a->get_velocity(x) - b->get_velocity(x);
 
@@ -100,6 +101,17 @@ void srph::collision_t::resting_correct(){
         a->constrain_acceleration(-d * b->get_mass()); 
         b->constrain_acceleration( d * a->get_mass());
     } 
+}
+
+void srph::collision_t::minimise(const aabb4_t & region){
+    std::queue<aabb4_t> queue;
+    std::vector<aabb4_t> solutions;
+    std::vector<aabb4_t> singulars;
+    //double upper_t;
+
+    while (!queue.empty()){
+
+    }
 }
 
 void srph::collision_t::colliding_correct(){
