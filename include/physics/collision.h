@@ -28,13 +28,13 @@ namespace srph {
         double lower_bound_t(const aabb4_t & region) const;
         double upper_bound_t(const aabb4_t & region) const;
         
-        bool satisfies_constraints(const aabb4_t & region) const;
         bool should_accept_solution(const aabb4_t & region) const;
         bool contains_unique_solution(const aabb4_t & region) const;
-        
-        bool is_solution_too_dense(const aabb4_t & region) const;
         std::pair<aabb4_t, aabb4_t> subdivide(const aabb4_t & region) const;        
         
+        bool satisfies_constraints(
+            const aabb4_t & region, double upper_t, const std::vector<aabb4_t> & sing_solns
+        ) const;
 
     public:
         collision_t(double delta_t, matter_t * a, matter_t * b);

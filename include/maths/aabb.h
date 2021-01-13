@@ -65,7 +65,7 @@ namespace srph {
             return aabb_t<T, D>(vec::max(min, a.min), vec::min(max, a.max));
         }
 
-        aabb_t<T, D> operator||(const aabb_T<T, D> & a) const {
+        aabb_t<T, D> operator||(const aabb_t<T, D> & a) const {
             return aabb_t<T, D>(vec::min(min, a.min), vec::max(max, a.max));
         }
 
