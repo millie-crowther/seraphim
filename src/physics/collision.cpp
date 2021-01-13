@@ -165,7 +165,7 @@ void srph::collision_t::minimise(const aabb4_t & initial_region){
     std::queue<aabb4_t> queue;
     queue.push(initial_region);
 
-    std::vector<aabb4_t> uniq_solns;
+    std::vector<aabb4_t> solutions;
     std::vector<aabb4_t> sing_solns;
     double upper_t = constant::sigma;
 
@@ -178,7 +178,7 @@ void srph::collision_t::minimise(const aabb4_t & initial_region){
         } 
 
         if (should_accept_solution(region)){
-            uniq_solns.push_back(region);
+            solutions.push_back(region);
             
             if (!contains_unique_solution(region)){
                 sing_solns.push_back(region);
@@ -190,7 +190,7 @@ void srph::collision_t::minimise(const aabb4_t & initial_region){
                 return y.get_min()[3] > upper_t + constant::iota;
             };
                 
-            std::remove_if(uniq_solns.begin(), uniq_solns.end(), too_late);
+            std::remove_if(solutions.begin(),  solutions.end(),  too_late);
             std::remove_if(sing_solns.begin(), sing_solns.end(), too_late);
         } else {
             auto subregions = subdivide(region);
@@ -205,10 +205,12 @@ bool srph::collision_t::comparator_t::operator()(const collision_t & a, const co
 }
 
 double srph::collision_t::lower_bound_t(const aabb4_t & region) const {
+    // TODO
     return 0.0;
 }
 
 double srph::collision_t::upper_bound_t(const aabb4_t & region) const {
+    // TODO
     return constant::sigma;
 }
 
@@ -229,11 +231,21 @@ bool srph::collision_t::satisfies_constraints(
     if (std::any_of(sing_solns.begin(), sing_solns.end(), is_too_dense)){
         return false;
     }
-    
+   
+    // is too far from surface
+    // TODO
+
+    // normals not anti-parallel    
+    // TODO
+
+    // incoming collision constraint
+    // TODO
+ 
     return true;
 }
 
 bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
+    // TODO: accept at higher resolutions
     vec4_t size = region.get_size();
     return 
         vec::length(vec3_t(size[0], size[1], size[2])) * 2 < constant::epsilon &&
@@ -241,9 +253,11 @@ bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
 }
 
 std::pair<aabb4_t, aabb4_t> srph::collision_t::subdivide(const aabb4_t & region) const {
+    // TODO
     return std::make_pair(region, region);
 }
 
 bool srph::collision_t::contains_unique_solution(const aabb4_t & region) const {
+    // TODO
     return false;
 }

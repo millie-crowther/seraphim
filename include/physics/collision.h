@@ -7,7 +7,7 @@
 namespace srph {
     class collision_t {
     private:
-        static constexpr double solution_density = constant::epsilon * 2;
+        static constexpr double solution_density = constant::epsilon * 10;
 
         bool intersecting;
         bool anticipated;
