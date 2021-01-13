@@ -103,20 +103,6 @@ void srph::collision_t::resting_correct(){
     } 
 }
 
-void srph::collision_t::minimise(const aabb4_t & initial_region){
-    std::queue<aabb4_t> queue;
-    queue.push(initial_region);
-
-    std::vector<aabb4_t> solutions;
-    std::vector<aabb4_t> singulars;
-    double upper_t = constant::sigma;
-
-    while (!queue.empty()){
-        aabb4_t region = queue.front();
-        queue.pop();
-    }
-}
-
 void srph::collision_t::colliding_correct(){
     // calculate collision impulse magnitude
     auto mata = a->get_material(x_a);
@@ -175,6 +161,60 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
     }
 }
 
+bool srph::collision_t::is_solution_too_dense(const aabb4_t & region){
+    return 
+        lower_bound_t(region) > upper_t - constant::iota &&
+        std::any_of(sing_solns.begin(), sing_solns.end(), [region, this](const aabb4_t & y){
+            return (region || y).get_size() * 2 < solution_density;
+        });
+}
+
+void srph::collision_t::minimise(const aabb4_t & initial_region){
+    std::queue<aabb4_t> queue;
+    queue.push(initial_region);
+
+    std::vector<aabb4_t> uniq_solns;
+    std::vector<aabb4_t> sing_solns;
+    double upper_t = constant::sigma;
+
+    while (!queue.empty()){
+        aabb4_t region = queue.front();
+        queue.pop();
+
+        if (lower_bound_t(region) > upper_t + constant::iota){
+            // discard region
+        } else if (is_solution_too_dense(region){
+            // discard region
+        } else if (should_accept_solution(region)){
+            uniq_solns.push_back(region);
+            
+            if (!contains_unique_solution(region)){
+                sing_solns.push_back(region);
+            }
+
+            upper_t = std::min(upper_t, upper_bound_t(region));
+
+            auto too_late = [upper_t](const aabb4_t & y){
+                return y.get_min()[3] > upper_t + constant::iota;
+            });
+                
+            std::remove_if(uniq_solns.begin(), uniq_solns.end(), too_late);
+            std::remove_if(sing_solns.begin(), sing_solns.end(), too_late);
+        } else {
+            auto subregions = subdivide(region);
+            for (const auto & subregion : subregions){
+                if (!satisfies_constraings(subregion)){
+                    // discard Y
+                } else if (lower_bound_t(subregion) > upper_t + constant::iota){
+                    // sicard Y
+                } else {        
+                    queue.push_back(subregion);
+                }
+            }
+        }
+    }
+}
+
 bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
     return a.t < b.t;
 }
@@ -187,11 +227,11 @@ double srph::collision_t::upper_bound_t(const aabb4_t & region) const {
     return constant::sigma;
 }
 
-bool srph::collision_t::may_contain_collision(const aabb4_t & region) const {
+bool srph::collision_t::satisfies_constraints(const aabb4_t & region) const {
     return true;
 }
 
-bool srph::collision_t::should_accept_region(const aabb4_t & region) const {
+bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
     return 
         vec::length(vec3_t(region[0], region[1], region[2])) < constant::epsilon &&
         region[3] <= constant::iota;
@@ -199,4 +239,8 @@ bool srph::collision_t::should_accept_region(const aabb4_t & region) const {
 
 std::pair<aabb4_t, aabb4_t> srph::collision_t::subdivide(const aabb4_t & region) const {
     return std::make_pair(region, region);
-} 
+}
+
+bool srph::collision_t::contains_unique_solution(const aabb4_t & region) const {
+    return false;
+}

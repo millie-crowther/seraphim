@@ -24,6 +24,10 @@ namespace srph {
             this->max = max;
         }
 
+        bool contains(const vec_t<T, D> & x) const {
+            return vec::all(x >= min && x <= max);
+        } 
+
         void capture_point(const vec_t<T, D> & c){
             min = vec::min(min, c);
             max = vec::max(max, c); 
@@ -56,25 +60,13 @@ namespace srph {
             return v;
         }
 
-        std::pair<aabb_t<T, D>, aabb_t<T, D>> bisect() const {
-            auto aabbs = std::make_pair(*this, *this);
-            auto s = get_size();                  
-
-            int max_i = 0;
-            for (int i = 1; i < D; i++){
-                if (s[i] > s[max_i]){
-                    max_i = i;
-                }
-            }
-
-            aabbs.first .max[max_i] -= s[max_i];
-            aabbs.second.min[max_i] += s[max_i];
-
-            return aabbs;
-        }
         
         aabb_t<T, D> operator&&(const aabb_t<T, D> & a) const {
             return aabb_t<T, D>(vec::max(min, a.min), vec::min(max, a.max));
+        }
+
+        aabb_t<T, D> operator||(const aabb_T<T, D> & a) const {
+            return aabb_t<T, D>(vec::min(min, a.min), vec::max(max, a.max));
         }
 
         bool is_valid() const {

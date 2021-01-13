@@ -7,7 +7,7 @@
 namespace srph {
     class collision_t {
     private:
-        static constexpr double density = constant::epsilon * 2;
+        static constexpr double solution_density = constant::epsilon * 2;
 
         bool intersecting;
         bool anticipated;
@@ -27,9 +27,14 @@ namespace srph {
         void minimise(const aabb4_t & region);
         double lower_bound_t(const aabb4_t & region) const;
         double upper_bound_t(const aabb4_t & region) const;
-        bool may_contain_collision(const aabb4_t & region) const;
-        bool should_accept_region(const aabb4_t & region) const;
+        
+        bool satisfies_constraints(const aabb4_t & region) const;
+        bool should_accept_solution(const aabb4_t & region) const;
+        bool contains_unique_solution(const aabb4_t & region) const;
+        
+        bool is_solution_too_dense(const aabb4_t & region) const;
         std::pair<aabb4_t, aabb4_t> subdivide(const aabb4_t & region) const;        
+        
 
     public:
         collision_t(double delta_t, matter_t * a, matter_t * b);
