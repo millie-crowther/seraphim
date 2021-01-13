@@ -103,14 +103,17 @@ void srph::collision_t::resting_correct(){
     } 
 }
 
-void srph::collision_t::minimise(const aabb4_t & region){
+void srph::collision_t::minimise(const aabb4_t & initial_region){
     std::queue<aabb4_t> queue;
+    queue.push(initial_region);
+
     std::vector<aabb4_t> solutions;
     std::vector<aabb4_t> singulars;
-    //double upper_t;
+    double upper_t = constant::sigma;
 
     while (!queue.empty()){
-
+        aabb4_t region = queue.front();
+        queue.pop();
     }
 }
 
@@ -175,3 +178,25 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
 bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
     return a.t < b.t;
 }
+
+double srph:collision_t::lower_bound_t(const aabb4_t & region) const {
+    return 0.0;
+}
+
+double srph::collision_t::upper_bound_t(const aabb4_t & region) const {
+    return constant::sigma;
+}
+
+bool srph::collision_t::may_contain_collision(const aabb4_t & region) const {
+    return true;
+}
+
+bool srph::collision_t::should_accept_region(const aabb4_t & region) const {
+    return 
+        vec::length(vec3_t(region[0], region[1], region[2])) < constant::epsilon &&
+        region[3] <= constant::iota;
+}
+
+std::pair<aabb4_t, aabb4_t> srph::collision_t::subdivide(const aabb4_t & region) const {
+    return std::make_pair(region, region);
+} 
