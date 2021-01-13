@@ -246,10 +246,26 @@ bool srph::collision_t::satisfies_constraints(
 
 bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
     // TODO: accept at higher resolutions
+     
+
     vec4_t size = region.get_size();
-    return 
-        vec::length(vec3_t(size[0], size[1], size[2])) * 2 < constant::epsilon &&
-        size[3] * 2 <= constant::iota;
+    if ( 
+        vec::length(vec3_t(size[0], size[1], size[2])) * 2 > constant::epsilon ||
+        size[3] * 2 > constant::iota
+    ){
+        return false;
+    }
+
+    vec4_t c4 = region.get_centre();
+    vec3_t centre(c4[0], c4[1], c4[2]);
+    
+    vec3_t c_a = a->to_local_space(centre);
+    vec3_t c_b = b->to_local_space(centre);
+
+    double phi_a = std::abs(a->get_sdf()->phi(c_a)); 
+    double phi_b = std::abs(b->get_sdf()->phi(c_b));
+
+    return std::max(phi_a, phi_b) < constant::epsilon; 
 }
 
 std::pair<aabb4_t, aabb4_t> srph::collision_t::subdivide(const aabb4_t & region) const {
