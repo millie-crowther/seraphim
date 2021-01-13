@@ -269,8 +269,24 @@ bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
 }
 
 std::pair<aabb4_t, aabb4_t> srph::collision_t::subdivide(const aabb4_t & region) const {
-    // TODO
-    return std::make_pair(region, region);
+    // TODO cleverer subdivision
+    vec4_t size = region.get_size();
+    size[3] *= constant::epsilon / constant::iota;
+
+    int max_i = 0;
+    for (int i = 1; i < 4; i++){
+        if (size[i] > size[max_i]){
+            max_i = i;
+        }
+    }
+    
+    vec4_t min = region.get_min();
+    vec4_t max = region.get_max();
+
+    min[max_i] = region.get_centre()[max_i];
+    max[max_i] = region.get_centre()[max_i];
+
+    return std::make_pair(aabb4_t(region.get_min(), max), aabb4_t(min, region.get_max()));
 }
 
 bool srph::collision_t::contains_unique_solution(const aabb4_t & region) const {
