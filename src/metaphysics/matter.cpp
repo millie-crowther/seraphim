@@ -142,12 +142,20 @@ void matter_t::reset_acceleration() {
     alpha = vec3_t();
 }
 
-void matter_t::physics_tick(double t){
+transform_t matter_t::get_transform_after(double t){
+    transform_t tf = transform;
+
     // update position
-    transform.translate((0.5 * a * t + v) * t);
+    tf.translate((0.5 * a * t + v) * t);
     
     // update rotation
-    transform.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
+    tf.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
+
+    return tf;
+}
+
+void matter_t::physics_tick(double t){
+    transform = get_transform_after(t);
 
     // integrate accelerations into velocities
     v += a * t;

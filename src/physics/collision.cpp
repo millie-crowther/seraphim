@@ -246,11 +246,9 @@ bool srph::collision_t::satisfies_constraints(
 
 bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
     // TODO: accept at higher resolutions
-     
-
     vec4_t size = region.get_size();
     if ( 
-        vec::length(vec3_t(size[0], size[1], size[2])) * 2 > constant::epsilon ||
+        vec::length(vec3_t(size[0], size[1], size[2])) > constant::epsilon ||
         size[3] * 2 > constant::iota
     ){
         return false;

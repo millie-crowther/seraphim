@@ -36,6 +36,7 @@ namespace srph {
         vec3_t to_local_space(const vec3_t & x) const;
 
         void physics_tick(double delta);
+        transform_t get_transform_after(double delta);
 
         double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
         
