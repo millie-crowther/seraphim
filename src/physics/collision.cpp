@@ -241,21 +241,30 @@ bool srph::collision_t::satisfies_constraints(
     // is too far from surface
     double t1 = region.get_min()[3];
     double t2 = region.get_max()[3];
-    
-    transform_t tfa = a->get_transform_after(t1);
     vec4_t c = region.get_centre();
     vec3_t x = vec3_t(c[0], c[1], c[2]);
-    vec3_t x_a = tfa.to_local_space(x);
-    std::cout << "x_a = " << x_a << std::endl;
-    vec3_t v_a = a->get_velocity_after(x, t1);
-    double max_distance = vec::length(v_a) * (t2 - t1);
-
     vec4_t size1 = region.get_size();
     vec3_t size = vec3_t(size1[0], size1[1], size1[2]);
+    
+    transform_t tfa = a->get_transform_after(t1);
+    vec3_t x_a = tfa.to_local_space(x);
+    vec3_t v_a = a->get_velocity_after(x, t1);
+    double distance_a = vec::length(v_a) * (t2 - t1);
 
-    if (std::abs(a->get_sdf()->phi(x_a) - max_distance > vec::length(size))){
+    if (std::abs(a->get_sdf()->phi(x_a) - distance_a > vec::length(size))){
         return false;
     } 
+
+    transform_t tfb = b->get_transform_after(t1);
+    vec3_t x_b = tfb.to_local_space(x);
+    vec3_t v_b = b->get_velocity_after(x, t1);
+    double distance_b = vec::length(v_b) * (t2 - t1);
+
+    if (std::abs(b->get_sdf()->phi(x_b) - distance_b > vec::length(size))){
+        return false;
+    } 
+
+
     // normals not anti-parallel    
     // TODO
 
