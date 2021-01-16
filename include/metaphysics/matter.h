@@ -26,17 +26,15 @@ namespace srph {
 
         bool is_inert();
 
-        vec3_t get_velocity(const vec3_t & x);
-
-        vec3_t get_acceleration(const vec3_t & x);
         void constrain_acceleration(const vec3_t & da);
         void reset_acceleration();
         
-        vec3_t get_offset_from_centre_of_mass(const vec3_t & x);
         vec3_t to_local_space(const vec3_t & x) const;
 
         void physics_tick(double delta);
+        
         transform_t get_transform_after(double delta);
+        vec3_t get_velocity_after(const vec3_t & x, double t);
 
         double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
         

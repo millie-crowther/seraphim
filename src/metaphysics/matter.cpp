@@ -60,7 +60,7 @@ aabb3_t matter_t::get_moving_aabb(double t) const {
 }
 
 double matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){
-    auto r = get_offset_from_centre_of_mass(r_global); 
+    auto r = r_global - transform.to_global_space(get_centre_of_mass()); 
     auto rn = vec::cross(r, n);
 
     return vec::dot(rn, *get_inv_tf_i() * rn);
@@ -81,14 +81,14 @@ void matter_t::apply_force(const vec3_t & f){
 void matter_t::apply_force_at(const vec3_t & f, const vec3_t & x){
     a += f / get_mass();
 
-    auto r = get_offset_from_centre_of_mass(x); 
+    auto r = x - transform.to_global_space(get_centre_of_mass()); 
     alpha += *get_inv_tf_i() * vec::cross(r, f);
 }    
 
 void matter_t::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
     v += j / get_mass();
 
-    auto r = get_offset_from_centre_of_mass(r_global); 
+    auto r = r_global - transform.to_global_space(get_centre_of_mass()); 
     omega += *get_inv_tf_i() * vec::cross(r, j);
 }
 
@@ -199,16 +199,10 @@ mat3_t * matter_t::get_i(){
     return i.get();
 }
 
-vec3_t matter_t::get_velocity(const vec3_t & x){
-    return v + vec::cross(omega, get_offset_from_centre_of_mass(x));
-}
-
-vec3_t matter_t::get_acceleration(const vec3_t & x){
-    return a + vec::cross(alpha, get_offset_from_centre_of_mass(x));
-}
-
-vec3_t matter_t::get_offset_from_centre_of_mass(const vec3_t & x){
-    return x - transform.to_global_space(get_centre_of_mass()); 
+vec3_t matter_t::get_velocity_after(const vec3_t & x, double t){
+    transform_t tf = get_transform_after(t);
+    vec3_t x1 = x - tf.to_global_space(get_centre_of_mass());
+    return v + vec::cross(omega, x1);
 }
 
 vec3_t matter_t::to_local_space(const vec3_t & x) const {
