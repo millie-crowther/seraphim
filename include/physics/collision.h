@@ -37,7 +37,7 @@ namespace srph {
         ) const;
 
     public:
-        collision_t(double delta_t, matter_t * a, matter_t * b);
+        collision_t(matter_t * a, matter_t * b);
        
         bool is_intersecting() const;
         bool is_anticipated() const;

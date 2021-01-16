@@ -7,10 +7,7 @@
 
 using namespace srph;
 
-srph::collision_t::collision_t(
-    double delta_t,
-    matter_t * a, matter_t * b
-){
+srph::collision_t::collision_t(matter_t * a, matter_t * b){
     this->a = a;
     this->b = b;
     intersecting = false;
@@ -26,7 +23,7 @@ srph::collision_t::collision_t(
         return std::max(phi_a, phi_b);
     };
    
-    aabb3_t aabb = a->get_moving_aabb(delta_t) && b->get_moving_aabb(delta_t);
+    aabb3_t aabb = a->get_moving_aabb(constant::sigma) && b->get_moving_aabb(constant::sigma);
     std::array<vec3_t, 4> xs = {
         aabb.get_vertex(0), aabb.get_vertex(3),
         aabb.get_vertex(5), aabb.get_vertex(6)
@@ -50,6 +47,11 @@ srph::collision_t::collision_t(
         } else {
             n = b->get_rotation() * -b->get_sdf()->normal(x_b);
         }
+
+        vec4_t region_min(aabb.get_min()[0], aabb.get_min()[1], aabb.get_min()[2], 0.0);
+        vec4_t region_max(aabb.get_max()[0], aabb.get_max()[1], aabb.get_max()[2], constant::sigma);
+        
+        minimise(aabb4_t(region_min, region_max));
     }
     
     // find relative velocity at point 
@@ -64,7 +66,7 @@ srph::collision_t::collision_t(
 
             if (distance > 0){
                 t = distance / vrn;
-                anticipated = t <= delta_t;
+                anticipated = t <= constant::sigma;
             }
         }
     }
@@ -177,6 +179,8 @@ void srph::collision_t::minimise(const aabb4_t & initial_region){
             continue;
         } 
 
+        std::cout << "region size: "<< region.get_size() << std::endl;
+
         if (should_accept_solution(region)){
             solutions.push_back(region);
             
@@ -223,17 +227,20 @@ bool srph::collision_t::satisfies_constraints(
     }
 
     // is solution too densely packed
-    auto is_too_dense = [region, this](const aabb4_t & y){
-        vec4_t size = (region || y).get_size();
-        return vec::length(vec3_t(size[0], size[1], size[2])) * 2 < solution_density;
-    };
+//    auto is_too_dense = [region, this](const aabb4_t & y){
+ //       vec4_t size = (region || y).get_size();
+ //       return vec::length(vec3_t(size[0], size[1], size[2])) * 2 < solution_density;
+//    };
 
-    if (std::any_of(sing_solns.begin(), sing_solns.end(), is_too_dense)){
-        return false;
-    }
+ //   if (std::any_of(sing_solns.begin(), sing_solns.end(), is_too_dense)){
+ //       return false;
+  //  }
    
     // is too far from surface
-    // TODO
+    transform_t tfa = a->get_transform_after(region.get_min()[3]);
+    vec4_t c = region.get_centre();
+    vec3_t x_a = tfa.to_local_space(vec3_t(c[0], c[1], c[2]));
+    std::cout << "x_a = " << x_a << std::endl;
 
     // normals not anti-parallel    
     // TODO
@@ -256,9 +263,12 @@ bool srph::collision_t::should_accept_solution(const aabb4_t & region) const {
 
     vec4_t c4 = region.get_centre();
     vec3_t centre(c4[0], c4[1], c4[2]);
-    
-    vec3_t c_a = a->to_local_space(centre);
-    vec3_t c_b = b->to_local_space(centre);
+   
+    auto tfa = a->get_transform_after(c4[3]);
+    auto tfb = b->get_transform_after(c4[3]);
+ 
+    vec3_t c_a = tfa.to_local_space(centre);
+    vec3_t c_b = tfb.to_local_space(centre);
 
     double phi_a = std::abs(a->get_sdf()->phi(c_a)); 
     double phi_b = std::abs(b->get_sdf()->phi(c_b));
