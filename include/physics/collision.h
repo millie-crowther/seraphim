@@ -7,6 +7,17 @@
 namespace srph {
     class collision_t {
     private:
+        struct region_t {
+            aabb4_t region;
+
+            region_t(){}
+            region_t(const vec4_t & min, const vec4_t & max) : region(min, max){}            
+
+            struct comparator_t {
+                bool operator()(const region_t & a, const region_t & b) const;
+            };
+        };
+
         static constexpr double solution_density = constant::epsilon * 10;
 
         bool intersecting;
@@ -24,16 +35,16 @@ namespace srph {
         matter_t * a;
         matter_t * b;
 
-        void minimise(const aabb4_t & region);
-        double lower_bound_t(const aabb4_t & region) const;
-        double upper_bound_t(const aabb4_t & region) const;
+        void minimise(const region_t & region);
+        double lower_bound_t(const region_t & region) const;
+        double upper_bound_t(const region_t & region) const;
         
-        bool should_accept_solution(const aabb4_t & region) const;
-        bool contains_unique_solution(const aabb4_t & region) const;
-        std::pair<aabb4_t, aabb4_t> subdivide(const aabb4_t & region) const;        
+        bool should_accept_solution(const region_t & region) const;
+        bool contains_unique_solution(const region_t & region) const;
+        std::pair<region_t, region_t> subdivide(const region_t & region) const;        
         
         bool satisfies_constraints(
-            const aabb4_t & region, double upper_t, const std::vector<aabb4_t> & sing_solns
+            const region_t & region, double upper_t, const std::vector<region_t> & sing_solns
         ) const;
 
     public:
