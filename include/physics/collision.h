@@ -18,7 +18,7 @@ namespace srph {
             };
         };
 
-        static constexpr double solution_density = constant::epsilon * 10;
+        static constexpr double solution_density = constant::epsilon * 16;
 
         bool intersecting;
         bool anticipated;
@@ -36,8 +36,6 @@ namespace srph {
         matter_t * b;
 
         void minimise(const region_t & region);
-        double lower_bound_t(const region_t & region) const;
-        double upper_bound_t(const region_t & region) const;
         
         bool should_accept_solution(const region_t & region) const;
         bool contains_unique_solution(const region_t & region) const;

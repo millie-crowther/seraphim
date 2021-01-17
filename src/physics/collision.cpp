@@ -189,7 +189,7 @@ void srph::collision_t::minimise(const region_t & initial_region){
                 sing_solns.push_back(region);
             }
 
-            upper_t = std::min(upper_t, upper_bound_t(region));
+            upper_t = std::min(upper_t, region.region.get_max()[3]);
 
             auto too_late = [upper_t](const region_t & y){
                 return y.region.get_min()[3] > upper_t + constant::iota;
@@ -213,21 +213,11 @@ bool srph::collision_t::region_t::comparator_t::operator()(const region_t & a, c
     return a.region.get_max()[3] < b.region.get_max()[3];
 }
 
-double srph::collision_t::lower_bound_t(const region_t & region) const {
-    // TODO
-    return 0.0;
-}
-
-double srph::collision_t::upper_bound_t(const region_t & region) const {
-    // TODO
-    return constant::sigma;
-}
-
 bool srph::collision_t::satisfies_constraints(
     const region_t & region, double upper_t, const std::vector<region_t> & sing_solns
 ) const {
     // is solution too late in time
-    if (lower_bound_t(region) > upper_t + constant::iota){
+    if (region.region.get_min()[3] > upper_t + constant::iota){
         return false;
     }
 
@@ -266,7 +256,6 @@ bool srph::collision_t::satisfies_constraints(
     if (std::abs(b->get_sdf()->phi(x_b) - distance_b > vec::length(size))){
         return false;
     } 
-
 
     // normals not anti-parallel    
     // TODO

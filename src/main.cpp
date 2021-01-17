@@ -70,7 +70,7 @@ int main(){
             true
         )
     );
- 
+
     srph::seraphim_t seraphim;
 
     seraphim.create(floor_substance);
