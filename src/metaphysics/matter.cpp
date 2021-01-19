@@ -49,7 +49,7 @@ material_t matter_t::get_material(const vec3_t & x){
 interval_t<vec3_t> matter_t::get_moving_interval(double t) const {
     interval_t<vec3_t> interval;
     
-    for (uint8_t i = 0; i < 8; i++){   
+    for (int i = 0; i < 8; i++){  
         vec3_t x = sdf->get_interval().get_min();
         for (int j = 0; j < 3; j++){
             if (i & (1 << j)){

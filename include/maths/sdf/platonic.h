@@ -15,7 +15,7 @@ namespace srph { namespace platonic {
         double phi(const vec_t<double, D> & x) override {
             auto q = vec::abs(x) - r;
             return 
-                vec::length(std::max(q, 0.0)) +
+                vec::length(vec::max(q, 0.0)) +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }
 

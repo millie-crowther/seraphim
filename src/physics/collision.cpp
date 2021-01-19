@@ -26,7 +26,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
 
         return std::max(phi_a, phi_b);
     };
-   
+
     interval_t<vec3_t> aabb = 
         a->get_moving_interval(constant::sigma) && 
         b->get_moving_interval(constant::sigma);

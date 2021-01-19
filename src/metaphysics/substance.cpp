@@ -36,7 +36,7 @@ substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
     vec3_t r = matter->get_sdf()->get_interval().get_size();
     vec3_t eye = matter->to_local_space(eye_position);
 
-    float near = vec::length(std::max((vec::abs(eye) - r), 0.0));
+    float near = vec::length(vec::max(vec::abs(eye) - r, 0.0));
     float far  = vec::length(vec::abs(eye) + r);
 
     return data_t(

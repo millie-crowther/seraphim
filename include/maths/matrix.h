@@ -375,6 +375,27 @@ namespace srph {
                 return *std::max_element(absx.begin(), absx.end());
             }
         }
+        
+        template<class T, int N>
+        vec_t<T, N> min(const srph::vec_t<T, N> & a, const vec_t<T, N> & b){
+            vec_t<T, N> x;
+            auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
+            std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
+            return x;
+        }
+        
+        template<class T, int N>
+        vec_t<T, N> max(const vec_t<T, N> & a, const vec_t<T, N> & b){
+            vec_t<T, N> x;
+            auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
+            std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
+            return x;
+        }    
+
+        template<class T, int N>
+        vec_t<T, N> max(const vec_t<T, N> & x, const T & y){
+            return vec::max(x, vec_t<T, N>(y));
+        }
     }
 
     namespace mat {
@@ -538,24 +559,13 @@ namespace srph {
 namespace std {
     template<class T, int N>
     srph::vec_t<T, N> min(const srph::vec_t<T, N> & a, const srph::vec_t<T, N> & b){
-        srph::vec_t<T, N> x;
-        auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
-        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
-        return x;
+        return srph::vec::min(a, b);
     }
     
     template<class T, int N>
     srph::vec_t<T, N> max(const srph::vec_t<T, N> & a, const srph::vec_t<T, N> & b){
-        srph::vec_t<T, N> x;
-        auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
-        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
-        return x;
+        return srph::vec::max(a, b);    
     }    
-
-    template<class T, int N>
-    srph::vec_t<T, N> max(const srph::vec_t<T, N> & x, const T & y){
-        return std::max(x, T(y));
-    }
 
     template<class T, int N>
     class numeric_limits<srph::vec_t<T, N>> {
