@@ -18,7 +18,7 @@ namespace srph {
             };
         };
 
-        static constexpr double solution_density = constant::epsilon * 16;
+        static constexpr double solution_density = 1.0 / 4.0;
 
         bool intersecting;
         bool anticipated;
@@ -30,6 +30,9 @@ namespace srph {
 
         vec3_t n;
         vec3_t vr;
+
+        std::vector<vec3_t> min_xs;
+        double min_t;
 
         double depth;
         matter_t * a;

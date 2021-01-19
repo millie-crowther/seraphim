@@ -1,6 +1,7 @@
 #include "physics/collision.h"
 
 #include "maths/optimise.h"
+#include "maths/sdf/platonic.h"
 
 #include <map>
 #include <queue>
@@ -35,6 +36,19 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         depth = std::abs(result.fx);
         intersecting = result.fx < 0;
         
+        vec4_t region_min(aabb.get_min()[0], aabb.get_min()[1], aabb.get_min()[2], 0.0);
+        vec4_t region_max(aabb.get_max()[0], aabb.get_max()[1], aabb.get_max()[2], constant::sigma);
+        minimise(region_t(region_min, region_max));
+        
+        vec3_t sum_x;
+        for (auto & min_x : min_xs){
+            sum_x += min_x;
+        }
+
+        if (!min_xs.empty()){
+            x = sum_x / min_xs.size();
+        }        
+
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
         
@@ -47,11 +61,6 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         } else {
             n = b->get_rotation() * -b->get_sdf()->normal(x_b);
         }
-
-        vec4_t region_min(aabb.get_min()[0], aabb.get_min()[1], aabb.get_min()[2], 0.0);
-        vec4_t region_max(aabb.get_max()[0], aabb.get_max()[1], aabb.get_max()[2], constant::sigma);
-        
-        minimise(region_t(region_min, region_max));
     }
     
     // find relative velocity at point 
@@ -203,6 +212,12 @@ void srph::collision_t::minimise(const region_t & initial_region){
             queue.push(subregions.second);
         }
     }
+
+    for (auto & solution : solutions){
+        auto centre = solution.region.get_centre();
+        min_xs.emplace_back(centre[0], centre[1], centre[2]);
+    }
+    min_t = upper_t;
 }
 
 bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
@@ -234,32 +249,31 @@ bool srph::collision_t::satisfies_constraints(
     // is too far from surface
     double t1 = region.region.get_min()[3];
     double t2 = region.region.get_max()[3];
-    vec4_t c = region.region.get_centre();
-    vec3_t x = vec3_t(c[0], c[1], c[2]);
+    vec4_t c1 = region.region.get_centre();
+    vec3_t c = vec3_t(c1[0], c1[1], c1[2]);
     vec4_t size1 = region.region.get_size();
     vec3_t size = vec3_t(size1[0], size1[1], size1[2]);
     
     transform_t tfa = a->get_transform_after(t1);
-    vec3_t x_a = tfa.to_local_space(x);
-    vec3_t v_a = a->get_velocity_after(x, t1);
+    vec3_t c_a = tfa.to_local_space(c);
+    vec3_t v_a = a->get_velocity_after(c, t1);
     double distance_a = vec::length(v_a) * (t2 - t1);
 
-    if (std::abs(a->get_sdf()->phi(x_a) - distance_a > vec::length(size))){
+    if (std::abs(a->get_sdf()->phi(c_a) - distance_a > vec::length(size))){
         return false;
     } 
 
     transform_t tfb = b->get_transform_after(t1);
-    vec3_t x_b = tfb.to_local_space(x);
-    vec3_t v_b = b->get_velocity_after(x, t1);
+    vec3_t c_b = tfb.to_local_space(c);
+    vec3_t v_b = b->get_velocity_after(c, t1);
     double distance_b = vec::length(v_b) * (t2 - t1);
 
-    if (std::abs(b->get_sdf()->phi(x_b) - distance_b > vec::length(size))){
+    if (std::abs(b->get_sdf()->phi(c_b) - distance_b > vec::length(size))){
         return false;
     } 
 
     // normals not anti-parallel    
-    // TODO
-
+    
     // incoming collision constraint
     // TODO
  

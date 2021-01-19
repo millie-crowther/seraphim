@@ -28,7 +28,8 @@ void physics_t::run(){
         frames++;
         
         auto now = std::chrono::steady_clock::now();
-        double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
+        double delta = constant::sigma;
+         //std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
 
         previous = now;
 
