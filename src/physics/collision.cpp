@@ -1,5 +1,8 @@
 #include "physics/collision.h"
 
+#include "maths/matrix.h"
+#include "maths/interval.h"
+
 #include "maths/optimise.h"
 #include "maths/sdf/platonic.h"
 
@@ -24,13 +27,26 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         return std::max(phi_a, phi_b);
     };
    
-    aabb3_t aabb = a->get_moving_aabb(constant::sigma) && b->get_moving_aabb(constant::sigma);
-    std::array<vec3_t, 4> xs = {
-        aabb.get_vertex(0), aabb.get_vertex(3),
-        aabb.get_vertex(5), aabb.get_vertex(6)
+    interval_t<vec3_t> aabb = 
+        a->get_moving_interval(constant::sigma) && 
+        b->get_moving_interval(constant::sigma);
+
+    auto get_vertex = [aabb](int i){
+        vec3_t x = aabb.get_min();
+        for (int j = 0; j < 3; j++){
+            if (i & (1 << j)){
+                x[j] = aabb.get_max()[j];
+            }
+        }
+        return x;
     };
 
-    if (aabb.is_valid()){
+    std::array<vec3_t, 4> xs = {
+        get_vertex(0), get_vertex(3),
+        get_vertex(5), get_vertex(6)
+    };
+
+    if (vec::all(aabb.is_valid())){
         auto result = srph::optimise::nelder_mead(f, xs);
         x = result.x;
         depth = std::abs(result.fx);
@@ -67,7 +83,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
     vr = a->get_velocity_after(x, 0) - b->get_velocity_after(x, 0);
 
     // check to see if anticipated
-    if (aabb.is_valid() && !intersecting){
+    if (vec::all(aabb.is_valid()) && !intersecting){
         auto vrn = vec::dot(vr, n);
        
         if (vrn > 0){
@@ -152,19 +168,12 @@ void srph::collision_t::colliding_correct(){
     }
 }
 
-void srph::collision_t::correct(const vec3_t & adjusted_x){
+void srph::collision_t::correct(){
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n * b->get_mass() / sm);
     b->translate( depth * n * a->get_mass() / sm);
     
-//    x = adjusted_x;
-    x_a = a->to_local_space(x);
-    x_b = b->to_local_space(x);
-    vr = a->get_velocity_after(x, 0) - b->get_velocity_after(x, 0);
-   // std::cout << "xb = " << x_b << std::endl;
-        
- 
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){
@@ -175,7 +184,9 @@ void srph::collision_t::correct(const vec3_t & adjusted_x){
 }
 
 void srph::collision_t::minimise(const region_t & initial_region){
-    region_t::comparator_t cmp;
+    auto cmp = [](const region_t & a, const region_t & b){
+        return a.get_max()[3] < b.get_max()[3];
+    };
     std::priority_queue<region_t, std::vector<region_t>, decltype(cmp)> queue(cmp);
     queue.push(initial_region);
 
@@ -198,10 +209,10 @@ void srph::collision_t::minimise(const region_t & initial_region){
                 sing_solns.push_back(region);
             }
 
-            upper_t = std::min(upper_t, region.region.get_max()[3]);
+            upper_t = std::min(upper_t, region.get_max()[3]);
 
             auto too_late = [upper_t](const region_t & y){
-                return y.region.get_min()[3] > upper_t + constant::iota;
+                return y.get_min()[3] > upper_t + constant::iota;
             };
                 
             std::remove_if(solutions.begin(),  solutions.end(),  too_late);
@@ -214,7 +225,7 @@ void srph::collision_t::minimise(const region_t & initial_region){
     }
 
     for (auto & solution : solutions){
-        auto centre = solution.region.get_centre();
+        auto centre = solution.get_centre();
         min_xs.emplace_back(centre[0], centre[1], centre[2]);
     }
     min_t = upper_t;
@@ -224,21 +235,17 @@ bool srph::collision_t::comparator_t::operator()(const collision_t & a, const co
     return a.t < b.t;
 }
 
-bool srph::collision_t::region_t::comparator_t::operator()(const region_t & a, const region_t & b) const {
-    return a.region.get_max()[3] < b.region.get_max()[3];
-}
-
 bool srph::collision_t::satisfies_constraints(
     const region_t & region, double upper_t, const std::vector<region_t> & sing_solns
 ) const {
     // is solution too late in time
-    if (region.region.get_min()[3] > upper_t + constant::iota){
+    if (region.get_min()[3] > upper_t + constant::iota){
         return false;
     }
 
     // is solution too densely packed
     auto is_too_dense = [region, this](const region_t & y){
-        vec4_t size = (region.region || y.region).get_size();
+        vec4_t size = (region || y).get_size();
         return vec::length(vec3_t(size[0], size[1], size[2])) * 2 < solution_density;
     };
 
@@ -247,11 +254,11 @@ bool srph::collision_t::satisfies_constraints(
     }
    
     // is too far from surface
-    double t1 = region.region.get_min()[3];
-    double t2 = region.region.get_max()[3];
-    vec4_t c1 = region.region.get_centre();
+    double t1 = region.get_min()[3];
+    double t2 = region.get_max()[3];
+    vec4_t c1 = region.get_centre();
     vec3_t c = vec3_t(c1[0], c1[1], c1[2]);
-    vec4_t size1 = region.region.get_size();
+    vec4_t size1 = region.get_size();
     vec3_t size = vec3_t(size1[0], size1[1], size1[2]);
     
     transform_t tfa = a->get_transform_after(t1);
@@ -282,7 +289,7 @@ bool srph::collision_t::satisfies_constraints(
 
 bool srph::collision_t::should_accept_solution(const region_t & region) const {
     // TODO: accept at higher resolutions
-    vec4_t size = region.region.get_size();
+    vec4_t size = region.get_size();
     if ( 
         vec::length(vec3_t(size[0], size[1], size[2])) * 2 > constant::epsilon ||
         size[3] * 2 > constant::iota
@@ -290,7 +297,7 @@ bool srph::collision_t::should_accept_solution(const region_t & region) const {
         return false;
     }
 
-    std::cout << "collision at: " << region.region.get_centre() << std::endl;
+    std::cout << "collision at: " << region.get_centre() << std::endl;
     return true;
 /*
     vec4_t c4 = region.get_centre();
@@ -311,7 +318,7 @@ bool srph::collision_t::should_accept_solution(const region_t & region) const {
 
 std::pair<collision_t::region_t, collision_t::region_t> srph::collision_t::subdivide(const region_t & region) const {
     // TODO cleverer subdivision
-    vec4_t size = region.region.get_size();
+    vec4_t size = region.get_size();
     size[3] *= constant::epsilon / constant::iota;
 
     int max_i = 0;
@@ -321,15 +328,15 @@ std::pair<collision_t::region_t, collision_t::region_t> srph::collision_t::subdi
         }
     }
     
-    vec4_t min = region.region.get_min();
-    vec4_t max = region.region.get_max();
+    vec4_t min = region.get_min();
+    vec4_t max = region.get_max();
 
-    min[max_i] = region.region.get_centre()[max_i];
-    max[max_i] = region.region.get_centre()[max_i];
+    min[max_i] = region.get_centre()[max_i];
+    max[max_i] = region.get_centre()[max_i];
 
     return std::make_pair(
-        region_t(region.region.get_min(), max), 
-        region_t(min, region.region.get_max())
+        region_t(region.get_min(), max), 
+        region_t(min, region.get_max())
     );
 }
 

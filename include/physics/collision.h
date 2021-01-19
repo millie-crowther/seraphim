@@ -7,16 +7,7 @@
 namespace srph {
     class collision_t {
     private:
-        struct region_t {
-            aabb4_t region;
-
-            region_t(){}
-            region_t(const vec4_t & min, const vec4_t & max) : region(min, max){}            
-
-            struct comparator_t {
-                bool operator()(const region_t & a, const region_t & b) const;
-            };
-        };
+        typedef interval_t<vec4_t> region_t;
 
         static constexpr double solution_density = 1.0 / 4.0;
 
@@ -57,7 +48,7 @@ namespace srph {
         vec3_t get_position() const;
         std::pair<matter_t *, matter_t *> get_matters() const;
 
-        void correct(const vec3_t & adjusted_x);
+        void correct();
         void resting_correct();
         void colliding_correct();
 

@@ -3,7 +3,8 @@
 
 #include <functional>
 #include "core/constant.h"
-#include "maths/aabb.h"
+#include "maths/matrix.h"
+#include "maths/interval.h"
 
 namespace srph {
     template<uint8_t D>
@@ -47,8 +48,8 @@ namespace srph {
             return phi(x) <= 0.0;
         }
 
-        virtual aabb_t<double, D> get_aabb(){
-            return aabb_t<double, D>(vec_t<double, D>(-constant::rho), vec_t<double, D>(constant::rho));
+        virtual interval_t<vec_t<double, D>> get_interval(){
+            return interval_t<vec_t<double, D>>(-constant::rho, constant::rho);
         }
 
         virtual double get_volume(){

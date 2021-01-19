@@ -8,8 +8,6 @@
 
 using namespace srph;
 
-std::default_random_engine engine;
-
 physics_t::physics_t(){
     quit = false;
     thread = std::thread(&physics_t::run, this);
@@ -63,7 +61,7 @@ void physics_t::run(){
         // correct all present collisions and anticipate the next one
         for (auto & c : collisions){
             if (c.is_intersecting()){
-                correct(c);
+                c.correct();
             } else if (c.is_anticipated()){
                 delta = std::min(delta, c.get_estimated_time());
             }
@@ -95,57 +93,6 @@ void physics_t::run(){
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
     }
-}
-
-void physics_t::correct(collision_t & c){
-    auto pair = c.get_matters();
-    auto points = &contact_points[pair];
-
-    // remove all points which are no longer contact points
-    //*
-    for (unsigned int i = 0; i < points->size();){
-        auto x1 = pair.first->to_local_space(points->at(i));
-        auto x2 = pair.second->to_local_space(points->at(i)); 
-
-        if (
-            pair.first->get_sdf()->phi(x1)  > 0 || 
-            pair.second->get_sdf()->phi(x2) > 0 
-        ){
-            points->at(i) = points->at(points->size() - 1);
-            points->pop_back();
-        } else {
-            i++;
-        }
-    }
-    //*/
-
-    // check if max point limit reached 
-    if (points->size() < max_contact_points){
-        points->push_back(c.get_position());
-    } else {
-        /*/
-        int min_i = 0;
-        double min_distance = vec::length(points->at(0) - c.get_position());
-        for (unsigned int i = 1; i < points->size(); i++){
-            double distance = vec::length(points->at(i) - c.get_position());
-            if (distance < min_distance){
-                min_i = i;
-                distance = min_distance;
-            }
-        }
-        // */
-
-        std::uniform_int_distribution<int> distr(0, points->size() - 1);
-        int min_i = distr(engine);
-    
-        points->at(min_i) = c.get_position();
-    }
-
- //   std::cout << "points size: " << points->size() << std::endl;
-
-    // find mean of points to find centre of collision surface
-    vec3_t total = std::accumulate(points->begin(), points->end(), vec3_t());
-    c.correct(total / points->size());
 }
 
 void physics_t::register_matter(std::shared_ptr<matter_t> matter){

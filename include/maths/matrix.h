@@ -338,25 +338,6 @@ namespace srph {
         }
 
         template<class V>
-        V min(V x, const V & y){
-            auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
-            std::transform(x.begin(), x.end(), y.begin(), x.begin(), f);
-            return x;
-        }
-
-        template<class V>
-        V max(V x, const V & y){
-            auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
-            std::transform(x.begin(), x.end(), y.begin(), x.begin(), f);
-            return x;
-        }
-
-        template<class V>
-        V max(const V & x, const decltype(*x.begin()) & y){
-            return vec::max(x, V(y));
-        }
-        
-        template<class V>
         V abs(V x){
             std::transform(x.begin(), x.end(), x.begin(), [](const auto & a){return std::abs(a);});
             return x;
@@ -487,6 +468,11 @@ namespace srph {
         return !(b < a);
     }
 
+    template<class T, int N>
+    vec_t<bool, N> operator>=(const vec_t<T, N> & a, const vec_t<T, N> & b){
+        return !(a < b);
+    }
+
     // multiplication operators
     template<class T, int M, int N>
     matrix_t<T, M, N> operator*(const T & x, const matrix_t<T, M, N> & a){
@@ -527,7 +513,15 @@ namespace srph {
     bool operator!=(const vec_t<T, N> & a, const vec_t<T, N> & b){
         return !(a == b);
     }
-        
+       
+    template<class T, int N>
+    vec_t<T, N> operator&&(const vec_t<T, N> & a, const vec_t<T, N> & b){
+        vec_t<T, N> x;
+        auto f = [](const auto & a, const auto & b){ return a && b; };
+        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
+        return x;
+    }
+ 
     // output operators
     template<class T, int M, int N>
     std::ostream & operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
@@ -538,6 +532,42 @@ namespace srph {
         os << v[M * N - 1] << ")";
         return os;
     } 
+    
 }
+
+namespace std {
+    template<class T, int N>
+    srph::vec_t<T, N> min(const srph::vec_t<T, N> & a, const srph::vec_t<T, N> & b){
+        srph::vec_t<T, N> x;
+        auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
+        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
+        return x;
+    }
+    
+    template<class T, int N>
+    srph::vec_t<T, N> max(const srph::vec_t<T, N> & a, const srph::vec_t<T, N> & b){
+        srph::vec_t<T, N> x;
+        auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
+        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
+        return x;
+    }    
+
+    template<class T, int N>
+    srph::vec_t<T, N> max(const srph::vec_t<T, N> & x, const T & y){
+        return std::max(x, T(y));
+    }
+
+    template<class T, int N>
+    class numeric_limits<srph::vec_t<T, N>> {
+    public:
+        static srph::vec_t<T, N> min(){
+            return srph::vec_t<T, N>(std::numeric_limits<T>::min());
+        }
+        
+        static srph::vec_t<T, N> max(){
+            return srph::vec_t<T, N>(std::numeric_limits<T>::max());
+        }
+    };
+}        
 
 #endif

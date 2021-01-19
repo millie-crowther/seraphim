@@ -17,7 +17,7 @@ namespace srph {
         std::shared_ptr<sdf3_t> get_sdf() const;
         vec3_t get_position() const;
         double get_mass();
-        aabb3_t get_moving_aabb(double t) const;
+        interval_t<vec3_t> get_moving_interval(double t) const;
 
         void translate(const vec3_t & x);
         void rotate(const quat_t & q);

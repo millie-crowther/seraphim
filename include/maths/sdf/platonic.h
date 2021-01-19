@@ -15,12 +15,12 @@ namespace srph { namespace platonic {
         double phi(const vec_t<double, D> & x) override {
             auto q = vec::abs(x) - r;
             return 
-                vec::length(vec::max(q, 0.0)) +
+                vec::length(std::max(q, 0.0)) +
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }
 
-        aabb_t<double, D> get_aabb() override {
-            return aabb_t<double, D>(-r, r);
+        interval_t<vec_t<double, D>> get_interval() override {
+            return interval_t<vec_t<double, D>>(-r, r);
         }
 
         double get_volume() override {
@@ -78,9 +78,9 @@ namespace srph { namespace platonic {
             return vec::normalise(vec::sign(x));
         }
 
-        aabb3_t get_aabb() override {
+        interval_t<vec3_t> get_interval() override {
             vec3_t x(e / std::sqrt(2));
-            return aabb3_t(-x, x);
+            return interval_t<vec3_t>(-x, x);
         }
 
         double get_volume() override {
