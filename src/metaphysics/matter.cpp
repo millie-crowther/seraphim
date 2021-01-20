@@ -46,22 +46,22 @@ material_t matter_t::get_material(const vec3_t & x){
     return material;
 }
 
-interval_t<vec3_t> matter_t::get_moving_interval(double t) const {
-    interval_t<vec3_t> interval;
+bound3_t matter_t::get_moving_bound(double t) const {
+    bound3_t bound;
     
     for (int i = 0; i < 8; i++){  
-        vec3_t x = sdf->get_interval().get_min();
+        vec3_t x = sdf->get_bound().get_lower();
         for (int j = 0; j < 3; j++){
             if (i & (1 << j)){
-                x[j] = sdf->get_interval().get_max()[j];
+                x[j] = sdf->get_bound().get_upper()[j];
             }
         }
-        interval.capture(transform.to_global_space(x));
+        bound.capture(transform.to_global_space(x));
     }
 
-    interval.enlarge(0.5 * vec::length(a) * t * t + vec::length(v) * t);
+    bound.enlarge(0.5 * vec::length(a) * t * t + vec::length(v) * t);
 
-    return interval;
+    return bound;
 }
 
 double matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){

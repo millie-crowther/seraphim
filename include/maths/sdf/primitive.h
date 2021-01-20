@@ -22,8 +22,8 @@ namespace srph { namespace primitive {
             return vec::normalise(x);
         }
 
-        interval_t<vec_t<double, D>> get_interval() override {
-            return interval_t<vec_t<double, D>>(-r, vec_t<double, D>(r));
+        bound_t<double, D> get_bound() override {
+            return bound_t<double, D>(-r, r);
         }
 
         double get_volume() override {
@@ -53,9 +53,9 @@ namespace srph { namespace primitive {
            return vec::length(q) - r2;     
         }
 
-        interval_t<vec3_t> get_interval() override {
+        bound3_t get_bound() override {
             vec3_t r(r1 + r2, r2, r1 + r2);
-            return interval_t<vec3_t>(-r, r);
+            return bound3_t(-r, r);
         }
 
         double get_volume() override {

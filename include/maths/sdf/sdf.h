@@ -3,8 +3,7 @@
 
 #include <functional>
 #include "core/constant.h"
-#include "maths/matrix.h"
-#include "maths/interval.h"
+#include "maths/bound.h"
 
 namespace srph {
     template<uint8_t D>
@@ -48,8 +47,8 @@ namespace srph {
             return phi(x) <= 0.0;
         }
 
-        virtual interval_t<vec_t<double, D>> get_interval(){
-            return interval_t<vec_t<double, D>>(-constant::rho, constant::rho);
+        virtual bound_t<double, D> get_bound(){
+            return bound_t<double, D>(-constant::rho, constant::rho);
         }
 
         virtual double get_volume(){

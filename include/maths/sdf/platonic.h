@@ -19,8 +19,8 @@ namespace srph { namespace platonic {
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }
 
-        interval_t<vec_t<double, D>> get_interval() override {
-            return interval_t<vec_t<double, D>>(-r, r);
+        bound_t<double, D> get_bound() override {
+            return bound_t<double, D>(-r, r);
         }
 
         double get_volume() override {
@@ -78,9 +78,9 @@ namespace srph { namespace platonic {
             return vec::normalise(vec::sign(x));
         }
 
-        interval_t<vec3_t> get_interval() override {
+        bound3_t get_bound() override {
             vec3_t x(e / std::sqrt(2));
-            return interval_t<vec3_t>(-x, x);
+            return bound3_t(-x, x);
         }
 
         double get_volume() override {

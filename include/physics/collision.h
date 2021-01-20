@@ -7,8 +7,6 @@
 namespace srph {
     class collision_t {
     private:
-        typedef interval_t<vec4_t> region_t;
-
         static constexpr double solution_density = 1.0 / 4.0;
 
         bool intersecting;
@@ -29,14 +27,14 @@ namespace srph {
         matter_t * a;
         matter_t * b;
 
-        void minimise(const region_t & region);
+        void minimise(const bound4_t & bound);
         
-        bool should_accept_solution(const region_t & region) const;
-        bool contains_unique_solution(const region_t & region) const;
-        std::pair<region_t, region_t> subdivide(const region_t & region) const;        
+        bool should_accept_solution(const bound4_t & bound) const;
+        bool contains_unique_solution(const bound4_t & bound) const;
+        std::pair<bound4_t, bound4_t> subdivide(const bound4_t & bound) const;        
         
         bool satisfies_constraints(
-            const region_t & region, double upper_t, const std::vector<region_t> & sing_solns
+            const bound4_t & region, double upper_t, const std::vector<bound4_t> & sing_solns
         ) const;
 
     public:
