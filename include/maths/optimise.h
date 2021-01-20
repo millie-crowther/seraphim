@@ -27,7 +27,7 @@ namespace srph { namespace optimise {
         }
         std::sort(xs.begin(), xs.end(), [](const auto & a, const auto & b){ return a.fx < b.fx; });
 
-        for(int i = 0; i < max_i; i++){
+        for (int i = 0; i < max_i; i++){
             // terminate
             auto minx = xs[0].x;
             auto maxx = xs[0].x;

@@ -58,11 +58,15 @@ namespace srph {
         }
 
         bound_t<T, N> operator&&(const bound_t<T, N> & b) const {
-            return bound_t<T, N>(vec::max(get_lower(), b.get_lower()), vec::min(get_upper(), b.get_upper()));
+            return bound_t<T, N>(
+                vec::max(get_lower(), b.get_lower()), vec::min(get_upper(), b.get_upper())
+            );
         }        
         
         bound_t<T, N> operator||(const bound_t<T, N> & b) const {
-            return bound_t<T, N>(vec::min(get_lower(), b.get_lower()), vec::max(get_upper(), b.get_upper()));
+            return bound_t<T, N>(
+                vec::min(get_lower(), b.get_lower()), vec::max(get_upper(), b.get_upper())
+            );
         }    
 
         void enlarge(const T & x){
