@@ -17,12 +17,6 @@ namespace srph { namespace optimise {
 
         result_t(){}
         result_t(const X & _x, double _fx) : x(_x), fx(_fx){}
-        
-        struct default_comparator_t {
-            bool operator()(const result_t<X> & a, const result_t<X> & b){
-                return a.fx < b.fx;
-            }
-        };
     };
 
     template<int N, class F>
@@ -31,7 +25,7 @@ namespace srph { namespace optimise {
         for (const auto & y : ys){
             xs.emplace_back(y, f(y));
         }
-        std::sort(xs.begin(), xs.end(), typename result_t<vec_t<double, N>>::default_comparator_t());
+        std::sort(xs.begin(), xs.end(), [](const auto & a, const auto & b){ return a.fx < b.fx; });
 
         for(int i = 0; i < max_i; i++){
             // terminate
@@ -47,7 +41,7 @@ namespace srph { namespace optimise {
             }
 
             // order
-            std::sort(xs.begin(), xs.end(), typename result_t<vec_t<double, N>>::default_comparator_t()); 
+            std::sort(xs.begin(), xs.end(), [](const auto & a, const auto & b){ return a.fx < b.fx; });
 
             // calculate centroid
             vec_t<double, N> x0;
