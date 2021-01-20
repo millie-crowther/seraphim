@@ -38,8 +38,8 @@ namespace srph { namespace optimise {
             auto minx = xs[0].x;
             auto maxx = xs[0].x;
             for (int j = 1; j < N + 1; j++){
-                minx = std::min(minx, xs[j].x);
-                maxx = std::max(maxx, xs[j].x);
+                minx = vec::min(minx, xs[j].x);
+                maxx = vec::max(maxx, xs[j].x);
             }
 
             if (minx == maxx){

@@ -17,7 +17,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
     intersecting = false;
     anticipated = false;   
  
-    auto f = [a, b](const vec3_t & x){
+    auto f = [a, b](const vec3_t & x) -> double {
         vec3_t x_a   = a->to_local_space(x);
         double phi_a = a->get_sdf()->phi(x_a); 
         
@@ -33,7 +33,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         vec3_t x = bound.get_lower();
         for (int j = 0; j < 3; j++){
             if (i & (1 << j)){
-                x[j] = bound.get_upper()[j];
+                x[j] = bound[j].get_upper();
             }
         }
         return x;
