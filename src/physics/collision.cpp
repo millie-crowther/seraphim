@@ -39,29 +39,28 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         return x;
     };
 
+    if (bound.is_valid()){
+        vec4_t lower(bound.get_lower(), 0.0);
+        vec4_t upper(bound.get_upper(), constant::sigma);
+        minimise(bound4_t(lower, upper));
+    }
+
     std::array<vec3_t, 4> xs = {
         get_vertex(0), get_vertex(3),
         get_vertex(5), get_vertex(6)
     };
 
-    if (bound.is_valid()){
+    if (!min_xs.empty()){
         auto result = srph::optimise::nelder_mead(f, xs);
-        x = result.x;
         depth = std::abs(result.fx);
         intersecting = result.fx < 0;
-        
-        vec4_t lower(bound.get_lower(), 0.0);
-        vec4_t upper(bound.get_upper(), constant::sigma);
-        minimise(bound4_t(lower, upper));
         
         vec3_t sum_x;
         for (auto & min_x : min_xs){
             sum_x += min_x;
         }
 
-        if (!min_xs.empty()){
-            x = sum_x / min_xs.size();
-        }        
+        x = sum_x / min_xs.size();
 
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
