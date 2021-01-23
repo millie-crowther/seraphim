@@ -71,7 +71,20 @@ namespace srph {
 
         void enlarge(const T & x){
             *this += interval_t<T>(-x, x);
-        }    
+        }   
+
+        bound_t<T, N> get_subdivision(int i){
+            vec_t<T, N> lower = get_lower();
+            vec_t<T, N> width = get_width();
+            
+            for (int j = 0; j < N; j++){
+                if (i & (1 << j)){
+                    lower[i] += width[i];
+                }
+            }
+
+            return bound_t<T, N>(lower, lower + width);
+        } 
     };
 
 

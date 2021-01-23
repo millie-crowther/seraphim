@@ -1,13 +1,27 @@
-#ifndef SDF_H
-#define SDF_H
+#ifndef SERAPHIM_SDF_H
+#define SERAPHIM_SDF_H
 
 #include <functional>
+#include <memory>
+
 #include "core/constant.h"
 #include "maths/bound.h"
 
 namespace srph {
     template<uint8_t D>
     class sdf_t {
+    private:
+        struct normal_tree_t {
+            bound_t<double, D> normals;
+            std::vector<normal_tree_t> children;
+
+            void build(const bound_t<double, D> & bounds){
+
+            }
+        };
+
+        std::unique_ptr<normal_tree_t> root;
+
     protected:
         // protected constructor for abstract class
         sdf_t(){}

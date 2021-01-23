@@ -74,11 +74,11 @@ int main(){
     srph::seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-    seraphim.create(sphere);
-    seraphim.create(torus);
+//    seraphim.create(sphere);
+//    seraphim.create(torus);
     seraphim.create(cube);
-    seraphim.create(cube2);
-    seraphim.create(octahedron);
+ //   seraphim.create(cube2);
+   // seraphim.create(octahedron);
 
     seraphim.run();
 
