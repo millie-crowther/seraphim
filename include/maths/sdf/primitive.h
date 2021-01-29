@@ -23,7 +23,7 @@ namespace srph { namespace primitive {
         }
 
         bound_t<double, D> get_bound() override {
-            return bound_t<double, D>(-r, r);
+            return bound_t<double, D>(-vec_t<double, D>(r), vec_t<double, D>(r));
         }
 
         double get_volume() override {

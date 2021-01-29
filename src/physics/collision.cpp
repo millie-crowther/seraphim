@@ -251,12 +251,11 @@ bool srph::collision_t::satisfies_constraints(
     }
    
     // is too far from surface
+    bound3_t xyz_bound(bound[0], bound[1], bound[2]);
     double t1 = bound[3].get_lower();
     double t2 = bound[3].get_upper();
-    vec4_t c1 = bound.get_midpoint();
-    vec3_t c = vec3_t(c1[0], c1[1], c1[2]);
-    vec4_t size1 = bound.get_width();
-    vec3_t size = vec3_t(size1[0], size1[1], size1[2]);
+    vec3_t c = xyz_bound.get_midpoint();
+    vec3_t size = xyz_bound.get_width();
     
     transform_t tfa = a->get_transform_after(t1);
     vec3_t c_a = tfa.to_local_space(c);
@@ -277,7 +276,7 @@ bool srph::collision_t::satisfies_constraints(
     } 
 
     // normals not anti-parallel    
-    
+  //  bound3_t normals_a = a->normal_bounds( 
     // incoming collision constraint
     // TODO
  

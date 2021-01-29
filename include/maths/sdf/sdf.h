@@ -58,7 +58,8 @@ namespace srph {
         }
 
         virtual bound_t<double, D> get_bound(){
-            return bound_t<double, D>(-constant::rho, constant::rho);
+            vec_t<double, D> x(constant::rho);
+            return bound_t<double, D>(-x, x);
         }
 
         virtual double get_volume(){
