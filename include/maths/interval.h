@@ -19,6 +19,10 @@ namespace srph {
             return x >= lower && x < upper;
         }
 
+        bool intersects(const interval_t<T> & i) const {
+            return contains(i.lower) || contains(i.upper) || i.contains(lower);
+        }
+
         T get_upper() const {
             return upper;
         }

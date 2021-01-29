@@ -12,7 +12,7 @@ namespace srph {
     template<uint8_t D>
     class sdf_t {
     private:
-        std::unique_ptr<normal_tree_t<D>> root;
+        normal_tree_t<D> normal_tree;
 
     protected:
         // protected constructor for abstract class
@@ -32,12 +32,8 @@ namespace srph {
             return vec::normalise(n);
         }
 
-        virtual bound_t<double, D> get_normal_range(const bound_t<double, D> & bounds){
-            if (!root){
-                root = std::make_unique<normal_tree_t<D>>(nullptr);
-            }
-
-            return bound_t<double, D>(vec_t<double, D>(), vec_t<double, D>());
+        virtual bound_t<double, D> get_normal_bounds(const bound_t<double, D> & bounds){
+            return normal_tree.get_normal_range(*this, get_bound(), bounds); 
         }
 
         matrix_t<double, D, D> jacobian(const vec_t<double, D> & x){

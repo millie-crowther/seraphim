@@ -16,6 +16,15 @@ namespace srph {
             }
         }
 
+        bool intersects(const bound_t<T, N> & b) const {
+            for (int i = 0; i < N; i++){
+                if (!(*this)[i].intersects(b[i])){
+                    return false;
+                }
+            }
+            return true;
+        }
+
         bool contains(const vec_t<T, N> & x) const {
             for (int i = 0; i < N; i++){
                 if (!(*this)[i].contains(x[i])){    
@@ -23,6 +32,10 @@ namespace srph {
                 }
             }
             return true;
+        }
+
+        bool contains(const bound_t<T, N> & b) const {
+            return contains(b.get_lower()) && contains(b.get_upper());
         }
 
         bool is_valid() const {
@@ -90,6 +103,19 @@ namespace srph {
             }
 
             return bound_t<T, N>(lower, lower + width);
+        }
+        
+        vec_t<T, N> vertex(int i) const {
+            vec_t<T, N> x = get_lower();
+            vec_t<T, N> w = get_width() * 2;
+           
+            for (int j = 0; j < N; j++){
+                if (i & (1 << j)){
+                    x[j] += w[j];
+                }
+            }
+
+            return x;
         }
 
         int subdivision_index(const vec_t<T, N> & x) const {

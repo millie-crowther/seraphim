@@ -46,6 +46,8 @@ namespace srph {
         void apply_force(const vec3_t & f);
         void apply_force_at(const vec3_t & f, const vec3_t & x);
 
+        bound3_t normal_bounds(const bound3_t & x);
+
     private:
         material_t material;
         std::shared_ptr<sdf3_t> sdf;

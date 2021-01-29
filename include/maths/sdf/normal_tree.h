@@ -6,14 +6,13 @@
 
 namespace srph {
     template<int N>
-    struct normal_tree_t {
+    class normal_tree_t {
+    private:
         bool is_explored;
         normal_tree_t<N> * parent;
         bound_t<double, N> normals;
         std::vector<normal_tree_t<N>> children;
-
-        normal_tree_t(normal_tree_t<N> * _parent) : is_explored(false), parent(_parent) {}
-
+        
         void propagate(){
             auto f = [](const normal_tree_t<N> & x){ return x.is_explored; };
             is_explored = std::all_of(children.begin(), children.end(), f);
@@ -51,7 +50,7 @@ namespace srph {
                 bool is_updated = false;
                 for (int i = 0; i < (1 << N); i++){
                     if (!children[i].is_explored){
-                        bound_t<double, N> subbounds = node_bounds.index_subdivision(i);
+                        bound_t<double, N> subbounds = node_bounds.subdivision(i);
                                     
                         if (subbounds.intersects(query_bounds)){
                             is_updated = true;
@@ -66,6 +65,10 @@ namespace srph {
             }
         }
 
+    public:
+        normal_tree_t() : normal_tree_t(nullptr) {}
+        normal_tree_t(normal_tree_t<N> * _parent) : is_explored(false), parent(_parent) {}
+        
         template<class SDF>
         bound_t<double, N> get_normal_range(
             SDF & sdf, const bound_t<double, N> & node_bounds, 
