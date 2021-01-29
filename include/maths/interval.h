@@ -32,6 +32,11 @@ namespace srph {
             upper = std::max(upper, t);
         }
 
+        void operator|=(const interval_t<T> & i){
+            lower = std::min(lower, i.lower);
+            upper = std::max(upper, i.upper);
+        }
+
         interval_t<T> operator*(const interval_t<T> & i) const {
             T x1y1 = lower * i.lower;
             T x1y2 = lower * i.upper;       

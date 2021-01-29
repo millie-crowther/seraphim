@@ -10,13 +10,16 @@ using namespace srph;
 
 physics_t::physics_t(){
     quit = false;
-    thread = std::thread(&physics_t::run, this);
 }
 
 physics_t::~physics_t(){
     quit = true;
     thread.join();
 }
+
+void physics_t::start(){
+    thread = std::thread(&physics_t::run, this);
+} 
 
 void physics_t::run(){
     auto t = scheduler::clock_t::now();

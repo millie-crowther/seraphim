@@ -263,6 +263,8 @@ bool srph::seraphim_t::check_validation_layers(){
 #endif
 
 void srph::seraphim_t::run(){
+    physics->start();
+
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto   previous   = std::chrono::steady_clock::now();

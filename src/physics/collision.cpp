@@ -27,7 +27,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         return std::max(phi_a, phi_b);
     };
 
-    bound3_t bound = a->get_moving_bound(constant::sigma) && b->get_moving_bound(constant::sigma);
+    bound3_t bound = a->get_moving_bound(constant::sigma) & b->get_moving_bound(constant::sigma);
 
     auto get_vertex = [bound](int i){
         vec3_t x = bound.get_lower();
@@ -242,7 +242,7 @@ bool srph::collision_t::satisfies_constraints(
 
     // is solution too densely packed
     auto is_too_dense = [bound, this](const bound4_t & y){
-        vec4_t size = (bound || y).get_width();
+        vec4_t size = (bound | y).get_width();
         return vec::length(vec3_t(size[0], size[1], size[2])) * 2 < solution_density;
     };
 

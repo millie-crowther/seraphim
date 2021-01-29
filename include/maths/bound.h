@@ -57,36 +57,54 @@ namespace srph {
             }
         }
 
-        bound_t<T, N> operator&&(const bound_t<T, N> & b) const {
+        bound_t<T, N> operator&(const bound_t<T, N> & b) const {
             return bound_t<T, N>(
                 vec::max(get_lower(), b.get_lower()), vec::min(get_upper(), b.get_upper())
             );
         }        
         
-        bound_t<T, N> operator||(const bound_t<T, N> & b) const {
-            return bound_t<T, N>(
-                vec::min(get_lower(), b.get_lower()), vec::max(get_upper(), b.get_upper())
-            );
-        }    
+        bound_t<T, N> operator|(const bound_t<T, N> & b) const {
+            bound_t<T, N> x = *this;
+            x |= b;
+            return x;
+        }
+
+        void operator|=(const bound_t<T, N> & b){
+            for (int i = 0; i < N; i++){
+                (*this)[i] |= b[i];
+            }
+        }
 
         void enlarge(const T & x){
             *this += interval_t<T>(-x, x);
         }   
 
-        bound_t<T, N> get_subdivision(int i){
+        bound_t<T, N> subdivision(int i) const {
             vec_t<T, N> lower = get_lower();
             vec_t<T, N> width = get_width();
-            
+           
             for (int j = 0; j < N; j++){
                 if (i & (1 << j)){
-                    lower[i] += width[i];
+                    lower[j] += width[j];
                 }
             }
 
             return bound_t<T, N>(lower, lower + width);
-        } 
-    };
+        }
 
+        int subdivision_index(const vec_t<T, N> & x) const {
+            vec_t<bool, N> subdivision = x >= get_midpoint();
+
+            int index = 0;  
+            for (int i = 0; i < N; i++){
+                if (subdivision[i]){
+                    index |= (1 << i);
+                }
+            }
+            
+            return index;
+        }
+    };
 
     using bound3_t = bound_t<double, 3>;
     using bound4_t = bound_t<double, 4>;

@@ -207,6 +207,8 @@ namespace srph {
     template<class T, int N>
     using vec_t = matrix_t<T, N, 1>;
 
+    using bvec3_t = vec_t<bool, 3>;
+
     typedef vec_t<int32_t, 2> i32vec2_t;
 
     typedef vec_t<uint8_t, 2> u8vec2_t;

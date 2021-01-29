@@ -17,6 +17,8 @@ namespace srph {
         physics_t();
         ~physics_t();
 
+        void start();
+
         void register_matter(std::shared_ptr<matter_t> matter);
         void unregister_matter(std::shared_ptr<matter_t> matter);
 
