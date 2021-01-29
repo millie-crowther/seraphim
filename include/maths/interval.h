@@ -23,6 +23,10 @@ namespace srph {
             return contains(i.lower) || contains(i.upper) || i.contains(lower);
         }
 
+        double get_width() const {
+            return upper - lower;
+        }
+
         T get_upper() const {
             return upper;
         }
@@ -65,6 +69,10 @@ namespace srph {
 
         interval_t<T> operator+(const T & x) const {
             return interval_t<T>(lower + x, upper + x);
+        }
+
+        interval_t<T> operator-(const interval_t<T> & i) const {
+            return interval_t<T>(lower - i.upper, upper - i.lower);
         }
 
         void operator+=(const interval_t<T> & i){

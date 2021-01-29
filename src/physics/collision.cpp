@@ -235,8 +235,10 @@ bool srph::collision_t::comparator_t::operator()(const collision_t & a, const co
 bool srph::collision_t::satisfies_constraints(
     const bound4_t & bound, double upper_t, const std::vector<bound4_t> & sing_solns
 ) const {
+    interval_t<double> t = bound[3];
+    
     // is solution too late in time
-    if (bound[3].get_lower() > upper_t + constant::iota){
+    if (t.get_lower() > upper_t + constant::iota){
         return false;
     }
 
@@ -252,33 +254,45 @@ bool srph::collision_t::satisfies_constraints(
    
     // is too far from surface
     bound3_t xyz_bound(bound[0], bound[1], bound[2]);
-    double t1 = bound[3].get_lower();
-    double t2 = bound[3].get_upper();
     vec3_t c = xyz_bound.get_midpoint();
     vec3_t size = xyz_bound.get_width();
     
-    transform_t tfa = a->get_transform_after(t1);
+    transform_t tfa = a->get_transform_after(t.get_lower());
     vec3_t c_a = tfa.to_local_space(c);
-    vec3_t v_a = a->get_velocity_after(c, t1);
-    double distance_a = vec::length(v_a) * (t2 - t1);
+    vec3_t v_a = a->get_velocity_after(c, t.get_lower());
+    double distance_a = vec::length(v_a) * t.get_width();
 
     if (std::abs(a->get_sdf()->phi(c_a) - distance_a > vec::length(size))){
         return false;
     } 
 
-    transform_t tfb = b->get_transform_after(t1);
+    transform_t tfb = b->get_transform_after(t.get_lower());
     vec3_t c_b = tfb.to_local_space(c);
-    vec3_t v_b = b->get_velocity_after(c, t1);
-    double distance_b = vec::length(v_b) * (t2 - t1);
+    vec3_t v_b = b->get_velocity_after(c, t.get_lower());
+    double distance_b = vec::length(v_b) * t.get_width();
 
     if (std::abs(b->get_sdf()->phi(c_b) - distance_b > vec::length(size))){
         return false;
     } 
 
-    // normals not anti-parallel    
-  //  bound3_t normals_a = a->normal_bounds( 
+    // normals facing each other
+    bound3_t ns_a = a->normal_bounds(xyz_bound);
+    bound3_t ns_b = b->normal_bounds(xyz_bound);
+    interval_t<double> nn = vec::dot(ns_a, ns_b);
+    if (nn.get_lower() > 0){
+        return false;
+    }
+ 
     // incoming collision constraint
-    // TODO
+    bound3_t vs_a = a->velocity_bounds(xyz_bound, t);
+    bound3_t vs_b = b->velocity_bounds(xyz_bound, t);
+    bound3_t vrs = vs_a - vs_b;
+    bound3_t ns = ns_a | -ns_b;
+
+    interval_t<double> vrns = vec::dot(vrs, ns);
+    if (vrns.get_upper() < 0){
+        return false;
+    }
  
     return true;
 }

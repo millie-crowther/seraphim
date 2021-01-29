@@ -71,6 +71,12 @@ double matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t 
     return vec::dot(rn, *get_inv_tf_i() * rn);
 }
 
+bound3_t matter_t::velocity_bounds(const bound3_t & x, const interval_t<double> & t){
+    transform_t tf = get_transform_after(t.get_lower());
+    bound3_t com = v * t + tf.to_global_space(get_centre_of_mass());
+    return v + vec::cross(omega, x - com);
+}
+
 void matter_t::apply_impulse(const vec3_t & j){
     v += j / get_mass();
 }

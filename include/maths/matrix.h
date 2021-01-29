@@ -82,15 +82,17 @@ namespace srph {
         }
 
         // vector accessor operators  
-        matrix_t<T, M, N> operator+(const matrix_t<T, M, N> & x) const {
-            matrix_t<T, M, N> r;
-            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus<T>());
+        template<class S>
+        matrix_t<decltype(T() + S()), M, N> operator+(const matrix_t<S, M, N> & x) const {
+            matrix_t<decltype(T() + S()), M, N> r;
+            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::plus());
             return r;
         }
 
-        matrix_t<T, M, N> operator-(const matrix_t<T, M, N> & x) const {
-            matrix_t<T, M, N> r;
-            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus<T>());
+        template<class S>
+        matrix_t<decltype(T() - S()), M, N> operator-(const matrix_t<S, M, N> & x) const {
+            matrix_t<decltype(T() - S()), M, N> r;
+            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::minus());
             return r;
         } 
 
@@ -116,8 +118,9 @@ namespace srph {
             return *this + matrix_t<T, M, N>(x);    
         }
 
-        matrix_t<T, M, N> operator*(const T & x) const {
-            return *this * matrix_t<T, M, N>(x);
+        template<class S>
+        matrix_t<decltype(T() * S()), M, N> operator*(const S & x) const {
+            return *this * matrix_t<S, M, N>(x);
         }
 
         matrix_t<T, M, N> operator/(const T & x) const {
@@ -307,9 +310,9 @@ namespace srph {
             }
         }
 
-        template<class T>
-        vec_t<T, 3> cross(const vec_t<T, 3> & x, const vec_t<T, 3> & y){
-            return vec_t<T, 3>(
+        template<class S, class T>
+        vec_t<decltype(S() * T()), 3> cross(const vec_t<S, 3> & x, const vec_t<T, 3> & y){
+            return vec_t<decltype(S()* T()), 3>(
                 x[1] * y[2] - x[2] * y[1],
                 x[2] * y[0] - x[0] * y[2],
                 x[0] * y[1] - x[1] * y[0]
@@ -458,7 +461,7 @@ namespace srph {
                     ab.set(m, n, vec::dot(a.get_row(m), b.get_column(n)));
                 }
             }
-
+            
             return ab; 
         }
         

@@ -11,7 +11,7 @@ namespace srph {
         bound_t(){}
     
         bound_t(const vec_t<interval_t<T>, N> & b){
-            *this = b;
+            std::copy(b.begin(), b.end(), this->begin());
         }
     
         template<typename... Xs> 
