@@ -94,9 +94,10 @@ namespace srph {
             return r;
         } 
 
-        matrix_t<T, M, N> scaled(const matrix_t<T, M, N> & x) const {
-            matrix_t<T, M, N> r;
-            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies<T>());
+        template<class S>
+        matrix_t<decltype(T() * S()), M, N> scaled(const matrix_t<S, M, N> & x) const {
+            matrix_t<decltype(T() * S()), M, N> r;
+            std::transform(this->begin(), this->end(), x.begin(), r.begin(), std::multiplies());
             return r;
         }
 
@@ -258,10 +259,10 @@ namespace srph {
             return vec_t<T, 3>(T(0), T(0), T(1));
         }
 
-        template<class T, int N>
-        T dot(const vec_t<T, N> & x, const vec_t<T, N> & y){
-            vec_t<T, N> h = x * y;
-            return std::accumulate(h.begin(), h.end(), T(0));
+        template<class S, class T, int N>
+        decltype(S() * T()) dot(const vec_t<S, N> & x, const vec_t<T, N> & y){
+            vec_t<decltype(S() * T()), N> h = x * y;
+            return std::accumulate(h.begin(), h.end(), decltype(S() * T())(0));
         }
        
         template<int P, class T, int M, int N>
@@ -448,9 +449,9 @@ namespace srph {
             }
         } 
 
-        template<class T, int X, int Y, int Z>
-        matrix_t<T, X, Z> multiply(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
-            matrix_t<T, X, Z> ab;
+        template<class T, class S, int X, int Y, int Z>
+        matrix_t<decltype(T() * S()), X, Z> multiply(const matrix_t<T, X, Y> & a, const matrix_t<S, Y, Z> & b){
+            matrix_t<decltype(T() * S()), X, Z> ab;
             
             for (int m = 0; m < X; m++){
                 for (int n = 0; n < Z; n++){
@@ -502,8 +503,8 @@ namespace srph {
         return a * x;
     }
 
-    template<class T, int N>
-    matrix_t<T, N, 1> operator*(const matrix_t<T, N, 1> & a, const matrix_t<T, N, 1> & b){
+    template<class S, class T, int N>
+    matrix_t<decltype(S() * T()), N, 1> operator*(const matrix_t<S, N, 1> & a, const matrix_t<T, N, 1> & b){
         return a.scaled(b);
     }
 
@@ -512,8 +513,8 @@ namespace srph {
         a.scale(b);
     }
 
-    template<class T, int X, int Y, int Z>
-    matrix_t<T, X, Z> operator*(const matrix_t<T, X, Y> & a, const matrix_t<T, Y, Z> & b){
+    template<class S, class T, int X, int Y, int Z>
+    matrix_t<decltype(S() * T()), X, Z> operator*(const matrix_t<T, X, Y> & a, const matrix_t<S, Y, Z> & b){
         return mat::multiply(a, b);
     }
 

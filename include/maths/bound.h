@@ -9,6 +9,10 @@ namespace srph {
     class bound_t : public vec_t<interval_t<T>, N> {
     public:
         bound_t(){}
+    
+        bound_t(const vec_t<interval_t<T>, N> & b){
+            *this = b;
+        }
         
         bound_t(const vec_t<T, N> & lower, const vec_t<T, N> & upper){
             for (int i = 0; i < N; i++){

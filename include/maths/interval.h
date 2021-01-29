@@ -53,14 +53,34 @@ namespace srph {
             );       
         }
 
+        interval_t<T> operator*(const T & x) const {
+            T a = lower * x;
+            T b = upper * x;
+            return interval_t<T>(std::min(a, b), std::max(a, b));
+        }
+
         interval_t<T> operator+(const interval_t<T> & i) const {
             return interval_t<T>(lower + i.lower, upper + i.upper);
+        }
+
+        interval_t<T> operator+(const T & x) const {
+            return interval_t<T>(lower + x, upper + x);
         }
 
         void operator+=(const interval_t<T> & i){
             *this = *this + i;
         }
     };
+
+    template<class T>
+    interval_t<T> operator*(const T & x, const interval_t<T> & i){
+        return i * x;
+    }
+
+    template<class T>
+    interval_t<T> operator+(const T & x, const interval_t<T> & i){
+        return i + x;
+    }
 }
 
 #endif
