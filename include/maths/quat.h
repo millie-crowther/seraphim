@@ -11,13 +11,6 @@ namespace srph {
         // fields
         vec4_t qs;
 
-        quat_t mult(const quat_t * q, const quat_t & r) const;
-        
-        template<class T, class V>
-        T mult(const vec_t<V, 3> * v, const T & x) const {
-            return to_matrix() * x;
-        }
-
     public:
         // public constructors
         quat_t();
@@ -28,9 +21,11 @@ namespace srph {
 
         // operators
         template<class T>
-        T operator*(const T & x) const {
-            return mult(&x, x);
-        }        
+        vec_t<T, 3> operator*(const vec_t<T, 3> & x) const {
+            return to_matrix() * x;
+        }    
+    
+        quat_t operator*(const quat_t & r) const;
 
         void operator*=(const quat_t & r);
         double operator[](uint32_t i) const;

@@ -21,7 +21,7 @@ quat_t quat_t::inverse() const {
     return quat_t(qs[0], -qs[1], -qs[2], -qs[3]);
 }
 
-quat_t quat_t::mult(const quat_t * q, const quat_t & r) const {
+quat_t quat_t::operator*(const quat_t & r) const {
     return quat_t(
         r.qs[0] * qs[0] - r.qs[1] * qs[1] - r.qs[2] * qs[2] - r.qs[3] * qs[3],
         r.qs[0] * qs[1] + r.qs[1] * qs[0] - r.qs[2] * qs[3] + r.qs[3] * qs[2],
