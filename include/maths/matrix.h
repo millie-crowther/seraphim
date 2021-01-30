@@ -262,17 +262,14 @@ namespace srph {
             return vec_t<T, 3>(T(0), T(0), T(1));
         }
 
-        template<class S, class T, int N>
-        decltype(S() * T()) dot(const vec_t<S, N> & x, const vec_t<T, N> & y){
-            vec_t<decltype(S() * T()), N> h = x * y;
-            return std::accumulate(h.begin(), h.end(), decltype(S() * T())(0));
+        template<class S, class T, int M, int N>
+        decltype(S() * T()) dot(const matrix_t<S, M, N> & x, const matrix_t<T, M, N> & y){
+            return std::transform_reduce(x.begin(), x.end(), y.begin(), T(0));
         }
 
         template<class T, int M, int N>
         T length(const matrix_t<T, M, N> & x){
-            return std::sqrt(std::transform_reduce(
-                x.begin(), x.end(), T(0), std::plus(), [](const T & x){ return x * x; }
-            ));
+            return std::sqrt(dot(x, x));
         }   
 
         template<class T, int N>
