@@ -59,7 +59,10 @@ bound3_t matter_t::get_moving_bound(double t) const {
         bound.capture(transform.to_global_space(x));
     }
 
-    bound.enlarge(0.5 * vec::length(a) * t * t + vec::length(v) * t);
+    
+    bound += v * interval_t<double>(0, t);
+
+    // TODO: include rotation    
 
     return bound;
 }
@@ -149,6 +152,33 @@ double matter_t::get_average_density(){
 
 double matter_t::get_mass(){
     return get_average_density() * sdf->get_volume();
+}
+
+bool matter_t::is_locally_planar(const bound3_t & b) const {
+    vec3_t centre = to_local_space(b.get_midpoint());
+    vec3_t n = sdf->normal(centre);
+    double d = vec::dot(centre, n) - sdf->phi(centre);
+
+    // check each vertex maps onto the same plane
+    for (int i = 0; i < 8; i++){
+        vec3_t vertex = b.vertex(i);
+        
+        double di = vec::dot(vertex, n) - sdf->phi(vertex);
+        if (std::abs(d - di) > constant::epsilon){
+            return false;
+        }
+
+        if (sdf->normal(vertex) != n){
+            return false;
+        }
+    }
+
+    // TODO:
+    // this is not a perfect detector of a planar region. However,
+    // it might be good enough! If it proves to be insufficient somehow,
+    // further restriction will be necessary below.
+
+    return true; 
 }
 
 void matter_t::translate(const vec3_t & x){

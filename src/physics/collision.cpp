@@ -69,7 +69,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         auto ja = a->get_sdf()->jacobian(x_a);
         auto jb = b->get_sdf()->jacobian(x_b);
 
-        if (vec::p_norm<1>(ja) <= vec::p_norm<1>(jb)){
+        if (vec::length(ja) <= vec::length(jb)){
             n = a->get_rotation() * a->get_sdf()->normal(x_a);
         } else {
             n = b->get_rotation() * -b->get_sdf()->normal(x_b);
@@ -253,14 +253,18 @@ bool srph::collision_t::satisfies_constraints(
     }
    
     // is too far from surface
+    // TODO: normal bounds over time
     bound3_t xyz_bound(bound[0], bound[1], bound[2]);
     vec3_t c = xyz_bound.get_midpoint();
     vec3_t size = xyz_bound.get_width();
-    
+ 
     transform_t tfa = a->get_transform_after(t.get_lower());
     vec3_t c_a = tfa.to_local_space(c);
-    vec3_t v_a = a->get_velocity_after(c, t.get_lower());
-    double distance_a = vec::length(v_a) * t.get_width();
+    bound3_t vsa = a->velocity_bounds(bound3_t(c, c), t);
+    bound3_t ns_a = a->normal_bounds(xyz_bound);
+    interval_t<double> vns_a = vec::dot(vsa, ns_a);
+
+    double distance_a = vns_a.get_upper() * t.get_width();
 
     if (std::abs(a->get_sdf()->phi(c_a) - distance_a > vec::length(size))){
         return false;
@@ -268,18 +272,21 @@ bool srph::collision_t::satisfies_constraints(
 
     transform_t tfb = b->get_transform_after(t.get_lower());
     vec3_t c_b = tfb.to_local_space(c);
-    vec3_t v_b = b->get_velocity_after(c, t.get_lower());
-    double distance_b = vec::length(v_b) * t.get_width();
+    bound3_t vsb = b->velocity_bounds(bound3_t(c, c), t);
+    bound3_t ns_b = b->normal_bounds(xyz_bound);
+    interval_t<double> vns_b = vec::dot(vsb, ns_b);   
+ 
+    double distance_b = vns_b.get_upper() * t.get_width();
 
     if (std::abs(b->get_sdf()->phi(c_b) - distance_b > vec::length(size))){
         return false;
     } 
 
     // normals facing each other
-    bound3_t ns_a = a->normal_bounds(xyz_bound);
-    bound3_t ns_b = b->normal_bounds(xyz_bound);
     interval_t<double> nn = vec::dot(ns_a, ns_b);
+//    std::cout << "nn = " << nn.get_lower() << " <= x < " << nn.get_upper() << std::endl;
     if (nn.get_lower() > 0){
+        throw 1;
         return false;
     }
  
@@ -291,6 +298,7 @@ bool srph::collision_t::satisfies_constraints(
 
     interval_t<double> vrns = vec::dot(vrs, ns);
     if (vrns.get_upper() < 0){
+        throw 2;
         return false;
     }
  

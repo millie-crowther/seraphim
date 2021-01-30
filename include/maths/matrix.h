@@ -267,31 +267,12 @@ namespace srph {
             vec_t<decltype(S() * T()), N> h = x * y;
             return std::accumulate(h.begin(), h.end(), decltype(S() * T())(0));
         }
-       
-        template<int P, class T, int M, int N>
-        T p_norm(matrix_t<T, M, N> x){
-            static_assert(P > 0, "Error: P-norm must have a positive P-value");
-
-        //    if constexpr (P != 1 || !std::is_unsigned<T>::value){
-                std::transform(x.begin(), x.end(), x.begin(), [](const T & y){ 
-        //            if constexpr (P == 1){
-          //              return std::abs(y); 
-        //            } 
-                   // else if constexpr ((P & 1) == 0 || std::is_unsigned<T>::value){
-                     //   return std::pow(y, P); 
-            //        } else {
-                        return std::abs(std::pow(y, P));
-              //      }
-                });
-          //  }
-            
-            auto sum = std::accumulate(x.begin(), x.end(), T(0));
-            return std::pow(sum, 1.0 / static_cast<double>(P));    
-        }
 
         template<class T, int M, int N>
         T length(const matrix_t<T, M, N> & x){
-            return p_norm<2>(x);
+            return std::sqrt(std::transform_reduce(
+                x.begin(), x.end(), T(0), std::plus(), [](const T & x){ return x * x; }
+            ));
         }   
 
         template<class T, int N>

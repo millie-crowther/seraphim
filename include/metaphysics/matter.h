@@ -48,6 +48,7 @@ namespace srph {
 
         bound3_t normal_bounds(const bound3_t & x);
         bound3_t velocity_bounds(const bound3_t & b, const interval_t<double> & t);
+        bool is_locally_planar(const bound3_t & b) const;
 
     private:
         material_t material;

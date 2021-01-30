@@ -36,6 +36,7 @@ namespace srph {
             SDF & sdf, const bound_t<double, N> & node_bounds, 
             const bound_t<double, N> & query_bounds
         ){
+           // std::cout << "beep" << node_bounds.get_midpoint() << std::endl;
             vec_t<double, N> m = node_bounds.get_midpoint();
             double r = vec::length(node_bounds.get_width());
 
