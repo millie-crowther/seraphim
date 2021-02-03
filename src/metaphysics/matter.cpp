@@ -161,7 +161,7 @@ bool matter_t::is_locally_planar(const bound3_t & b) const {
 
     // check each vertex maps onto the same plane
     for (int i = 0; i < 8; i++){
-        vec3_t vertex = b.vertex(i);
+        vec3_t vertex = to_local_space(b.vertex(i));
         
         double di = vec::dot(vertex, n) - sdf->phi(vertex);
         if (std::abs(d - di) > constant::epsilon){

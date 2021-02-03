@@ -29,38 +29,30 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
 
     bound3_t bound = a->get_moving_bound(constant::sigma) & b->get_moving_bound(constant::sigma);
 
-    auto get_vertex = [bound](int i){
-        vec3_t x = bound.get_lower();
-        for (int j = 0; j < 3; j++){
-            if (i & (1 << j)){
-                x[j] = bound[j].get_upper();
-            }
-        }
-        return x;
+
+//    if (bound.is_valid()){
+//        vec4_t lower(bound.get_lower(), 0.0);
+  //      vec4_t upper(bound.get_upper(), constant::sigma);
+    //    minimise(bound4_t(lower, upper));
+   // }
+
+    std::array<vec3_t, 4> xs = {
+        bound.vertex(0), bound.vertex(3),
+        bound.vertex(5), bound.vertex(6)
     };
 
     if (bound.is_valid()){
-        vec4_t lower(bound.get_lower(), 0.0);
-        vec4_t upper(bound.get_upper(), constant::sigma);
-        minimise(bound4_t(lower, upper));
-    }
-
-    std::array<vec3_t, 4> xs = {
-        get_vertex(0), get_vertex(3),
-        get_vertex(5), get_vertex(6)
-    };
-
-    if (!min_xs.empty()){
         auto result = srph::optimise::nelder_mead(f, xs);
         depth = std::abs(result.fx);
         intersecting = result.fx < 0;
-        
-        vec3_t sum_x;
-        for (auto & min_x : min_xs){
-            sum_x += min_x;
-        }
+        x = result.x;  
+      
+     ///   vec3_t sum_x;
+      //  for (auto & min_x : min_xs){
+        //    sum_x += min_x;
+       // }
 
-        x = sum_x / min_xs.size();
+       // x = sum_x / min_xs.size();
 
         x_a = a->to_local_space(x);
         x_b = b->to_local_space(x);
@@ -104,6 +96,52 @@ bool srph::collision_t::is_anticipated() const {
 
 double srph::collision_t::get_estimated_time() const {
     return t;
+}
+
+double collision_t::time_to_collision(const bound3_t & bound){
+    // too far from surface of a
+    double r = vec::length(bound.get_width());
+    vec3_t c = bound.get_midpoint();
+    vec3_t xa = a->to_local_space(c);
+    double phi_a = a->get_sdf()->phi(xa);
+    if (r < std::abs(phi_a)){
+        return constant::sigma;
+    }
+    
+    // found a direct intersection
+    vec3_t xb = b->to_local_space(c);
+    double phi_b = b->get_sdf()->phi(xb);
+    double phi = phi_a + phi_b;
+    if (phi <= 0){
+        return 0;
+    }
+    
+    // region is unit size
+    if (r < constant::epsilon){
+        // check if collision is incoming
+        vec3_t n = a->get_rotation() * a->get_sdf()->normal(xa);
+        vec3_t va = a->get_velocity_after(c, 0);
+        vec3_t vb = b->get_velocity_after(c, 0);
+        vec3_t vr = va - vb;
+        double vrn = vec::dot(vr, n);
+    
+        if (vrn <= 0){
+            return constant::sigma;
+        }
+
+        // estimate of time to collision
+        return phi / vrn;        
+    }
+    
+    // recurse 
+    // TODO: choose which half to do first based on heuristic
+    auto bs = bound.bisect();
+    double t1 = time_to_collision(bs.first);
+    if (t1 < constant::iota){
+        return t1;
+    } else {
+        return std::min(t1, time_to_collision(bs.second));
+    }
 }
 
 vec3_t srph::collision_t::get_position() const {
@@ -261,46 +299,52 @@ bool srph::collision_t::satisfies_constraints(
     transform_t tfa = a->get_transform_after(t.get_lower());
     vec3_t c_a = tfa.to_local_space(c);
     bound3_t vsa = a->velocity_bounds(bound3_t(c, c), t);
-    bound3_t ns_a = a->normal_bounds(xyz_bound);
-    interval_t<double> vns_a = vec::dot(vsa, ns_a);
+    double va = std::sqrt(vec::dot(vsa, vsa).get_upper());
 
-    double distance_a = vns_a.get_upper() * t.get_width();
+    double distance_a = va * t.get_width();
 
-    if (std::abs(a->get_sdf()->phi(c_a) - distance_a > vec::length(size))){
+    if (std::abs(a->get_sdf()->phi(c_a)) - distance_a > vec::length(size)){
         return false;
     } 
 
     transform_t tfb = b->get_transform_after(t.get_lower());
     vec3_t c_b = tfb.to_local_space(c);
     bound3_t vsb = b->velocity_bounds(bound3_t(c, c), t);
-    bound3_t ns_b = b->normal_bounds(xyz_bound);
-    interval_t<double> vns_b = vec::dot(vsb, ns_b);   
+    double vb = std::sqrt(vec::dot(vsb, vsb).get_upper());
  
-    double distance_b = vns_b.get_upper() * t.get_width();
+    double distance_b = vb * t.get_width();
 
-    if (std::abs(b->get_sdf()->phi(c_b) - distance_b > vec::length(size))){
+    if (std::abs(b->get_sdf()->phi(c_b)) - distance_b > vec::length(size)){
         return false;
     } 
 
-    // normals facing each other
-    interval_t<double> nn = vec::dot(ns_a, ns_b);
-//    std::cout << "nn = " << nn.get_lower() << " <= x < " << nn.get_upper() << std::endl;
-    if (nn.get_lower() > 0){
-        throw 1;
-        return false;
+    if (a->is_locally_planar(xyz_bound) && b->is_locally_planar(xyz_bound)){
+        // check if normals face each other
+        vec3_t na = tfa.get_rotation() * a->get_sdf()->normal(c_a); 
+        vec3_t nb = tfb.get_rotation() * b->get_sdf()->normal(c_b);
+        
+        if (vec::dot(na, nb) > 0){
+            return false;
+        }
+
+        if (vec::cross(na, nb) != vec3_t()){
+            return false;
+        }
+
+        // check if incoming
+        bound3_t vr = vsa - vsb;
+        if (vec::dot(vr, na).get_upper() < 0){
+            return false;
+        }
+        
+        if (vec::dot(vr, nb).get_lower() > 0){
+            return false;
+        }
     }
+
+    // normals facing each other
  
     // incoming collision constraint
-    bound3_t vs_a = a->velocity_bounds(xyz_bound, t);
-    bound3_t vs_b = b->velocity_bounds(xyz_bound, t);
-    bound3_t vrs = vs_a - vs_b;
-    bound3_t ns = ns_a | -ns_b;
-
-    interval_t<double> vrns = vec::dot(vrs, ns);
-    if (vrns.get_upper() < 0){
-        throw 2;
-        return false;
-    }
  
     return true;
 }
@@ -315,7 +359,7 @@ bool srph::collision_t::should_accept_solution(const bound4_t & bound) const {
         return false;
     }
 
-    std::cout << "collision at: " << bound.get_width() << std::endl;
+    std::cout << "collision at: " << bound.get_midpoint() << std::endl;
     return true;
 /*
     vec4_t c4 = region.get_centre();

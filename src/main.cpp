@@ -38,7 +38,7 @@ int main(){
         std::make_shared<matter_t>(
             cube_sdf, 
             material_t(vec3_t(0.8, 0.8, 0.1), 700.0, 0.2, mu_s, mu_d),
-            vec3_t(-2.0, 2.0, 0),
+            vec3_t(0, 3, 0),
             true
         )
     );

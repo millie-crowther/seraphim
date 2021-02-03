@@ -264,7 +264,7 @@ namespace srph {
 
         template<class S, class T, int M, int N>
         decltype(S() * T()) dot(const matrix_t<S, M, N> & x, const matrix_t<T, M, N> & y){
-            return std::transform_reduce(x.begin(), x.end(), y.begin(), T(0));
+            return std::transform_reduce(x.begin(), x.end(), y.begin(), decltype(S() * T())(0));
         }
 
         template<class T, int M, int N>
@@ -280,7 +280,7 @@ namespace srph {
 
         template<class T, int N>
         T volume(const vec_t<T, N> & x){
-            T product = std::accumulate(x.begin(), x.end(), T(1), std::multiplies<T>());
+            T product = std::reduce(x.begin(), x.end(), T(1), std::multiplies<T>());
             if constexpr (std::is_unsigned<T>::value){
                 return product;
             } else {

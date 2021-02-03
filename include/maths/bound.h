@@ -95,10 +95,6 @@ namespace srph {
             }
         }
 
-        void enlarge(const T & x){
-            *this += interval_t<T>(-x, x);
-        }   
-
         bound_t<T, N> subdivision(int i) const {
             vec_t<T, N> lower = get_lower();
             vec_t<T, N> width = get_width();
@@ -136,6 +132,26 @@ namespace srph {
             }
             
             return index;
+        }
+
+        std::pair<bound_t<T, N>, bound_t<T, N>> bisect() const {
+            int axis = 0;
+            vec_t<T, N> w = get_width();
+            for (int i = 1; i < N; i++){
+                if (w[i] > w[axis]){
+                    axis = i;
+                }
+            }
+
+            vec_t<T, N> min = get_lower();
+            vec_t<T, N> max = get_upper();
+
+            T m = get_midpoint()[axis];
+
+            min[axis] = m;
+            max[axis] = m;
+
+            return std::make_pair(bound_t<T, N>(get_lower(), max), bound_t<T, N>(min, get_upper()));
         }
     };
 
