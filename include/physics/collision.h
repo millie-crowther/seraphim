@@ -29,7 +29,7 @@ namespace srph {
 
         void minimise(const bound4_t & bound);
 
-        double time_to_collision(const bound3_t & b);
+        double time_to_collision(const bound3_t & b, double upper_t);
         
         bool should_accept_solution(const bound4_t & bound) const;
         bool contains_unique_solution(const bound4_t & bound) const;

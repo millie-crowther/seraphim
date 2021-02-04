@@ -46,7 +46,10 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         depth = std::abs(result.fx);
         intersecting = result.fx < 0;
         x = result.x;  
-      
+
+        double t = time_to_collision(bound, constant::sigma);
+        std::cout << "t = " << t << std::endl;
+        std::cout << "iota = " << constant::iota << std::endl;  
      ///   vec3_t sum_x;
       //  for (auto & min_x : min_xs){
         //    sum_x += min_x;
@@ -98,27 +101,46 @@ double srph::collision_t::get_estimated_time() const {
     return t;
 }
 
-double collision_t::time_to_collision(const bound3_t & bound){
-    // too far from surface of a
+double collision_t::time_to_collision(const bound3_t & bound, double upper_t){
+    // only check points on the surface of one of the substances
     double r = vec::length(bound.get_width());
     vec3_t c = bound.get_midpoint();
+    
     vec3_t xa = a->to_local_space(c);
     double phi_a = a->get_sdf()->phi(xa);
-    if (r < std::abs(phi_a)){
-        return constant::sigma;
+    if (std::abs(phi_a) > r){
+        return upper_t;
     }
     
-    // found a direct intersection
+    // check for a direct intersection
     vec3_t xb = b->to_local_space(c);
     double phi_b = b->get_sdf()->phi(xb);
     double phi = phi_a + phi_b;
+    
     if (phi <= 0){
         return 0;
     }
+
+    // check lower bound on time to collision in this volume
+    // TODO: check upper bound on time to collision? 
+    bound3_t vba = a->velocity_bounds(bound, interval_t<double>(0, upper_t));   
+    bound3_t vbb = b->velocity_bounds(bound, interval_t<double>(0, upper_t));  
+    bound3_t vrb = vba - vbb; 
+    double upper_v = vec::dot(vrb, vrb).get_upper();
     
+    if (upper_v <= 0){
+        return upper_t;
+    }
+
+    double lower_t = (phi - r * 2) / std::sqrt(upper_v);
+    if (lower_t >= upper_t){
+        return upper_t;
+    }
+ 
     // region is unit size
     if (r < constant::epsilon){
         // check if collision is incoming
+        // TODO: do this at broader scope. thats what will make this realtime
         vec3_t n = a->get_rotation() * a->get_sdf()->normal(xa);
         vec3_t va = a->get_velocity_after(c, 0);
         vec3_t vb = b->get_velocity_after(c, 0);
@@ -126,7 +148,7 @@ double collision_t::time_to_collision(const bound3_t & bound){
         double vrn = vec::dot(vr, n);
     
         if (vrn <= 0){
-            return constant::sigma;
+            return upper_t;
         }
 
         // estimate of time to collision
@@ -136,12 +158,14 @@ double collision_t::time_to_collision(const bound3_t & bound){
     // recurse 
     // TODO: choose which half to do first based on heuristic
     auto bs = bound.bisect();
-    double t1 = time_to_collision(bs.first);
+    double t1 = time_to_collision(bs.first, upper_t);
+    
     if (t1 < constant::iota){
         return t1;
-    } else {
-        return std::min(t1, time_to_collision(bs.second));
     }
+
+    double t2 = time_to_collision(bs.second, std::min(upper_t, t1));
+    return std::min(t1, t2);
 }
 
 vec3_t srph::collision_t::get_position() const {
