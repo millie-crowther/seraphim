@@ -47,9 +47,10 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         intersecting = result.fx < 0;
         x = result.x;  
 
-        double t = time_to_collision(bound, constant::sigma);
-        std::cout << "t = " << t << std::endl;
-        std::cout << "iota = " << constant::iota << std::endl;  
+//        double t = time_to_collision(bound, constant::sigma);
+        auto ttc = [this](const vec3_t & x){ return time_to_collision(x); };
+        auto t_result = srph::optimise::nelder_mead(ttc, xs, constant::iota);
+        t = std::min(t_result.fx, constant::sigma);
      ///   vec3_t sum_x;
       //  for (auto & min_x : min_xs){
         //    sum_x += min_x;
@@ -72,7 +73,7 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
     }
     
     // find relative velocity at point 
-    vr = a->get_velocity_after(x, 0) - b->get_velocity_after(x, 0);
+    vr = a->get_velocity(x) - b->get_velocity(x);
 
     // check to see if anticipated
     if (bound.is_valid() && !intersecting){
@@ -101,26 +102,51 @@ double srph::collision_t::get_estimated_time() const {
     return t;
 }
 
-double collision_t::time_to_collision(const bound3_t & bound, double upper_t){
-    // only check points on the surface of one of the substances
-    double r = vec::length(bound.get_width());
-    vec3_t c = bound.get_midpoint();
+double collision_t::time_to_collision(const vec3_t & x){
+    vec3_t xa = a->to_local_space(x);
+    double phi_a = a->get_sdf()->phi(xa);
     
+    vec3_t xb = b->to_local_space(x);
+    double phi_b = b->get_sdf()->phi(xb);
+    double phi = phi_a + phi_b;
+   
+    if (phi <= 0){
+        return 0;
+    }
+ 
+    vec3_t n = a->get_rotation() * a->get_sdf()->normal(xa);
+    vec3_t va = a->get_velocity(x);
+    vec3_t vb = b->get_velocity(x);
+    vec3_t vr = va - vb;
+    double vrn = vec::dot(vr, n);
+
+    if (vrn <= 0){
+        return std::numeric_limits<double>::max();
+    }
+
+    // estimate of time to collision
+    return phi / vrn;        
+}
+/*
+double collision_t::time_to_collision(const bound3_t & bound, double upper_t){
+    // take upper bound from sample at centre
+    vec3_t c = bound.get_midpoint();
+    double tc = time_to_collision(c);
+    upper_t = std::min(upper_t, tc);   
+
+    // check if region is unit size
+    double r = vec::length(bound.get_width());
+    if (r < constant::epsilon || upper_t < constant::iota){
+        return tc;
+    }
+    
+    // only check points on the surface of one of the substances
     vec3_t xa = a->to_local_space(c);
     double phi_a = a->get_sdf()->phi(xa);
     if (std::abs(phi_a) > r){
         return upper_t;
     }
     
-    // check for a direct intersection
-    vec3_t xb = b->to_local_space(c);
-    double phi_b = b->get_sdf()->phi(xb);
-    double phi = phi_a + phi_b;
-    
-    if (phi <= 0){
-        return 0;
-    }
-
     // check lower bound on time to collision in this volume
     // TODO: check upper bound on time to collision? 
     bound3_t vba = a->velocity_bounds(bound, interval_t<double>(0, upper_t));   
@@ -128,46 +154,38 @@ double collision_t::time_to_collision(const bound3_t & bound, double upper_t){
     bound3_t vrb = vba - vbb; 
     double upper_v = vec::dot(vrb, vrb).get_upper();
     
-    if (upper_v <= 0){
+    if (upper_v < constant::epsilon){
         return upper_t;
     }
 
+    vec3_t xb = b->to_local_space(c);
+    double phi_b = b->get_sdf()->phi(xb);
+    double phi = phi_a + phi_b;
     double lower_t = (phi - r * 2) / std::sqrt(upper_v);
     if (lower_t >= upper_t){
         return upper_t;
-    }
- 
-    // region is unit size
-    if (r < constant::epsilon){
-        // check if collision is incoming
-        // TODO: do this at broader scope. thats what will make this realtime
-        vec3_t n = a->get_rotation() * a->get_sdf()->normal(xa);
-        vec3_t va = a->get_velocity_after(c, 0);
-        vec3_t vb = b->get_velocity_after(c, 0);
-        vec3_t vr = va - vb;
-        double vrn = vec::dot(vr, n);
-    
-        if (vrn <= 0){
-            return upper_t;
-        }
-
-        // estimate of time to collision
-        return phi / vrn;        
     }
     
     // recurse 
     // TODO: choose which half to do first based on heuristic
     auto bs = bound.bisect();
-    double t1 = time_to_collision(bs.first, upper_t);
+    double t1_est = time_to_collision(bs.first.get_midpoint()); 
+    double t2_est = time_to_collision(bs.first.get_midpoint()); 
+    upper_t = std::min(upper_t, std::min(t1_est, t2_est));
+
+    bound3_t b1 = t1_est < t2_est ? bs.first  : bs.second;
+    bound3_t b2 = t1_est < t2_est ? bs.second : bs.first;
     
+    double t1 = time_to_collision(b1, upper_t);
+
     if (t1 < constant::iota){
         return t1;
     }
 
-    double t2 = time_to_collision(bs.second, std::min(upper_t, t1));
+    double t2 = time_to_collision(b2, std::min(upper_t, t1));
     return std::min(t1, t2);
 }
-
+*/
 vec3_t srph::collision_t::get_position() const {
     return x;
 }
@@ -228,6 +246,8 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
+    find_contact_points();
+
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n * b->get_mass() / sm);
@@ -242,53 +262,6 @@ void srph::collision_t::correct(){
     }
 }
 
-void srph::collision_t::minimise(const bound4_t & initial_bound){
-    auto cmp = [](const bound4_t & a, const bound4_t & b){
-        return a[3].get_upper() < b[3].get_upper();
-    };
-    std::priority_queue<bound4_t, std::vector<bound4_t>, decltype(cmp)> queue(cmp);
-    queue.push(initial_bound);
-
-    std::vector<bound4_t> solutions;
-    std::vector<bound4_t> sing_solns;
-    double upper_t = constant::sigma;
-
-    while (!queue.empty()){
-        bound4_t bound = queue.top();
-        queue.pop();
-
-        if (!satisfies_constraints(bound, upper_t, sing_solns)){
-            continue;
-        } 
-
-        if (should_accept_solution(bound)){
-            solutions.push_back(bound);
-            
-            if (!contains_unique_solution(bound)){
-                sing_solns.push_back(bound);
-            }
-
-            upper_t = std::min(upper_t, bound[3].get_upper());
-
-            auto too_late = [upper_t](const bound4_t & y){
-                return y[3].get_lower() > upper_t + constant::iota;
-            };
-                
-            std::remove_if(solutions.begin(),  solutions.end(),  too_late);
-            std::remove_if(sing_solns.begin(), sing_solns.end(), too_late);
-        } else {
-            auto subregions = subdivide(bound);
-            queue.push(subregions.first);
-            queue.push(subregions.second);
-        }
-    }
-
-    for (auto & solution : solutions){
-        vec4_t centre = solution.get_midpoint();
-        min_xs.emplace_back(centre[0], centre[1], centre[2]);
-    }
-    min_t = upper_t;
-}
 
 bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
     return a.t < b.t;
@@ -429,4 +402,9 @@ std::pair<bound4_t, bound4_t> srph::collision_t::subdivide(const bound4_t & boun
 bool srph::collision_t::contains_unique_solution(const bound4_t & bound) const {
     // TODO
     return false;
+}
+
+void collision_t::find_contact_points(){
+    bound3_t bound = a->get_bound () & b->get_bound();
+    std::cout << bound.get_midpoint() << std::endl; 
 }

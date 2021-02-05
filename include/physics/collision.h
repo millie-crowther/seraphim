@@ -20,16 +20,13 @@ namespace srph {
         vec3_t n;
         vec3_t vr;
 
-        std::vector<vec3_t> min_xs;
-        double min_t;
+        std::vector<vec3_t> contact_points;
 
         double depth;
         matter_t * a;
         matter_t * b;
 
-        void minimise(const bound4_t & bound);
-
-        double time_to_collision(const bound3_t & b, double upper_t);
+//        double time_to_collision(const bound3_t & b, double upper_t);
         
         bool should_accept_solution(const bound4_t & bound) const;
         bool contains_unique_solution(const bound4_t & bound) const;
@@ -38,6 +35,10 @@ namespace srph {
         bool satisfies_constraints(
             const bound4_t & region, double upper_t, const std::vector<bound4_t> & sing_solns
         ) const;
+
+        double time_to_collision(const vec3_t & x);
+
+        void find_contact_points();
 
     public:
         collision_t(matter_t * a, matter_t * b);

@@ -46,7 +46,7 @@ material_t matter_t::get_material(const vec3_t & x){
     return material;
 }
 
-bound3_t matter_t::get_moving_bound(double t) const {
+bound3_t matter_t::get_bound() const {
     bound3_t bound;
     
     for (int i = 0; i < 8; i++){  
@@ -59,6 +59,12 @@ bound3_t matter_t::get_moving_bound(double t) const {
         bound.capture(transform.to_global_space(x));
     }
 
+    return bound;
+}
+    
+
+bound3_t matter_t::get_moving_bound(double t) const {
+    bound3_t bound = get_bound();
     
     bound += v * interval_t<double>(0, t);
 
@@ -252,9 +258,8 @@ mat3_t * matter_t::get_i(){
     return i.get();
 }
 
-vec3_t matter_t::get_velocity_after(const vec3_t & x, double t){
-    transform_t tf = get_transform_after(t);
-    vec3_t x1 = x - tf.to_global_space(get_centre_of_mass());
+vec3_t matter_t::get_velocity(const vec3_t & x){
+    vec3_t x1 = x - transform.to_global_space(get_centre_of_mass());
     return v + vec::cross(omega, x1);
 }
 

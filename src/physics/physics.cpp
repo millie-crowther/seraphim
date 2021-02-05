@@ -61,6 +61,7 @@ void physics_t::run(){
         }
         
         // correct all present collisions and anticipate the next one
+        
         for (auto & c : collisions){
             if (c.is_intersecting()){
                 c.correct();

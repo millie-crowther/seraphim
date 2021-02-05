@@ -17,6 +17,8 @@ namespace srph {
         std::shared_ptr<sdf3_t> get_sdf() const;
         vec3_t get_position() const;
         double get_mass();
+
+        bound3_t get_bound() const;
         bound3_t get_moving_bound(double t) const;
 
         void translate(const vec3_t & x);
@@ -34,7 +36,7 @@ namespace srph {
         void physics_tick(double delta);
         
         transform_t get_transform_after(double delta);
-        vec3_t get_velocity_after(const vec3_t & x, double t);
+        vec3_t get_velocity(const vec3_t & x);
 
         double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
         

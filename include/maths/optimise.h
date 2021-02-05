@@ -20,12 +20,13 @@ namespace srph { namespace optimise {
     };
 
     template<int N, class F>
-    result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
+    result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys, double threshold){
+        auto comparator = [](const auto & a, const auto & b){ return a.fx < b.fx; };
         std::vector<result_t<vec_t<double, N>>> xs;
         for (const auto & y : ys){
             xs.emplace_back(y, f(y));
         }
-        std::sort(xs.begin(), xs.end(), [](const auto & a, const auto & b){ return a.fx < b.fx; });
+        std::sort(xs.begin(), xs.end(), comparator);
 
         for (int i = 0; i < max_i; i++){
             // terminate
@@ -36,12 +37,12 @@ namespace srph { namespace optimise {
                 maxx = vec::max(maxx, xs[j].x);
             }
 
-            if (minx == maxx){
+            if (minx == maxx || xs[0].fx <= threshold){
                 return result_t(xs[0].x, xs[0].fx);
             }
 
             // order
-            std::sort(xs.begin(), xs.end(), [](const auto & a, const auto & b){ return a.fx < b.fx; });
+            std::sort(xs.begin(), xs.end(), comparator);
 
             // calculate centroid
             vec_t<double, N> x0;
@@ -88,6 +89,12 @@ namespace srph { namespace optimise {
 
         return xs[0]; 
     } 
+    
+    template<int N, class F>
+    result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
+        return nelder_mead(f, ys, std::numeric_limits<double>::min());
+    }
+
 }}
 
 #endif
