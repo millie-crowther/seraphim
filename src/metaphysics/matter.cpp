@@ -116,18 +116,6 @@ void matter_t::calculate_centre_of_mass(){
     throw std::runtime_error("Error: autocalc of centre of mass not yet implemented.");
 }
 
-bound3_t matter_t::normal_bounds(const bound3_t & b){
-    bound3_t local_bounds;
-    
-    for (int i = 0; i < 8; i++){
-        local_bounds.capture(transform.to_local_space(b.vertex(i)));    
-    }
-
-    bound3_t normal_bounds = sdf->get_normal_bounds(local_bounds);
-
-    return transform.get_rotation() * normal_bounds; 
-}
-
 vec3_t matter_t::get_centre_of_mass(){
     if (is_uniform){
         return sdf->get_uniform_centre_of_mass();

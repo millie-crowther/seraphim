@@ -246,7 +246,8 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
-    find_contact_points();
+    bound3_t bound = a->get_bound() & b->get_bound();
+    find_contact_points(bound);
 
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
@@ -404,7 +405,46 @@ bool srph::collision_t::contains_unique_solution(const bound4_t & bound) const {
     return false;
 }
 
-void collision_t::find_contact_points(){
-    bound3_t bound = a->get_bound () & b->get_bound();
-    std::cout << bound.get_midpoint() << std::endl; 
+void collision_t::find_contact_points(const bound3_t & bound){
+    vec3_t x = bound.get_midpoint();
+    double r = vec::length(bound.get_width());
+
+    vec3_t x_a   = a->to_local_space(x);
+    double phi_a = a->get_sdf()->phi(x_a); 
+    
+    if (std::abs(phi_a) > r){
+        return;
+    }
+ 
+    vec3_t x_b   = b->to_local_space(x);
+    double phi_b = b->get_sdf()->phi(x_b); 
+
+    if (std::abs(phi_b) > r){
+        return;
+    }
+
+    for (const vec3_t & c : contact_points){
+        bool is_contained = true;
+        for (int i = 0; i < 8; i++){
+            vec3_t vertex = bound.vertex(i);
+            if (vec::length(vertex - c) > solution_density){
+                is_contained = false;
+                break;
+            }
+
+            if (is_contained){
+                return;
+            }
+        }
+    }
+
+    if (r < constant::epsilon){
+        // TODO check if incoming
+        contact_points.push_back(x);
+        return;
+    } 
+
+    auto bs = bound.bisect();
+    find_contact_points(bs.first);
+    find_contact_points(bs.second);
 }

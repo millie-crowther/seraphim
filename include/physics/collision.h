@@ -7,7 +7,7 @@
 namespace srph {
     class collision_t {
     private:
-        static constexpr double solution_density = 1.0 / 4.0;
+        static constexpr double solution_density = 1.0 / 5.0;
 
         bool intersecting;
         bool anticipated;
@@ -38,7 +38,7 @@ namespace srph {
 
         double time_to_collision(const vec3_t & x);
 
-        void find_contact_points();
+        void find_contact_points(const bound3_t & b);
 
     public:
         collision_t(matter_t * a, matter_t * b);

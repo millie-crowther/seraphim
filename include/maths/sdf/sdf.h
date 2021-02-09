@@ -4,16 +4,13 @@
 #include <functional>
 #include <memory>
 
-#include "normal_tree.h"
-
 #include "core/constant.h"
+
+#include "maths/bound.h"
 
 namespace srph {
     template<uint8_t D>
     class sdf_t {
-    private:
-        normal_tree_t<D> normal_tree;
-
     protected:
         // protected constructor for abstract class
         sdf_t(){}
@@ -29,11 +26,7 @@ namespace srph {
                 axis[i] = constant::epsilon;
                 n[i] = phi(x + axis) - phi(x - axis);
             }   
-            return vec::normalise(n);
-        }
-
-        virtual bound_t<double, D> get_normal_bounds(const bound_t<double, D> & bounds){
-            return normal_tree.get_normal_range(*this, get_bound(), bounds); 
+            return n / (2.0 * constant::epsilon);
         }
 
         matrix_t<double, D, D> jacobian(const vec_t<double, D> & x){
@@ -53,13 +46,37 @@ namespace srph {
             return j;
         }
 
+        double project(const vec_t<double, D> & d){
+            vec_t<double, D> x = vec::normalise(d);
+            double scale = constant::rho;
+
+            while (true){
+                double p = phi(x * scale);
+
+                // TODO: better criteria for acceptance?
+                //       we want theta to be small enough that theta = cos(theta) = 1    
+                if (p > constant::rho){
+                    return scale - p;
+                }
+    
+                scale *= 1.5;
+            }
+        }
+
         virtual bool contains(const vec_t<double, D> & x){
             return phi(x) <= 0.0;
         }
 
         virtual bound_t<double, D> get_bound(){
-            vec_t<double, D> x(constant::rho);
-            return bound_t<double, D>(-x, x);
+            bound_t<double, D> bound;
+
+            for (int i = 0; i < D; i++){
+                vec_t<double, D> axis;
+                axis[i] = 1;
+                bound[i] = interval_t<double>(-project(-axis), project(axis));
+            }
+
+            return bound;
         }
 
         virtual double get_volume(){

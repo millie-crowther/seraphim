@@ -72,6 +72,7 @@ int main(){
             true
         )
     );
+
     
     srph::seraphim_t seraphim;
 

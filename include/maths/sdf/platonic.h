@@ -19,10 +19,6 @@ namespace srph { namespace platonic {
                 std::min(*std::max_element(q.begin(), q.end()), 0.0);
         }
 
-        bound_t<double, D> get_bound() override {
-            return bound_t<double, D>(-r, r);
-        }
-
         double get_volume() override {
             return vec::volume(r) * std::pow(2, D);
         }
