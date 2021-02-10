@@ -63,6 +63,22 @@ namespace srph {
             }
         }
 
+        vec3_t support(const vec_t<double, D> & d){
+            vec_t<double, D> x = vec::normalise(d) * constant::rho;
+
+            while (true){
+                double p = phi(x);
+
+                // TODO: better criteria for acceptance?
+                //       we want theta to be small enough that theta = cos(theta) = 1    
+                if (p > constant::rho){
+                    return x - normal(x) * p;
+                }
+    
+                x *= 1.5;
+            }
+        }
+
         virtual bool contains(const vec_t<double, D> & x){
             return phi(x) <= 0.0;
         }

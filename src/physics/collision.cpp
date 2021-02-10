@@ -74,20 +74,6 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
     
     // find relative velocity at point 
     vr = a->get_velocity(x) - b->get_velocity(x);
-
-    // check to see if anticipated
-    if (bound.is_valid() && !intersecting){
-        auto vrn = vec::dot(vr, n);
-       
-        if (vrn > 0){
-            double distance = a->get_sdf()->phi(x_a) + b->get_sdf()->phi(x_b);
-
-            if (distance > 0){
-                t = distance / vrn;
-                anticipated = t <= constant::sigma;
-            }
-        }
-    }
 }
 
 bool srph::collision_t::is_intersecting() const {
@@ -246,8 +232,8 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
-    bound3_t bound = a->get_bound() & b->get_bound();
-    find_contact_points(bound);
+   // bound3_t bound = a->get_bound() & b->get_bound();
+    //find_contact_points(bound);
 
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
