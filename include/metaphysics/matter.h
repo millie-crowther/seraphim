@@ -9,8 +9,7 @@
 #include <memory>
 
 namespace srph {
-    class matter_t {
-    public:
+    struct matter_t {
         matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform);
 
         material_t get_material(const vec3_t & x);
@@ -35,7 +34,6 @@ namespace srph {
 
         void physics_tick(double delta);
         
-        transform_t get_transform_after(double delta);
         vec3_t get_velocity(const vec3_t & x);
 
         double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
@@ -48,14 +46,13 @@ namespace srph {
         void apply_force(const vec3_t & f);
         void apply_force_at(const vec3_t & f, const vec3_t & x);
 
-        bound3_t normal_bounds(const bound3_t & x);
-        bound3_t velocity_bounds(const bound3_t & b, const interval_t<double> & t);
+        bound3_t velocity_bounds(const vec3_t & x, const interval_t<double> & t);
         bool is_locally_planar(const bound3_t & b) const;
 
-    private:
+        transform_t transform;
+    
         material_t material;
         std::shared_ptr<sdf3_t> sdf;
-        transform_t transform;
         vec3_t previous_position;
         bool is_uniform;
 

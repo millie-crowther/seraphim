@@ -80,9 +80,8 @@ double matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t 
     return vec::dot(rn, *get_inv_tf_i() * rn);
 }
 
-bound3_t matter_t::velocity_bounds(const bound3_t & x, const interval_t<double> & t){
-    transform_t tf = get_transform_after(t.get_lower());
-    bound3_t com = v * t + tf.to_global_space(get_centre_of_mass());
+bound3_t matter_t::velocity_bounds(const vec3_t & x, const interval_t<double> & t){
+    bound3_t com = v * t + transform.to_global_space(get_centre_of_mass());
     return v + vec::cross(omega, x - com);
 }
 
@@ -189,20 +188,12 @@ void matter_t::reset_acceleration() {
     alpha = vec3_t();
 }
 
-transform_t matter_t::get_transform_after(double t){
-    transform_t tf = transform;
-
+void matter_t::physics_tick(double t){
     // update position
-    tf.translate((0.5 * a * t + v) * t);
+    transform.translate((0.5 * a * t + v) * t);
     
     // update rotation
-    tf.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
-
-    return tf;
-}
-
-void matter_t::physics_tick(double t){
-    transform = get_transform_after(t);
+    transform.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
 
     // integrate accelerations into velocities
     v += a * t;

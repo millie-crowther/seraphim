@@ -75,6 +75,10 @@ namespace srph {
             return interval_t<T>(lower - i.upper, upper - i.lower);
         }
 
+        interval_t<T> operator-() const {
+            return interval_t<T>(-upper, -lower);
+        }     
+
         void operator+=(const interval_t<T> & i){
             *this = *this + i;
         }
@@ -88,6 +92,11 @@ namespace srph {
     template<class T>
     interval_t<T> operator+(const T & x, const interval_t<T> & i){
         return i + x;
+    }
+
+    template<class T>
+    interval_t<T> operator-(const T & x, const interval_t<T> & i){
+        return x + (-i);
     }
 }
 

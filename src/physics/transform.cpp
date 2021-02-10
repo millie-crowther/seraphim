@@ -21,6 +21,10 @@ vec3_t transform_t::to_local_space(const vec3_t & x) const {
     return rotation.inverse() * (x - position);
 }
 
+vec3_t transform_t::to_local_direction(const vec3_t & x) const {
+    return rotation.inverse() * vec::normalise(x);
+}
+
 vec3_t transform_t::to_global_space(const vec3_t & x) const {
     return rotation * x + position;
 }
