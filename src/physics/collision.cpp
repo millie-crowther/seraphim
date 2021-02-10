@@ -4,7 +4,8 @@
 #include "maths/interval.h"
 
 #include "maths/optimise.h"
-#include "maths/sdf/platonic.h"
+#include "maths/sdf/mutate.h"
+#include "maths/sdf/compose.h"
 
 #include <map>
 #include <queue>
@@ -234,6 +235,34 @@ void srph::collision_t::colliding_correct(){
 void srph::collision_t::correct(){
    // bound3_t bound = a->get_bound() & b->get_bound();
     //find_contact_points(bound);
+    srph_transform_sdf a_sdf, b_sdf;
+    srph_create_transform_sdf(&a_sdf, &a->transform, a->sdf.get()); 
+    srph_create_transform_sdf(&b_sdf, &b->transform, b->sdf.get()); 
+    
+    srph_intersection_sdf i_sdf;
+    srph_create_intersection_sdf(&i_sdf, &a_sdf, &b_sdf);
+
+    std::cout << "-----" << std::endl;
+//    std::cout << "x1 = " << i_sdf.support(vec3_t(0, 0,  1)) << std::endl;
+ //   std::cout << "x2 = " << i_sdf.support(vec3_t(0, 0, -1)) << std::endl;
+
+    std::cout << "n1 = " << i_sdf.normal(vec3_t(0, 0, -constant::rho)) << std::endl;
+
+    vec3_t c;
+    for (int i = 0; i < 3; i++){
+        vec3_t x;
+        x[i] = 1;
+        c += i_sdf.support(x);
+        c += i_sdf.support(-x);
+
+//        std::cout << i << "a = " << i_sdf.support( x) << std::endl;
+//        std::cout << i << "b = " << i_sdf.support(-x) << std::endl;
+    }
+
+    c /= 6;
+
+  //  std::cout << "c  = " << c << std::endl;
+  //  std::cout << "p  = " << b->transform.get_position() << std::endl;
 
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();

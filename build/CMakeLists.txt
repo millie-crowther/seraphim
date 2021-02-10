@@ -45,6 +45,8 @@ set(SOURCES
     ../src/metaphysics/matter.cpp
     
     ../src/maths/quat.cpp
+    ../src/maths/sdf/mutate.cpp
+    ../src/maths/sdf/compose.cpp
 
     ../src/ui/keyboard.cpp
     ../src/ui/resources.cpp

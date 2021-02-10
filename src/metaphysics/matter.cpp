@@ -9,8 +9,7 @@ matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, con
     
     transform.set_position(initial_position);
     previous_position = initial_position;
-        
-    omega = vec3_t(0.01);
+
 }
 
 std::shared_ptr<sdf3_t> matter_t::get_sdf() const {
