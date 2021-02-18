@@ -76,3 +76,7 @@ void srph_vec3_subtract(vec3 * x, const vec3 * a, const vec3 * b){
 void srph_vec3_abs(vec3 * x){
     vector_abs(x->raw, 3);
 }
+
+void srph_vec3_print(const vec3 * x){
+    printf("vec3(%f, %f, %f)", x->x, x->y, x->z);
+}

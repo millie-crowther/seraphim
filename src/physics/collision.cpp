@@ -157,29 +157,25 @@ void srph::collision_t::colliding_correct(){
 void srph::collision_t::correct(){
     x_a = a->to_local_space(x);
     x_b = b->to_local_space(x);
-    
-    vec3 x1;
-    srph_vec3_set(&x1, x[0], x[1], x[2]);
+
+    vec3 x1a, x1b;
+    srph_vec3_set(&x1a, x_a[0], x_a[1], x_a[2]);
+    srph_vec3_set(&x1b, x_b[0], x_b[1], x_b[2]);
 
     // choose best normal based on smallest second derivative
-    auto ja = srph_sdf_jacobian(a->sdf, &x1);
-    auto jb = srph_sdf_jacobian(b->sdf, &x1);
+    auto ja = srph_sdf_jacobian(a->sdf, &x1a);
+    auto jb = srph_sdf_jacobian(b->sdf, &x1b);
 
     vec3 n1;
     if (vec::length(ja) <= vec::length(jb)){
-        n1 = srph_sdf_normal(a->sdf, &x1);
-        vec3_t n2(n1.x, n1.y, n1.z);
-        n2 = a->get_rotation() * n2;
-        srph_vec3_set(&n1, n2[0], n2[1], n2[2]);
+        n1 = srph_sdf_normal(a->sdf, &x1a);
+        n = a->get_rotation() * vec3_t(n1.x, n1.y, n1.z);
 
     } else {
-        n1 = srph_sdf_normal(b->sdf, &x1);
-        vec3_t n2(n1.x, n1.y, n1.z);
-        n2 = b->get_rotation() * n2;
-        srph_vec3_set(&n1, n2[0], n2[1], n2[2]);
+        n1 = srph_sdf_normal(b->sdf, &x1b);
+        n = b->get_rotation() * vec3_t(n1.x, n1.y, n1.z);
     }
-    n = vec3_t(n1.x, n1.y, n1.z);
- 
+
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
     a->translate(-depth * n * b->get_mass() / sm);

@@ -1,5 +1,4 @@
 #include "core/seraphim.h"
-
 #include "core/scheduler.h"
 #include "maths/sdf/primitive.h"
 #include "maths/sdf/platonic.h"
@@ -93,11 +92,11 @@ int main(){
     srph::seraphim_t seraphim;
 
     seraphim.create(floor_substance);
-    seraphim.create(sphere);
-    seraphim.create(torus);
-  //  seraphim.create(cube);
-    seraphim.create(cube2);
-    seraphim.create(octahedron);
+//    seraphim.create(sphere);
+ //   seraphim.create(torus);
+    seraphim.create(cube);
+  //  seraphim.create(cube2);
+  //  seraphim.create(octahedron);
 
     seraphim.run();
 

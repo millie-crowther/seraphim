@@ -40,7 +40,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
         vec3 x1 = *x;
         x1.raw[i] += srph::constant::epsilon;
 
-        vec3 x2 = x1;
+        vec3 x2 = *x;
         x2.raw[i] -= srph::constant::epsilon;
         
         n.raw[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
@@ -99,7 +99,7 @@ srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x){
         vec3 x1 = *x;
         x1.raw[col] += srph::constant::epsilon;
 
-        vec3 x2 = x1;
+        vec3 x2 = *x;
         x2.raw[col] -= srph::constant::epsilon;
         
         vec3 n1 = srph_sdf_normal(sdf, &x1);
