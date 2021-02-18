@@ -33,7 +33,7 @@ uint32_t substance_t::get_id() const {
 }
 
 substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
-    vec3_t r = matter->get_sdf()->get_bound().get_width();
+    vec3_t r = srph_sdf_bound(matter->sdf)->get_width();
     vec3_t eye = matter->to_local_space(eye_position);
 
     float near = vec::length(vec::max(vec::abs(eye) - r, 0.0));

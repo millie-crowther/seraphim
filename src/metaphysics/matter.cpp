@@ -2,18 +2,13 @@
 
 using namespace srph;
 
-matter_t::matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
+matter_t::matter_t(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
     this->material = material;
     this->is_uniform = is_uniform;
     
     transform.set_position(initial_position);
     previous_position = initial_position;
-
-}
-
-std::shared_ptr<sdf3_t> matter_t::get_sdf() const {
-    return sdf;
 }
 
 quat_t matter_t::get_rotation() const {
@@ -47,12 +42,13 @@ material_t matter_t::get_material(const vec3_t & x){
 
 bound3_t matter_t::get_bound() const {
     bound3_t bound;
-    
+
+    bound3_t * sdf_bound = srph_sdf_bound(sdf);
     for (int i = 0; i < 8; i++){  
-        vec3_t x = sdf->get_bound().get_lower();
+        vec3_t x = sdf_bound->get_lower();
         for (int j = 0; j < 3; j++){
             if (i & (1 << j)){
-                x[j] = sdf->get_bound().get_upper()[j];
+                x[j] = sdf_bound->get_upper()[j];
             }
         }
         bound.capture(transform.to_global_space(x));
@@ -60,7 +56,6 @@ bound3_t matter_t::get_bound() const {
 
     return bound;
 }
-    
 
 bound3_t matter_t::get_moving_bound(double t) const {
     bound3_t bound = get_bound();
@@ -116,7 +111,8 @@ void matter_t::calculate_centre_of_mass(){
 
 vec3_t matter_t::get_centre_of_mass(){
     if (is_uniform){
-        return sdf->get_uniform_centre_of_mass();
+        vec3 c = srph_sdf_com(sdf);
+        return vec3_t(c.x, c.y, c.z);
     }
 
     if (!centre_of_mass){
@@ -143,34 +139,7 @@ double matter_t::get_average_density(){
 }
 
 double matter_t::get_mass(){
-    return get_average_density() * sdf->get_volume();
-}
-
-bool matter_t::is_locally_planar(const bound3_t & b) const {
-    vec3_t centre = to_local_space(b.get_midpoint());
-    vec3_t n = sdf->normal(centre);
-    double d = vec::dot(centre, n) - sdf->phi(centre);
-
-    // check each vertex maps onto the same plane
-    for (int i = 0; i < 8; i++){
-        vec3_t vertex = to_local_space(b.vertex(i));
-        
-        double di = vec::dot(vertex, n) - sdf->phi(vertex);
-        if (std::abs(d - di) > constant::epsilon){
-            return false;
-        }
-
-        if (sdf->normal(vertex) != n){
-            return false;
-        }
-    }
-
-    // TODO:
-    // this is not a perfect detector of a planar region. However,
-    // it might be good enough! If it proves to be insufficient somehow,
-    // further restriction will be necessary below.
-
-    return true; 
+    return get_average_density() * srph_sdf_volume(sdf);
 }
 
 void matter_t::translate(const vec3_t & x){
@@ -226,7 +195,7 @@ mat3_t * matter_t::get_i(){
     if (!i){
         if (is_uniform){
             i = std::make_unique<mat3_t>(
-                sdf->get_uniform_inertia_tensor(get_mass())
+                srph_sdf_inertia_tensor(sdf) * get_mass()
             );
         } else {
             throw std::runtime_error("Error: non uniform substances not yet supported.");

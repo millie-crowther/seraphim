@@ -61,14 +61,14 @@ void physics_t::run(){
         }
         
         // correct all present collisions and anticipate the next one
-        
         for (auto & c : collisions){
             if (c.is_intersecting()){
                 c.correct();
-            } else if (c.is_anticipated()){
-                delta = std::min(delta, c.get_estimated_time());
-            }
+            } 
+            delta = std::min(delta, c.get_estimated_time());
         }
+        
+        delta = std::max(delta, constant::iota);
        
         {
             std::lock_guard<std::mutex> lock(matters_mutex);

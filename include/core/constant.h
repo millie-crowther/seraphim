@@ -1,10 +1,5 @@
-#ifndef HYPER_H
-#define HYPER_H
-
-#include <chrono>
-#include <stdint.h>
-
-using namespace std::chrono_literals;
+#ifndef SERAPHIM_CONSTANT_H
+#define SERAPHIM_CONSTANT_H
 
 namespace srph { namespace constant {
     // smallest distance (metres)

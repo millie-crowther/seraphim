@@ -10,10 +10,30 @@
 
 namespace srph {
     struct matter_t {
-        matter_t(std::shared_ptr<sdf3_t> sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform);
+        transform_t transform;
+    
+        material_t material;
+        srph_sdf * sdf;
+
+        vec3_t previous_position;
+        bool is_uniform;
+
+        std::unique_ptr<double> average_density;
+        std::unique_ptr<vec3_t> centre_of_mass;
+        
+        std::unique_ptr<mat3_t> i;
+        std::unique_ptr<mat3_t> inv_tf_i;
+
+        vec3_t v;
+        vec3_t a;
+
+        vec3_t omega;
+        vec3_t alpha;
+
+        matter_t(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform);
 
         material_t get_material(const vec3_t & x);
-        std::shared_ptr<sdf3_t> get_sdf() const;
+        srph_sdf * get_sdf() const;
         vec3_t get_position() const;
         double get_mass();
 
@@ -47,26 +67,6 @@ namespace srph {
         void apply_force_at(const vec3_t & f, const vec3_t & x);
 
         bound3_t velocity_bounds(const vec3_t & x, const interval_t<double> & t);
-        bool is_locally_planar(const bound3_t & b) const;
-
-        transform_t transform;
-    
-        material_t material;
-        std::shared_ptr<sdf3_t> sdf;
-        vec3_t previous_position;
-        bool is_uniform;
-
-        std::unique_ptr<double> average_density;
-        std::unique_ptr<vec3_t> centre_of_mass;
-        
-        std::unique_ptr<mat3_t> i;
-        std::unique_ptr<mat3_t> inv_tf_i;
-
-        vec3_t v;
-        vec3_t a;
-
-        vec3_t omega;
-        vec3_t alpha;
 
         void calculate_centre_of_mass();
         double get_average_density();

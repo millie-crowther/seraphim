@@ -62,19 +62,25 @@ response_t::response_t(){}
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
-        auto sdf = substance->get_matter()->get_sdf();
-        vec3_t p = mat::cast<double>(call.get_position()) - sdf->get_bound().get_midpoint();
+        srph_sdf * sdf = substance->get_matter()->sdf;
+
+        bound3_t * bound = srph_sdf_bound(sdf);
+        vec3_t p = mat::cast<double>(call.get_position()) - bound->get_midpoint();
 
         uint32_t contains_mask = 0;
 
         for (int o = 0; o < 8; o++){
             vec3_t d = p + vertices[o] * call.get_radius();
+            vec3 d1;
+            srph_vec3_set(&d1, d[0], d[1], d[2]);
 
-            if (!sdf->contains(d)){
+            if (!srph_sdf_contains(sdf, &d1)){
                 contains_mask |= 1 << o;
             }
 
-            vec3_t n = sdf->normal(d) / 2 + 0.5;
+            vec3 n1 = srph_sdf_normal(sdf, &d1);
+            vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;
+
             normals[o] = squash(vec4_t(n, 0.0));
 
             vec3_t c = substance->get_matter()->get_material(d).colour;
@@ -82,10 +88,12 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         }
 
         vec3_t c = p + call.get_radius();
-        float phi = static_cast<float>(sdf->phi(c));
-
+        vec3 c1;
+        srph_vec3_set(&c1, c[0], c[1], c[2]);
+        float phi = static_cast<float>(srph_sdf_phi(sdf, &c1));
         
-        vec3_t n = sdf->normal(c) / 2.0 + 0.5;
+        vec3 n1 = srph_sdf_normal(sdf, &c1);
+        vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;
         uint32_t np = squash(vec4_t(n, 0.0));
 
         uint32_t x_elem = contains_mask << 16;

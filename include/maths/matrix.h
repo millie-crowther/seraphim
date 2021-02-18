@@ -120,7 +120,11 @@ namespace srph {
 
         template<class S>
         matrix_t<decltype(T() * S()), M, N> operator*(const S & x) const {
-            return *this * matrix_t<S, M, N>(x);
+            matrix_t<decltype(T() * S()), M, N> ms;
+            for (int i = 0; i < M * N; i++){
+                ms[i] = (*this)[i] * x;
+            }
+            return ms;
         }
 
         matrix_t<T, M, N> operator/(const T & x) const {

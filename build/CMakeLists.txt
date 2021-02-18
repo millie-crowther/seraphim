@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.7)
 set (CMAKE_CXX_STANDARD 17)
 project (seraphim)
 
-SET(COMPILER_FLAGS "-pedantic -Wall -Werror -Wfatal-errors")
+SET(COMPILER_FLAGS "-Wall -Werror -Wfatal-errors")
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}")
 
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
@@ -45,8 +45,11 @@ set(SOURCES
     ../src/metaphysics/matter.cpp
     
     ../src/maths/quat.cpp
-    ../src/maths/sdf/mutate.cpp
-    ../src/maths/sdf/compose.cpp
+    ../src/maths/vector.cpp
+
+    ../src/maths/sdf/sdf.cpp
+    ../src/maths/sdf/primitive.cpp
+    ../src/maths/sdf/platonic.cpp
 
     ../src/ui/keyboard.cpp
     ../src/ui/resources.cpp
