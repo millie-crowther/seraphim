@@ -183,7 +183,8 @@ mat3_t * matter_t::get_inv_tf_i(){
         // rotate
         auto r = transform.get_rotation().to_matrix();
         *inv_tf_i = r * *inv_tf_i * mat::transpose(r);
-        
+    
+    
         // invert
         *inv_tf_i = mat::inverse(*inv_tf_i);
     }

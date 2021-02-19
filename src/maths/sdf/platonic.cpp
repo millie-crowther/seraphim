@@ -65,7 +65,7 @@ void srph_sdf_cuboid_create(srph_sdf_cuboid * cuboid, const vec3 * r){
     for (int i = 0; i < 3; i++){
         volume *= r->raw[i];
     }
-    volume = abs(volume);
+    volume = fabs(volume);
 
     vec3 r2;
     srph_vec3_multiply(&r2, r, r);
