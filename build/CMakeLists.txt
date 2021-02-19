@@ -26,6 +26,7 @@ set(SOURCES
   
     ../src/core/command.cpp
     ../src/core/device.cpp
+    ../src/core/random.cpp
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
 

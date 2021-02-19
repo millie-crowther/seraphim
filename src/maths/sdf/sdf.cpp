@@ -1,5 +1,7 @@
 #include "maths/sdf/sdf.h"
 
+#include <iostream>
+
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     srph_sdf_full_create(sdf, phi, data, -1, NULL);
 }
@@ -14,7 +16,7 @@ void srph_sdf_full_create(
 
     sdf->_phi = phi;
     sdf->_data = data;
-    sdf->_volume = volume;
+
     
     sdf->_is_bound_valid = false;
     sdf->_is_com_valid = false;
@@ -24,6 +26,14 @@ void srph_sdf_full_create(
         sdf->_inertia_tensor = *inertia_tensor;
         sdf->_is_inertia_tensor_valid = true;
     }
+    
+    sdf->_volume = -1.0;
+
+    double auto_volume = srph_sdf_volume(sdf);
+
+    sdf->_volume = volume;
+
+    printf("Auto volume = %f; Correct volume = %f\n", auto_volume, volume);
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
@@ -73,12 +83,13 @@ double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
 }
 
 double srph_sdf_volume(srph_sdf * sdf){
-    if (sdf->_volume >= 0.0){
-        return sdf->_volume;
-    } else {
-        // TODO: 
+    if (sdf->_volume < 0.0){
+        double v = 0.0;
+      //  calculate_volume(sdf, &v, srph_sdf_bound(sdf));
+        sdf->_volume = v;        
     }
-    return 0;
+
+    return sdf->_volume;
 }
 
 vec3 srph_sdf_com(srph_sdf * sdf){
