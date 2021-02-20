@@ -114,18 +114,7 @@ double collision_t::time_to_collision(const vec3_t & x){
 }
 
 void srph::collision_t::resting_correct(){
-  /*
-    auto aa = a->get_acceleration(x);
-    auto ab = b->get_acceleration(x);
-    double ca = vec::dot(aa, n) - vec::dot(ab, n);    
- 
-    if (ca > 0){
-        double sm = a->get_mass() + b->get_mass(); 
-        auto d = ca * n / sm;
-        a->constrain_acceleration(-d * b->get_mass()); 
-        b->constrain_acceleration( d * a->get_mass());
-    }
-    */ 
+
 }
 
 void srph::collision_t::colliding_correct(){

@@ -20,15 +20,6 @@ vec3_t srph_matter::get_position() const {
 }
 
 bool srph_matter::is_inert(){
-//    std::cout << "-----" << std::endl;
-//    std::cout << "\tv = " << vec::length(v) << std::endl;
-//    std::cout << "\to = " << vec::length(omega) << std::endl;
-
-
-//    if (std::max(vec::length(v), vec::length(omega)) < constant::epsilon){
-//        std::cout << "beep" << std::endl;
-//    }
-
     return 
         vec::length(v) < constant::epsilon &&
         vec::length(omega) < constant::epsilon &&
@@ -51,6 +42,7 @@ void srph_matter_bound(const srph_matter * m, srph_bound3 * b){
     for (int i = 0; i < 8; i++){  
         vec3 x1;
         srph_bound3_vertex(sdf_bound, i, x1.raw);
+    
         vec3_t x(x1.x, x1.y, x1.z);
         x = m->transform.to_global_space(x);
     

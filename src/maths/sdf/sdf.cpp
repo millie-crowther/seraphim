@@ -154,6 +154,7 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     } 
 
     if (!sdf->_is_bound_valid){
+        printf("Calculating bound\n");
         vec3 a;
         for (int i = 0; i < 3; i++){
             srph_vec3_fill(&a, 0.0);
@@ -163,6 +164,8 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
 
             a.raw[i] = 1.0;
             sdf->_bound.upper[i] =  srph_sdf_project(sdf, &a); 
+        
+            printf("\taxis %d. lower = %f, upper = %f\n", i, sdf->_bound.lower[i], sdf->_bound.upper[i]);
         }
 
         sdf->_is_bound_valid = true;
