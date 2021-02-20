@@ -3,6 +3,8 @@
 #include <math.h>
 #include <time.h>
 
+#include <iostream>
+
 // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
 // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
 uint32_t srph_random_u32(srph_random * r){
@@ -42,10 +44,12 @@ double srph_random_f64(srph_random * r){
         u.u[1] = srph_random_u32(r);
     } while (!isfinite(u.d));
 
-    int exp;
-    frexp(u.d, &exp);
+    static int _;
+    double d = frexp(u.d, &_);
+    d = fabs(d) - 0.5;
+    d *= 2.0; 
 
-    return ldexp(u.d, -exp - 1) + 0.5;
+    return d;
 }
 
 double srph_random_f64_range(srph_random * r, double l, double u){

@@ -70,3 +70,15 @@ void srph_bound3_capture(srph_bound3 * b, double * v){
         b->upper[i] = fmax(b->upper[i], v[i]);
     }
 }
+
+double srph_bound3_volume(const srph_bound3 * b){
+    if (b == NULL){
+        return 0.0;
+    }
+
+    double v = 1.0;
+    for (int i = 0; i < 3; i++){
+        v *= b->upper[i] - b->lower[i];
+    }
+    return v;
+}

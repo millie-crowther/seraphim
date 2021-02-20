@@ -4,14 +4,14 @@
 
 #include "core/random.h"
 
-#define VOLUME_SAMPLES 1000
+#define VOLUME_SAMPLES 10000
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
-    srph_sdf_full_create(sdf, phi, data, -1, NULL);
+    srph_sdf_full_create(sdf, phi, data, NULL);
 }
 
 void srph_sdf_full_create(
-    srph_sdf * sdf, srph_sdf_func phi, void * data, double volume, 
+    srph_sdf * sdf, srph_sdf_func phi, void * data,  
     srph::mat3_t * inertia_tensor
 ){
     if (sdf == NULL){
@@ -20,7 +20,6 @@ void srph_sdf_full_create(
 
     sdf->_phi = phi;
     sdf->_data = data;
-
     
     sdf->_is_bound_valid = false;
     sdf->_is_com_valid = false;
@@ -32,19 +31,9 @@ void srph_sdf_full_create(
     }
     
     sdf->_volume = -1.0;
-
-    double auto_volume = srph_sdf_volume(sdf);
-
-    sdf->_volume = volume;
-
-    printf("Auto volume = %f; Correct volume = %f\n", auto_volume, volume);
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
-    if (sdf == NULL || x == NULL){
-        //TODO: error
-    }
-
     return sdf->_phi(sdf->_data, x);
 }
 
@@ -66,7 +55,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
 }
 
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return srph_sdf_phi(sdf, x) <= 0.0;
+    return srph_sdf_phi(sdf, x) < 0.0;
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
@@ -91,23 +80,23 @@ double srph_sdf_volume(srph_sdf * sdf){
         int hits = 0;
      
         srph_bound3 * b = srph_sdf_bound(sdf);
-        srph::vec3_t l(b->lower[0], b->lower[1], b->lower[2]);
-        srph::vec3_t u(b->upper[0], b->upper[1], b->upper[2]);
         srph_random rng;
         srph_random_default_seed(&rng);
     
         for (int i = 0; i < VOLUME_SAMPLES; i++){
             vec3 x;
             srph_vec3_set(&x,
-                srph_random_f64_range(&rng, l[0], u[0]),
-                srph_random_f64_range(&rng, l[1], u[1]),
-                srph_random_f64_range(&rng, l[2], u[2])
+                srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
+                srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
+                srph_random_f64_range(&rng, b->lower[2], b->upper[2])
             );
 
-            hits += (int) srph_sdf_contains(sdf, &x);
+            if (srph_sdf_contains(sdf, &x)){
+                hits++;
+            }
         }
 
-        sdf->_volume = 0.0; 
+        sdf->_volume = srph_bound3_volume(b) * (double) hits / (double) VOLUME_SAMPLES;
     }
 
     return sdf->_volume;
@@ -154,7 +143,6 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     } 
 
     if (!sdf->_is_bound_valid){
-        printf("Calculating bound\n");
         vec3 a;
         for (int i = 0; i < 3; i++){
             srph_vec3_fill(&a, 0.0);
@@ -164,8 +152,6 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
 
             a.raw[i] = 1.0;
             sdf->_bound.upper[i] =  srph_sdf_project(sdf, &a); 
-        
-            printf("\taxis %d. lower = %f, upper = %f\n", i, sdf->_bound.lower[i], sdf->_bound.upper[i]);
         }
 
         sdf->_is_bound_valid = true;

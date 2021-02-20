@@ -1,14 +1,6 @@
 #include "maths/sdf/platonic.h"
 
 static double cuboid_phi(void * data, const vec3 * x){
-/*
-float sdBox( vec3 p, vec3 b )
-{
-  vec3 q = abs(p) - b;
-  return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
-}
-*/
-
     vec3 * r = (vec3 *) data;
     vec3 x1 = *x;
 
@@ -61,12 +53,6 @@ void srph_sdf_cuboid_create(srph_sdf_cuboid * cuboid, const vec3 * r){
 
     cuboid->_r = *r;
 
-    double volume = 1.0;
-    for (int i = 0; i < 3; i++){
-        volume *= r->raw[i];
-    }
-    volume = fabs(volume);
-
     vec3 r2;
     srph_vec3_multiply(&r2, r, r);
     srph::mat3_t i(
@@ -76,7 +62,7 @@ void srph_sdf_cuboid_create(srph_sdf_cuboid * cuboid, const vec3 * r){
     );
     i /= 12.0;
     
-    srph_sdf_full_create(&cuboid->sdf, cuboid_phi, (void *) &cuboid->_r, volume, &i); 
+    srph_sdf_full_create(&cuboid->sdf, cuboid_phi, (void *) &cuboid->_r, &i); 
 }
 
 void srph_sdf_octahedron_create(srph_sdf_octahedron * octa, double e){
@@ -86,7 +72,6 @@ void srph_sdf_octahedron_create(srph_sdf_octahedron * octa, double e){
 
     octa->_e = e;
 
-    double volume = sqrt(2) / 3.0 * pow(e, 3);
     srph::mat3_t i = srph::mat3_t::diagonal(0.1 * pow(e, 2));
-    srph_sdf_full_create(&octa->sdf, octahedron_phi, (void *) &octa->_e, volume, &i);
+    srph_sdf_full_create(&octa->sdf, octahedron_phi, (void *) &octa->_e, &i);
 }

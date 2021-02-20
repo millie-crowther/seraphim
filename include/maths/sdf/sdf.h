@@ -26,7 +26,7 @@ typedef struct srph_sdf {
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);
 void srph_sdf_full_create(
-    srph_sdf * sdf, srph_sdf_func phi, void * data, double volume, 
+    srph_sdf * sdf, srph_sdf_func phi, void * data,  
     srph::mat3_t * inertia_tensor
 );
 

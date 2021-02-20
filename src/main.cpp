@@ -81,6 +81,7 @@ int main(){
     srph_sdf_torus torus_sdf;
     srph_sdf_torus_create(&torus_sdf, 0.5, 0.25);
 
+
     auto torus = std::make_shared<substance_t>(
         std::make_shared<form_t>(),
         std::make_shared<srph_matter>(
