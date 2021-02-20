@@ -1,6 +1,7 @@
 #include "core/random.h"
 
 #include <math.h>
+#include <time.h>
 
 // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
 // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
@@ -26,6 +27,10 @@ void srph_random_seed(srph_random * r, uint64_t state, uint64_t sequence){
     srph_random_u32(r);
 }
 
+void srph_random_default_seed(srph_random * r){
+    srph_random_seed(r, time(NULL), (uint64_t) r);
+}
+
 double srph_random_f64(srph_random * r){
     union {
         uint32_t u[2];
@@ -42,7 +47,7 @@ double srph_random_f64(srph_random * r){
 
     return ldexp(u.d, -exp - 1) + 0.5;
 }
-   
+
 double srph_random_f64_range(srph_random * r, double l, double u){
     return srph_random_f64(r) * (u - l) + l;
 } 

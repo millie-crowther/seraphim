@@ -8,73 +8,71 @@
 
 #include <memory>
 
-namespace srph {
-    struct matter_t {
-        transform_t transform;
+
+typedef struct srph_matter {
+    srph::transform_t transform;
+
+    srph::material_t material;
+    srph_sdf * sdf;
+
+    srph::vec3_t previous_position;
+    bool is_uniform;
+
+    std::unique_ptr<double> average_density;
+    std::unique_ptr<srph::vec3_t> centre_of_mass;
     
-        material_t material;
-        srph_sdf * sdf;
+    std::unique_ptr<srph::mat3_t> i;
+    std::unique_ptr<srph::mat3_t> inv_tf_i;
 
-        vec3_t previous_position;
-        bool is_uniform;
+    srph::vec3_t v;
+    srph::vec3_t a;
 
-        std::unique_ptr<double> average_density;
-        std::unique_ptr<vec3_t> centre_of_mass;
-        
-        std::unique_ptr<mat3_t> i;
-        std::unique_ptr<mat3_t> inv_tf_i;
+    srph::vec3_t omega;
+    srph::vec3_t alpha;
 
-        vec3_t v;
-        vec3_t a;
+    srph_matter(srph_sdf * sdf, const srph::material_t & material, const srph::vec3_t & initial_position, bool is_uniform);
 
-        vec3_t omega;
-        vec3_t alpha;
+    srph::material_t get_material(const srph::vec3_t & x);
+    srph_sdf * get_sdf() const;
+    srph::vec3_t get_position() const;
+    double get_mass();
 
-        matter_t(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform);
+    srph_bound3 get_moving_bound(double t) const;
 
-        material_t get_material(const vec3_t & x);
-        srph_sdf * get_sdf() const;
-        vec3_t get_position() const;
-        double get_mass();
+    void translate(const srph::vec3_t & x);
+    void rotate(const srph::quat_t & q);
 
-        bound3_t get_bound() const;
-        bound3_t get_moving_bound(double t) const;
+    srph::quat_t get_rotation() const;
 
-        void translate(const vec3_t & x);
-        void rotate(const quat_t & q);
+    bool is_inert();
 
-        quat_t get_rotation() const;
+    
+    srph::vec3_t to_local_space(const srph::vec3_t & x) const;
 
-        bool is_inert();
+    void physics_tick(double delta);
+    
+    srph::vec3_t get_velocity(const srph::vec3_t & x);
 
-        void constrain_acceleration(const vec3_t & da);
-        void reset_acceleration();
-        
-        vec3_t to_local_space(const vec3_t & x) const;
+    double get_inverse_angular_mass(const srph::vec3_t & x, const srph::vec3_t & n);
+    
+    void apply_impulse(const srph::vec3_t & j);
+    void apply_impulse_at(const srph::vec3_t & j, const srph::vec3_t & x);
 
-        void physics_tick(double delta);
-        
-        vec3_t get_velocity(const vec3_t & x);
+    srph::f32mat4_t * get_matrix();
 
-        double get_inverse_angular_mass(const vec3_t & x, const vec3_t & n);
-        
-        void apply_impulse(const vec3_t & j);
-        void apply_impulse_at(const vec3_t & j, const vec3_t & x);
+    void apply_force(const srph::vec3_t & f);
+    void apply_force_at(const srph::vec3_t & f, const srph::vec3_t & x);
 
-        f32mat4_t * get_matrix();
+    void reset_acceleration();
 
-        void apply_force(const vec3_t & f);
-        void apply_force_at(const vec3_t & f, const vec3_t & x);
+    void calculate_centre_of_mass();
+    double get_average_density();
+    srph::vec3_t get_centre_of_mass();
 
-        bound3_t velocity_bounds(const vec3_t & x, const interval_t<double> & t);
+    srph::mat3_t * get_i();
+    srph::mat3_t * get_inv_tf_i();
+} srph_matter;
 
-        void calculate_centre_of_mass();
-        double get_average_density();
-        vec3_t get_centre_of_mass();
-
-        mat3_t * get_i();
-        mat3_t * get_inv_tf_i();
-    };
-}
+void srph_matter_bound(const srph_matter * m, srph_bound3 * b);
 
 #endif

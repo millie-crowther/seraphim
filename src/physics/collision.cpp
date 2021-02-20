@@ -1,7 +1,6 @@
 #include "physics/collision.h"
 
 #include "maths/matrix.h"
-#include "maths/interval.h"
 #include "maths/vector.h"
 
 #include "maths/optimise.h"
@@ -11,7 +10,7 @@
 
 using namespace srph;
 
-srph::collision_t::collision_t(matter_t * a, matter_t * b){
+srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
     this->a = a;
     this->b = b;
     intersecting = false;
@@ -31,14 +30,26 @@ srph::collision_t::collision_t(matter_t * a, matter_t * b){
         return std::max(phi_a, phi_b);
     };
 
-    bound3_t bound = a->get_moving_bound(constant::sigma) & b->get_moving_bound(constant::sigma);
+    srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
+    srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
+
+    srph_bound3 bound_i;
+    srph_bound3_intersection(&bound_a, &bound_b, &bound_i);
+
+    vec3 xs1[4];
+    srph_bound3_vertex(&bound_i, 0, xs1[0].raw);
+    srph_bound3_vertex(&bound_i, 3, xs1[1].raw);
+    srph_bound3_vertex(&bound_i, 5, xs1[2].raw);
+    srph_bound3_vertex(&bound_i, 6, xs1[3].raw);
 
     std::array<vec3_t, 4> xs = {
-        bound.vertex(0), bound.vertex(3),
-        bound.vertex(5), bound.vertex(6)
+        vec3_t(xs1[0].x, xs1[0].y, xs1[0].z),
+        vec3_t(xs1[1].x, xs1[1].y, xs1[1].z),
+        vec3_t(xs1[2].x, xs1[2].y, xs1[2].z),
+        vec3_t(xs1[3].x, xs1[3].y, xs1[3].z)
     };
 
-    if (bound.is_valid()){
+    if (srph_bound3_is_valid(&bound_i)){
         auto result = srph::optimise::nelder_mead(f, xs);
         depth = std::abs(result.fx);
         x = result.x;  
@@ -68,7 +79,6 @@ double collision_t::time_to_collision(const vec3_t & x){
     vec3 x1a, x1b;
     srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
     srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
-
 
     double phi_a = srph_sdf_phi(a->sdf, &x1a);
     double phi_b = srph_sdf_phi(b->sdf, &x1b);

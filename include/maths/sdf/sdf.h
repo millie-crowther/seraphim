@@ -4,12 +4,13 @@
 #include "core/constant.h"
 #include "maths/vector.h"
 #include "maths/bound.h"
+#include "maths/matrix.h"
 
 typedef double (*srph_sdf_func)(void * data, const vec3 * x);
 
 typedef struct srph_sdf {
     bool _is_bound_valid;
-    srph::bound3_t _bound;
+    srph_bound3 _bound;
 
     double _volume;
 
@@ -35,7 +36,7 @@ srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x);
 double srph_sdf_volume(srph_sdf * sdf);
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d);
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x);
-srph::bound3_t * srph_sdf_bound(srph_sdf * sdf);
+srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
 vec3 srph_sdf_com(srph_sdf * sdf);
 srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf);
 

@@ -19,7 +19,7 @@ int main(){
 
     auto floor_substance = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &floor_sdf.sdf, 
             material_t(vec3_t(0.1, 0.8, 0.8), 700.0, 0.3, mu_s, mu_d),
             vec3_t(0.0, -100.0, 0.0),
@@ -32,7 +32,7 @@ int main(){
 
     auto sphere = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &sphere_sdf.sdf, 
             material_t(vec3_t(0.8, 0.1, 0.8), 700.0, 0.5, mu_s, mu_d),
             vec3_t(2.0, 3.0, 0.0),
@@ -47,7 +47,7 @@ int main(){
 
     auto cube = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &cube_sdf.sdf, 
             material_t(vec3_t(0.8, 0.8, 0.1), 700.0, 0.2, mu_s, mu_d),
             vec3_t(0, 3, 0),
@@ -57,7 +57,7 @@ int main(){
 
     auto cube2 = std::make_shared<substance_t>( 
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &cube_sdf.sdf, 
             material_t(vec3_t(0.4, 0.5, 0.8), 700.0, 0.2, mu_s, mu_d),
             vec3_t(-2.0, 3.1, 0),
@@ -70,7 +70,7 @@ int main(){
 
     auto octahedron = std::make_shared<substance_t>(
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &octa_sdf.sdf,
             material_t(vec3_t(0.9, 0.3, 0.5), 700.0, 0.4, mu_s, mu_d),
             vec3_t(0.0, 3.0, 0.0),
@@ -83,7 +83,7 @@ int main(){
 
     auto torus = std::make_shared<substance_t>(
         std::make_shared<form_t>(),
-        std::make_shared<matter_t>(
+        std::make_shared<srph_matter>(
             &torus_sdf.sdf,
             material_t(vec3_t(0.3, 0.6, 0.8), 700.0, 0.4, mu_s, mu_d),
             vec3_t(-4.0, 3.0, 0.0),

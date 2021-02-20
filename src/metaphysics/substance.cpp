@@ -8,7 +8,7 @@ substance_t::substance_t(uint32_t id) {
     this->id = id;
 }
 
-substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter){
+substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<srph_matter> matter){
     static uint32_t id = 0;
 
     this->form = form;
@@ -20,7 +20,7 @@ std::shared_ptr<form_t> substance_t::get_form() const {
     return form;
 }
 
-std::shared_ptr<matter_t> substance_t::get_matter() const {
+std::shared_ptr<srph_matter> substance_t::get_matter() const {
     return matter;
 }
 
@@ -33,7 +33,9 @@ uint32_t substance_t::get_id() const {
 }
 
 substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
-    vec3_t r = srph_sdf_bound(matter->sdf)->get_width();
+    vec3 r1;
+    srph_bound3_radius(srph_sdf_bound(matter->sdf), r1.raw);
+    vec3_t r = vec3_t(r1.x, r1.y, r1.z);
     vec3_t eye = matter->to_local_space(eye_position);
 
     float near = vec::length(vec::max(vec::abs(eye) - r, 0.0));

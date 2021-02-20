@@ -20,13 +20,13 @@ namespace srph {
         vec3_t vr;
 
         double depth;
-        matter_t * a;
-        matter_t * b;
+        srph_matter * a;
+        srph_matter * b;
 
         double time_to_collision(const vec3_t & x);
 
     public:
-        collision_t(matter_t * a, matter_t * b);
+        collision_t(srph_matter * a, srph_matter * b);
        
         bool is_intersecting() const;
         double get_estimated_time() const;

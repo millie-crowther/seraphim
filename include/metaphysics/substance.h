@@ -33,17 +33,17 @@ namespace srph {
         };
 
         substance_t(uint32_t i);
-        substance_t(std::shared_ptr<form_t> form, std::shared_ptr<matter_t> matter);
+        substance_t(std::shared_ptr<form_t> form, std::shared_ptr<srph_matter> matter);
 
         std::shared_ptr<form_t> get_form() const;
-        std::shared_ptr<matter_t> get_matter() const;
+        std::shared_ptr<srph_matter> get_matter() const;
         data_t get_data(const vec3_t & eye_position);
         uint32_t get_id() const;
 
     private:
         uint32_t id;
         std::shared_ptr<form_t> form;
-        std::shared_ptr<matter_t> matter;
+        std::shared_ptr<srph_matter> matter;
     };
 }
 

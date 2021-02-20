@@ -64,8 +64,10 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
     if (auto substance = substance_ptr.lock()){
         srph_sdf * sdf = substance->get_matter()->sdf;
 
-        bound3_t * bound = srph_sdf_bound(sdf);
-        vec3_t p = mat::cast<double>(call.get_position()) - bound->get_midpoint();
+        srph_bound3 * bound = srph_sdf_bound(sdf);
+        vec3 m;
+        srph_bound3_midpoint(bound, m.raw);
+        vec3_t p = mat::cast<double>(call.get_position()) - vec3_t(m.x, m.y, m.z);
 
         uint32_t contains_mask = 0;
 

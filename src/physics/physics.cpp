@@ -24,7 +24,7 @@ void physics_t::start(){
 void physics_t::run(){
     auto t = scheduler::clock_t::now();
     auto previous = std::chrono::steady_clock::now();
-       
+      
     while (!quit){
         frames++;
         
@@ -34,7 +34,7 @@ void physics_t::run(){
         previous = now;
 
         std::vector<collision_t> collisions;
-        
+    
         {
             std::lock_guard<std::mutex> lock(matters_mutex);
             
@@ -98,12 +98,12 @@ void physics_t::run(){
     }
 }
 
-void physics_t::register_matter(std::shared_ptr<matter_t> matter){
+void physics_t::register_matter(std::shared_ptr<srph_matter> matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     matters.push_back(matter);
 }
     
-void physics_t::unregister_matter(std::shared_ptr<matter_t> matter){
+void physics_t::unregister_matter(std::shared_ptr<srph_matter> matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     
     auto it = std::find(matters.begin(), matters.end(), matter);

@@ -77,6 +77,7 @@ srph::seraphim_t::seraphim_t(){
 
     scheduler::initialise();
 
+
     renderer = std::make_unique<renderer_t>(
         device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
@@ -271,7 +272,7 @@ void srph::seraphim_t::run(){
     double r_time;
 
     while (!window->should_close()){
-	    glfwPollEvents();
+        glfwPollEvents();
 
         auto now   = std::chrono::steady_clock::now();
         double delta = std::chrono::duration_cast<std::chrono::microseconds>(now - previous).count() / 1000000.0;
@@ -279,6 +280,7 @@ void srph::seraphim_t::run(){
         previous = now;
 
         window->get_mouse().update(delta, *window);
+    
         test_camera->update(delta, window->get_keyboard(), window->get_mouse());
 
         if (current_frame % frequency == frequency - 1){    

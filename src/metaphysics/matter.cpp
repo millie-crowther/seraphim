@@ -2,7 +2,7 @@
 
 using namespace srph;
 
-matter_t::matter_t(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
+srph_matter::srph_matter(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
     this->material = material;
     this->is_uniform = is_uniform;
@@ -11,15 +11,15 @@ matter_t::matter_t(srph_sdf * sdf, const material_t & material, const vec3_t & i
     previous_position = initial_position;
 }
 
-quat_t matter_t::get_rotation() const {
+quat_t srph_matter::get_rotation() const {
     return transform.get_rotation();
 }
 
-vec3_t matter_t::get_position() const {
+vec3_t srph_matter::get_position() const {
     return transform.get_position();
 }
 
-bool matter_t::is_inert(){
+bool srph_matter::is_inert(){
 //    std::cout << "-----" << std::endl;
 //    std::cout << "\tv = " << vec::length(v) << std::endl;
 //    std::cout << "\to = " << vec::length(omega) << std::endl;
@@ -36,80 +36,85 @@ bool matter_t::is_inert(){
         vec::length(alpha) < constant::epsilon;
 }
 
-material_t matter_t::get_material(const vec3_t & x){
+material_t srph_matter::get_material(const vec3_t & x){
     return material;
 }
 
-bound3_t matter_t::get_bound() const {
-    bound3_t bound;
-
-    bound3_t * sdf_bound = srph_sdf_bound(sdf);
-    for (int i = 0; i < 8; i++){  
-        vec3_t x = sdf_bound->get_lower();
-        for (int j = 0; j < 3; j++){
-            if (i & (1 << j)){
-                x[j] = sdf_bound->get_upper()[j];
-            }
-        }
-        bound.capture(transform.to_global_space(x));
+void srph_matter_bound(const srph_matter * m, srph_bound3 * b){
+    if (m == NULL || b == NULL){
+        return;
     }
 
-    return bound;
+    srph_bound3_create(b);
+
+    srph_bound3 * sdf_bound = srph_sdf_bound(m->sdf);
+    for (int i = 0; i < 8; i++){  
+        vec3 x1;
+        srph_bound3_vertex(sdf_bound, i, x1.raw);
+        vec3_t x(x1.x, x1.y, x1.z);
+        x = m->transform.to_global_space(x);
+    
+        srph_vec3_set(&x1, x[0], x[1], x[2]);
+
+        srph_bound3_capture(b, x1.raw);
+    }
 }
 
-bound3_t matter_t::get_moving_bound(double t) const {
-    bound3_t bound = get_bound();
-    
-    bound += v * interval_t<double>(0, t);
+srph_bound3 srph_matter::get_moving_bound(double t) const {
+    srph_bound3 bound;
+    srph_matter_bound(this, &bound);
+
+    for (int i = 0; i < 3; i++){
+        if (v[i] >= 0){
+            bound.upper[i] += v[i] * t;
+        } else {
+            bound.lower[i] += v[i] * t;
+        }
+    }      
 
     // TODO: include rotation    
 
     return bound;
 }
 
-double matter_t::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){
+double srph_matter::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){
     auto r = r_global - transform.to_global_space(get_centre_of_mass()); 
     auto rn = vec::cross(r, n);
 
     return vec::dot(rn, *get_inv_tf_i() * rn);
 }
 
-bound3_t matter_t::velocity_bounds(const vec3_t & x, const interval_t<double> & t){
-    bound3_t com = v * t + transform.to_global_space(get_centre_of_mass());
-    return v + vec::cross(omega, x - com);
-}
-
-void matter_t::apply_impulse(const vec3_t & j){
+void srph_matter::apply_impulse(const vec3_t & j){
     v += j / get_mass();
 }
 
-f32mat4_t * matter_t::get_matrix(){
+f32mat4_t * srph_matter::get_matrix(){
     return transform.get_matrix();
 }
 
-void matter_t::apply_force(const vec3_t & f){
+void srph_matter::apply_force(const vec3_t & f){
     a += f / get_mass();
 }
 
-void matter_t::apply_force_at(const vec3_t & f, const vec3_t & x){
-    a += f / get_mass();
+void srph_matter::apply_force_at(const vec3_t & f, const vec3_t & x){
+    apply_force(f);
 
     auto r = x - transform.to_global_space(get_centre_of_mass()); 
     alpha += *get_inv_tf_i() * vec::cross(r, f);
 }    
 
-void matter_t::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
-    v += j / get_mass();
+void srph_matter::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
+    apply_impulse(j);
 
     auto r = r_global - transform.to_global_space(get_centre_of_mass()); 
     omega += *get_inv_tf_i() * vec::cross(r, j);
 }
 
-void matter_t::calculate_centre_of_mass(){
+void srph_matter::calculate_centre_of_mass(){
     throw std::runtime_error("Error: autocalc of centre of mass not yet implemented.");
 }
 
-vec3_t matter_t::get_centre_of_mass(){
+vec3_t srph_matter::get_centre_of_mass(){
     if (is_uniform){
         vec3 c = srph_sdf_com(sdf);
         return vec3_t(c.x, c.y, c.z);
@@ -122,11 +127,7 @@ vec3_t matter_t::get_centre_of_mass(){
     return *centre_of_mass;
 }
 
-void matter_t::constrain_acceleration(const vec3_t & da){
-    a += da;
-}
-
-double matter_t::get_average_density(){
+double srph_matter::get_average_density(){
     if (is_uniform){
         return get_material(vec3_t()).density;
     }
@@ -138,25 +139,25 @@ double matter_t::get_average_density(){
     return *average_density;
 }
 
-double matter_t::get_mass(){
+double srph_matter::get_mass(){
     return get_average_density() * srph_sdf_volume(sdf);
 }
 
-void matter_t::translate(const vec3_t & x){
+void srph_matter::translate(const vec3_t & x){
     transform.translate(x);
 }
 
-void matter_t::rotate(const quat_t & q){
+void srph_matter::rotate(const quat_t & q){
     transform.rotate(q);
     inv_tf_i.reset();
 }
 
-void matter_t::reset_acceleration() {
+void srph_matter::reset_acceleration() {
     a = vec3_t(0.0, -9.8, 0.0);
     alpha = vec3_t();
 }
 
-void matter_t::physics_tick(double t){
+void srph_matter::physics_tick(double t){
     // update position
     transform.translate((0.5 * a * t + v) * t);
     
@@ -176,7 +177,7 @@ void matter_t::physics_tick(double t){
     }    
 }
 
-mat3_t * matter_t::get_inv_tf_i(){
+mat3_t * srph_matter::get_inv_tf_i(){
     if (!inv_tf_i){
         inv_tf_i = std::make_unique<mat3_t>(*get_i());
 
@@ -192,7 +193,7 @@ mat3_t * matter_t::get_inv_tf_i(){
     return inv_tf_i.get();
 }
 
-mat3_t * matter_t::get_i(){
+mat3_t * srph_matter::get_i(){
     if (!i){
         if (is_uniform){
             i = std::make_unique<mat3_t>(
@@ -206,11 +207,11 @@ mat3_t * matter_t::get_i(){
     return i.get();
 }
 
-vec3_t matter_t::get_velocity(const vec3_t & x){
+vec3_t srph_matter::get_velocity(const vec3_t & x){
     vec3_t x1 = x - transform.to_global_space(get_centre_of_mass());
     return v + vec::cross(omega, x1);
 }
 
-vec3_t matter_t::to_local_space(const vec3_t & x) const {
+vec3_t srph_matter::to_local_space(const vec3_t & x) const {
     return transform.to_local_space(x);
 }

@@ -19,8 +19,8 @@ namespace srph {
 
         void start();
 
-        void register_matter(std::shared_ptr<matter_t> matter);
-        void unregister_matter(std::shared_ptr<matter_t> matter);
+        void register_matter(std::shared_ptr<srph_matter> matter);
+        void unregister_matter(std::shared_ptr<srph_matter> matter);
 
         int get_frame_count();
 
@@ -30,8 +30,8 @@ namespace srph {
 
         std::mutex matters_mutex;
 
-        std::vector<std::shared_ptr<matter_t>> matters;
-        std::vector<std::shared_ptr<matter_t>> asleep_matters;
+        std::vector<std::shared_ptr<srph_matter>> matters;
+        std::vector<std::shared_ptr<srph_matter>> asleep_matters;
 
         int frames;
 

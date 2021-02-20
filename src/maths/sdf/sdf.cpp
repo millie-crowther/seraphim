@@ -2,6 +2,10 @@
 
 #include <iostream>
 
+#include "core/random.h"
+
+#define VOLUME_SAMPLES 1000
+
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     srph_sdf_full_create(sdf, phi, data, -1, NULL);
 }
@@ -84,9 +88,26 @@ double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
 
 double srph_sdf_volume(srph_sdf * sdf){
     if (sdf->_volume < 0.0){
-        double v = 0.0;
-      //  calculate_volume(sdf, &v, srph_sdf_bound(sdf));
-        sdf->_volume = v;        
+        int hits = 0;
+     
+        srph_bound3 * b = srph_sdf_bound(sdf);
+        srph::vec3_t l(b->lower[0], b->lower[1], b->lower[2]);
+        srph::vec3_t u(b->upper[0], b->upper[1], b->upper[2]);
+        srph_random rng;
+        srph_random_default_seed(&rng);
+    
+        for (int i = 0; i < VOLUME_SAMPLES; i++){
+            vec3 x;
+            srph_vec3_set(&x,
+                srph_random_f64_range(&rng, l[0], u[0]),
+                srph_random_f64_range(&rng, l[1], u[1]),
+                srph_random_f64_range(&rng, l[2], u[2])
+            );
+
+            hits += (int) srph_sdf_contains(sdf, &x);
+        }
+
+        sdf->_volume = 0.0; 
     }
 
     return sdf->_volume;
@@ -127,7 +148,7 @@ srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x){
     return j;        
 }
 
-srph::bound3_t * srph_sdf_bound(srph_sdf * sdf){
+srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     if (sdf == NULL){
         return NULL;
     } 
@@ -138,12 +159,10 @@ srph::bound3_t * srph_sdf_bound(srph_sdf * sdf){
             srph_vec3_fill(&a, 0.0);
 
             a.raw[i] = -1.0;
-            double l = -srph_sdf_project(sdf, &a);
+            sdf->_bound.lower[i] = -srph_sdf_project(sdf, &a); 
 
             a.raw[i] = 1.0;
-            double u =  srph_sdf_project(sdf, &a);
-
-            sdf->_bound[i] = srph::interval_t<double>(l, u);
+            sdf->_bound.upper[i] =  srph_sdf_project(sdf, &a); 
         }
 
         sdf->_is_bound_valid = true;
