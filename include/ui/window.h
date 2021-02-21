@@ -25,6 +25,7 @@ namespace srph {
 
         // modifiers
         void set_title(const std::string & title);
+        void show();
 
         // accessors
         GLFWwindow * get_window() const;

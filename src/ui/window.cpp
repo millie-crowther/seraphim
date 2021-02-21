@@ -16,6 +16,7 @@ window_t::window_t(u32vec2_t size){
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     window = glfwCreateWindow(size[0], size[1], "Seraphim", nullptr, nullptr);
 
@@ -58,4 +59,8 @@ keyboard_t & window_t::get_keyboard() const {
 
 mouse_t & window_t::get_mouse() const {
     return *mouse;
+}
+
+void window_t::show(){
+    glfwShowWindow(window);
 }

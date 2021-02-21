@@ -3,6 +3,7 @@
 
 #include "core/debug.h"
 
+#include <condition_variable>
 #include <set>
 #include <string>
 #include <vector>
@@ -43,6 +44,7 @@ namespace srph {
         bool fps_monitor_quit;
         void monitor_fps();
         std::thread fps_monitor_thread;
+        std::condition_variable fps_cv;
 
     public:
         seraphim_t();

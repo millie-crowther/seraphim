@@ -77,14 +77,11 @@ srph::seraphim_t::seraphim_t(){
 
     scheduler::initialise();
 
-
     renderer = std::make_unique<renderer_t>(
         device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
 
     physics = std::make_unique<physics_t>();
-
-    fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
 }
 
 srph::seraphim_t::~seraphim_t(){
@@ -94,8 +91,13 @@ srph::seraphim_t::~seraphim_t(){
 
     vkDeviceWaitIdle(device->get_device());
 
-    fps_monitor_thread.join(); 
+    fps_cv.notify_all();
+    if (fps_monitor_thread.joinable()){
+        fps_monitor_thread.join(); 
+    }
     
+    physics.reset();
+
     // delete renderer early to release resources at appropriate time
     renderer.reset();
 
@@ -112,7 +114,7 @@ srph::seraphim_t::~seraphim_t(){
         func(instance, callback, nullptr);
     }
 #endif
-   
+ 
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
     // destroy instance
@@ -122,7 +124,7 @@ srph::seraphim_t::~seraphim_t(){
 
     glfwTerminate();
 
-    std::cout << "Seraphim engine exiting gracefully." << std::endl;
+    printf("Seraphim engine exiting gracefully.\n");
 }
 
 renderer_t * srph::seraphim_t::get_renderer() const {
@@ -130,9 +132,11 @@ renderer_t * srph::seraphim_t::get_renderer() const {
 }
 
 void seraphim_t::monitor_fps(){
-    auto t = scheduler::clock_t::now();
     int interval = 1; // seconds
     fps_monitor_quit = false;
+
+    std::mutex m;
+    std::unique_lock<std::mutex> lock(m);
 
     while (!fps_monitor_quit){
         double physics_fps = static_cast<double>(physics->get_frame_count()) / interval;
@@ -141,8 +145,7 @@ void seraphim_t::monitor_fps(){
         std::cout << 
             "Render: "  << render_fps  << " FPS; " << 
             "Physics: " << physics_fps << " FPS" << std::endl;
-        t += std::chrono::seconds(interval);
-        std::this_thread::sleep_until(t);       
+        fps_cv.wait_for(lock, std::chrono::seconds(interval));       
     }
 }
 
@@ -265,6 +268,9 @@ bool srph::seraphim_t::check_validation_layers(){
 
 void srph::seraphim_t::run(){
     physics->start();
+    fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
+
+    window->show();
 
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
@@ -284,7 +290,6 @@ void srph::seraphim_t::run(){
         test_camera->update(delta, window->get_keyboard(), window->get_mouse());
 
         if (current_frame % frequency == frequency - 1){    
-           // std::cout << "Render FPS: " << r_time / frequency << std::endl;
             r_time = 0;
         }
 

@@ -14,7 +14,10 @@ physics_t::physics_t(){
 
 physics_t::~physics_t(){
     quit = true;
-    thread.join();
+
+    if (thread.joinable()){
+        thread.join();
+    }
 }
 
 void physics_t::start(){
@@ -24,6 +27,8 @@ void physics_t::start(){
 void physics_t::run(){
     auto t = scheduler::clock_t::now();
     auto previous = std::chrono::steady_clock::now();
+
+    printf("physics thread starting\n");
       
     while (!quit){
         frames++;
