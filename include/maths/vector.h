@@ -27,6 +27,7 @@ void srph_vec3_set(vec3 * v, double x, double y, double z);
 
 void srph_vec3_scale(vec3 * x, double s);
 void srph_vec3_multiply(vec3 * x, const vec3 * a, const vec3 * b);
+void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b);
 void srph_vec3_subtract(vec3 * x, const vec3 * a, const vec3 * b);
 
 void srph_vec3_abs(vec3 * x);

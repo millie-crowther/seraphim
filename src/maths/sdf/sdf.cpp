@@ -159,3 +159,30 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
 
     return &sdf->_bound;
 }
+
+vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * _d){
+    vec3 d = *_d;
+    srph_vec3_normalise(&d);
+
+    vec3 x;
+    srph_vec3_fill(&x, 0.0);
+
+    double phi;
+    vec3 n, d2;
+    for (int i = 0; i < 1000; i++){
+        n = srph_sdf_normal(sdf, &x);
+        srph_vec3_scale(&n, 0.9);
+        srph_vec3_subtract(&d2, &d, &n);
+        srph_vec3_normalise(&d2);
+        
+
+        phi = srph_sdf_phi(sdf, &x);
+        srph_vec3_scale(&d2, fabs(phi));
+
+        srph_vec3_add(&x, &x, &d2);
+
+        if (phi >= 0.0){
+            return x;
+        }
+    }
+}

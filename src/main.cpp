@@ -77,7 +77,8 @@ int main(){
             true
         )
     );
-        
+    
+/*    
     srph_sdf_torus torus_sdf;
     srph_sdf_torus_create(&torus_sdf, 0.5, 0.25);
 
@@ -91,6 +92,8 @@ int main(){
             true
         )
     );
+
+  */
 
     srph::seraphim_t seraphim;
 

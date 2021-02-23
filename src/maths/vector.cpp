@@ -80,3 +80,9 @@ void srph_vec3_abs(vec3 * x){
 void srph_vec3_print(const vec3 * x){
     printf("vec3(%f, %f, %f)", x->x, x->y, x->z);
 }
+
+void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b){
+    for (int i = 0; i < 3; i++){
+        x->raw[i] = a->raw[i] + b->raw[i];
+    }
+}
