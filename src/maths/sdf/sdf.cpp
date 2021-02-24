@@ -185,4 +185,7 @@ vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * _d){
             return x;
         }
     }
+
+    return x;
 }
+

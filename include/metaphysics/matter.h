@@ -74,5 +74,6 @@ typedef struct srph_matter {
 } srph_matter;
 
 void srph_matter_bound(const srph_matter * m, srph_bound3 * b);
+void srph_matter_sphere_bound(const srph_matter * m, double t, vec3 * c, double * r);
 
 #endif

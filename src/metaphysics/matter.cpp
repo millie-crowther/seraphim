@@ -207,3 +207,21 @@ vec3_t srph_matter::get_velocity(const vec3_t & x){
 vec3_t srph_matter::to_local_space(const vec3_t & x) const {
     return transform.to_local_space(x);
 }
+
+void srph_matter_sphere_bound(const srph_matter * m, double t, vec3 * c, double * r){
+    srph_bound3 * b = srph_sdf_bound(m->sdf);
+    srph_bound3_midpoint(b, c->raw);
+    
+    srph::vec3_t p1 = m->transform.get_position();
+    vec3 p;
+    srph_vec3_set(&p, p1[0], p1[1], p1[2]);
+    srph_vec3_add(c, c, &p);
+    
+    vec3 r3;
+    srph_bound3_radius(b, r3.raw);
+    *r = srph_vec3_length(&r3);
+
+    vec3 v1;
+    srph_vec3_set(&v1, m->v[0], m->v[1], m->v[2]);
+    *r += srph_vec3_length(&v1) * t;
+}

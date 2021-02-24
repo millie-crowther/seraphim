@@ -16,40 +16,48 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
     intersecting = false;
     t = constant::sigma;
 
-    auto f = [a, b](const vec3_t & x) -> double {
-        vec3_t xa = a->transform.to_local_space(x);
-        vec3_t xb = b->transform.to_local_space(x);
+    vec3 c_a, c_b;
+    double r_a, r_b;
+    srph_matter_sphere_bound(a, constant::sigma, &c_a, &r_a);
+    srph_matter_sphere_bound(b, constant::sigma, &c_b, &r_b);
 
-        vec3 x1a, x1b;
-        srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
-        srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
+    vec3 d3;
+    srph_vec3_subtract(&d3, &c_a, &c_b);
+    double d = srph_vec3_length(&d3) - r_a - r_b;
+    if (d <= 0){
+        srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
+        srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
 
-        double phi_a = srph_sdf_phi(a->sdf, &x1a);
-        double phi_b = srph_sdf_phi(b->sdf, &x1b);
+        srph_bound3 bound_i;
+        srph_bound3_intersection(&bound_a, &bound_b, &bound_i);
 
-        return std::max(phi_a, phi_b);
-    };
+        vec3 xs1[4];
+        srph_bound3_vertex(&bound_i, 0, xs1[0].raw);
+        srph_bound3_vertex(&bound_i, 3, xs1[1].raw);
+        srph_bound3_vertex(&bound_i, 5, xs1[2].raw);
+        srph_bound3_vertex(&bound_i, 6, xs1[3].raw);
 
-    srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
-    srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
+        std::array<vec3_t, 4> xs = {
+            vec3_t(xs1[0].x, xs1[0].y, xs1[0].z),
+            vec3_t(xs1[1].x, xs1[1].y, xs1[1].z),
+            vec3_t(xs1[2].x, xs1[2].y, xs1[2].z),
+            vec3_t(xs1[3].x, xs1[3].y, xs1[3].z)
+        };
+        
+        auto f = [a, b](const vec3_t & x) -> double {
+            vec3_t xa = a->transform.to_local_space(x);
+            vec3_t xb = b->transform.to_local_space(x);
 
-    srph_bound3 bound_i;
-    srph_bound3_intersection(&bound_a, &bound_b, &bound_i);
+            vec3 x1a, x1b;
+            srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
+            srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
 
-    vec3 xs1[4];
-    srph_bound3_vertex(&bound_i, 0, xs1[0].raw);
-    srph_bound3_vertex(&bound_i, 3, xs1[1].raw);
-    srph_bound3_vertex(&bound_i, 5, xs1[2].raw);
-    srph_bound3_vertex(&bound_i, 6, xs1[3].raw);
+            double phi_a = srph_sdf_phi(a->sdf, &x1a);
+            double phi_b = srph_sdf_phi(b->sdf, &x1b);
 
-    std::array<vec3_t, 4> xs = {
-        vec3_t(xs1[0].x, xs1[0].y, xs1[0].z),
-        vec3_t(xs1[1].x, xs1[1].y, xs1[1].z),
-        vec3_t(xs1[2].x, xs1[2].y, xs1[2].z),
-        vec3_t(xs1[3].x, xs1[3].y, xs1[3].z)
-    };
+            return std::max(phi_a, phi_b);
+        };
 
-    if (srph_bound3_is_valid(&bound_i)){
         auto result = srph::optimise::nelder_mead(f, xs);
         depth = std::abs(result.fx);
         x = result.x;  
@@ -58,10 +66,10 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
         auto t_result = srph::optimise::nelder_mead(ttc, xs, constant::iota);
         t = t_result.fx;
         intersecting = t < constant::iota;
+        
+        // find relative velocity at point 
+        vr = a->get_velocity(x) - b->get_velocity(x);
     }
-    
-    // find relative velocity at point 
-    vr = a->get_velocity(x) - b->get_velocity(x);
 }
 
 bool srph::collision_t::is_intersecting() const {
