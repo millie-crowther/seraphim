@@ -300,16 +300,6 @@ namespace srph {
                 x[0] * y[1] - x[1] * y[0]
             );
         }
-       
-        template<class T>
-        vec_t<T, 3> tangent(const vec_t<T, 3> & x){
-            auto nx = normalise(x);
-            if (1 - std::abs(nx[0]) > constant::epsilon){
-                return cross(nx, right<T>());
-            } else {
-                return cross(nx, up<T>());
-            }
-        }
  
         template<class T, int N>
         vec_t<T, N> clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
@@ -323,45 +313,6 @@ namespace srph {
         template<class T, int N>
         vec_t<T, N> clamp(const vec_t<T, N> & x, const T & low, const T & high){
             return clamp(x, vec_t<T, N>(low), vec_t<T, N>(high));
-        }
-
-        template<class V>
-        V abs(V x){
-            std::transform(x.begin(), x.end(), x.begin(), [](const auto & a){return std::abs(a);});
-            return x;
-        }
-            
-        template<class B>
-        bool all(const B & x){
-            for (const auto & b : x){
-                if (!b) return false;
-            }
-            return true;
-        }
-
-        template<class V>
-        V sign(const V & x){
-            V r;
-
-            std::transform(x.begin(), x.end(), r.begin(), [](const auto & y){
-                if constexpr (std::is_unsigned<decltype(y)>::value){
-                    return y == 0 ? 0 : 1;
-                } else {
-                    return y > 0 ? 1 : (y < 0 ? -1 : 0);
-                }
-            });
-
-            return r;
-        }
-        
-        template<class T, int M, int N>
-        T max_norm(const matrix_t<T, M, N> & x){
-            if constexpr (std::is_unsigned<T>::value){
-                return *std::max_element(x.begin(), x.end());
-            } else {
-                auto absx = vec::abs(x);
-                return *std::max_element(absx.begin(), absx.end());
-            }
         }
         
         template<class T, int N>
@@ -379,11 +330,6 @@ namespace srph {
             std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
             return x;
         }    
-
-        template<class T, int N>
-        vec_t<T, N> max(const vec_t<T, N> & x, const T & y){
-            return vec::max(x, vec_t<T, N>(y));
-        }
     }
 
     namespace mat {

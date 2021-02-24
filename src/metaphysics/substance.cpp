@@ -33,17 +33,28 @@ uint32_t substance_t::get_id() const {
 }
 
 substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
-    vec3 r1;
-    srph_bound3_radius(srph_sdf_bound(matter->sdf), r1.raw);
-    vec3_t r = vec3_t(r1.x, r1.y, r1.z);
+    vec3 r;
+    srph_bound3_radius(srph_sdf_bound(matter->sdf), r.raw);
     vec3_t eye = matter->to_local_space(eye_position);
 
-    float near = vec::length(vec::max(vec::abs(eye) - r, 0.0));
-    float far  = vec::length(vec::abs(eye) + r);
+    vec3 a;
+    srph_vec3_set(&a, eye[0], eye[1], eye[2]);
+    srph_vec3_abs(&a, &a);
+
+    vec3 x;
+    srph_vec3_subtract(&x, &a, &r);
+    srph_vec3_max_scalar(&x, &x, 0.0);
+    
+    float near = srph_vec3_length(&x);
+    
+    srph_vec3_set(&x, eye[0], eye[1], eye[2]);
+    srph_vec3_add(&x, &a, &r);
+    
+    float far = srph_vec3_length(&x);
 
     return data_t(
         near, far,
-        mat::cast<float>(r),
+        f32vec3_t(r.x, r.y, r.z),
         id,
         *matter->get_matrix()
     );

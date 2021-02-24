@@ -23,9 +23,9 @@ static void vector_multiply(double * xs, const double * as, const double * bs, i
     }
 }
 
-static void vector_abs(double * xs, int n){
+static void vector_abs(double * abs_xs, const double * xs, int n){
     for (int i = 0; i < n; i++){
-        xs[i] = fabs(xs[i]);
+        abs_xs[i] = fabs(xs[i]);
     }
 }
 
@@ -73,8 +73,8 @@ void srph_vec3_subtract(vec3 * x, const vec3 * a, const vec3 * b){
     }
 }
 
-void srph_vec3_abs(vec3 * x){
-    vector_abs(x->raw, 3);
+void srph_vec3_abs(vec3 * abs_x, const vec3 * x){
+    vector_abs(abs_x->raw, x->raw, 3);
 }
 
 void srph_vec3_print(const vec3 * x){
@@ -84,5 +84,11 @@ void srph_vec3_print(const vec3 * x){
 void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b){
     for (int i = 0; i < 3; i++){
         x->raw[i] = a->raw[i] + b->raw[i];
+    }
+}
+
+void srph_vec3_max_scalar(vec3 * max_x, const vec3 * x, double m){
+    for (int i = 0; i < 3; i++){
+        max_x->raw[i] = fmax(x->raw[i], m);
     }
 }
