@@ -1,12 +1,8 @@
-#ifndef FORM_H
-#define FORM_H
+#ifndef SERAPHIM_FORM_H
+#define SERAPHIM_FORM_H
 
-namespace srph {
-    class form_t {
-    private:
+typedef struct srph_form {
 
-    public:
-    };
-}
+} srph_form;
 
 #endif

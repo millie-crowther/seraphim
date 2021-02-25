@@ -8,16 +8,12 @@ substance_t::substance_t(uint32_t id) {
     this->id = id;
 }
 
-substance_t::substance_t(std::shared_ptr<form_t> form, std::shared_ptr<srph_matter> matter){
+substance_t::substance_t(srph_form * form, std::shared_ptr<srph_matter> matter){
     static uint32_t id = 0;
 
     this->form = form;
     this->matter = matter;
     this->id = id++;
-}
-
-std::shared_ptr<form_t> substance_t::get_form() const {
-    return form;
 }
 
 std::shared_ptr<srph_matter> substance_t::get_matter() const {
