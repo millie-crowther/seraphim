@@ -22,6 +22,11 @@ typedef struct vec2 {
     };
 } vec2;
 
+static const vec3 srph_vec3_zero    = { 0.0, 0.0, 0.0 };
+static const vec3 srph_vec3_right   = { 1.0, 0.0, 0.0 };
+static const vec3 srph_vec3_up      = { 0.0, 1.0, 0.0 };
+static const vec3 srph_vec3_forward = { 0.0, 0.0, 1.0 };
+
 void srph_vec3_fill(vec3 * v, double x);
 void srph_vec3_set(vec3 * v, double x, double y, double z);
 

@@ -121,9 +121,7 @@ vec3_t srph_matter::get_centre_of_mass(){
 
 double srph_matter::get_average_density(){
     if (is_uniform){
-        vec3 zero;
-        srph_vec3_fill(&zero, 0.0);
-        return get_material(&zero).density;
+        return get_material(&srph_vec3_zero).density;
     }
 
     if (!average_density){
