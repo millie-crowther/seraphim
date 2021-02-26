@@ -9,20 +9,23 @@
 using namespace srph;
 
 int main(){
-    double mu_s = 0.2;
-    double mu_d = 0.1;
+    srph_material material;
+    material.static_friction = 0.2;
+    material.dynamic_friction = 0.1;
+    material.density = 700.0;
+    material.restitution = 0.3;
+
+    srph_form form;
 
     srph_sdf_cuboid floor_sdf;
     vec3 floor_size;
     srph_vec3_fill(&floor_size, 100.0);
     srph_sdf_cuboid_create(&floor_sdf, &floor_size);
-
-    srph_form form;
+    srph_vec3_set(&material.colour, 0.1, 0.8, 0.8);
 
     auto floor_substance = std::make_shared<substance_t>( 
         &form, std::make_shared<srph_matter>(
-            &floor_sdf.sdf, 
-            material_t(vec3_t(0.1, 0.8, 0.8), 700.0, 0.3, mu_s, mu_d),
+            &floor_sdf.sdf, &material, 
             vec3_t(0.0, -100.0, 0.0),
             true
         )
@@ -30,11 +33,11 @@ int main(){
 
     srph_sdf_sphere sphere_sdf;
     srph_sdf_sphere_create(&sphere_sdf, 0.5);
+    srph_vec3_set(&material.colour, 0.8, 0.1, 0.8);
 
     auto sphere = std::make_shared<substance_t>( 
         &form, std::make_shared<srph_matter>(
-            &sphere_sdf.sdf, 
-            material_t(vec3_t(0.8, 0.1, 0.8), 700.0, 0.5, mu_s, mu_d),
+            &sphere_sdf.sdf, &material, 
             vec3_t(2.0, 3.0, 0.0),
             true
         )
@@ -44,20 +47,21 @@ int main(){
     vec3 cube_size;
     srph_vec3_fill(&cube_size, 0.5);
     srph_sdf_cuboid_create(&cube_sdf, &cube_size);
+    srph_vec3_set(&material.colour, 0.8, 0.8, 0.1);
 
     auto cube = std::make_shared<substance_t>( 
         &form, std::make_shared<srph_matter>(
-            &cube_sdf.sdf, 
-            material_t(vec3_t(0.8, 0.8, 0.1), 700.0, 0.2, mu_s, mu_d),
+            &cube_sdf.sdf, &material, 
             vec3_t(0, 3, 0),
             true
         )
     );
 
+    srph_vec3_set(&material.colour, 0.4, 0.5, 0.1);
+    
     auto cube2 = std::make_shared<substance_t>( 
         &form, std::make_shared<srph_matter>(
-            &cube_sdf.sdf, 
-            material_t(vec3_t(0.4, 0.5, 0.8), 700.0, 0.2, mu_s, mu_d),
+            &cube_sdf.sdf, &material,
             vec3_t(-2.0, 3.1, 0),
             true
         )
@@ -65,11 +69,11 @@ int main(){
     
     srph_sdf_octahedron octa_sdf;
     srph_sdf_octahedron_create(&octa_sdf, 1.0);
+    srph_vec3_set(&material.colour, 0.9, 0.3, 0.5);
 
     auto octahedron = std::make_shared<substance_t>(
         &form, std::make_shared<srph_matter>(
-            &octa_sdf.sdf,
-            material_t(vec3_t(0.9, 0.3, 0.5), 700.0, 0.4, mu_s, mu_d),
+            &octa_sdf.sdf, &material,
             vec3_t(0.0, 3.0, 0.0),
             true
         )

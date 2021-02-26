@@ -1,5 +1,5 @@
-#ifndef MATTER_H
-#define MATTER_H
+#ifndef SERAPHIM_MATTER_H
+#define SERAPHIM_MATTER_H
 
 #include "maths/sdf/sdf.h"
 #include "material.h"
@@ -8,11 +8,10 @@
 
 #include <memory>
 
-
 typedef struct srph_matter {
     srph::transform_t transform;
 
-    srph::material_t material;
+    srph_material material;
     srph_sdf * sdf;
 
     srph::vec3_t previous_position;
@@ -30,9 +29,9 @@ typedef struct srph_matter {
     srph::vec3_t omega;
     srph::vec3_t alpha;
 
-    srph_matter(srph_sdf * sdf, const srph::material_t & material, const srph::vec3_t & initial_position, bool is_uniform);
+    srph_matter(srph_sdf * sdf, const srph_material * material, const srph::vec3_t & initial_position, bool is_uniform);
 
-    srph::material_t get_material(const srph::vec3_t & x);
+    srph_material get_material(const vec3 * x);
     srph_sdf * get_sdf() const;
     srph::vec3_t get_position() const;
     double get_mass();

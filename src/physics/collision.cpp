@@ -126,9 +126,13 @@ void srph::collision_t::resting_correct(){
 }
 
 void srph::collision_t::colliding_correct(){
+    vec3 x_a1, x_b1;
+    srph_vec3_set(&x_a1, x_a[0], x_a[1], x_a[2]);
+    srph_vec3_set(&x_b1, x_b[0], x_b[1], x_b[2]);
+
     // calculate collision impulse magnitude
-    auto mata = a->get_material(x_a);
-    auto matb = b->get_material(x_b);
+    auto mata = a->get_material(&x_a1);
+    auto matb = b->get_material(&x_b1);
 
     double CoR = std::max(mata.restitution, matb.restitution);
 

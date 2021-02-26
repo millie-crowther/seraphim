@@ -2,9 +2,9 @@
 
 using namespace srph;
 
-srph_matter::srph_matter(srph_sdf * sdf, const material_t & material, const vec3_t & initial_position, bool is_uniform){
+srph_matter::srph_matter(srph_sdf * sdf, const srph_material * material, const vec3_t & initial_position, bool is_uniform){
     this->sdf = sdf;
-    this->material = material;
+    this->material = *material;
     this->is_uniform = is_uniform;
     
     transform.set_position(initial_position);
@@ -27,7 +27,7 @@ bool srph_matter::is_inert(){
         vec::length(alpha) < constant::epsilon;
 }
 
-material_t srph_matter::get_material(const vec3_t & x){
+srph_material srph_matter::get_material(const vec3 * x){
     return material;
 }
 
@@ -121,7 +121,9 @@ vec3_t srph_matter::get_centre_of_mass(){
 
 double srph_matter::get_average_density(){
     if (is_uniform){
-        return get_material(vec3_t()).density;
+        vec3 zero;
+        srph_vec3_fill(&zero, 0.0);
+        return get_material(&zero).density;
     }
 
     if (!average_density){
