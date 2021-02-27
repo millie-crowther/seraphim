@@ -84,12 +84,11 @@ double srph_sdf_volume(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x;
-            srph_vec3_set(&x,
+            vec3 x = {
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            );
+            };
 
             if (srph_sdf_contains(sdf, &x)){
                 hits++;
@@ -112,12 +111,11 @@ vec3 srph_sdf_com(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x;
-            srph_vec3_set(&x,
+            vec3 x = {
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            );
+            };
 
             if (srph_sdf_contains(sdf, &x)){
                 srph_vec3_add(&com, &com, &x);

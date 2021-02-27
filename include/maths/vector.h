@@ -28,7 +28,6 @@ static const vec3 srph_vec3_up      = { 0.0, 1.0, 0.0 };
 static const vec3 srph_vec3_forward = { 0.0, 0.0, 1.0 };
 
 void srph_vec3_fill(vec3 * v, double x);
-void srph_vec3_set(vec3 * v, double x, double y, double z);
 
 void srph_vec3_scale(vec3 * x, double s);
 void srph_vec3_multiply(vec3 * x, const vec3 * a, const vec3 * b);

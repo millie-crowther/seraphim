@@ -22,8 +22,6 @@ namespace srph {
         srph_matter * a;
         srph_matter * b;
 
-        double time_to_collision(const vec3_t & x);
-
         collision_t(srph_matter * a, srph_matter * b);
        
         bool is_intersecting() const;

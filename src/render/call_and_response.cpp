@@ -73,8 +73,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
 
         for (int o = 0; o < 8; o++){
             vec3_t d = p + vertices[o] * call.get_radius();
-            vec3 d1;
-            srph_vec3_set(&d1, d[0], d[1], d[2]);
+            vec3 d1 = { d[0], d[1], d[2] };
 
             if (!srph_sdf_contains(sdf, &d1)){
                 contains_mask |= 1 << o;
@@ -90,8 +89,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
         }
 
         vec3_t c = p + call.get_radius();
-        vec3 c1;
-        srph_vec3_set(&c1, c[0], c[1], c[2]);
+        vec3 c1 = { c[0], c[1], c[2] };
         float phi = static_cast<float>(srph_sdf_phi(sdf, &c1));
         
         vec3 n1 = srph_sdf_normal(sdf, &c1);

@@ -30,13 +30,7 @@ static void vector_abs(double * abs_xs, const double * xs, int n){
 }
 
 void srph_vec3_fill(vec3 * v, double x){
-    srph_vec3_set(v, x, x, x);
-}
-
-void srph_vec3_set(vec3 * v, double x, double y, double z){
-    v->x = x;
-    v->y = y;
-    v->z = z;
+    *v = { x, x, x };
 }
 
 void srph_vec3_scale(vec3 * v, double s){

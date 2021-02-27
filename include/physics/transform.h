@@ -6,35 +6,34 @@
 #include <vector>
 
 #include "maths/quat.h"
+#include "maths/vector.h"
 
-namespace srph {
-    class transform_t {
-    private:
-        vec3_t position;
-        quat_t rotation;
-        std::shared_ptr<f32mat4_t> matrix;
-        
-        void recalculate_matrix();
+typedef struct srph_transform {
+    srph::vec3_t position;
+    srph::quat_t rotation;
+    std::shared_ptr<srph::f32mat4_t> matrix;
+    
+    void recalculate_matrix();
 
-    public:
-        vec3_t get_position() const;
-        void set_position(const vec3_t & x);
-        void translate(const vec3_t & x);
+    srph::vec3_t get_position() const;
+    void set_position(const srph::vec3_t & x);
+    void translate(const srph::vec3_t & x);
 
-        quat_t get_rotation() const;
-        void rotate(const quat_t & q);
+    srph::quat_t get_rotation() const;
+    void rotate(const srph::quat_t & q);
 
-        // accessors
-        vec3_t forward() const;
-        vec3_t up() const;
-        vec3_t right() const;
+    // accessors
+    srph::vec3_t forward() const;
+    srph::vec3_t up() const;
+    srph::vec3_t right() const;
 
-        vec3_t to_local_direction(const vec3_t & x) const;
-        vec3_t to_local_space(const vec3_t & x) const;
-        vec3_t to_global_space(const vec3_t & x) const;
+    srph::vec3_t to_local_direction(const srph::vec3_t & x) const;
+    srph::vec3_t to_local_space(const srph::vec3_t & x) const;
+    srph::vec3_t to_global_space(const srph::vec3_t & x) const;
 
-        f32mat4_t * get_matrix();
-    };
-}
+    srph::f32mat4_t * get_matrix();
+} srph_transform;
+
+void srph_transform_to_local_space(srph_transform * tf, vec3 * tx, const vec3 * x);
 
 #endif

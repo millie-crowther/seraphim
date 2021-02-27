@@ -1,5 +1,7 @@
 #include "physics/collision.h"
 
+#include <float.h>
+
 #include "maths/matrix.h"
 #include "maths/vector.h"
 
@@ -13,25 +15,56 @@ static double intersection_func(void * data, const vec3 * x){
     srph_matter * a = collision->a;
     srph_matter * b = collision->b;
     
-    srph::vec3_t x1(x->x, x->y, x->z);
+    vec3 xa, xb;
+    srph_transform_to_local_space(&a->transform, &xa, x);
+    srph_transform_to_local_space(&b->transform, &xb, x);
 
-    srph::vec3_t xa = a->transform.to_local_space(x1);
-    srph::vec3_t xb = b->transform.to_local_space(x1);
-
-    vec3 x1a, x1b;
-    srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
-    srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
-
-    double phi_a = srph_sdf_phi(a->sdf, &x1a);
-    double phi_b = srph_sdf_phi(b->sdf, &x1b);
+    double phi_a = srph_sdf_phi(a->sdf, &xa);
+    double phi_b = srph_sdf_phi(b->sdf, &xb);
 
     return std::max(phi_a, phi_b);
 }
 
 static double time_to_collision_func(void * data, const vec3 * x){
     srph::collision_t * collision = (srph::collision_t *) data;
+    srph_matter * a = collision->a;
+    srph_matter * b = collision->b;
+    
+    vec3 xa, xb;
+    srph_transform_to_local_space(&a->transform, &xa, x);
+    srph_transform_to_local_space(&b->transform, &xb, x);
+
+    double phi_a = srph_sdf_phi(a->sdf, &xa);
+    double phi_b = srph_sdf_phi(b->sdf, &xb);
+    double phi = phi_a + phi_b;
+   
+    if (phi <= 0){
+        return 0;
+    }
+ 
+    vec3 n = srph_sdf_normal(a->sdf, &xa);
+
+    srph::vec3_t n1(n.x, n.y, n.z);
+    n1 = a->get_rotation() * n1;
+
+    n = { n1[0], n1[1], n1[2] };
+
+    //TODO
     srph::vec3_t x1(x->x, x->y, x->z);
-    return collision->time_to_collision(x1);
+    srph::vec3_t va = a->get_velocity(x1);
+    srph::vec3_t vb = b->get_velocity(x1);
+    srph::vec3_t vr1 = va - vb;
+
+    vec3 vr = { vr1[0], vr1[2], vr1[2] };
+
+    double vrn = srph_vec3_dot(&vr, &n);
+
+    if (vrn <= 0){
+        return DBL_MAX;
+    }
+
+    // estimate of time to collision
+    return phi / vrn;        
 }
 
 using namespace srph;
@@ -86,55 +119,13 @@ double srph::collision_t::get_estimated_time() const {
     return t;
 }
 
-double collision_t::time_to_collision(const vec3_t & x){
-    vec3_t xa = a->transform.to_local_space(x);
-    vec3_t xb = b->transform.to_local_space(x);
-
-    vec3 x1a, x1b;
-    srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
-    srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
-
-    double phi_a = srph_sdf_phi(a->sdf, &x1a);
-    double phi_b = srph_sdf_phi(b->sdf, &x1b);
-    double phi = phi_a + phi_b;
-   
-    if (phi <= 0){
-        return 0;
-    }
- 
-    vec3 n = srph_sdf_normal(a->sdf, &x1a);
-
-    vec3_t n1(n.x, n.y, n.z);
-    n1 = a->get_rotation() * n1;
-
-    srph_vec3_set(&n, n1[0], n1[1], n1[2]);
-
-    //TODO
-    vec3_t va = a->get_velocity(x);
-    vec3_t vb = b->get_velocity(x);
-    vec3_t vr1 = va - vb;
-
-    vec3 vr;
-    srph_vec3_set(&vr, vr1[0], vr1[2], vr1[2]);
-
-    double vrn = srph_vec3_dot(&vr, &n);
-
-    if (vrn <= 0){
-        return std::numeric_limits<double>::max();
-    }
-
-    // estimate of time to collision
-    return phi / vrn;        
-}
-
 void srph::collision_t::resting_correct(){
 
 }
 
 void srph::collision_t::colliding_correct(){
-    vec3 x_a1, x_b1;
-    srph_vec3_set(&x_a1, x_a[0], x_a[1], x_a[2]);
-    srph_vec3_set(&x_b1, x_b[0], x_b[1], x_b[2]);
+    vec3 x_a1 = { x_a[0], x_a[1], x_a[2] };
+    vec3 x_b1 = { x_b[0], x_b[1], x_b[2] };
 
     // calculate collision impulse magnitude
     auto mata = a->get_material(&x_a1);
@@ -175,9 +166,8 @@ void srph::collision_t::correct(){
     x_a = a->to_local_space(x);
     x_b = b->to_local_space(x);
 
-    vec3 x1a, x1b;
-    srph_vec3_set(&x1a, x_a[0], x_a[1], x_a[2]);
-    srph_vec3_set(&x1b, x_b[0], x_b[1], x_b[2]);
+    vec3 x1a = { x_a[0], x_a[1], x_a[2] };
+    vec3 x1b = { x_b[0], x_b[1], x_b[2] };
 
     // choose best normal based on smallest second derivative
     auto ja = srph_sdf_jacobian(a->sdf, &x1a);

@@ -8,7 +8,7 @@
 namespace srph {
     class camera_t {
     private:
-        transform_t transform;
+        srph_transform transform;
 
     public:
         camera_t();

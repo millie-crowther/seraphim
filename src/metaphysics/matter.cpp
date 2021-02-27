@@ -46,7 +46,7 @@ void srph_matter_bound(const srph_matter * m, srph_bound3 * b){
         vec3_t x(x1.x, x1.y, x1.z);
         x = m->transform.to_global_space(x);
     
-        srph_vec3_set(&x1, x[0], x[1], x[2]);
+        x1 = { x[0], x[1], x[2] };
 
         srph_bound3_capture(b, x1.raw);
     }
@@ -213,15 +213,13 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, vec3 * c, double 
     srph_bound3_midpoint(b, c->raw);
     
     srph::vec3_t p1 = m->transform.get_position();
-    vec3 p;
-    srph_vec3_set(&p, p1[0], p1[1], p1[2]);
+    vec3 p = { p1[0], p1[1], p1[2] };
     srph_vec3_add(c, c, &p);
     
     vec3 r3;
     srph_bound3_radius(b, r3.raw);
     *r = srph_vec3_length(&r3);
 
-    vec3 v1;
-    srph_vec3_set(&v1, m->v[0], m->v[1], m->v[2]);
+    vec3 v1 = { m->v[0], m->v[1], m->v[2] };
     *r += srph_vec3_length(&v1) * t;
 }

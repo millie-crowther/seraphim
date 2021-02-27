@@ -9,7 +9,7 @@
 #include <memory>
 
 typedef struct srph_matter {
-    srph::transform_t transform;
+    srph_transform transform;
 
     srph_material material;
     srph_sdf * sdf;

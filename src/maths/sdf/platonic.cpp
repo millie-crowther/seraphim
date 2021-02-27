@@ -28,11 +28,11 @@ static double octahedron_phi(void * data, const vec3 * x){
     
     vec3 q;
     if (3.0 * p.x < m ){
-        srph_vec3_set(&q, p.x, p.y, p.z);
+        q = { p.x, p.y, p.z };
     } else if (3.0 * p.y < m){
-        srph_vec3_set(&q, p.y, p.z, p.x);
+        q = { p.y, p.z, p.x };
     } else if (3.0 * p.z < m){
-        srph_vec3_set(&q, p.z, p.x, p.y);
+        q = { p.z, p.x, p.y };
     } else {
         return m * 0.57735027;
     }
@@ -41,8 +41,7 @@ static double octahedron_phi(void * data, const vec3 * x){
     k = fmax(k, 0.0);
     k = fmin(k, s);
 
-    vec3 r;
-    srph_vec3_set(&r, q.x, q.y - s + k, q.z - k);
+    vec3 r = { q.x, q.y - s + k, q.z - k };
     return srph_vec3_length(&r);  
 }
 
