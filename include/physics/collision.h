@@ -29,7 +29,6 @@ namespace srph {
         double get_estimated_time() const;
 
         void correct();
-        void resting_correct();
         void colliding_correct();
 
         struct comparator_t {

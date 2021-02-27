@@ -6,12 +6,7 @@
 #include "maths/optimise.h"
 #include "maths/vector.h"
 
-//static void epa(srph::collision_t * c, vec3 * x0, vec3 * xs, int * n){
-   // srph_matter * a = collision->a;
-   // srph_matter * b = collision->b;
-
-    
-//}
+#define MAX_COLLISION_POINTS 20
 
 static double intersection_func(void * data, const vec3 * x){
     srph::collision_t * collision = (srph::collision_t *) data;
@@ -119,10 +114,6 @@ double srph::collision_t::get_estimated_time() const {
     return t;
 }
 
-void srph::collision_t::resting_correct(){
-
-}
-
 void srph::collision_t::colliding_correct(){
     // calculate collision impulse magnitude
     auto mata = a->get_material(&xa);
@@ -187,13 +178,7 @@ void srph::collision_t::correct(){
     // find relative velocity at point 
     srph::vec3_t x1(x.x, x.y, x.z);
     vr = a->get_velocity(x1) - b->get_velocity(x1);
-    auto vrn = vec::dot(vr, n);
-
-    if (vrn > constant::epsilon){
-        colliding_correct();
-    } else {
-        resting_correct();
-    }
+    colliding_correct();
 }
 
 bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
