@@ -1,7 +1,6 @@
 #ifndef SERAPHIM_SDF_H
 #define SERAPHIM_SDF_H
 
-#include "core/constant.h"
 #include "maths/vector.h"
 #include "maths/bound.h"
 #include "maths/matrix.h"

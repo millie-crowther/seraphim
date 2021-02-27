@@ -1,100 +1,17 @@
-#ifndef NELDER_MEAD_H
-#define NELDER_MEAD_H
+#ifndef SERAPHIM_OPTIMISE_H
+#define SERAPHIM_OPTIMISE_H
 
-#include "maths/matrix.h"
+#include "maths/vector.h"
 
-namespace srph { namespace optimise {
-    constexpr double alpha = 1.0;
-    constexpr double gamma = 2.0;
-    constexpr double rho   = 0.5;
-    constexpr double sigma = 0.5;
-    constexpr int    max_i = 100;
+typedef double (*srph_opt_func)(void * data, const vec3 * x);
 
-    template<class X>
-    struct result_t {
-        X x;
-        double fx; 
+typedef struct srph_opt_sample {
+    vec3 x;
+    double fx;
+} srph_opt_sample;
 
-        result_t(){}
-        result_t(const X & _x, double _fx) : x(_x), fx(_fx){}
-    };
-
-    template<int N, class F>
-    result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys, double threshold){
-        auto comparator = [](const auto & a, const auto & b){ return a.fx < b.fx; };
-        std::vector<result_t<vec_t<double, N>>> xs;
-        for (const auto & y : ys){
-            xs.emplace_back(y, f(y));
-        }
-        std::sort(xs.begin(), xs.end(), comparator);
-
-        for (int i = 0; i < max_i; i++){
-            // terminate
-            auto minx = xs[0].x;
-            auto maxx = xs[0].x;
-            for (int j = 1; j < N + 1; j++){
-                minx = vec::min(minx, xs[j].x);
-                maxx = vec::max(maxx, xs[j].x);
-            }
-
-            if (minx == maxx || xs[0].fx <= threshold){
-                return result_t(xs[0].x, xs[0].fx);
-            }
-
-            // order
-            std::sort(xs.begin(), xs.end(), comparator);
-
-            // calculate centroid
-            vec_t<double, N> x0;
-            for (int j = 0; j < N; j++){
-                x0 += xs[j].x;
-            }
-            x0 /= N;
-
-            // reflection
-            auto xr = x0 + alpha * (x0 - xs[N].x);
-            double fxr = f(xr);
-            if (xs[0].fx <= fxr && fxr < xs[N - 1].fx){
-                xs[N] = result_t<vec_t<double, N>>(xr, fxr);
-                continue;
-            }
-
-            // expansion
-            if (fxr < xs[0].fx){
-                auto xe = x0 + gamma * (xr - x0);
-                auto fxe = f(xe);
-                
-                if (fxe < fxr){
-                    xs[N] = result_t<vec_t<double, N>>(xe, fxe);
-                } else {
-                    xs[N] = result_t<vec_t<double, N>>(xr, fxr);
-                }
-                continue;
-            }
-
-            // contraction
-            auto xc = x0 + rho * (xs[N].x - x0);
-            double fxc = f(xc);
-            if (fxc < xs[N].fx){
-                xs[N] = result_t<vec_t<double, N>>(xc, fxc);
-                continue;
-            }   
-
-            // shrink
-            for (int j = 1; j < N + 1; j++){
-                xs[j].x = xs[0].x + sigma * (xs[j].x - xs[0].x);
-                xs[j].fx = f(xs[j].x);
-            }
-        }
-
-        return xs[0]; 
-    } 
-    
-    template<int N, class F>
-    result_t<vec_t<double, N>> nelder_mead(const F & f, const std::array<vec_t<double, N>, N + 1> & ys){
-        return nelder_mead(f, ys, std::numeric_limits<double>::min());
-    }
-
-}}
+void srph_opt_nelder_mead(
+    srph_opt_sample * s, srph_opt_func f, void * data, const vec3 * xs, double * threshold
+);
 
 #endif

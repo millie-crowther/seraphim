@@ -8,6 +8,32 @@
 #include <map>
 #include <queue>
 
+static double intersection_func(void * data, const vec3 * x){
+    srph::collision_t * collision = (srph::collision_t *) data;
+    srph_matter * a = collision->a;
+    srph_matter * b = collision->b;
+    
+    srph::vec3_t x1(x->x, x->y, x->z);
+
+    srph::vec3_t xa = a->transform.to_local_space(x1);
+    srph::vec3_t xb = b->transform.to_local_space(x1);
+
+    vec3 x1a, x1b;
+    srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
+    srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
+
+    double phi_a = srph_sdf_phi(a->sdf, &x1a);
+    double phi_b = srph_sdf_phi(b->sdf, &x1b);
+
+    return std::max(phi_a, phi_b);
+}
+
+static double time_to_collision_func(void * data, const vec3 * x){
+    srph::collision_t * collision = (srph::collision_t *) data;
+    srph::vec3_t x1(x->x, x->y, x->z);
+    return collision->time_to_collision(x1);
+}
+
 using namespace srph;
 
 srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
@@ -37,35 +63,15 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
         srph_bound3_vertex(&bound_i, 5, xs1[2].raw);
         srph_bound3_vertex(&bound_i, 6, xs1[3].raw);
 
-        std::array<vec3_t, 4> xs = {
-            vec3_t(xs1[0].x, xs1[0].y, xs1[0].z),
-            vec3_t(xs1[1].x, xs1[1].y, xs1[1].z),
-            vec3_t(xs1[2].x, xs1[2].y, xs1[2].z),
-            vec3_t(xs1[3].x, xs1[3].y, xs1[3].z)
-        };
-        
-        auto f = [a, b](const vec3_t & x) -> double {
-            vec3_t xa = a->transform.to_local_space(x);
-            vec3_t xb = b->transform.to_local_space(x);
+        srph_opt_sample s;
+        srph_opt_nelder_mead(&s, intersection_func, this, xs1, NULL);
+        depth = fabs(s.fx);
+        x = vec3_t(s.x.x, s.x.y, s.x.z);  
 
-            vec3 x1a, x1b;
-            srph_vec3_set(&x1a, xa[0], xa[1], xa[2]);
-            srph_vec3_set(&x1b, xb[0], xb[1], xb[2]);
-
-            double phi_a = srph_sdf_phi(a->sdf, &x1a);
-            double phi_b = srph_sdf_phi(b->sdf, &x1b);
-
-            return std::max(phi_a, phi_b);
-        };
-
-        auto result = srph::optimise::nelder_mead(f, xs);
-        depth = std::abs(result.fx);
-        x = result.x;  
-
-        auto ttc = [this](const vec3_t & x){ return time_to_collision(x); };
-        auto t_result = srph::optimise::nelder_mead(ttc, xs, constant::iota);
-        t = t_result.fx;
-        intersecting = t < constant::iota;
+        double iota = constant::iota;
+        srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
+        t = s.fx;
+        intersecting = t <= constant::iota;
         
         // find relative velocity at point 
         vr = a->get_velocity(x) - b->get_velocity(x);

@@ -48,6 +48,7 @@ set(SOURCES
     ../src/maths/bound.cpp    
     ../src/maths/quat.cpp
     ../src/maths/vector.cpp
+    ../src/maths/optimise.cpp
 
     ../src/maths/sdf/sdf.cpp
     ../src/maths/sdf/primitive.cpp

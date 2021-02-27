@@ -1,12 +1,11 @@
-#ifndef COLLISION_H
-#define COLLISION_H
+#ifndef SERAPHIM_COLLISION_H
+#define SERAPHIM_COLLISION_H
 
 #include "maths/matrix.h"
 #include "metaphysics/matter.h"
 
 namespace srph {
-    class collision_t {
-    private:
+    struct collision_t {
         static constexpr double solution_density = 1.0 / 5.0;
 
         bool intersecting;
@@ -25,7 +24,6 @@ namespace srph {
 
         double time_to_collision(const vec3_t & x);
 
-    public:
         collision_t(srph_matter * a, srph_matter * b);
        
         bool is_intersecting() const;
@@ -40,7 +38,5 @@ namespace srph {
         };
     };
 }
-
-
 
 #endif
