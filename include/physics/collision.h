@@ -2,6 +2,7 @@
 #define SERAPHIM_COLLISION_H
 
 #include "maths/matrix.h"
+#include "maths/vector.h"
 #include "metaphysics/matter.h"
 
 namespace srph {
@@ -11,9 +12,9 @@ namespace srph {
         bool intersecting;
         double t;
 
-        vec3_t x;
-        vec3_t x_a;
-        vec3_t x_b;
+        vec3 x;
+        vec3 xa;
+        vec3 xb;
 
         vec3_t n;
         vec3_t vr;

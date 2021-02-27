@@ -3,12 +3,15 @@
 #include <float.h>
 
 #include "maths/matrix.h"
+#include "maths/optimise.h"
 #include "maths/vector.h"
 
-#include "maths/optimise.h"
+//static void epa(srph::collision_t * c, vec3 * x0, vec3 * xs, int * n){
+   // srph_matter * a = collision->a;
+   // srph_matter * b = collision->b;
 
-#include <map>
-#include <queue>
+    
+//}
 
 static double intersection_func(void * data, const vec3 * x){
     srph::collision_t * collision = (srph::collision_t *) data;
@@ -99,15 +102,12 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
         srph_opt_sample s;
         srph_opt_nelder_mead(&s, intersection_func, this, xs1, NULL);
         depth = fabs(s.fx);
-        x = vec3_t(s.x.x, s.x.y, s.x.z);  
+        x = s.x; 
 
         double iota = constant::iota;
         srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
         t = s.fx;
         intersecting = t <= constant::iota;
-        
-        // find relative velocity at point 
-        vr = a->get_velocity(x) - b->get_velocity(x);
     }
 }
 
@@ -124,22 +124,21 @@ void srph::collision_t::resting_correct(){
 }
 
 void srph::collision_t::colliding_correct(){
-    vec3 x_a1 = { x_a[0], x_a[1], x_a[2] };
-    vec3 x_b1 = { x_b[0], x_b[1], x_b[2] };
-
     // calculate collision impulse magnitude
-    auto mata = a->get_material(&x_a1);
-    auto matb = b->get_material(&x_b1);
+    auto mata = a->get_material(&xa);
+    auto matb = b->get_material(&xb);
 
     double CoR = std::max(mata.restitution, matb.restitution);
 
+    srph::vec3_t x1(x.x, x.y, x.z);
+
     double jr = (1.0 + CoR) * vec::dot(vr, n) / (
-        1.0 / a->get_mass() + a->get_inverse_angular_mass(x, n) +
-        1.0 / b->get_mass() + b->get_inverse_angular_mass(x, n)
+        1.0 / a->get_mass() + a->get_inverse_angular_mass(x1, n) +
+        1.0 / b->get_mass() + b->get_inverse_angular_mass(x1, n)
     );
 
-    a->apply_impulse_at(-jr * n, x);
-    b->apply_impulse_at( jr * n, x);
+    a->apply_impulse_at(-jr * n, x1);
+    b->apply_impulse_at( jr * n, x1);
 
     // apply friction force
     vec3_t t = vr - vec::dot(vr, n) * n;
@@ -157,29 +156,26 @@ void srph::collision_t::colliding_correct(){
         double ka = -(mvta <= js) ? mvta : jd;
         double kb =  (mvtb <= js) ? mvtb : jd;
 
-        a->apply_impulse_at(ka * t, x);
-        b->apply_impulse_at(kb * t, x);
+        a->apply_impulse_at(ka * t, x1);
+        b->apply_impulse_at(kb * t, x1);
     }
 }
 
 void srph::collision_t::correct(){
-    x_a = a->to_local_space(x);
-    x_b = b->to_local_space(x);
-
-    vec3 x1a = { x_a[0], x_a[1], x_a[2] };
-    vec3 x1b = { x_b[0], x_b[1], x_b[2] };
+    srph_transform_to_local_space(&a->transform, &xa, &x);
+    srph_transform_to_local_space(&b->transform, &xb, &x);
 
     // choose best normal based on smallest second derivative
-    auto ja = srph_sdf_jacobian(a->sdf, &x1a);
-    auto jb = srph_sdf_jacobian(b->sdf, &x1b);
+    auto ja = srph_sdf_jacobian(a->sdf, &xa);
+    auto jb = srph_sdf_jacobian(b->sdf, &xb);
 
     vec3 n1;
     if (vec::length(ja) <= vec::length(jb)){
-        n1 = srph_sdf_normal(a->sdf, &x1a);
+        n1 = srph_sdf_normal(a->sdf, &xa);
         n = a->get_rotation() * vec3_t(n1.x, n1.y, n1.z);
 
     } else {
-        n1 = srph_sdf_normal(b->sdf, &x1b);
+        n1 = srph_sdf_normal(b->sdf, &xb);
         n = b->get_rotation() * vec3_t(n1.x, n1.y, n1.z);
     }
 
@@ -188,6 +184,9 @@ void srph::collision_t::correct(){
     a->translate(-depth * n * b->get_mass() / sm);
     b->translate( depth * n * a->get_mass() / sm);
     
+    // find relative velocity at point 
+    srph::vec3_t x1(x.x, x.y, x.z);
+    vr = a->get_velocity(x1) - b->get_velocity(x1);
     auto vrn = vec::dot(vr, n);
 
     if (vrn > constant::epsilon){
