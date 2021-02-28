@@ -29,12 +29,16 @@ static const vec3 srph_vec3_forward = { 0.0, 0.0, 1.0 };
 
 void srph_vec3_fill(vec3 * v, double x);
 
+// unary vector operations
+void srph_vec3_abs(vec3 * abs_x, const vec3 * x);
 void srph_vec3_scale(vec3 * sx, const vec3 * x, double s);
-void srph_vec3_multiply(vec3 * x, const vec3 * a, const vec3 * b);
+
+// binary vector operations
 void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b);
 void srph_vec3_subtract(vec3 * x, const vec3 * a, const vec3 * b);
+void srph_vec3_multiply(vec3 * x, const vec3 * a, const vec3 * b);
+void srph_vec3_divide(vec3 * x, const vec3 * a, const vec3 * b);
 
-void srph_vec3_abs(vec3 * abs_x, const vec3 * x);
 void srph_vec3_max_scalar(vec3 * max_x, const vec3 * x, double m);
 
 void srph_vec3_normalise(vec3 * nx, const vec3 * x);

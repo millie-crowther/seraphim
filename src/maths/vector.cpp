@@ -62,6 +62,10 @@ void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b){
     VECTOR_BIN_OP(x->raw, a->raw, b->raw, +, 3);
 }
 
+void srph_vec3_divide(vec3 * x, const vec3 * a, const vec3 * b){
+    VECTOR_BIN_OP(x->raw, a->raw, b->raw, /, 3);
+}
+
 void srph_vec3_max_scalar(vec3 * max_x, const vec3 * x, double m){
     for (int i = 0; i < 3; i++){
         max_x->raw[i] = fmax(x->raw[i], m);
