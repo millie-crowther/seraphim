@@ -58,12 +58,12 @@ void srph_opt_nelder_mead(
         for (int i = 0; i < N; i++){
             srph_vec3_add(&x0, &x0, &xs[i].x);
         }
-        srph_vec3_scale(&x0, 1.0 / N);
+        srph_vec3_scale(&x0, &x0, 1.0 / N);
 
         // reflection
         vec3 xr;
         srph_vec3_subtract(&xr, &x0, &xs[N].x);
-        srph_vec3_scale(&xr, ALPHA);
+        srph_vec3_scale(&xr, &xr, ALPHA);
         srph_vec3_add(&xr, &xr, &x0);
         double fxr = f(data, &xr);
         if (xs[0].fx <= fxr && fxr < xs[N - 1].fx){
@@ -76,7 +76,7 @@ void srph_opt_nelder_mead(
         if (fxr < xs[0].fx){
             vec3 xe;
             srph_vec3_subtract(&xe, &xr, &x0);
-            srph_vec3_scale(&xe, GAMMA);
+            srph_vec3_scale(&xe, &xe, GAMMA);
             srph_vec3_add(&xe, &xe, &x0);
     
             double fxe = f(data, &xe);
@@ -93,7 +93,7 @@ void srph_opt_nelder_mead(
         // contraction
         vec3 xc;
         srph_vec3_subtract(&xc, &xs[N].x, &x0);
-        srph_vec3_scale(&xc, RHO);
+        srph_vec3_scale(&xc, &xc, RHO);
         srph_vec3_add(&xc, &xc, &x0);
         double fxc = f(data, &xc);
         if (fxc < xs[N].fx){
@@ -105,7 +105,7 @@ void srph_opt_nelder_mead(
         // shrink
         for (int j = 1; j < N + 1; j++){
             srph_vec3_subtract(&xs[j].x, &xs[j].x, &xs[0].x);
-            srph_vec3_scale(&xs[j].x, SIGMA);
+            srph_vec3_scale(&xs[j].x, &xs[j].x, SIGMA);
             srph_vec3_add(&xs[j].x, &xs[j].x, &xs[0].x);
             xs[j].fx = f(data, &xs[j].x);
         }            

@@ -49,7 +49,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
         n.raw[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
     }
     
-    srph_vec3_scale(&n, 0.5 / srph::constant::epsilon);
+    srph_vec3_scale(&n, &n, 0.5 / srph::constant::epsilon);
 
     return n;
 }
@@ -59,9 +59,9 @@ bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
-    vec3 x = *d;
-    srph_vec3_normalise(&x);
-    srph_vec3_scale(&x, srph::constant::rho);
+    vec3 x;
+    srph_vec3_normalise(&x, d);
+    srph_vec3_scale(&x, &x, srph::constant::rho);
 
     while (true){
         double p = srph_sdf_phi(sdf, &x);
@@ -71,7 +71,7 @@ double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
             return srph_vec3_length(&x) - p;
         }
 
-        srph_vec3_scale(&x, 2.0);
+        srph_vec3_scale(&x, &x, 2.0);
     }
 }
 
@@ -123,7 +123,7 @@ vec3 srph_sdf_com(srph_sdf * sdf){
             }
         }
 
-        srph_vec3_scale(&com, 1.0 / hits);
+        srph_vec3_scale(&com, &com, 1.0 / hits);
         sdf->_com = com;
         sdf->_is_com_valid = true;
     }
@@ -149,7 +149,7 @@ srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x){
         vec3 n2 = srph_sdf_normal(sdf, &x2);
         vec3 n;
         srph_vec3_subtract(&n, &n1, &n2);
-        srph_vec3_scale(&n, 0.5 / srph::constant::epsilon);
+        srph_vec3_scale(&n, &n, 0.5 / srph::constant::epsilon);
 
         for (int row = 0; row < 3; row++){
             j.set(row, col, n.raw[row]);
@@ -183,8 +183,8 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
 }
 
 vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * _d){
-    vec3 d = *_d;
-    srph_vec3_normalise(&d);
+    vec3 d;
+    srph_vec3_normalise(&d, _d);
 
     vec3 x;
     srph_vec3_fill(&x, 0.0);
@@ -193,13 +193,13 @@ vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * _d){
     vec3 n, d2;
     for (int i = 0; i < 1000; i++){
         n = srph_sdf_normal(sdf, &x);
-        srph_vec3_scale(&n, 0.9);
+        srph_vec3_scale(&n, &n, 0.9);
         srph_vec3_subtract(&d2, &d, &n);
-        srph_vec3_normalise(&d2);
+        srph_vec3_normalise(&d2, &d2);
         
 
         phi = srph_sdf_phi(sdf, &x);
-        srph_vec3_scale(&d2, fabs(phi));
+        srph_vec3_scale(&d2, &d2, fabs(phi));
 
         srph_vec3_add(&x, &x, &d2);
 
