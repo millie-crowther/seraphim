@@ -5,6 +5,7 @@
 #include "core/random.h"
 
 #define VOLUME_SAMPLES 10000
+#define SUPPORT_ALPHA 0.5
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     srph_sdf_full_create(sdf, phi, data, NULL);
@@ -24,6 +25,7 @@ void srph_sdf_full_create(
     sdf->_is_bound_valid = false;
     sdf->_is_com_valid = false;
     sdf->_is_inertia_tensor_valid = false;
+    sdf->_is_convex = true; // TODO
 
     if (inertia_tensor != NULL){
         sdf->_inertia_tensor = *inertia_tensor;
@@ -180,34 +182,5 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     }
 
     return &sdf->_bound;
-}
-
-vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * _d){
-    vec3 d;
-    srph_vec3_normalise(&d, _d);
-
-    vec3 x;
-    srph_vec3_fill(&x, 0.0);
-
-    double phi;
-    vec3 n, d2;
-    for (int i = 0; i < 1000; i++){
-        n = srph_sdf_normal(sdf, &x);
-        srph_vec3_scale(&n, &n, 0.9);
-        srph_vec3_subtract(&d2, &d, &n);
-        srph_vec3_normalise(&d2, &d2);
-        
-
-        phi = srph_sdf_phi(sdf, &x);
-        srph_vec3_scale(&d2, &d2, fabs(phi));
-
-        srph_vec3_add(&x, &x, &d2);
-
-        if (phi >= 0.0){
-            return x;
-        }
-    }
-
-    return x;
 }
 

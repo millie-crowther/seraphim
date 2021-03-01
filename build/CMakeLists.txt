@@ -29,6 +29,7 @@ set(SOURCES
     ../src/core/random.cpp
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
+    ../src/core/array.cpp
 
     ../src/physics/collision.cpp    
     ../src/physics/physics.cpp

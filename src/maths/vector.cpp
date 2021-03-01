@@ -58,6 +58,10 @@ void srph_vec3_print(const vec3 * x){
     printf("vec3(%f, %f, %f)", x->x, x->y, x->z);
 }
 
+void srph_vec3_negate(vec3 * nx, const vec3 * x){
+    VECTOR_UNI_OP(nx->raw, x->raw, -, 3);
+}
+
 void srph_vec3_add(vec3 * x, const vec3 * a, const vec3 * b){
     VECTOR_BIN_OP(x->raw, a->raw, b->raw, +, 3);
 }
@@ -71,3 +75,13 @@ void srph_vec3_max_scalar(vec3 * max_x, const vec3 * x, double m){
         max_x->raw[i] = fmax(x->raw[i], m);
     }
 }
+
+void srph_vec3_project(vec3 * pa, const vec3 * a, const vec3 * b){
+    double s = srph_vec3_dot(a, b);
+    double l = srph_vec3_length(b);
+    vec3 a1;
+
+    srph_vec3_scale(&a1, b, l == 0 ? s : s / l);
+    srph_vec3_subtract(pa, a, &a1);
+}
+    

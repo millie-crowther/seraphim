@@ -21,6 +21,8 @@ typedef struct srph_sdf {
 
     void * _data;
     srph_sdf_func _phi;
+
+    bool _is_convex;
 } srph_sdf;
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);
@@ -38,6 +40,5 @@ bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x);
 srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
 vec3 srph_sdf_com(srph_sdf * sdf);
 srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf);
-vec3 srph_sdf_support(srph_sdf * sdf, const vec3 * d);
 
 #endif
