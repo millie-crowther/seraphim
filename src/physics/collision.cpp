@@ -5,6 +5,7 @@
 #include "maths/matrix.h"
 #include "maths/optimise.h"
 #include "maths/vector.h"
+#include "physics/sphere.h"
 
 #define MAX_COLLISION_POINTS 20
 
@@ -73,15 +74,14 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
     intersecting = false;
     t = constant::sigma;
 
-    vec3 c_a, c_b;
-    double r_a, r_b;
-    srph_matter_sphere_bound(a, constant::sigma, &c_a, &r_a);
-    srph_matter_sphere_bound(b, constant::sigma, &c_b, &r_b);
+    srph_sphere sa, sb;
+    srph_matter_sphere_bound(a, constant::sigma, &sa);
+    srph_matter_sphere_bound(b, constant::sigma, &sb);
 
-    vec3 d3;
-    srph_vec3_subtract(&d3, &c_a, &c_b);
-    double d = srph_vec3_length(&d3) - r_a - r_b;
-    if (d <= 0){
+//    vec3 d3;
+ //   srph_vec3_subtract(&d3, &c_a, &c_b);
+ //   double d = srph_vec3_length(&d3) - r_a - r_b;
+    if (srph_sphere_intersect(&sa, &sb)){
         srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
         srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
 
@@ -153,6 +153,8 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
+      
+
     srph_transform_to_local_space(&a->transform, &xa, &x);
     srph_transform_to_local_space(&b->transform, &xb, &x);
 

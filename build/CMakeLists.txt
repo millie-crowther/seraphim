@@ -33,6 +33,7 @@ set(SOURCES
 
     ../src/physics/collision.cpp    
     ../src/physics/physics.cpp
+    ../src/physics/sphere.cpp
     ../src/physics/transform.cpp
 
     ../src/render/call_and_response.cpp

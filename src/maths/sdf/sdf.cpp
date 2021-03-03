@@ -6,6 +6,7 @@
 
 #include "core/random.h"
 #include "maths/sdf/primitive.h"
+#include "physics/sphere.h"
 
 #define VOLUME_SAMPLES 10000
 #define SUPPORT_ALPHA 0.5
