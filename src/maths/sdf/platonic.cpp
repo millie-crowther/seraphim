@@ -1,5 +1,7 @@
 #include "maths/sdf/platonic.h"
 
+#include <stdlib.h>
+
 static double cuboid_phi(void * data, const vec3 * x){
     vec3 * r = (vec3 *) data;
     vec3 x1 = *x;
@@ -45,12 +47,22 @@ static double octahedron_phi(void * data, const vec3 * x){
     return srph_vec3_length(&r);  
 }
 
-void srph_sdf_cuboid_create(srph_sdf_cuboid * cuboid, const vec3 * r){
-    if (cuboid == NULL){
-        return;
+srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
+    if (r == NULL){
+        return NULL;
     }
 
-    cuboid->_r = *r;
+    srph_sdf * sdf = (srph_sdf *) malloc(sizeof(srph_sdf));
+    if (sdf == NULL){
+        return NULL;
+    }
+    
+    vec3 * r_ptr = (vec3 *) malloc(sizeof(vec3));
+    if (r_ptr == NULL){
+        free(sdf);
+        return NULL;
+    }
+    *r_ptr = *r;
 
     vec3 r2;
     srph_vec3_multiply(&r2, r, r);
@@ -61,16 +73,24 @@ void srph_sdf_cuboid_create(srph_sdf_cuboid * cuboid, const vec3 * r){
     );
     i /= 12.0;
     
-    srph_sdf_full_create(&cuboid->sdf, cuboid_phi, (void *) &cuboid->_r, &i); 
+    srph_sdf_full_create(sdf, cuboid_phi, r_ptr, &i); 
+    return sdf;
 }
 
-void srph_sdf_octahedron_create(srph_sdf_octahedron * octa, double e){
-    if (octa == NULL){
-        return;
+srph_sdf * srph_sdf_octahedron_create(double e){
+    srph_sdf * sdf = (srph_sdf *) malloc(sizeof(srph_sdf));
+    if (sdf == NULL){
+        return NULL;
     }
-
-    octa->_e = e;
+    
+    double * e2 = (double *) malloc(sizeof(double));
+    if (e2 == NULL){
+        free(sdf);
+        return NULL;
+    }
+    *e2 = e;
 
     srph::mat3_t i = srph::mat3_t::diagonal(0.1 * pow(e, 2));
-    srph_sdf_full_create(&octa->sdf, octahedron_phi, (void *) &octa->_e, &i);
+    srph_sdf_full_create(sdf, octahedron_phi, e2, &i);
+    return sdf;
 }

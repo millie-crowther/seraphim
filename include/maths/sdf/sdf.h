@@ -31,6 +31,8 @@ void srph_sdf_full_create(
     srph::mat3_t * inertia_tensor
 );
 
+void srph_sdf_destroy(srph_sdf * sdf);
+
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x);
 vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x);
 srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x);

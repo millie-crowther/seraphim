@@ -19,12 +19,11 @@ int main(){
 
     srph_form form;
 
-    srph_sdf_cuboid floor_sdf;
     vec3 floor_size;
     srph_vec3_fill(&floor_size, 100.0);
-    srph_sdf_cuboid_create(&floor_sdf, &floor_size);
+    srph_sdf * floor_sdf = srph_sdf_cuboid_create(&floor_size);
     material.colour = { 0.1, 0.8, 0.8 };
-    srph_matter floor_matter(&floor_sdf.sdf, &material, vec3_t(0.0, -100.0, 0.0), true);
+    srph_matter floor_matter(floor_sdf, &material, vec3_t(0.0, -100.0, 0.0), true);
     srph_create_substance(&engine, &form, &floor_matter);
 
 /*
@@ -35,12 +34,11 @@ int main(){
     srph_create_substance(&engine, &form, &sphere_matter);
 */
 
-    srph_sdf_cuboid cube_sdf;
     vec3 cube_size;
     srph_vec3_fill(&cube_size, 0.5);
-    srph_sdf_cuboid_create(&cube_sdf, &cube_size);
+    srph_sdf * cube_sdf = srph_sdf_cuboid_create(&cube_size);
     material.colour = { 0.8, 0.8, 0.1 };
-    srph_matter cube1_matter(&cube_sdf.sdf, &material, vec3_t(0.0, 3.0, 0.0), true);
+    srph_matter cube1_matter(cube_sdf, &material, vec3_t(0.0, 3.0, 0.0), true);
     srph_create_substance(&engine, &form, &cube1_matter);
 
 /*
@@ -56,6 +54,9 @@ int main(){
 */
 
     engine.run();
+
+    srph_sdf_destroy(floor_sdf);
+    srph_sdf_destroy(cube_sdf);
 
     return 0;
 }

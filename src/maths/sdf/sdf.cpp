@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include <stdlib.h>
+
 #include "core/random.h"
 
 #define VOLUME_SAMPLES 10000
@@ -184,3 +186,9 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     return &sdf->_bound;
 }
 
+void srph_sdf_destroy(srph_sdf * sdf){
+    if (sdf != NULL){
+        free(sdf->_data);
+        free(sdf);
+    }
+}
