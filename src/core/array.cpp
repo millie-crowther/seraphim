@@ -12,12 +12,9 @@ void srph_array_create(srph_array * a, uint32_t element_size){
 }
 
 void srph_array_destroy(srph_array * a){
-    if (a == NULL || a->_data == NULL){
-        return;
+    if (a != NULL && a->_data != NULL){
+        free(a->_data);
     }
-
-    free(a->_data);
-    a->_data = NULL;
 }
 
 void srph_array_push_back(srph_array * a, void * data){

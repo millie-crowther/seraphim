@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #include "core/random.h"
+#include "maths/sdf/primitive.h"
 
 #define VOLUME_SAMPLES 10000
 #define SUPPORT_ALPHA 0.5
@@ -35,6 +36,8 @@ void srph_sdf_full_create(
     }
     
     sdf->_volume = -1.0;
+
+    srph_array_create(&sdf->sphere_approx, sizeof(srph_sphere));
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
@@ -188,7 +191,12 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
 
 void srph_sdf_destroy(srph_sdf * sdf){
     if (sdf != NULL){
-        free(sdf->_data);
+        if (sdf->_data != NULL){
+            free(sdf->_data);
+        }
+
+        srph_array_destroy(&sdf->sphere_approx);
+        
         free(sdf);
     }
 }

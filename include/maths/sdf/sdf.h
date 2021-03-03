@@ -1,6 +1,8 @@
 #ifndef SERAPHIM_SDF_H
 #define SERAPHIM_SDF_H
 
+#include "core/array.h"
+
 #include "maths/vector.h"
 #include "maths/bound.h"
 #include "maths/matrix.h"
@@ -23,6 +25,8 @@ typedef struct srph_sdf {
     srph_sdf_func _phi;
 
     bool _is_convex;
+    
+    srph_array sphere_approx;
 } srph_sdf;
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);

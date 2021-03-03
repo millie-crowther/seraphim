@@ -10,7 +10,7 @@ typedef struct srph_array {
     void * _data;
 } srph_array;
 
-void srph_array_create(srph_array * a, uint32_t element_size, uint32_t size);
+void srph_array_create(srph_array * a, uint32_t element_size);
 void srph_array_destroy(srph_array * a);
 
 void srph_array_push_back(srph_array * a, void * data);

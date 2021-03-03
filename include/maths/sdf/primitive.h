@@ -3,6 +3,11 @@
 
 #include "sdf.h"
 
+typedef struct srph_sphere {
+    vec3 c;
+    double r;
+} srph_sphere;
+
 srph_sdf * srph_sdf_sphere_create(double r);
 srph_sdf * srph_sdf_torus_create(double r1, double r2);
 
