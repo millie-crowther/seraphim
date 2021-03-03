@@ -13,8 +13,7 @@
 #include "ui/window.h"
 
 namespace srph {
-    class seraphim_t {
-    private:
+    struct seraphim_t {
         // debug fields
     #if SERAPHIM_DEBUG
         VkDebugReportCallbackEXT callback;
@@ -46,7 +45,6 @@ namespace srph {
         std::thread fps_monitor_thread;
         std::condition_variable fps_cv;
 
-    public:
         seraphim_t();
         ~seraphim_t();
 
@@ -55,9 +53,10 @@ namespace srph {
         renderer_t * get_renderer() const;
         window_t *   get_window()   const;
 
-        void create(std::shared_ptr<substance_t> substance);
         void annihilate(std::shared_ptr<substance_t> substance);
     };
 }
+
+srph::substance_t * srph_create_substance(srph::seraphim_t * srph, srph_form * form, srph_matter * matter);
 
 #endif
