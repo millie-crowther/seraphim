@@ -17,11 +17,15 @@ typedef struct srph_matter {
     srph::vec3_t previous_position;
     bool is_uniform;
 
-    std::unique_ptr<double> average_density;
-    std::unique_ptr<srph::vec3_t> centre_of_mass;
-    
-    std::unique_ptr<srph::mat3_t> i;
-    std::unique_ptr<srph::mat3_t> inv_tf_i;
+    bool _is_mass_calculated;
+    double average_density;
+    srph::vec3_t centre_of_mass;    
+
+    bool _is_inertia_tensor_valid;
+    srph::mat3_t i;
+
+    bool _is_inv_inertia_tensor_valid;
+    srph::mat3_t inv_tf_i;
 
     srph::vec3_t v;
     srph::vec3_t a;
@@ -29,6 +33,7 @@ typedef struct srph_matter {
     srph::vec3_t omega;
     srph::vec3_t alpha;
 
+    srph_matter(){}
     srph_matter(srph_sdf * sdf, const srph_material * material, const srph::vec3_t & initial_position, bool is_uniform);
 
     srph_material get_material(const vec3 * x);
@@ -44,7 +49,6 @@ typedef struct srph_matter {
     srph::quat_t get_rotation() const;
 
     bool is_inert();
-
     
     srph::vec3_t to_local_space(const srph::vec3_t & x) const;
 

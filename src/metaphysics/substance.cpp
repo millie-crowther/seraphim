@@ -8,16 +8,12 @@ substance_t::substance_t(uint32_t id) {
     this->id = id;
 }
 
-substance_t::substance_t(srph_form * form, std::shared_ptr<srph_matter> matter){
+substance_t::substance_t(srph_form * form, srph_matter * matter){
     static uint32_t id = 0;
 
-    this->form = form;
-    this->matter = matter;
+    this->form = *form;
+    this->matter = *matter;
     this->id = id++;
-}
-
-std::shared_ptr<srph_matter> substance_t::get_matter() const {
-    return matter;
 }
 
 bool substance_t::comparator_t::operator()(std::shared_ptr<substance_t> a, std::shared_ptr<substance_t> b) const {
@@ -30,8 +26,8 @@ uint32_t substance_t::get_id() const {
 
 substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
     vec3 r;
-    srph_bound3_radius(srph_sdf_bound(matter->sdf), r.raw);
-    vec3_t eye = matter->to_local_space(eye_position);
+    srph_bound3_radius(srph_sdf_bound(matter.sdf), r.raw);
+    vec3_t eye = matter.to_local_space(eye_position);
 
     vec3 a = { eye[0], eye[1], eye[2] };
     srph_vec3_abs(&a, &a);
@@ -51,7 +47,7 @@ substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
         near, far,
         f32vec3_t(r.x, r.y, r.z),
         id,
-        *matter->get_matrix()
+        *matter.get_matrix()
     );
 }
 

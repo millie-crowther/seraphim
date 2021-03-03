@@ -53,14 +53,14 @@ void physics_t::run(){
             // collide awake substances with each other
             for (uint32_t i = 0; i < matters.size(); i++){
                 for (uint32_t j = i + 1; j < matters.size(); j++){
-                    collisions.emplace_back(matters[i].get(), matters[j].get());
+                    collisions.emplace_back(matters[i], matters[j]);
                 }
             }
             
             // collide awake substances with asleep substances
             for (auto awake_matter : matters){
                 for (auto asleep_matter : asleep_matters){
-                    collisions.emplace_back(asleep_matter.get(), awake_matter.get());
+                    collisions.emplace_back(asleep_matter, awake_matter);
                 }
             }
         }
@@ -103,12 +103,12 @@ void physics_t::run(){
     }
 }
 
-void physics_t::register_matter(std::shared_ptr<srph_matter> matter){
+void physics_t::register_matter(srph_matter * matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     matters.push_back(matter);
 }
     
-void physics_t::unregister_matter(std::shared_ptr<srph_matter> matter){
+void physics_t::unregister_matter(srph_matter * matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     
     auto it = std::find(matters.begin(), matters.end(), matter);

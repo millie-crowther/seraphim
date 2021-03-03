@@ -12,26 +12,24 @@
 #include <thread>
 
 namespace srph {
-    class physics_t {
-    public:
+    struct physics_t {
         physics_t();
         ~physics_t();
 
         void start();
 
-        void register_matter(std::shared_ptr<srph_matter> matter);
-        void unregister_matter(std::shared_ptr<srph_matter> matter);
+        void register_matter(srph_matter * matter);
+        void unregister_matter(srph_matter * matter);
 
         int get_frame_count();
 
-    private:
         bool quit;
         std::thread thread;
 
         std::mutex matters_mutex;
 
-        std::vector<std::shared_ptr<srph_matter>> matters;
-        std::vector<std::shared_ptr<srph_matter>> asleep_matters;
+        std::vector<srph_matter *> matters;
+        std::vector<srph_matter *> asleep_matters;
 
         int frames;
 

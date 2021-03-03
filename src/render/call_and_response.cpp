@@ -62,7 +62,7 @@ response_t::response_t(){}
 
 response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance_ptr){
     if (auto substance = substance_ptr.lock()){
-        srph_sdf * sdf = substance->get_matter()->sdf;
+        srph_sdf * sdf = substance->matter.sdf;
 
         srph_bound3 * bound = srph_sdf_bound(sdf);
         vec3 m;
@@ -84,7 +84,7 @@ response_t::response_t(const call_t & call, std::weak_ptr<substance_t> substance
 
             normals[o] = squash(vec4_t(n, 0.0));
 
-            vec3 c = substance->get_matter()->get_material(&d1).colour;
+            vec3 c = substance->matter.get_material(&d1).colour;
             colours[o] = squash(vec4_t(c.x, c.y, c.z, 0.0));
         }
 

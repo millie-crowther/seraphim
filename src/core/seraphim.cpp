@@ -306,12 +306,12 @@ srph::window_t * srph::seraphim_t::get_window() const {
 void srph::seraphim_t::create(std::shared_ptr<substance_t> substance){
     substances.insert(substance);
     renderer->register_substance(substance);
-    physics->register_matter(substance->get_matter());
+    physics->register_matter(&substance->matter);
 }
 
 void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
     renderer->unregister_substance(substance);
-    physics->unregister_matter(substance->get_matter());
+    physics->unregister_matter(&substance->matter);
 
     auto it = substances.find(substance);
     if (it != substances.end()){

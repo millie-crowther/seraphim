@@ -9,6 +9,10 @@ srph_matter::srph_matter(srph_sdf * sdf, const srph_material * material, const v
     
     transform.set_position(initial_position);
     previous_position = initial_position;
+
+    _is_mass_calculated = false;
+    _is_inertia_tensor_valid = false;
+    _is_inv_inertia_tensor_valid = false;
 }
 
 quat_t srph_matter::get_rotation() const {
@@ -103,6 +107,7 @@ void srph_matter::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
 }
 
 void srph_matter::calculate_centre_of_mass(){
+    _is_mass_calculated = true;
     throw std::runtime_error("Error: autocalc of centre of mass not yet implemented.");
 }
 
@@ -112,11 +117,11 @@ vec3_t srph_matter::get_centre_of_mass(){
         return vec3_t(c.x, c.y, c.z);
     }
 
-    if (!centre_of_mass){
+    if (!_is_mass_calculated){
         calculate_centre_of_mass();
     }
 
-    return *centre_of_mass;
+    return centre_of_mass;
 }
 
 double srph_matter::get_average_density(){
@@ -124,11 +129,11 @@ double srph_matter::get_average_density(){
         return get_material(&srph_vec3_zero).density;
     }
 
-    if (!average_density){
+    if (!_is_mass_calculated){
         calculate_centre_of_mass();
     }
 
-    return *average_density;
+    return average_density;
 }
 
 double srph_matter::get_mass(){
@@ -141,7 +146,7 @@ void srph_matter::translate(const vec3_t & x){
 
 void srph_matter::rotate(const quat_t & q){
     transform.rotate(q);
-    inv_tf_i.reset();
+    _is_inv_inertia_tensor_valid = false;
 }
 
 void srph_matter::reset_acceleration() {
@@ -170,33 +175,33 @@ void srph_matter::physics_tick(double t){
 }
 
 mat3_t * srph_matter::get_inv_tf_i(){
-    if (!inv_tf_i){
-        inv_tf_i = std::make_unique<mat3_t>(*get_i());
+    if (!_is_inv_inertia_tensor_valid){
+        inv_tf_i = *get_i();        
 
         // rotate
         auto r = transform.get_rotation().to_matrix();
-        *inv_tf_i = r * *inv_tf_i * mat::transpose(r);
+        inv_tf_i = r * i * mat::transpose(r);
     
     
         // invert
-        *inv_tf_i = mat::inverse(*inv_tf_i);
+        inv_tf_i = mat::inverse(inv_tf_i);
+        _is_inv_inertia_tensor_valid = true;
     }
 
-    return inv_tf_i.get();
+    return &inv_tf_i;
 }
 
 mat3_t * srph_matter::get_i(){
-    if (!i){
+    if (!_is_inertia_tensor_valid){
         if (is_uniform){
-            i = std::make_unique<mat3_t>(
-                srph_sdf_inertia_tensor(sdf) * get_mass()
-            );
+            i = srph_sdf_inertia_tensor(sdf) * get_mass();
         } else {
             throw std::runtime_error("Error: non uniform substances not yet supported.");
         }
+        _is_inertia_tensor_valid = true;
     }
     
-    return i.get();
+    return &i;
 }
 
 vec3_t srph_matter::get_velocity(const vec3_t & x){
