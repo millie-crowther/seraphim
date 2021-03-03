@@ -17,6 +17,14 @@ void srph_array_destroy(srph_array * a){
     }
 }
 
+void * srph_array_first(srph_array * a){
+    return a->size == 0 ? NULL : a->_data;
+}
+
+void * srph_array_last(srph_array * a){
+    return a->size == 0 ? NULL : srph_array_at(a, a->size - 1);
+}
+
 void srph_array_push_back(srph_array * a, void * data){
     if (a->size == a->capacity){
         a->capacity *= 2;

@@ -9,6 +9,25 @@
 
 #define MAX_COLLISION_POINTS 20
 
+static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
+    srph_sphere * s2;
+    for (uint32_t i = 0; i < a->size;){
+        s2 = (srph_sphere *) srph_array_at(a, i);
+        
+        // do not insert if contained by another sphere 
+        if (srph_sphere_contains(s2, s1)){
+            return;
+        }        
+
+        // delete all spheres contained by this sphere   
+        if (srph_sphere_contains(s1, s2)){
+            srph_array_pop_back(a, s2);            
+        } else {
+            i++;
+        }
+    }
+}
+
 static double intersection_func(void * data, const vec3 * x){
     srph::collision_t * collision = (srph::collision_t *) data;
     srph_matter * a = collision->a;
@@ -153,11 +172,19 @@ void srph::collision_t::colliding_correct(){
 }
 
 void srph::collision_t::correct(){
-      
-
     srph_transform_to_local_space(&a->transform, &xa, &x);
     srph_transform_to_local_space(&b->transform, &xb, &x);
 
+    // incrementally produce sphere set approximation
+    double phi_a = srph_sdf_phi(a->sdf, &xa);
+    srph_sphere sa = { .c = xa, .r = fabs(phi_a) };
+    sphere_set_approximate(&a->sdf->sphere_approx, &sa);
+    
+
+    double phi_b = srph_sdf_phi(b->sdf, &xb);
+    srph_sphere sb = { .c = xb, .r = fabs(phi_b) };
+    sphere_set_approximate(&b->sdf->sphere_approx, &sb);
+ 
     // choose best normal based on smallest second derivative
     auto ja = srph_sdf_jacobian(a->sdf, &xa);
     auto jb = srph_sdf_jacobian(b->sdf, &xb);

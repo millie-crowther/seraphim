@@ -84,4 +84,10 @@ void srph_vec3_project(vec3 * pa, const vec3 * a, const vec3 * b){
     srph_vec3_scale(&a1, b, l == 0 ? s : s / l);
     srph_vec3_subtract(pa, a, &a1);
 }
+
+double srph_vec3_distance(const vec3 * a, const vec3 * b){
+    vec3 d;
+    srph_vec3_subtract(&d, a, b);
+    return srph_vec3_length(&d);
+}
     

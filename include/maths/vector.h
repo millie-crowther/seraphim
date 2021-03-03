@@ -42,10 +42,13 @@ void srph_vec3_divide(vec3 * x, const vec3 * a, const vec3 * b);
 
 void srph_vec3_project(vec3 * pa, const vec3 * a, const vec3 * b);
 void srph_vec3_max_scalar(vec3 * max_x, const vec3 * x, double m);
+
+double srph_vec3_distance(const vec3 * a, const vec3 * b);
 void srph_vec3_normalise(vec3 * nx, const vec3 * x);
 double srph_vec3_dot(const vec3 * a, const vec3 * b);
 double srph_vec2_length(const vec2 * x);
 double srph_vec3_length(const vec3 * x);
+
 void srph_vec3_print(const vec3 * x);
 
 #endif

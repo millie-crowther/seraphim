@@ -8,7 +8,7 @@ typedef struct srph_sphere {
     double r;
 } srph_sphere;
 
-bool srph_sphere_contains(const srph_sphere * s, const vec3 * x);
+bool srph_sphere_contains(const srph_sphere * a, const srph_sphere * b);
 bool srph_sphere_intersect(const srph_sphere * a, const srph_sphere * b);
 
 #endif
