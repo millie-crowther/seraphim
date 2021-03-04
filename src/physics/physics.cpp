@@ -38,7 +38,7 @@ void physics_t::run(){
 
         previous = now;
 
-        std::vector<collision_t> collisions;
+        std::vector<srph_collision> collisions;
     
         {
             std::lock_guard<std::mutex> lock(matters_mutex);
@@ -67,10 +67,10 @@ void physics_t::run(){
         
         // correct all present collisions and anticipate the next one
         for (auto & c : collisions){
-            if (c.is_intersecting()){
+            if (c.is_intersecting){
                 c.correct();
             } 
-            delta = std::min(delta, c.get_estimated_time());
+            delta = fmin(delta, c.t);
         }
         
         delta = std::max(delta, constant::iota);

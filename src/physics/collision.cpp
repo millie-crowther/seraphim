@@ -10,9 +10,8 @@
 #define MAX_COLLISION_POINTS 20
 
 static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
-    srph_sphere * s2;
     for (uint32_t i = 0; i < a->size;){
-        s2 = (srph_sphere *) srph_array_at(a, i);
+        srph_sphere * s2 = (srph_sphere *) srph_array_at(a, i);
         
         // do not insert if contained by another sphere 
         if (srph_sphere_contains(s2, s1)){
@@ -29,7 +28,7 @@ static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
 }
 
 static double intersection_func(void * data, const vec3 * x){
-    srph::collision_t * collision = (srph::collision_t *) data;
+    srph_collision * collision = (srph_collision *) data;
     srph_matter * a = collision->a;
     srph_matter * b = collision->b;
     
@@ -44,7 +43,7 @@ static double intersection_func(void * data, const vec3 * x){
 }
 
 static double time_to_collision_func(void * data, const vec3 * x){
-    srph::collision_t * collision = (srph::collision_t *) data;
+    srph_collision * collision = (srph_collision *) data;
     srph_matter * a = collision->a;
     srph_matter * b = collision->b;
     
@@ -87,19 +86,16 @@ static double time_to_collision_func(void * data, const vec3 * x){
 
 using namespace srph;
 
-srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
+srph_collision::srph_collision(srph_matter * a, srph_matter * b){
     this->a = a;
     this->b = b;
-    intersecting = false;
+    is_intersecting = false;
     t = constant::sigma;
 
     srph_sphere sa, sb;
     srph_matter_sphere_bound(a, constant::sigma, &sa);
     srph_matter_sphere_bound(b, constant::sigma, &sb);
 
-//    vec3 d3;
- //   srph_vec3_subtract(&d3, &c_a, &c_b);
- //   double d = srph_vec3_length(&d3) - r_a - r_b;
     if (srph_sphere_intersect(&sa, &sb)){
         srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
         srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
@@ -121,19 +117,11 @@ srph::collision_t::collision_t(srph_matter * a, srph_matter * b){
         double iota = constant::iota;
         srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
         t = s.fx;
-        intersecting = t <= constant::iota;
+        is_intersecting = t <= constant::iota;
     }
 }
 
-bool srph::collision_t::is_intersecting() const {
-    return intersecting;
-}
-
-double srph::collision_t::get_estimated_time() const {
-    return t;
-}
-
-void srph::collision_t::colliding_correct(){
+void srph_collision::colliding_correct(){
     // calculate collision impulse magnitude
     auto mata = a->get_material(&xa);
     auto matb = b->get_material(&xb);
@@ -171,7 +159,7 @@ void srph::collision_t::colliding_correct(){
     }
 }
 
-void srph::collision_t::correct(){
+void srph_collision::correct(){
     srph_transform_to_local_space(&a->transform, &xa, &x);
     srph_transform_to_local_space(&b->transform, &xb, &x);
 
@@ -180,7 +168,6 @@ void srph::collision_t::correct(){
     srph_sphere sa = { .c = xa, .r = fabs(phi_a) };
     sphere_set_approximate(&a->sdf->sphere_approx, &sa);
     
-
     double phi_b = srph_sdf_phi(b->sdf, &xb);
     srph_sphere sb = { .c = xb, .r = fabs(phi_b) };
     sphere_set_approximate(&b->sdf->sphere_approx, &sb);
@@ -210,6 +197,6 @@ void srph::collision_t::correct(){
     colliding_correct();
 }
 
-bool srph::collision_t::comparator_t::operator()(const collision_t & a, const collision_t & b){
+bool srph_collision::comparator_t::operator()(const srph_collision & a, const srph_collision & b){
     return a.t < b.t;
 }

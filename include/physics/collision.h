@@ -5,36 +5,31 @@
 #include "maths/vector.h"
 #include "metaphysics/matter.h"
 
-namespace srph {
-    struct collision_t {
-        static constexpr double solution_density = 1.0 / 5.0;
+typedef struct srph_collision {
+    static constexpr double solution_density = 1.0 / 5.0;
 
-        bool intersecting;
-        double t;
+    bool is_intersecting;
+    double t;
 
-        vec3 x;
-        vec3 xa;
-        vec3 xb;
+    vec3 x;
+    vec3 xa;
+    vec3 xb;
 
-        vec3_t n;
-        vec3_t vr;
+    srph::vec3_t n;
+    srph::vec3_t vr;
 
-        double depth;
-        srph_matter * a;
-        srph_matter * b;
+    double depth;
+    srph_matter * a;
+    srph_matter * b;
 
-        collision_t(srph_matter * a, srph_matter * b);
-       
-        bool is_intersecting() const;
-        double get_estimated_time() const;
+    srph_collision(srph_matter * a, srph_matter * b);
 
-        void correct();
-        void colliding_correct();
+    void correct();
+    void colliding_correct();
 
-        struct comparator_t {
-            bool operator()(const collision_t & a, const collision_t & b);
-        };
+    struct comparator_t {
+        bool operator()(const srph_collision & a, const srph_collision & b);
     };
-}
+} srph_collision;
 
 #endif
