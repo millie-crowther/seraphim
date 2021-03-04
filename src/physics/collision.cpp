@@ -25,6 +25,8 @@ static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
             i++;
         }
     }
+
+    srph_array_push_back(a, s1);
 }
 
 static double intersection_func(void * data, const vec3 * x){
@@ -84,6 +86,20 @@ static double time_to_collision_func(void * data, const vec3 * x){
     return phi / vrn;        
 }
 
+static void find_contact_points(srph_array * xs, srph_matter * a, srph_matter * b){
+    for (uint32_t i = 0; i < a->sdf->sphere_approx.size; i++){
+        srph_sphere * s = (srph_sphere *) srph_array_at(&a->sdf->sphere_approx, i);
+        vec3 c_global, c_local;
+        srph_transform_to_global_space(&a->transform, &c_global, &s->c);
+        srph_transform_to_local_space(&b->transform, &c_local, &c_global);
+
+        double phi = srph_sdf_phi(b->sdf, &c_local);
+        if (phi < s->r){
+            srph_array_push_back(xs, &c_global);
+        }
+    }
+}
+
 using namespace srph;
 
 srph_collision::srph_collision(srph_matter * a, srph_matter * b){
@@ -118,6 +134,22 @@ srph_collision::srph_collision(srph_matter * a, srph_matter * b){
         srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
         t = s.fx;
         is_intersecting = t <= constant::iota;
+    }
+
+    if (is_intersecting){
+        srph_array xs;
+        srph_array_create(&xs, sizeof(vec3));
+
+        find_contact_points(&xs, a, b);
+        find_contact_points(&xs, b, a);
+
+        for (uint32_t i = 0; i < xs.size; i++){
+            printf("contact point = ");
+            srph_vec3_print((vec3 *) srph_array_at(&xs, i));
+            printf("\n");
+        }
+
+        srph_array_destroy(&xs);
     }
 }
 

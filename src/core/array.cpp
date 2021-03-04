@@ -25,7 +25,7 @@ void * srph_array_last(srph_array * a){
     return a->size == 0 ? NULL : srph_array_at(a, a->size - 1);
 }
 
-void srph_array_push_back(srph_array * a, void * data){
+void srph_array_push_back(srph_array * a, const void * data){
     if (a->size == a->capacity){
         a->capacity *= 2;
         a->_data = realloc(a->_data, a->capacity * a->element_size); 

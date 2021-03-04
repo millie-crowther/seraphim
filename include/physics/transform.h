@@ -34,6 +34,7 @@ typedef struct srph_transform {
     srph::f32mat4_t * get_matrix();
 } srph_transform;
 
-void srph_transform_to_local_space(srph_transform * tf, vec3 * tx, const vec3 * x);
+void srph_transform_to_local_space (srph_transform * tf, vec3 * tx, const vec3 * x);
+void srph_transform_to_global_space(srph_transform * tf, vec3 * tx, const vec3 * x);
 
 #endif

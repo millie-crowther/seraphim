@@ -29,6 +29,11 @@ void srph_transform_to_local_space(srph_transform * tf, vec3 * tx, const vec3 * 
     *tx = { tx1[0], tx1[1], tx1[2] };
 }
 
+void srph_transform_to_global_space(srph_transform * tf, vec3 * tx, const vec3 * x){
+    vec3_t x1 = tf->to_global_space(vec3_t(x->x, x->y, x->z));
+    *tx = { x1[0], x1[1], x1[2] };
+}
+
 vec3_t srph_transform::to_local_direction(const vec3_t & x) const {
     return rotation.inverse() * vec::normalise(x);
 }
