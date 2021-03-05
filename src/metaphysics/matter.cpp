@@ -10,6 +10,8 @@ srph_matter::srph_matter(srph_sdf * sdf, const srph_material * material, const v
     transform.set_position(initial_position);
     previous_position = initial_position;
 
+    omega = vec3_t(0.01, 0.01, 0.01);
+
     _is_mass_calculated = false;
     _is_inertia_tensor_valid = false;
     _is_inv_inertia_tensor_valid = false;

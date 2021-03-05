@@ -10,6 +10,10 @@
 #define MAX_COLLISION_POINTS 20
 
 static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
+    if (s1->r <= 0){
+        return;
+    }    
+
     for (uint32_t i = 0; i < a->size;){
         srph_sphere * s2 = (srph_sphere *) srph_array_at(a, i);
         
@@ -95,6 +99,10 @@ static void find_contact_points(srph_array * xs, srph_matter * a, srph_matter * 
 
         double phi = srph_sdf_phi(b->sdf, &c_local);
         if (phi < s->r){
+            vec3 n = srph_sdf_normal(b->sdf, &c_local);
+            srph_vec3_scale(&n, &n, -phi);
+            srph_vec3_add(&c_local, &c_local, &n);
+            srph_transform_to_global_space(&b->transform, &c_global, &c_local);
             srph_array_push_back(xs, &c_global);
         }
     }
@@ -143,12 +151,48 @@ srph_collision::srph_collision(srph_matter * a, srph_matter * b){
         find_contact_points(&xs, a, b);
         find_contact_points(&xs, b, a);
 
-        for (uint32_t i = 0; i < xs.size; i++){
-            printf("contact point = ");
-            srph_vec3_print((vec3 *) srph_array_at(&xs, i));
+    
+
+        printf("----------\n");
+
+/*
+        printf("a\n");
+        for (uint32_t i = 0; i < a->sdf->sphere_approx.size; i++){
+            printf("\tx = ");
+            srph_vec3_print((vec3 *) srph_array_at(&a->sdf->sphere_approx, i));
             printf("\n");
         }
-
+        
+        printf("b\n");
+        for (uint32_t i = 0; i < b->sdf->sphere_approx.size; i++){
+            printf("\tx = ");
+            srph_vec3_print((vec3 *) srph_array_at(&b->sdf->sphere_approx, i));
+            printf("\n");
+        }
+  // */
+                  
+//*
+        //printf("contact points length %d\n", xs.size);
+        vec3 cx = srph_vec3_zero;
+        for (uint32_t i = 0; i < xs.size; i++){
+            vec3 * tx = (vec3 *) srph_array_at(&xs, i);
+            srph_vec3_add(&cx, &cx, tx);  
+            printf("contact point = ");
+            srph_vec3_print(tx);
+            printf("\n");
+        }
+        printf("----------\n");
+        srph_vec3_scale(&cx, &cx, 1.0 / (double) xs.size);
+        srph_transform_to_global_space(&b->transform, &cx, &cx);
+        printf("x = ");
+        srph_vec3_print(&cx);
+        printf("\n");
+        printf("array size = %d\n", xs.size);
+        printf("a spheres size = %d\n", a->sdf->sphere_approx.size);
+        printf("b spheres size = %d\n", b->sdf->sphere_approx.size);
+//*/
+        printf("----------\n\n");  
+      
         srph_array_destroy(&xs);
     }
 }

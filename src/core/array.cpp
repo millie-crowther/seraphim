@@ -37,8 +37,6 @@ void srph_array_push_back(srph_array * a, const void * data){
         a->_data = realloc(a->_data, a->capacity * a->element_size); 
     }
 
-    printf("outside alloc  increase loop\n");
-
     memcpy(srph_array_end(a), data, a->element_size);
     a->size++;
 }
@@ -61,7 +59,7 @@ void srph_array_pop_back(srph_array * a, void * data){
 }
 
 void * srph_array_at(const srph_array * a, uint32_t i){
-    if (a == NULL || i >= a->size){
+    if (a == NULL || i > a->size){
         return NULL;
     }
 
