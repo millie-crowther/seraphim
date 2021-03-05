@@ -25,7 +25,7 @@ static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
             i++;
         }
     }
-
+    
     srph_array_push_back(a, s1);
 }
 

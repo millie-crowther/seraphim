@@ -18,6 +18,7 @@ void srph_array_pop_back(srph_array * a, void * data);
 
 void * srph_array_first(const srph_array * a);
 void * srph_array_last(const srph_array * a);
+void * srph_array_end(const srph_array * a);
 
 void * srph_array_at(const srph_array * a, uint32_t i);
 

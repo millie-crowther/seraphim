@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <iostream>
+
 void srph_array_create(srph_array * a, uint32_t element_size){
     a->element_size = element_size;
     a->size = 0;
@@ -17,12 +19,16 @@ void srph_array_destroy(srph_array * a){
     }
 }
 
-void * srph_array_first(srph_array * a){
-    return a->size == 0 ? NULL : a->_data;
+void * srph_array_first(const srph_array * a){
+    return (a == NULL || a->size == 0) ? NULL : a->_data;
 }
 
-void * srph_array_last(srph_array * a){
-    return a->size == 0 ? NULL : srph_array_at(a, a->size - 1);
+void * srph_array_last(const srph_array * a){
+    return (a == NULL || a->size == 0) ? NULL : srph_array_at(a, a->size - 1);
+}
+
+void * srph_array_end(const srph_array * a){
+    return a == NULL ? NULL : srph_array_at(a, a->size);
 }
 
 void srph_array_push_back(srph_array * a, const void * data){
@@ -31,7 +37,10 @@ void srph_array_push_back(srph_array * a, const void * data){
         a->_data = realloc(a->_data, a->capacity * a->element_size); 
     }
 
-    memcpy(srph_array_at(a, a->size), data, a->element_size);
+    printf("outside alloc  increase loop\n");
+
+    memcpy(srph_array_end(a), data, a->element_size);
+    a->size++;
 }
 
 void srph_array_pop_back(srph_array * a, void * data){
@@ -40,7 +49,7 @@ void srph_array_pop_back(srph_array * a, void * data){
     }
     
     if (data != NULL){
-        memcpy(data, srph_array_at(a, a->size - 1), a->element_size);
+        memcpy(data, srph_array_last(a), a->element_size);
     }
 
     a->size--;

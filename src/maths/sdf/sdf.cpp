@@ -38,6 +38,7 @@ void srph_sdf_full_create(
     
     sdf->_volume = -1.0;
 
+    printf("creating sdf ss array\n");
     srph_array_create(&sdf->sphere_approx, sizeof(srph_sphere));
 }
 
