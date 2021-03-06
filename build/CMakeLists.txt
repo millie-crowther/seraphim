@@ -47,6 +47,7 @@ set(SOURCES
     ../src/metaphysics/form.cpp
     ../src/metaphysics/matter.cpp
 
+    ../src/maths/matrix.cpp
     ../src/maths/bound.cpp    
     ../src/maths/quat.cpp
     ../src/maths/vector.cpp

@@ -11,9 +11,11 @@ typedef struct srph_matrix {
     srph_array xs;
 
     bool _is_sorted;
+    bool _is_symmetric;
 } srph_matrix;
 
 void srph_matrix_create(srph_matrix * m, uint32_t width, uint32_t height);
+void srph_matrix_create_symmetric(srph_matrix * m, uint32_t size);
 void srph_matrix_destroy(srph_matrix * m);
 
 double srph_matrix_at(srph_matrix * m, uint32_t x, uint32_t y);
