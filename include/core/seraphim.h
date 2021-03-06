@@ -46,17 +46,15 @@ namespace srph {
         std::condition_variable fps_cv;
 
         seraphim_t();
-        ~seraphim_t();
 
         void run();
-
-        renderer_t * get_renderer() const;
-        window_t *   get_window()   const;
 
         void annihilate(std::shared_ptr<substance_t> substance);
     };
 }
 
 srph::substance_t * srph_create_substance(srph::seraphim_t * srph, srph_form * form, srph_matter * matter);
+
+void srph_cleanup(srph::seraphim_t * engine);
 
 #endif

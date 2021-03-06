@@ -87,51 +87,47 @@ srph::seraphim_t::seraphim_t(){
     physics = std::make_unique<physics_t>();
 }
 
-srph::seraphim_t::~seraphim_t(){
-    fps_monitor_quit = true;
+void srph_cleanup(srph::seraphim_t * engine){
+    engine->fps_monitor_quit = true;
 
+    engine->physics.reset();
+ 
     scheduler::terminate();
 
-    vkDeviceWaitIdle(device->get_device());
+    vkDeviceWaitIdle(engine->device->get_device());
 
-    fps_cv.notify_all();
-    if (fps_monitor_thread.joinable()){
-        fps_monitor_thread.join(); 
+    engine->fps_cv.notify_all();
+    if (engine->fps_monitor_thread.joinable()){
+        engine->fps_monitor_thread.join(); 
     }
-    
-    physics.reset();
 
     // delete renderer early to release resources at appropriate time
-    renderer.reset();
+    engine->renderer.reset();
 
     // destroy device
-    device.reset();
+    engine->device.reset();
 
     // destroy debug callback
 #if SERAPHIM_DEBUG
     auto func = (PFN_vkDestroyDebugReportCallbackEXT) vkGetInstanceProcAddr(
-        instance, "vkDestroyDebugReportCallbackEXT"
+        engine->instance, "vkDestroyDebugReportCallbackEXT"
     );
 
     if (func != nullptr){
-        func(instance, callback, nullptr);
+        func(engine->instance, engine->callback, nullptr);
     }
 #endif
  
-    vkDestroySurfaceKHR(instance, surface, nullptr);
+    vkDestroySurfaceKHR(engine->instance, engine->surface, nullptr);
 
     // destroy instance
-    vkDestroyInstance(instance, nullptr);
+    vkDestroyInstance(engine->instance, nullptr);
 
-    window.reset();
+    engine->window.reset();
 
     glfwTerminate();
 
     printf("Seraphim engine exiting gracefully.\n");
-}
-
-renderer_t * srph::seraphim_t::get_renderer() const {
-    return renderer.get();
 }
 
 void seraphim_t::monitor_fps(){
@@ -300,10 +296,6 @@ void srph::seraphim_t::run(){
 
         current_frame++;
     }
-}
-
-srph::window_t * srph::seraphim_t::get_window() const {
-    return window.get();
 }
 
 void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){

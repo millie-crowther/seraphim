@@ -55,6 +55,8 @@ int main(){
 
     engine.run();
 
+    srph_cleanup(&engine);
+
     srph_sdf_destroy(floor_sdf);
     srph_sdf_destroy(cube_sdf);
 

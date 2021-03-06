@@ -18,6 +18,8 @@ physics_t::~physics_t(){
     if (thread.joinable()){
         thread.join();
     }
+
+    printf("joined physics thread\n");
 }
 
 void physics_t::start(){
