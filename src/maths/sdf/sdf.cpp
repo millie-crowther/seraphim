@@ -46,7 +46,7 @@ srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
 
             if (srph_sdf_contains(sdf, &x)){
                 for (int i = 0; i < 3; i++){
-                    for (int j = 0; j < 3; j++){
+                    for (int j = i; j < 3; j++){
                         vec3 r;
                         srph_vec3_subtract(&r, &x, srph_sdf_com(sdf));
 
@@ -57,6 +57,7 @@ srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
                         }
 
                         m[i * 3 + j] += iij;
+                        m[j * 3 + i] += iij;
                     }
                 }     
             
