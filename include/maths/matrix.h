@@ -65,14 +65,6 @@ namespace srph {
         }
 
         // scalar modifier operators 
-        void operator+=(const T & x){
-            *this += matrix_t<T, M, N>(x);
-        }
-
-        void operator-=(const T & x){
-            *this -= matrix_t<T, M, N>(x);
-        }
-
         void operator*=(const T & x){
             scale(matrix_t<T, M, N>(x));    
         }
@@ -129,11 +121,6 @@ namespace srph {
 
         matrix_t<T, M, N> operator/(const T & x) const {
             return *this / matrix_t<T, M, N>(x);
-        }
-
-        // negation operator
-        matrix_t<T, M, N> operator-() const {
-            return *this * matrix_t<T, M, N>(T(-1));
         }
 
         // equality and ordering operators
@@ -215,13 +202,7 @@ namespace srph {
     template<class T, int N>
     using vec_t = matrix_t<T, N, 1>;
 
-    using bvec3_t = vec_t<bool, 3>;
-
     typedef vec_t<int32_t, 2> i32vec2_t;
-
-    typedef vec_t<uint8_t, 2> u8vec2_t;
-    typedef vec_t<uint8_t, 3> u8vec3_t;
-    typedef vec_t<uint8_t, 4> u8vec4_t;
 
     typedef vec_t<uint16_t, 2> u16vec2_t;
     typedef vec_t<uint16_t, 4> u16vec4_t;
@@ -251,21 +232,6 @@ namespace srph {
     using mat4_t = matrix_t<double, 4, 4>;
 
     namespace vec {
-        template<class T> 
-        vec_t<T, 3> right(){
-            return vec_t<T, 3>(T(1), T(0), T(0));
-        }
-        
-        template<class T> 
-        vec_t<T, 3> up(){
-            return vec_t<T, 3>(T(0), T(1), T(0));
-        }
-
-        template<class T> 
-        vec_t<T, 3> forward(){
-            return vec_t<T, 3>(T(0), T(0), T(1));
-        }
-
         template<class S, class T, int M, int N>
         decltype(S() * T()) dot(const matrix_t<S, M, N> & x, const matrix_t<T, M, N> & y){
             return std::transform_reduce(x.begin(), x.end(), y.begin(), decltype(S() * T())(0));
@@ -276,13 +242,6 @@ namespace srph {
             return std::sqrt(dot(x, x));
         }   
 
-/*
-        template<class T, int N>
-        vec_t<T, N> normalise(const matrix_t<T, N, 1> & x){
-            T l = length(x);
-            return x / (l == T(0) ? T(1) : l);
-        }
-*/
         template<class T, int N>
         T volume(const vec_t<T, N> & x){
             T product = std::reduce(x.begin(), x.end(), T(1), std::multiplies<T>());
@@ -301,52 +260,9 @@ namespace srph {
                 x[0] * y[1] - x[1] * y[0]
             );
         }
- 
-        template<class T, int N>
-        vec_t<T, N> clamp(const vec_t<T, N> & x, const vec_t<T, N> & low, const vec_t<T, N> & high){
-            auto result = x;
-            for (int i = 0; i < N; i++){
-                result[i] = std::clamp(x[i], low[i], high[i]);
-            }
-            return result;
-        }
-
-        template<class T, int N>
-        vec_t<T, N> clamp(const vec_t<T, N> & x, const T & low, const T & high){
-            return clamp(x, vec_t<T, N>(low), vec_t<T, N>(high));
-        }
-        
-        template<class T, int N>
-        vec_t<T, N> min(const srph::vec_t<T, N> & a, const vec_t<T, N> & b){
-            vec_t<T, N> x;
-            auto f = [](const auto & a, const auto & b){ return std::min(a, b); };
-            std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
-            return x;
-        }
-        
-        template<class T, int N>
-        vec_t<T, N> max(const vec_t<T, N> & a, const vec_t<T, N> & b){
-            vec_t<T, N> x;
-            auto f = [](const auto & a, const auto & b){ return std::max(a, b); };
-            std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
-            return x;
-        }    
     }
 
     namespace mat {
-        template<class T, int M, int N>
-        matrix_t<T, M, N> outer_product(const vec_t<T, M> & x, const vec_t<T, N> & y){
-            matrix_t<T, M, N> m;
-
-            for (int i = 0; i < M; i++){
-                for (int j = 0; j < N; j++){
-                    m.set(i, j, x[i] * y[j]);
-                }
-            }
-
-            return m;
-        }
-
         template<class T>
         T determinant(const matrix_t<T, 3, 3> & a){
             return vec::dot(a.get_column(0), vec::cross(a.get_column(1), a.get_column(2)));
@@ -402,31 +318,6 @@ namespace srph {
             });
             return a;
         }
-    }
-
-    // ordering operators
-    template<int N>
-    vec_t<bool, N> operator!(const vec_t<bool, N> & x){
-        vec_t<bool, N> nx;
-        std::transform(x.begin(), x.end(), nx.begin(), std::logical_not<bool>());
-        return nx;
-    }
-
-    template<class T, int N>
-    vec_t<bool, N> operator<(const vec_t<T, N> & a, const vec_t<T, N> & b){
-        vec_t<bool, N> x;
-        std::transform(a.begin(), a.end(), b.begin(), x.begin(), std::less<T>());
-        return x;
-    }
-
-    template<class T, int N>
-    vec_t<bool, N> operator<=(const vec_t<T, N> & a, const vec_t<T, N> & b){
-        return !(b < a);
-    }
-
-    template<class T, int N>
-    vec_t<bool, N> operator>=(const vec_t<T, N> & a, const vec_t<T, N> & b){
-        return !(a < b);
     }
 
     // multiplication operators

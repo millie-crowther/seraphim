@@ -47,15 +47,15 @@ vec3_t srph_transform::to_global_space(const vec3_t & x) const {
 }
 
 vec3_t srph_transform::right() const {
-    return rotation * vec::right<double>();
+    return rotation * vec3_t(srph_vec3_right.x, srph_vec3_right.y, srph_vec3_right.z);
 }
 
 vec3_t srph_transform::up() const {
-    return rotation * vec::up<double>();
+    return rotation * vec3_t(srph_vec3_up.x, srph_vec3_up.y, srph_vec3_up.z);
 }
 
 vec3_t srph_transform::forward() const {
-    return rotation * vec::forward<double>();
+    return rotation * vec3_t(srph_vec3_forward.x, srph_vec3_forward.y, srph_vec3_forward.z);
 }
 
 void srph_transform::recalculate_matrix() {

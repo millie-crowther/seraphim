@@ -114,6 +114,9 @@ response_t::patch_t response_t::get_patch() const {
 }
 
 uint32_t response_t::squash(const vec4_t & x) const {
-    u8vec4_t x8 = mat::cast<uint8_t>(vec::clamp(x * 255.0, 0.0, 255.0));
-    return *reinterpret_cast<uint32_t *>(&x8);
+    uint8_t bytes[4];
+    for (int i = 0; i < 3; i++){
+        bytes[i] = (uint8_t)(fmax(0.0, fmin(x[i] * 255.0, 255.0)));
+    }
+    return *reinterpret_cast<uint32_t *>(bytes);
 }
