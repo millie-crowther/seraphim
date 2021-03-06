@@ -13,6 +13,8 @@ typedef struct srph_collision {
     vec3 xa;
     vec3 xb;
 
+    srph_array xs;
+
     srph::vec3_t n;
     srph::vec3_t vr;
 

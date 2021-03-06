@@ -86,7 +86,7 @@ void srph_matter::apply_impulse(const vec3_t & j){
     v += j / get_mass();
 }
 
-f32mat4_t * srph_matter::get_matrix(){
+f32mat4_t srph_matter::get_matrix(){
     return transform.get_matrix();
 }
 

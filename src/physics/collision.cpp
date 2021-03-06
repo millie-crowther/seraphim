@@ -161,7 +161,12 @@ srph_collision::srph_collision(srph_matter * a, srph_matter * b){
         for (uint32_t i = 0; i < xs.size; i++){
             srph_vec3_add(&cx, &cx, (vec3 *) srph_array_at(&xs, i));  
         }
-      
+
+        if (!srph_array_is_empty(&xs)){
+            srph_vec3_scale(&cx, &cx, 1.0 / (double) xs.size);
+            x = cx;
+        }
+
         srph_array_destroy(&xs);
     }
 }
@@ -210,11 +215,11 @@ void srph_collision::correct(){
 
     // incrementally produce sphere set approximation
     double phi_a = srph_sdf_phi(a->sdf, &xa);
-    srph_sphere sa = { .c = xa, .r = fabs(phi_a) };
+    srph_sphere sa = { .c = xa, .r = -phi_a };
     sphere_set_approximate(&a->sdf->sphere_approx, &sa);
     
     double phi_b = srph_sdf_phi(b->sdf, &xb);
-    srph_sphere sb = { .c = xb, .r = fabs(phi_b) };
+    srph_sphere sb = { .c = xb, .r = -phi_b };
     sphere_set_approximate(&b->sdf->sphere_approx, &sb);
  
     // choose best normal based on smallest second derivative

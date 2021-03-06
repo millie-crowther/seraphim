@@ -65,12 +65,12 @@ void srph_transform::recalculate_matrix() {
     matrix = std::make_shared<f32mat4_t>(a, b, c, d);
 }
 
-f32mat4_t * srph_transform::get_matrix(){
+f32mat4_t srph_transform::get_matrix(){
     if (matrix == nullptr){
         recalculate_matrix();
     }
 
-    return matrix.get();
+    return *matrix;
 }
 
 vec3_t srph_transform::get_position() const {

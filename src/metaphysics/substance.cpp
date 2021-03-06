@@ -47,7 +47,7 @@ substance_t::data_t substance_t::get_data(const vec3_t & eye_position){
         near, far,
         f32vec3_t(r.x, r.y, r.z),
         id,
-        *matter.get_matrix()
+        matter.get_matrix()
     );
 }
 

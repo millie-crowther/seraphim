@@ -40,7 +40,7 @@ void camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t &
 }
 
 f32mat4_t camera_t::get_matrix(){
-    return *transform.get_matrix();
+    return transform.get_matrix();
 }
 
 vec3_t camera_t::get_position() const {

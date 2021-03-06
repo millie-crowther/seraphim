@@ -31,7 +31,7 @@ typedef struct srph_transform {
     srph::vec3_t to_local_space(const srph::vec3_t & x) const;
     srph::vec3_t to_global_space(const srph::vec3_t & x) const;
 
-    srph::f32mat4_t * get_matrix();
+    srph::f32mat4_t get_matrix();
 } srph_transform;
 
 void srph_transform_to_local_space (srph_transform * tf, vec3 * tx, const vec3 * x);

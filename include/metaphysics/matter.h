@@ -62,7 +62,7 @@ typedef struct srph_matter {
     void apply_impulse(const srph::vec3_t & j);
     void apply_impulse_at(const srph::vec3_t & j, const srph::vec3_t & x);
 
-    srph::f32mat4_t * get_matrix();
+    srph::f32mat4_t get_matrix();
 
     void apply_force(const srph::vec3_t & f);
     void apply_force_at(const srph::vec3_t & f, const srph::vec3_t & x);
