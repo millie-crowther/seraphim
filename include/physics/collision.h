@@ -6,8 +6,6 @@
 #include "metaphysics/matter.h"
 
 typedef struct srph_collision {
-    static constexpr double solution_density = 1.0 / 5.0;
-
     bool is_intersecting;
     double t;
 
