@@ -1,11 +1,19 @@
 #include "maths/quat.h"
 
+#include "maths/vector.h"
+
 using namespace srph;
 
 quat_t::quat_t() : quat_t(1.0, 0.0, 0.0, 0.0){}
 
 quat_t::quat_t(double w, double x, double y, double z) : qs(w, x, y, z) {
-    qs = vec::normalise(qs);
+    double l = sqrt(w * w + x * x + y * y + z * z);
+    if (l != 0.0){
+        w /= l;
+        x /= l;
+        y /= l;
+        z /= l;
+    }
 }
 
 quat_t quat_t::angle_axis(double angle, const vec3_t & a){
@@ -14,7 +22,9 @@ quat_t quat_t::angle_axis(double angle, const vec3_t & a){
 }
 
 quat_t quat_t::euler_angles(const vec3_t & e){
-    return angle_axis(vec::length(e), vec::normalise(e));
+    vec3 e1 = { e[0], e[1], e[2] };
+    srph_vec3_normalise(&e1, &e1);
+    return angle_axis(vec::length(e), vec3_t(e1.x, e1.y, e1.z));
 }
 
 quat_t quat_t::inverse() const {

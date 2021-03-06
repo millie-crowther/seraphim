@@ -192,7 +192,9 @@ void srph_collision::colliding_correct(){
     vec3_t t = vr - vec::dot(vr, n) * n;
     if (t != vec3_t()){
         // no surface friction because impact vector is perpendicular to surface
-        t = vec::normalise(t);
+        vec3 t1 = { t[0], t[1], t[2] };
+        srph_vec3_normalise(&t1, &t1);
+        t = vec3_t(t1.x, t1.y, t1.z);
         
         double vrt = vec::dot(vr, t); 
         auto mvta = a->get_mass() * vrt;

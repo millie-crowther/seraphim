@@ -276,12 +276,13 @@ namespace srph {
             return std::sqrt(dot(x, x));
         }   
 
+/*
         template<class T, int N>
         vec_t<T, N> normalise(const matrix_t<T, N, 1> & x){
             T l = length(x);
             return x / (l == T(0) ? T(1) : l);
         }
-
+*/
         template<class T, int N>
         T volume(const vec_t<T, N> & x){
             T product = std::reduce(x.begin(), x.end(), T(1), std::multiplies<T>());

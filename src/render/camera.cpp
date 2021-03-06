@@ -1,5 +1,7 @@
 #include "render/camera.h"
 
+#include "maths/vector.h"
+
 using namespace srph;
 
 camera_t::camera_t(){
@@ -9,7 +11,11 @@ camera_t::camera_t(){
 void camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
     vec3_t forward = transform.forward();
     forward[1] = 0.0;
-    forward = vec::normalise(forward);
+    
+    vec3 f1 = { forward[0], forward[1], forward[2] };
+    srph_vec3_normalise(&f1, &f1);
+    forward = vec3_t(f1.x, f1.y, f1.z);
+
     vec3_t right = transform.right();
 
     if (keyboard.is_key_pressed(GLFW_KEY_W)){
