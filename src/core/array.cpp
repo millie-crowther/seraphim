@@ -69,3 +69,19 @@ void * srph_array_at(const srph_array * a, uint32_t i){
 bool srph_array_is_empty(const srph_array * a){
     return a->size == 0;
 }
+
+void srph_array_sort(srph_array * a, srph_comparator cmp){
+    if (a->size < 2){
+        return;
+    }
+
+    qsort(a->_data, a->size, a->element_size, cmp);
+}
+
+void * srph_array_find(srph_array * a, void * key, srph_comparator cmp){
+    if (a == NULL || cmp == NULL || a->_data == NULL || a->size == 0){
+        return NULL;
+    }
+
+    return bsearch(key, a->_data, a->size, a->element_size, cmp);
+}
