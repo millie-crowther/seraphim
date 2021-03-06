@@ -158,10 +158,10 @@ void srph_matter::reset_acceleration() {
 
 void srph_matter::physics_tick(double t){
     // update position
-    transform.translate((0.5 * a * t + v) * t);
+    transform.translate((a * 0.5 * t + v) * t);
     
     // update rotation
-    transform.rotate(quat_t::euler_angles((0.5 * alpha * t + omega) * t));
+    transform.rotate(quat_t::euler_angles((alpha * 0.5 * t + omega) * t));
 
     // integrate accelerations into velocities
     v += a * t;

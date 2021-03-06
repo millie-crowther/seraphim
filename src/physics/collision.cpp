@@ -185,11 +185,11 @@ void srph_collision::colliding_correct(){
         1.0 / b->get_mass() + b->get_inverse_angular_mass(x1, n)
     );
 
-    a->apply_impulse_at(-jr * n, x1);
-    b->apply_impulse_at( jr * n, x1);
+    a->apply_impulse_at(n * -jr, x1);
+    b->apply_impulse_at(n *  jr, x1);
 
     // apply friction force
-    vec3_t t = vr - vec::dot(vr, n) * n;
+    vec3_t t = vr - n * vec::dot(vr, n);
     if (t != vec3_t()){
         // no surface friction because impact vector is perpendicular to surface
         vec3 t1 = { t[0], t[1], t[2] };
@@ -206,8 +206,8 @@ void srph_collision::colliding_correct(){
         double ka = -(mvta <= js) ? mvta : jd;
         double kb =  (mvtb <= js) ? mvtb : jd;
 
-        a->apply_impulse_at(ka * t, x1);
-        b->apply_impulse_at(kb * t, x1);
+        a->apply_impulse_at(t * ka, x1);
+        b->apply_impulse_at(t * kb, x1);
     }
 }
 
@@ -240,8 +240,8 @@ void srph_collision::correct(){
 
     // extricate matters 
     double sm = a->get_mass() + b->get_mass();
-    a->translate(-depth * n * b->get_mass() / sm);
-    b->translate( depth * n * a->get_mass() / sm);
+    a->translate(n * -depth * b->get_mass() / sm);
+    b->translate(n *  depth * a->get_mass() / sm);
     
     // find relative velocity at point 
     srph::vec3_t x1(x.x, x.y, x.z);

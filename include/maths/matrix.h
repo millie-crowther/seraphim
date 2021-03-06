@@ -320,12 +320,6 @@ namespace srph {
         }
     }
 
-    // multiplication operators
-    template<class T, int M, int N>
-    matrix_t<T, M, N> operator*(const T & x, const matrix_t<T, M, N> & a){
-        return a * x;
-    }
-
     template<class S, class T, int N>
     matrix_t<decltype(S() * T()), N, 1> operator*(const matrix_t<S, N, 1> & a, const matrix_t<T, N, 1> & b){
         return a.scaled(b);
@@ -360,26 +354,6 @@ namespace srph {
     bool operator!=(const vec_t<T, N> & a, const vec_t<T, N> & b){
         return !(a == b);
     }
-       
-    template<class T, int N>
-    vec_t<T, N> operator&&(const vec_t<T, N> & a, const vec_t<T, N> & b){
-        vec_t<T, N> x;
-        auto f = [](const auto & a, const auto & b){ return a && b; };
-        std::transform(a.begin(), a.end(), b.begin(), x.begin(), f);
-        return x;
-    }
- 
-    // output operators
-    template<class T, int M, int N>
-    std::ostream & operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
-        os << "mat" << M << 'x' << N << '(';
-        for (int i = 0; i < M * N - 1; i++){
-            os << v[i] << ", ";
-        }
-        os << v[M * N - 1] << ")";
-        return os;
-    } 
-    
 }
 
 #endif
