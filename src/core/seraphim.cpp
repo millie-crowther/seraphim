@@ -35,7 +35,10 @@ srph::seraphim_t::seraphim_t(){
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    window = std::make_unique<window_t>(work_group_count * work_group_size);
+    window = std::make_unique<window_t>(u32vec2_t(
+        work_group_count[0] * work_group_size[0],
+        work_group_count[1] * work_group_size[1]
+    ));
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);

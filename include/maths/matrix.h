@@ -242,16 +242,6 @@ namespace srph {
             return std::sqrt(dot(x, x));
         }   
 
-        template<class T, int N>
-        T volume(const vec_t<T, N> & x){
-            T product = std::reduce(x.begin(), x.end(), T(1), std::multiplies<T>());
-            if constexpr (std::is_unsigned<T>::value){
-                return product;
-            } else {
-                return std::abs(product);
-            }
-        }
-
         template<class S, class T>
         vec_t<decltype(S() * T()), 3> cross(const vec_t<S, 3> & x, const vec_t<T, 3> & y){
             return vec_t<decltype(S()* T()), 3>(
@@ -318,16 +308,6 @@ namespace srph {
             });
             return a;
         }
-    }
-
-    template<class S, class T, int N>
-    matrix_t<decltype(S() * T()), N, 1> operator*(const matrix_t<S, N, 1> & a, const matrix_t<T, N, 1> & b){
-        return a.scaled(b);
-    }
-
-    template<class T, uint8_t N>
-    void operator*=(vec_t<T, N> & a, const vec_t<T, N> & b){
-        a.scale(b);
     }
 
     template<class S, class T, int X, int Y, int Z>

@@ -541,19 +541,21 @@ void renderer_t::present(uint32_t image_index) const {
 void renderer_t::render(){
     frames++;
 
+    uint32_t size = work_group_size[0] * work_group_size[1];
+
     // write substances
     std::vector<substance_t::data_t> substance_data;
     for (auto s : substances){
         substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
     }
-    substance_data.resize(vec::volume(work_group_size));
+    substance_data.resize(size);
 
     std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
 
     // write lights
-    std::vector<light_t> lights(vec::volume(work_group_size));
+    std::vector<light_t> lights(size);
     lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
     light_buffer->write(lights, 0);
     
@@ -666,8 +668,8 @@ void renderer_t::handle_requests(uint32_t frame){
 }
 
 void renderer_t::create_buffers(){
-    uint32_t c = vec::volume(work_group_count);
-    uint32_t s = vec::volume(work_group_size);
+    uint32_t c = work_group_count[0] * work_group_count[1];
+    uint32_t s = work_group_size[0] * work_group_size[1];
 
     patch_buffer = std::make_unique<device_buffer_t<response_t::patch_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
