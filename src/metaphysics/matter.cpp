@@ -115,8 +115,8 @@ void srph_matter::calculate_centre_of_mass(){
 
 vec3_t srph_matter::get_centre_of_mass(){
     if (is_uniform){
-        vec3 c = srph_sdf_com(sdf);
-        return vec3_t(c.x, c.y, c.z);
+        vec3 * c = srph_sdf_com(sdf);
+        return vec3_t(c->x, c->y, c->z);
     }
 
     if (!_is_mass_calculated){

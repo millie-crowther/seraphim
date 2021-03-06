@@ -64,16 +64,7 @@ srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
     }
     *r_ptr = *r;
 
-    vec3 r2;
-    srph_vec3_multiply(&r2, r, r);
-    srph::mat3_t i(
-        r2.y + r2.z, 0.0,         0.0,
-        0.0,         r2.x + r2.z, 0.0,
-        0.0,         0.0,         r2.x + r2.y
-    );
-    i = i / 12.0;
-    
-    srph_sdf_full_create(sdf, cuboid_phi, r_ptr, &i); 
+    srph_sdf_create(sdf, cuboid_phi, r_ptr); 
     return sdf;
 }
 
@@ -90,7 +81,6 @@ srph_sdf * srph_sdf_octahedron_create(double e){
     }
     *e2 = e;
 
-    srph::mat3_t i = srph::mat3_t::diagonal(0.1 * pow(e, 2));
-    srph_sdf_full_create(sdf, octahedron_phi, e2, &i);
+    srph_sdf_create(sdf, octahedron_phi, e2);
     return sdf;
 }

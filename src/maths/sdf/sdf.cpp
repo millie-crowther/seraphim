@@ -12,13 +12,6 @@
 #define SUPPORT_ALPHA 0.5
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
-    srph_sdf_full_create(sdf, phi, data, NULL);
-}
-
-void srph_sdf_full_create(
-    srph_sdf * sdf, srph_sdf_func phi, void * data,  
-    srph::mat3_t * inertia_tensor
-){
     if (sdf == NULL){
         return;
     }
@@ -30,15 +23,54 @@ void srph_sdf_full_create(
     sdf->_is_com_valid = false;
     sdf->_is_inertia_tensor_valid = false;
     sdf->_is_convex = true; // TODO
-
-    if (inertia_tensor != NULL){
-        sdf->_inertia_tensor = *inertia_tensor;
-        sdf->_is_inertia_tensor_valid = true;
-    }
-    
     sdf->_volume = -1.0;
 
     srph_array_create(&sdf->sphere_approx, sizeof(srph_sphere));
+}
+
+srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
+    if (!sdf->_is_inertia_tensor_valid){
+        srph::mat3_t m;
+        int hits = 0;
+     
+        srph_bound3 * b = srph_sdf_bound(sdf);
+        srph_random rng;
+        srph_random_default_seed(&rng);
+    
+        while (hits < VOLUME_SAMPLES){
+            vec3 x = {
+                srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
+                srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
+                srph_random_f64_range(&rng, b->lower[2], b->upper[2])
+            };
+
+            if (srph_sdf_contains(sdf, &x)){
+                for (int i = 0; i < 3; i++){
+                    for (int j = 0; j < 3; j++){
+                        vec3 r;
+                        srph_vec3_subtract(&r, &x, srph_sdf_com(sdf));
+
+                        double iij = -r.raw[i] * r.raw[j];
+
+                        if (i == j){
+                            iij += srph_vec3_dot(&r, &r);
+                        }
+
+                        m[i * 3 + j] += iij;
+                    }
+                }     
+            
+   
+                hits++;
+            }
+        }
+
+        m /= (double) VOLUME_SAMPLES;
+        sdf->_inertia_tensor = m;
+        sdf->_is_inertia_tensor_valid = true;
+    }
+
+    return sdf->_inertia_tensor;
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
@@ -109,7 +141,7 @@ double srph_sdf_volume(srph_sdf * sdf){
     return sdf->_volume;
 }
 
-vec3 srph_sdf_com(srph_sdf * sdf){
+vec3 * srph_sdf_com(srph_sdf * sdf){
     if (!sdf->_is_com_valid){
         vec3 com = srph_vec3_zero;
         double hits = 0.0;
@@ -136,11 +168,7 @@ vec3 srph_sdf_com(srph_sdf * sdf){
         sdf->_is_com_valid = true;
     }
 
-    return sdf->_com;    
-}
-
-srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
-    return srph::mat3_t::identity();
+    return &sdf->_com;    
 }
 
 srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x){

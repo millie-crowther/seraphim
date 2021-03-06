@@ -326,6 +326,25 @@ namespace srph {
     bool operator!=(const vec_t<T, N> & a, const vec_t<T, N> & b){
         return !(a == b);
     }
+
+    template<class T, int M, int N>
+    void operator/=(matrix_t<T, M, N> & ms, T s){
+        for (auto & m : ms){
+            m /= s;
+        }
+    }
+
+// output operators
+    template<class T, int M, int N>
+    std::ostream & operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
+        os << "mat" << M << 'x' << N << '(';
+        for (int i = 0; i < M * N - 1; i++){
+            os << v[i] << ", ";
+        }
+        os << v[M * N - 1] << ")";
+        return os;
+    } 
+
 }
 
 #endif
