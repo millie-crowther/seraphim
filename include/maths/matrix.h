@@ -59,18 +59,10 @@ namespace srph {
         void scale(const matrix_t<T, M, N> & x){
             std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::multiplies<T>());
         }
-
-        void operator/=(const matrix_t<T, M, N> & x){
-            std::transform(this->begin(), this->end(), x.begin(), this->begin(), std::divides<T>());
-        }
-
+        
         // scalar modifier operators 
         void operator*=(const T & x){
             scale(matrix_t<T, M, N>(x));    
-        }
-
-        void operator/=(const T & x){
-            *this /= matrix_t<T, M, N>(x);
         }
 
         // vector accessor operators  

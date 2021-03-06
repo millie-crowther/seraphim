@@ -71,7 +71,7 @@ srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
         0.0,         r2.x + r2.z, 0.0,
         0.0,         0.0,         r2.x + r2.y
     );
-    i /= 12.0;
+    i = i / 12.0;
     
     srph_sdf_full_create(sdf, cuboid_phi, r_ptr, &i); 
     return sdf;
