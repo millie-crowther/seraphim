@@ -57,11 +57,5 @@ double srph_matrix_at(srph_matrix * m, uint32_t x, uint32_t y){
 }
 
 void srph_matrix_set(srph_matrix * m, uint32_t x, uint32_t y, double a){
-    if (a == 0.0){
-        return;
-    }
 
-    srph_matrix_item i = { .i = index(m, x, y), .a = a };
-    srph_array_push_back(&m->xs, &i);
-    m->_is_sorted = false;
 }

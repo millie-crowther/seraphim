@@ -36,7 +36,7 @@ static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
         }
     }
     
-    srph_array_push_back(a, s1);
+    *((srph_sphere *) srph_array_push_back(a)) = *s1;
 }
 
 static double intersection_func(void * data, const vec3 * x){
@@ -109,7 +109,7 @@ static void find_contact_points(srph_array * xs, srph_matter * a, srph_matter * 
             srph_vec3_scale(&n, &n, -phi);
             srph_vec3_add(&c_local, &c_local, &n);
             srph_transform_to_global_space(&b->transform, &c_global, &c_local);
-            srph_array_push_back(xs, &c_global);
+            *((vec3 *) srph_array_push_back(xs)) = c_global;
         }
     }
 }

@@ -15,7 +15,7 @@ typedef struct srph_array {
 void srph_array_create(srph_array * a, uint32_t element_size);
 void srph_array_destroy(srph_array * a);
 
-void srph_array_push_back(srph_array * a, const void * data);
+void * srph_array_push_back(srph_array * a);
 void srph_array_pop_back(srph_array * a, void * data);
 
 void * srph_array_first(const srph_array * a);

@@ -31,14 +31,14 @@ void * srph_array_end(const srph_array * a){
     return a == NULL ? NULL : srph_array_at(a, a->size);
 }
 
-void srph_array_push_back(srph_array * a, const void * data){
+void * srph_array_push_back(srph_array * a){
     if (a->size == a->capacity){
         a->capacity *= 2;
         a->_data = realloc(a->_data, a->capacity * a->element_size); 
     }
 
-    memcpy(srph_array_end(a), data, a->element_size);
     a->size++;
+    return srph_array_last(a);
 }
 
 void srph_array_pop_back(srph_array * a, void * data){

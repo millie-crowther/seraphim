@@ -30,6 +30,7 @@ set(SOURCES
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
     ../src/core/array.cpp
+    ../src/core/set.cpp
 
     ../src/physics/collision.cpp    
     ../src/physics/physics.cpp
