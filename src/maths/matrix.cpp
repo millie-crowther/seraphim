@@ -24,10 +24,9 @@ static uint32_t index(srph_matrix * m, uint32_t x, uint32_t y){
 void srph_matrix_create(srph_matrix * m, uint32_t width, uint32_t height){
     m->width = width;
     m->height = height;
-    m->_is_sorted = true;
     m->_is_symmetric = false;
 
-    srph_array_create(&m->xs, sizeof(srph_matrix_item)); 
+    srph_set_create(&m->s, comparator, sizeof(srph_matrix_item)); 
 }
 
 void srph_matrix_create_symmetric(srph_matrix * m, uint32_t size){
@@ -37,25 +36,21 @@ void srph_matrix_create_symmetric(srph_matrix * m, uint32_t size){
 
 void srph_matrix_destroy(srph_matrix * m){
     if (m != NULL){
-        srph_array_destroy(&m->xs);
+        srph_set_destroy(&m->s);
     }
 }
 
 double srph_matrix_at(srph_matrix * m, uint32_t x, uint32_t y){
-    if (!m->_is_sorted){
-        srph_array_sort(&m->xs, comparator);
-        m->_is_sorted = false;
-    }
-
     srph_matrix_item key = { .i = index(m, x, y) };
-    void * value = srph_array_find(&m->xs, (void *) &key, comparator);
-    if (value == NULL){
-        return 0.0;
-    } else {
-        return ((srph_matrix_item *) value)->a;
-    }
+    double * v = (double *) srph_set_find(&m->s, &key);
+    return v == NULL ? 0 : *v;
 }
 
 void srph_matrix_set(srph_matrix * m, uint32_t x, uint32_t y, double a){
-
+    srph_matrix_item key = { .i = index(m, x, y), .a = a };
+    if (a == 0.0){
+        srph_set_remove(&m->s, &key); 
+    } else {
+        srph_set_insert(&m->s, &key);
+    }
 }

@@ -1,16 +1,13 @@
 #ifndef SERAPHIM_MATRIX_H
 #define SERAPHIM_MATRIX_H
 
-#include <stdint.h>
-
-#include "core/array.h"
+#include "core/set.h"
 
 typedef struct srph_matrix {
     uint32_t width;
     uint32_t height;
-    srph_array xs;
+    srph_set s;    
 
-    bool _is_sorted;
     bool _is_symmetric;
 } srph_matrix;
 

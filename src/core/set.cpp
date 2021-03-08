@@ -73,7 +73,7 @@ static void rebalance(srph_set_node ** root, srph_set_node * z){
         srph_set_node * y;
 
         // Find uncle and store uncle in y
-        if (z->parent && z->parent->parent && z->parent == z->parent->parent->left){
+        if (z->parent != NULL && z->parent->parent != NULL && z->parent == z->parent->parent->left){
             y = z->parent->parent->right;
         } else {
             y = z->parent->parent->left;
@@ -157,6 +157,13 @@ static srph_set_node * set_find_helper(srph_set * set, srph_set_node * node, voi
     return node;
 }
 
+void srph_set_remove(srph_set * s, void * key){
+    srph_set_node * n = set_find_helper(s, s->root, key);
+    if (s->cmp(n->data, key) == 0){
+        // TODO    
+    }
+}
+
 void * srph_set_find(srph_set * s, void * key){
     srph_set_node * n = set_find_helper(s, s->root, key);
     return s->cmp(n->data, key) == 0 ? n->data : NULL;
@@ -167,7 +174,6 @@ bool srph_set_contains(srph_set * s, void * key){
 }
 
 
-// Utility function to insert newly node in RedBlack tree
 void srph_set_insert(srph_set * set, void * key){
     srph_set_node * parent = set_find_helper(set, set->root, key);
     if (set->cmp(parent->data, key) == 0){
@@ -199,9 +205,10 @@ void srph_set_insert(srph_set * set, void * key){
     }
 }
 
-void srph_set_create(srph_set * s, uint32_t element_size){
+void srph_set_create(srph_set * s, srph_set_comparator cmp, uint32_t element_size){
     s->element_size = element_size;
     s->root = NULL;
+    s->cmp = cmp;
 }
 
 static void node_destroy(srph_set_node * n){
