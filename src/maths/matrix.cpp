@@ -49,7 +49,7 @@ double srph_matrix_at(srph_matrix * m, uint32_t x, uint32_t y){
 void srph_matrix_set(srph_matrix * m, uint32_t x, uint32_t y, double a){
     srph_matrix_item key = { .i = index(m, x, y), .a = a };
     if (a == 0.0){
-        srph_set_remove(&m->s, &key); 
+        srph_set_delete(&m->s, &key); 
     } else {
         srph_set_insert(&m->s, &key);
     }
