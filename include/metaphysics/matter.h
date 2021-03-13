@@ -1,13 +1,13 @@
 #ifndef SERAPHIM_MATTER_H
 #define SERAPHIM_MATTER_H
 
-#include "maths/sdf/sdf.h"
 #include "material.h"
+
+#include "maths/sdf/sdf.h"
 #include "maths/quat.h"
+#include "physics/constraint.h"
 #include "physics/sphere.h"
 #include "physics/transform.h"
-
-#include <memory>
 
 typedef struct srph_matter {
     srph_transform transform;
@@ -17,7 +17,6 @@ typedef struct srph_matter {
 
     srph_array _vertices;
 
-    srph::vec3_t previous_position;
     bool is_uniform;
 
     bool _is_mass_calculated;
@@ -33,9 +32,6 @@ typedef struct srph_matter {
     srph::vec3_t a;
     srph::vec3_t v;
     srph::vec3_t omega;
-
-    srph_matter(){}
-    srph_matter(srph_sdf * sdf, const srph_material * material, const srph::vec3_t & initial_position, bool is_uniform);
 
     srph_material get_material(const vec3 * x);
     srph_sdf * get_sdf() const;
@@ -71,6 +67,11 @@ typedef struct srph_matter {
     srph::mat3_t * get_i();
     srph::mat3_t * get_inv_tf_i();
 } srph_matter;
+
+void srph_matter_init(
+    srph_matter * m, srph_sdf * sdf, const srph_material * mat, const vec3 * x, bool is_uniform
+);
+void srph_matter_destroy(srph_matter * m);
 
 double srph_matter_mass(srph_matter * m);
 void srph_matter_bound(const srph_matter * m, srph_bound3 * b);

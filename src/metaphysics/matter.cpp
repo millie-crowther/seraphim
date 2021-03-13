@@ -2,19 +2,27 @@
 
 using namespace srph;
 
-srph_matter::srph_matter(srph_sdf * sdf, const srph_material * material, const vec3_t & initial_position, bool is_uniform){
-    this->sdf = sdf;
-    this->material = *material;
-    this->is_uniform = is_uniform;
+void srph_matter_init(
+    srph_matter * m, srph_sdf * sdf, const srph_material * material, 
+    const vec3 * x, bool is_uniform
+){
+    m->sdf = sdf;
+    m->material = *material;
+    m->is_uniform = is_uniform;
     
-    transform.set_position(initial_position);
-    previous_position = initial_position;
+    m->transform.set_position(srph::vec3_t(x->x, x->y, x->z));
 
-    omega = vec3_t(0.01, 0.01, 0.01);
+    m->omega = vec3_t(0.01, 0.01, 0.01);
 
-    _is_mass_calculated = false;
-    _is_inertia_tensor_valid = false;
-    _is_inv_inertia_tensor_valid = false;
+    m->_is_mass_calculated = false;
+    m->_is_inertia_tensor_valid = false;
+    m->_is_inv_inertia_tensor_valid = false;
+    
+    srph_array_create(&m->_vertices, sizeof(srph_vertex));
+}
+
+void srph_matter_destroy(srph_matter * m){
+    srph_array_destroy(&m->_vertices);
 }
 
 quat_t srph_matter::get_rotation() const {
