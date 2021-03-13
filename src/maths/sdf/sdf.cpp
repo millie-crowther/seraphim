@@ -24,7 +24,6 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->_is_bound_valid = false;
     sdf->_is_com_valid = false;
     sdf->_is_inertia_tensor_valid = false;
-    sdf->_is_convex = true; // TODO
     sdf->_volume = -1.0;
 
     srph_array_create(&sdf->vertices, sizeof(vec3));

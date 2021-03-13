@@ -1,6 +1,20 @@
 #include "metaphysics/matter.h"
 
+static void update_vertices(srph_matter * m){
+    while (m->_vertices.size < m->sdf->vertices.size){
+        vec3 * x_sdf = (vec3 *) srph_array_at(&m->sdf->vertices, m->_vertices.size);
+
+        srph_vertex * vertex = (srph_vertex *) srph_array_push_back(&m->_vertices);
+        vertex->_x_key = x_sdf;
+        vertex->w = 1.0; // TODO
+        srph_transform_to_global_space(&m->transform, &vertex->x, x_sdf);
+        srph_vec3_fill(&vertex->v, 0.0);
+    }
+}
+
 using namespace srph;
+
+
 
 void srph_matter_init(
     srph_matter * m, srph_sdf * sdf, const srph_material * material, 
@@ -19,6 +33,8 @@ void srph_matter_init(
     m->_is_inv_inertia_tensor_valid = false;
     
     srph_array_create(&m->_vertices, sizeof(srph_vertex));
+    
+    update_vertices(m); // TODO: remove
 }
 
 void srph_matter_destroy(srph_matter * m){

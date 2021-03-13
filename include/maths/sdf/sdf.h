@@ -23,8 +23,6 @@ typedef struct srph_sdf {
 
     void * _data;
     srph_sdf_func _phi;
-
-    bool _is_convex;
     
     srph_array vertices;
 } srph_sdf;
