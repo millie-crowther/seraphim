@@ -26,11 +26,7 @@ vec3_t srph_matter::get_position() const {
 }
 
 bool srph_matter::is_inert(){
-    return 
-        vec::length(v) < constant::epsilon &&
-        vec::length(omega) < constant::epsilon &&
-        vec::length(a) < constant::epsilon &&
-        vec::length(alpha) < constant::epsilon;
+    return false;
 }
 
 srph_material srph_matter::get_material(const vec3 * x){
@@ -137,7 +133,6 @@ void srph_matter::rotate(const quat_t & q){
 
 void srph_matter::reset_acceleration() {
     a = vec3_t(0.0, -9.8, 0.0);
-    alpha = vec3_t();
 }
 
 void srph_matter::physics_tick(double t){
@@ -145,18 +140,16 @@ void srph_matter::physics_tick(double t){
     transform.translate((a * 0.5 * t + v) * t);
     
     // update rotation
-    transform.rotate(quat_t::euler_angles((alpha * 0.5 * t + omega) * t));
+    transform.rotate(quat_t::euler_angles(omega * t));
 
     // integrate accelerations into velocities
     v += a * t;
-    omega += alpha * t;
     
     if (transform.get_position()[1] < -90.0){
         transform.set_position(vec3_t(0.0, -100.0, 0.0));
         v = vec3_t();
         omega = vec3_t();
         a = vec3_t();
-        alpha = vec3_t();
     }    
 }
 

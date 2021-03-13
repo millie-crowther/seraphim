@@ -15,6 +15,8 @@ typedef struct srph_matter {
     srph_material material;
     srph_sdf * sdf;
 
+    srph_array _vertices;
+
     srph::vec3_t previous_position;
     bool is_uniform;
 
@@ -28,11 +30,9 @@ typedef struct srph_matter {
     bool _is_inv_inertia_tensor_valid;
     srph::mat3_t inv_tf_i;
 
-    srph::vec3_t v;
     srph::vec3_t a;
-
+    srph::vec3_t v;
     srph::vec3_t omega;
-    srph::vec3_t alpha;
 
     srph_matter(){}
     srph_matter(srph_sdf * sdf, const srph_material * material, const srph::vec3_t & initial_position, bool is_uniform);
