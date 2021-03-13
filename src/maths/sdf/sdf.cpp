@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include <assert.h>
 #include <stdlib.h>
 
 #include "core/random.h"
@@ -10,6 +11,7 @@
 
 #define VOLUME_SAMPLES 10000
 #define SUPPORT_ALPHA 0.5
+#define SAMPLE_DENSITY 0.1
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     if (sdf == NULL){
@@ -25,7 +27,7 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->_is_convex = true; // TODO
     sdf->_volume = -1.0;
 
-    srph_array_create(&sdf->sphere_approx, sizeof(srph_sphere));
+    srph_array_create(&sdf->vertices, sizeof(vec3));
 }
 
 srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
@@ -96,7 +98,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
 }
 
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return srph_sdf_phi(sdf, x) < 0.0;
+    return x != NULL && srph_sdf_phi(sdf, x) < 0.0;
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
@@ -225,8 +227,25 @@ void srph_sdf_destroy(srph_sdf * sdf){
             free(sdf->_data);
         }
 
-        srph_array_destroy(&sdf->sphere_approx);
+        srph_array_destroy(&sdf->vertices);
         
         free(sdf);
     }
 }
+
+void srph_sdf_add_sample(srph_sdf * sdf, const vec3 * x){
+    assert(sdf != NULL);
+
+    if (!srph_sdf_contains(sdf, x)){
+        return;
+    }
+
+    for (uint32_t i = 0; i < sdf->vertices.size; i++){
+        const vec3 * y = (vec3 *) srph_array_at(&sdf->vertices, i);
+        if (srph_vec3_distance(x, y) < SAMPLE_DENSITY){
+            return;
+        }
+    }
+
+    *((vec3 *) srph_array_push_back(&sdf->vertices)) = *x;
+} 

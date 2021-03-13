@@ -5,39 +5,6 @@
 #include "maths/matrix.h"
 #include "maths/optimise.h"
 #include "maths/vector.h"
-#include "physics/sphere.h"
-
-#define MAX_COLLISION_POINTS 20
-#define COLLISION_DENSITY 0.1
-
-static void sphere_set_approximate(srph_array * a, const srph_sphere * s1){
-    if (s1->r <= 0){
-        return;
-    }    
-
-    for (uint32_t i = 0; i < a->size;){
-        srph_sphere * s2 = (srph_sphere *) srph_array_at(a, i);
-        
-        // do not insert if contained by another sphere 
-        if (srph_sphere_contains(s2, s1)){
-            return;
-        }        
-
-        // do not insert if solution too dense
-        if (srph_vec3_distance(&s1->c, &s2->c) < COLLISION_DENSITY){
-            return;
-        }
-
-        // delete all spheres contained by this sphere   
-        if (srph_sphere_contains(s1, s2)){
-            srph_array_pop_back(a, s2);            
-        } else {
-            i++;
-        }
-    }
-    
-    *((srph_sphere *) srph_array_push_back(a)) = *s1;
-}
 
 static double intersection_func(void * data, const vec3 * x){
     srph_collision * collision = (srph_collision *) data;
@@ -97,19 +64,14 @@ static double time_to_collision_func(void * data, const vec3 * x){
 }
 
 static void find_contact_points(srph_array * xs, srph_matter * a, srph_matter * b){
-    for (uint32_t i = 0; i < a->sdf->sphere_approx.size; i++){
-        srph_sphere * s = (srph_sphere *) srph_array_at(&a->sdf->sphere_approx, i);
-        vec3 c_global, c_local;
-        srph_transform_to_global_space(&a->transform, &c_global, &s->c);
-        srph_transform_to_local_space(&b->transform, &c_local, &c_global);
+    for (uint32_t i = 0; i < a->sdf->vertices.size; i++){
+        vec3 * x = (vec3 *) srph_array_at(&a->sdf->vertices, i);
+        vec3 x_global, x_local_b;
+        srph_transform_to_global_space(&a->transform, &x_global, x);
+        srph_transform_to_local_space(&b->transform, &x_local_b, &x_global);
 
-        double phi = srph_sdf_phi(b->sdf, &c_local);
-        if (phi < s->r){
-            vec3 n = srph_sdf_normal(b->sdf, &c_local);
-            srph_vec3_scale(&n, &n, -phi);
-            srph_vec3_add(&c_local, &c_local, &n);
-            srph_transform_to_global_space(&b->transform, &c_global, &c_local);
-            *((vec3 *) srph_array_push_back(xs)) = c_global;
+        if (srph_sdf_contains(b->sdf, &x_local_b)){
+            *((vec3 *) srph_array_push_back(xs)) = x_global;
         }
     }
 }
@@ -215,14 +177,8 @@ void srph_collision::correct(){
     srph_transform_to_local_space(&a->transform, &xa, &x);
     srph_transform_to_local_space(&b->transform, &xb, &x);
 
-    // incrementally produce sphere set approximation
-    double phi_a = srph_sdf_phi(a->sdf, &xa);
-    srph_sphere sa = { .c = xa, .r = -phi_a };
-    sphere_set_approximate(&a->sdf->sphere_approx, &sa);
-    
-    double phi_b = srph_sdf_phi(b->sdf, &xb);
-    srph_sphere sb = { .c = xb, .r = -phi_b };
-    sphere_set_approximate(&b->sdf->sphere_approx, &sb);
+    srph_sdf_add_sample(a->sdf, &xa);
+    srph_sdf_add_sample(b->sdf, &xb);
  
     // choose best normal based on smallest second derivative
     auto ja = srph_sdf_jacobian(a->sdf, &xa);
