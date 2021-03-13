@@ -143,8 +143,8 @@ void srph_collision::colliding_correct(){
     srph::vec3_t x1(x.x, x.y, x.z);
 
     double jr = (1.0 + CoR) * vec::dot(vr, n) / (
-        1.0 / a->get_mass() + a->get_inverse_angular_mass(x1, n) +
-        1.0 / b->get_mass() + b->get_inverse_angular_mass(x1, n)
+        1.0 / srph_matter_mass(a) + a->get_inverse_angular_mass(x1, n) +
+        1.0 / srph_matter_mass(b) + b->get_inverse_angular_mass(x1, n)
     );
 
     a->apply_impulse_at(n * -jr, x1);
@@ -159,8 +159,8 @@ void srph_collision::colliding_correct(){
         t = vec3_t(t1.x, t1.y, t1.z);
         
         double vrt = vec::dot(vr, t); 
-        auto mvta = a->get_mass() * vrt;
-        auto mvtb = b->get_mass() * vrt;
+        auto mvta = srph_matter_mass(a) * vrt;
+        auto mvtb = srph_matter_mass(b) * vrt;
 
         double js = std::max(mata.static_friction,  matb.static_friction ) * jr;
         double jd = std::max(mata.dynamic_friction, matb.dynamic_friction) * jr;
@@ -195,9 +195,9 @@ void srph_collision::correct(){
     }
 
     // extricate matters 
-    double sm = a->get_mass() + b->get_mass();
-    a->translate(n * -depth * b->get_mass() / sm);
-    b->translate(n *  depth * a->get_mass() / sm);
+    double sm = srph_matter_mass(a) + srph_matter_mass(b);
+    a->translate(n * -depth * srph_matter_mass(b) / sm);
+    b->translate(n *  depth * srph_matter_mass(a) / sm);
     
     // find relative velocity at point 
     srph::vec3_t x1(x.x, x.y, x.z);

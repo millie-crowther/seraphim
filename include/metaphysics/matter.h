@@ -40,7 +40,6 @@ typedef struct srph_matter {
     srph_material get_material(const vec3 * x);
     srph_sdf * get_sdf() const;
     srph::vec3_t get_position() const;
-    double get_mass();
 
     srph_bound3 get_moving_bound(double t) const;
 
@@ -59,13 +58,9 @@ typedef struct srph_matter {
 
     double get_inverse_angular_mass(const srph::vec3_t & x, const srph::vec3_t & n);
     
-    void apply_impulse(const srph::vec3_t & j);
     void apply_impulse_at(const srph::vec3_t & j, const srph::vec3_t & x);
 
     srph::f32mat4_t get_matrix();
-
-    void apply_force(const srph::vec3_t & f);
-    void apply_force_at(const srph::vec3_t & f, const srph::vec3_t & x);
 
     void reset_acceleration();
 
@@ -77,6 +72,7 @@ typedef struct srph_matter {
     srph::mat3_t * get_inv_tf_i();
 } srph_matter;
 
+double srph_matter_mass(srph_matter * m);
 void srph_matter_bound(const srph_matter * m, srph_bound3 * b);
 void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s);
 

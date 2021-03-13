@@ -82,28 +82,12 @@ double srph_matter::get_inverse_angular_mass(const vec3_t & r_global, const vec3
     return vec::dot(rn, *get_inv_tf_i() * rn);
 }
 
-void srph_matter::apply_impulse(const vec3_t & j){
-    v += j / get_mass();
-}
-
 f32mat4_t srph_matter::get_matrix(){
     return transform.get_matrix();
 }
 
-void srph_matter::apply_force(const vec3_t & f){
-    a += f / get_mass();
-}
-
-void srph_matter::apply_force_at(const vec3_t & f, const vec3_t & x){
-    apply_force(f);
-
-    auto r = x - transform.to_global_space(get_centre_of_mass()); 
-    alpha += *get_inv_tf_i() * vec::cross(r, f);
-}    
-
 void srph_matter::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
-    apply_impulse(j);
-
+    v += j / srph_matter_mass(this);
     auto r = r_global - transform.to_global_space(get_centre_of_mass()); 
     omega += *get_inv_tf_i() * vec::cross(r, j);
 }
@@ -138,8 +122,8 @@ double srph_matter::get_average_density(){
     return average_density;
 }
 
-double srph_matter::get_mass(){
-    return get_average_density() * srph_sdf_volume(sdf);
+double srph_matter_mass(srph_matter * m){
+    return m->get_average_density() * srph_sdf_volume(m->sdf);
 }
 
 void srph_matter::translate(const vec3_t & x){
@@ -196,7 +180,7 @@ mat3_t * srph_matter::get_inv_tf_i(){
 mat3_t * srph_matter::get_i(){
     if (!_is_inertia_tensor_valid){
         if (is_uniform){
-            i = srph_sdf_inertia_tensor(sdf) * get_mass();
+            i = srph_sdf_inertia_tensor(sdf) * srph_matter_mass(this);
         } else {
             throw std::runtime_error("Error: non uniform substances not yet supported.");
         }
