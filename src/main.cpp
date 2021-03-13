@@ -4,8 +4,6 @@
 #include "maths/sdf/platonic.h"
 #include "physics/transform.h"
 
-#include "core/random.h"
-
 using namespace srph;
 
 int main(){

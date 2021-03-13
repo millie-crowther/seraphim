@@ -1,7 +1,8 @@
 #ifndef SERAPHIM_CONSTRAINT_H
 #define SERAPHIM_CONSTRAINT_H
 
-#include "core/array.h"
+#include <stdint.h>
+
 #include "maths/vector.h"
 
 typedef struct srph_vertex {
@@ -11,27 +12,28 @@ typedef struct srph_vertex {
     double w;
 } srph_vertex;
 
-typedef double (*srph_constraint_func)(const void * data, srph_vertex ** xs, uint32_t n);
-typedef void (*srph_constraint_derivative_func)(
-    const void * data, vec3 * dC, srph_vertex ** xs, uint32_t i, uint32_t n
-);
+struct srph_constraint;
+typedef double (*srph_constraint_func)(struct srph_constraint * c);
+typedef void (*srph_constraint_derivative_func)(struct srph_constraint * c, uint32_t i, vec3 * dC);
 
 typedef struct srph_constraint {
     bool _is_equality;
     double _stiffness;
-    srph_array _vertex_pointers;
     void * _data;
     srph_constraint_func _c_func;
     srph_constraint_derivative_func _dc_func;
+    
+    uint32_t n;
+    srph_vertex * _vertices[];
 } srph_constraint;
 
+
 void srph_constraint_init(
-    srph_constraint * c, bool is_equality, double stiffness,
+    srph_constraint * c, bool is_equality, double stiffness, uint32_t n,
     void * data, srph_constraint_func c_func, srph_constraint_derivative_func dc_func
 );
-void srph_constraint_destroy(srph_constraint * c);
 
-void srph_constraint_update(const srph_constraint * c, vec3 * dp, uint32_t i, double s); 
-double srph_constraint_scaling_factor(const srph_constraint * c);
+void srph_constraint_update(srph_constraint * c, vec3 * dp, uint32_t i, double s); 
+double srph_constraint_scaling_factor(srph_constraint * c);
 
 #endif
