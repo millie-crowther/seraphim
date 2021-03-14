@@ -1,13 +1,17 @@
 #include "physics/physics.h"
 
 #include "core/scheduler.h"
+#include "physics/collision.h"
 
 #include <chrono>
-#include <functional>
 #include <iostream>
 
-void srph_physics_start(srph_physics * p){
+void srph_physics_init(srph_physics * p){
     p->quit = false;
+    srph_array_create(&p->substances, sizeof(srph_substance *));
+} 
+
+void srph_physics_start(srph_physics * p){
     p->thread = std::thread(&srph_physics::run, p);
 }
 
@@ -18,26 +22,19 @@ void srph_physics_destroy(srph_physics * p){
         p->thread.join();
     }
 
+    srph_array_destroy(&p->substances);
+
     printf("joined physics thread\n");
 }
 
 void srph_physics_tick(srph_physics * p){
-    double t = srph::constant::sigma;
+//    double t = srph::constant::sigma;
 
     // update vertices
-    srph_matter * m;
-    for (uint32_t i = 0; i < p->matters.size(); i++){
-        m = p->matters[i];
-        srph_matter_update_vertices(m, t);
-    }
 
     // solve constraints
 
     // update velocities
-    for (uint32_t i = 0; i < p->matters.size(); i++){
-        m = p->matters[i];
-        srph_matter_update_velocities(m, t); 
-    }
 }
 
 using namespace srph;
@@ -59,26 +56,27 @@ void srph_physics::run(){
         std::vector<srph_collision> collisions;
     
         {
-            std::lock_guard<std::mutex> lock(matters_mutex);
+            std::lock_guard<std::mutex> lock(substances_mutex);
             
             // reset acceleration and apply gravity force
-            for (auto & m : matters){
-                if (m->get_position()[1] > -90.0){
-                    m->reset_acceleration();
+            for (uint32_t i = 0; i < substances.size; i++){
+                srph_substance * s = *(srph_substance **) srph_array_at(&substances, i);
+                
+                if (s->matter.get_position()[1] > -90.0){
+                    s->matter.reset_acceleration();
                 }
             }
 
             // collide awake substances with each other
-            for (uint32_t i = 0; i < matters.size(); i++){
-                for (uint32_t j = i + 1; j < matters.size(); j++){
-                    collisions.emplace_back(matters[i], matters[j]);
-                }
-            }
-            
-            // collide awake substances with asleep substances
-            for (auto awake_matter : matters){
-                for (auto asleep_matter : asleep_matters){
-                    collisions.emplace_back(asleep_matter, awake_matter);
+            for (uint32_t i = 0; i < substances.size; i++){
+                srph_substance * s = *(srph_substance **) srph_array_at(&substances, i);
+               
+                if (!s->_is_asleep){                 
+                    for (uint32_t j = i + 1; j < substances.size; j++){
+                        srph_substance * t = *(srph_substance **) srph_array_at(&substances, j);
+                        
+                        collisions.emplace_back(&s->matter, &t->matter);
+                    }
                 }
             }
         }
@@ -94,9 +92,10 @@ void srph_physics::run(){
         delta = std::max(delta, constant::iota);
        
         {
-            std::lock_guard<std::mutex> lock(matters_mutex);
+            std::lock_guard<std::mutex> lock(substances_mutex);
  
             // apply acceleration and velocity changes to matters
+            /*
             for (auto m : matters){
                 m->physics_tick(delta);
             } 
@@ -113,7 +112,7 @@ void srph_physics::run(){
                 } else { 
                     i++;
                 }
-            }
+            }*/
         }
 
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
@@ -121,21 +120,20 @@ void srph_physics::run(){
     }
 }
 
-void srph_physics::register_matter(srph_matter * matter){
-    std::lock_guard<std::mutex> lock(matters_mutex);
-    matters.push_back(matter);
+void srph_physics_register(srph_physics * p, srph_substance * s){
+    std::lock_guard<std::mutex> lock(p->substances_mutex);
+    *((srph_substance **) srph_array_push_back(&p->substances)) = s;
 }
     
-void srph_physics::unregister_matter(srph_matter * matter){
-    std::lock_guard<std::mutex> lock(matters_mutex);
+void srph_physics_unregister(srph_physics * p, srph_substance * s){
+    std::lock_guard<std::mutex> lock(p->substances_mutex);
     
-    auto it = std::find(matters.begin(), matters.end(), matter);
-    if (it != matters.end()){
-        matters.erase(it);
-    } else {
-        it = std::find(asleep_matters.begin(), asleep_matters.end(), matter);
-        if (it != asleep_matters.end()){
-            asleep_matters.erase(it);
+    for (uint32_t i = 0; i < p->substances.size;){
+        srph_substance ** t = (srph_substance **) srph_array_at(&p->substances, i);
+        if (s == *t){
+            srph_array_pop_back(&p->substances, *t);
+        } else {       
+            i++;
         }
     }
 }

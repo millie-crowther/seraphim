@@ -544,13 +544,13 @@ void renderer_t::render(){
     uint32_t size = work_group_size[0] * work_group_size[1];
 
     // write substances
-    std::vector<substance_t::data_t> substance_data;
+    std::vector<srph_substance::data_t> substance_data;
     for (auto s : substances){
         substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
     }
     substance_data.resize(size);
 
-    std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
+    std::sort(substance_data.begin(), substance_data.end(), srph_substance::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
 
@@ -644,7 +644,7 @@ void renderer_t::handle_requests(uint32_t frame){
 
     for (auto & call : calls){
         if (call.is_valid()){
-            auto lookup_substance = std::make_shared<substance_t>(call.get_substance_ID());
+            auto lookup_substance = std::make_shared<srph_substance>(call.get_substance_ID());
             auto substance_iterator = substances.find(lookup_substance);
 
             if (substance_iterator != substances.end()){
@@ -674,14 +674,14 @@ void renderer_t::create_buffers(){
     patch_buffer = std::make_unique<device_buffer_t<response_t::patch_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
-    substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
+    substance_buffer = std::make_unique<device_buffer_t<srph_substance::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }
 
 
-response_t renderer_t::get_response(const call_t & call, std::weak_ptr<substance_t> substance){
+response_t renderer_t::get_response(const call_t & call, std::weak_ptr<srph_substance> substance){
     if (response_cache.size() > max_cache_size){
         response_cache.erase(*prev_calls.begin());
         prev_calls.pop_front();     
@@ -697,11 +697,11 @@ response_t renderer_t::get_response(const call_t & call, std::weak_ptr<substance
     return response_cache[call];
 }
 
-void renderer_t::register_substance(std::shared_ptr<substance_t> substance){
+void renderer_t::register_substance(std::shared_ptr<srph_substance> substance){
     substances.insert(substance);
 }
 
-void renderer_t::unregister_substance(std::shared_ptr<substance_t> substance){
+void renderer_t::unregister_substance(std::shared_ptr<srph_substance> substance){
     auto it = substances.find(substance);
     if (it != substances.end()){
         substances.erase(it);

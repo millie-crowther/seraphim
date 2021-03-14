@@ -38,7 +38,7 @@ namespace srph {
      
         std::shared_ptr<camera_t> test_camera;      
 
-        std::set<std::shared_ptr<substance_t>> substances;
+        std::set<std::shared_ptr<srph_substance>> substances;
 
         bool fps_monitor_quit;
         void monitor_fps();
@@ -49,11 +49,11 @@ namespace srph {
 
         void run();
 
-        void annihilate(std::shared_ptr<substance_t> substance);
+        void annihilate(std::shared_ptr<srph_substance> substance);
     };
 }
 
-srph::substance_t * srph_create_substance(srph::seraphim_t * srph, srph_form * form, srph_matter * matter);
+srph_substance * srph_create_substance(srph::seraphim_t * srph, srph_form * form, srph_matter * matter);
 
 void srph_cleanup(srph::seraphim_t * engine);
 

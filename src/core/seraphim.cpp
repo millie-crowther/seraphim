@@ -83,6 +83,8 @@ srph::seraphim_t::seraphim_t(){
     renderer = std::make_unique<renderer_t>(
         device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
+
+    srph_physics_init(&physics);
 }
 
 void srph_cleanup(srph::seraphim_t * engine){
@@ -297,9 +299,9 @@ void srph::seraphim_t::run(){
     }
 }
 
-void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
+void srph::seraphim_t::annihilate(std::shared_ptr<srph_substance> substance){
     renderer->unregister_substance(substance);
-    physics.unregister_matter(&substance->matter);
+    srph_physics_unregister(&physics, substance.get());
 
     auto it = substances.find(substance);
     if (it != substances.end()){
@@ -307,10 +309,10 @@ void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
     }
 }
 
-substance_t * srph_create_substance(seraphim_t * srph, srph_form * form, srph_matter * matter){
-    auto substance = std::make_shared<substance_t>(form, matter);
+srph_substance * srph_create_substance(seraphim_t * srph, srph_form * form, srph_matter * matter){
+    auto substance = std::make_shared<srph_substance>(form, matter);
     srph->substances.insert(substance);
     srph->renderer->register_substance(substance);
-    srph->physics.register_matter(&substance->matter);
+    srph_physics_register(&srph->physics, substance.get());
     return substance.get();
 }

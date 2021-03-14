@@ -223,7 +223,6 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s){
 void srph_matter_update_vertices(srph_matter * m, double t){
     // make sure matter has a vertex for every sdf vertex
     if (m->_vertices.size < m->sdf->vertices.size){
-
         // compute average translation and velocity for inserting new vertices
         vec3 d = srph_vec3_zero;
         vec3 v = srph_vec3_zero;
