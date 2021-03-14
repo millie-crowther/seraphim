@@ -81,5 +81,6 @@ void srph_matter_bound(const srph_matter * m, srph_bound3 * b);
 void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s);
 
 void srph_matter_update_vertices(srph_matter * m, double t);
+void srph_matter_update_velocities(srph_matter * m, double t);
 
 #endif

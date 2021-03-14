@@ -6,14 +6,6 @@
 #include <functional>
 #include <iostream>
 
-static void update_velocities(srph_physics * p){
-    double delta_t = srph::constant::sigma;
-    for (uint32_t i = 0; i < matters.size(); i++){
-        srph_matter * m = &matters[i];
-        srph_matter_update_velocities(m, t);
-    }
-}
-
 void srph_physics_start(srph_physics * p){
     p->quit = false;
     p->thread = std::thread(&srph_physics::run, p);
@@ -30,7 +22,22 @@ void srph_physics_destroy(srph_physics * p){
 }
 
 void srph_physics_tick(srph_physics * p){
-    update_velocities(p); 
+    double t = srph::constant::sigma;
+
+    // update vertices
+    srph_matter * m;
+    for (uint32_t i = 0; i < p->matters.size(); i++){
+        m = p->matters[i];
+        srph_matter_update_vertices(m, t);
+    }
+
+    // solve constraints
+
+    // update velocities
+    for (uint32_t i = 0; i < p->matters.size(); i++){
+        m = p->matters[i];
+        srph_matter_update_velocities(m, t); 
+    }
 }
 
 using namespace srph;
@@ -52,7 +59,7 @@ void srph_physics::run(){
         std::vector<srph_collision> collisions;
     
         {
-           - std::lock_guard<std::mutex> lock(matters_mutex);
+            std::lock_guard<std::mutex> lock(matters_mutex);
             
             // reset acceleration and apply gravity force
             for (auto & m : matters){
