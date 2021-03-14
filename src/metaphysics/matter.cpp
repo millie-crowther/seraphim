@@ -1,14 +1,35 @@
 #include "metaphysics/matter.h"
 
 static void update_vertices(srph_matter * m){
+    if (m->_vertices.size >= m->sdf->vertices.size){
+        return;
+    }
+
+    // compute average translation and velocity for inserting new vertices
+    vec3 d = srph_vec3_zero;
+    vec3 v = srph_vec3_zero;
+    for (uint32_t i = 0; i < m->_vertices.size; i++){
+        srph_vertex * vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
+        srph_vec3_add(&d, &d, &vertex->x);
+        srph_vec3_subtract(&d, &d, vertex->_x_key);
+
+        srph_vec3_add(&v, &v, &vertex->v);
+    }
+
+    if (!srph_array_is_empty(&m->_vertices)){
+        srph_vec3_scale(&d, &d, 1.0 / (double) m->_vertices.size);
+        srph_vec3_scale(&v, &v, 1.0 / (double) m->_vertices.size);
+    }
+
     while (m->_vertices.size < m->sdf->vertices.size){
         vec3 * x_sdf = (vec3 *) srph_array_at(&m->sdf->vertices, m->_vertices.size);
 
         srph_vertex * vertex = (srph_vertex *) srph_array_push_back(&m->_vertices);
         vertex->_x_key = x_sdf;
         vertex->w = 1.0; // TODO
-        srph_transform_to_global_space(&m->transform, &vertex->x, x_sdf);
-        srph_vec3_fill(&vertex->v, 0.0);
+        vertex->v = v;
+        srph_vec3_fill(&vertex->p, 0.0);
+        srph_vec3_add(&vertex->x, x_sdf, &d);
     }
 }
 
@@ -31,6 +52,9 @@ void srph_matter_init(
     m->_is_mass_calculated = false;
     m->_is_inertia_tensor_valid = false;
     m->_is_inv_inertia_tensor_valid = false;
+
+    srph_vec3_fill(&m->f, 0.0);
+    srph_vec3_fill(&m->t, 0.0);
     
     srph_array_create(&m->_vertices, sizeof(srph_vertex));
     

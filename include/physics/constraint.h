@@ -9,6 +9,7 @@ typedef struct srph_vertex {
     vec3 * _x_key;
     vec3 x;
     vec3 v;
+    vec3 p;
     double w;
 } srph_vertex;
 
@@ -24,7 +25,7 @@ typedef struct srph_constraint {
     srph_constraint_derivative_func _dc_func;
     
     uint32_t n;
-    srph_vertex * _vertices[];
+    srph_vertex ** _vertices;
 } srph_constraint;
 
 

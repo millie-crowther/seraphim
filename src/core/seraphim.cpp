@@ -83,14 +83,12 @@ srph::seraphim_t::seraphim_t(){
     renderer = std::make_unique<renderer_t>(
         device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
-
-    physics = std::make_unique<physics_t>();
 }
 
 void srph_cleanup(srph::seraphim_t * engine){
     engine->fps_monitor_quit = true;
 
-    engine->physics.reset();
+    srph_physics_destroy(&engine->physics);
  
     scheduler::terminate();
 
@@ -138,7 +136,7 @@ void seraphim_t::monitor_fps(){
     std::unique_lock<std::mutex> lock(m);
 
     while (!fps_monitor_quit){
-        double physics_fps = static_cast<double>(physics->get_frame_count()) / interval;
+        double physics_fps = static_cast<double>(physics.get_frame_count()) / interval;
         double render_fps = static_cast<double>(renderer->get_frame_count()) / interval;
 
         std::cout << 
@@ -266,7 +264,8 @@ bool srph::seraphim_t::check_validation_layers(){
 #endif
 
 void srph::seraphim_t::run(){
-    physics->start();
+    srph_physics_start(&physics);
+
     fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
 
     window->show();
@@ -300,7 +299,7 @@ void srph::seraphim_t::run(){
 
 void srph::seraphim_t::annihilate(std::shared_ptr<substance_t> substance){
     renderer->unregister_substance(substance);
-    physics->unregister_matter(&substance->matter);
+    physics.unregister_matter(&substance->matter);
 
     auto it = substances.find(substance);
     if (it != substances.end()){
@@ -312,6 +311,6 @@ substance_t * srph_create_substance(seraphim_t * srph, srph_form * form, srph_ma
     auto substance = std::make_shared<substance_t>(form, matter);
     srph->substances.insert(substance);
     srph->renderer->register_substance(substance);
-    srph->physics->register_matter(&substance->matter);
+    srph->physics.register_matter(&substance->matter);
     return substance.get();
 }

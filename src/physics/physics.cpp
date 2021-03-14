@@ -6,27 +6,25 @@
 #include <functional>
 #include <iostream>
 
-using namespace srph;
 
-physics_t::physics_t(){
-    quit = false;
+void srph_physics_start(srph_physics * p){
+    p->quit = false;
+    p->thread = std::thread(&srph_physics::run, p);
 }
 
-physics_t::~physics_t(){
-    quit = true;
+void srph_physics_destroy(srph_physics * p){
+    p->quit = true;
 
-    if (thread.joinable()){
-        thread.join();
+    if (p->thread.joinable()){
+        p->thread.join();
     }
 
     printf("joined physics thread\n");
 }
 
-void physics_t::start(){
-    thread = std::thread(&physics_t::run, this);
-} 
+using namespace srph;
 
-void physics_t::run(){
+void srph_physics::run(){
     auto t = scheduler::clock_t::now();
     auto previous = std::chrono::steady_clock::now();
 
@@ -105,12 +103,12 @@ void physics_t::run(){
     }
 }
 
-void physics_t::register_matter(srph_matter * matter){
+void srph_physics::register_matter(srph_matter * matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     matters.push_back(matter);
 }
     
-void physics_t::unregister_matter(srph_matter * matter){
+void srph_physics::unregister_matter(srph_matter * matter){
     std::lock_guard<std::mutex> lock(matters_mutex);
     
     auto it = std::find(matters.begin(), matters.end(), matter);
@@ -124,7 +122,7 @@ void physics_t::unregister_matter(srph_matter * matter){
     }
 }
 
-int physics_t::get_frame_count(){
+int srph_physics::get_frame_count(){
     int f = frames;
     frames = 0;
     return f;

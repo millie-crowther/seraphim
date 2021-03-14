@@ -28,7 +28,7 @@ namespace srph {
         std::unique_ptr<device_t>   device;
         std::unique_ptr<renderer_t> renderer;
         std::unique_ptr<window_t>   window;
-        std::unique_ptr<physics_t>  physics;
+        srph_physics physics;
 
         VkInstance instance;
         VkSurfaceKHR surface;

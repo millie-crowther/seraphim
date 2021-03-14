@@ -11,30 +11,28 @@
 #include <set>
 #include <thread>
 
-namespace srph {
-    struct physics_t {
-        physics_t();
-        ~physics_t();
+typedef struct srph_physics {
+    void register_matter(srph_matter * matter);
+    void unregister_matter(srph_matter * matter);
 
-        void start();
+    int get_frame_count();
 
-        void register_matter(srph_matter * matter);
-        void unregister_matter(srph_matter * matter);
+    bool quit;
+    std::thread thread;
 
-        int get_frame_count();
+    std::mutex matters_mutex;
 
-        bool quit;
-        std::thread thread;
+    std::vector<srph_matter *> matters;
+    std::vector<srph_matter *> asleep_matters;
 
-        std::mutex matters_mutex;
+    int frames;
 
-        std::vector<srph_matter *> matters;
-        std::vector<srph_matter *> asleep_matters;
+    void run();
+} srph_physics;
 
-        int frames;
 
-        void run();
-    };
-}
+void srph_physics_start(srph_physics * p);
+void srph_physics_destroy(srph_physics *p);
+void srph_physics_tick(srph_physics * p);
 
 #endif

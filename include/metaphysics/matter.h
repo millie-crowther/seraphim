@@ -29,6 +29,9 @@ typedef struct srph_matter {
     bool _is_inv_inertia_tensor_valid;
     srph::mat3_t inv_tf_i;
 
+    vec3 f;        
+    vec3 t;
+
     srph::vec3_t a;
     srph::vec3_t v;
     srph::vec3_t omega;
