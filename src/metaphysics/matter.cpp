@@ -1,41 +1,7 @@
 #include "metaphysics/matter.h"
 
-static void update_vertices(srph_matter * m){
-    if (m->_vertices.size >= m->sdf->vertices.size){
-        return;
-    }
-
-    // compute average translation and velocity for inserting new vertices
-    vec3 d = srph_vec3_zero;
-    vec3 v = srph_vec3_zero;
-    for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_vertex * vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
-        srph_vec3_add(&d, &d, &vertex->x);
-        srph_vec3_subtract(&d, &d, vertex->_x_key);
-
-        srph_vec3_add(&v, &v, &vertex->v);
-    }
-
-    if (!srph_array_is_empty(&m->_vertices)){
-        srph_vec3_scale(&d, &d, 1.0 / (double) m->_vertices.size);
-        srph_vec3_scale(&v, &v, 1.0 / (double) m->_vertices.size);
-    }
-
-    while (m->_vertices.size < m->sdf->vertices.size){
-        vec3 * x_sdf = (vec3 *) srph_array_at(&m->sdf->vertices, m->_vertices.size);
-
-        srph_vertex * vertex = (srph_vertex *) srph_array_push_back(&m->_vertices);
-        vertex->_x_key = x_sdf;
-        vertex->w = 1.0; // TODO
-        vertex->v = v;
-        srph_vec3_fill(&vertex->p, 0.0);
-        srph_vec3_add(&vertex->x, x_sdf, &d);
-    }
-}
 
 using namespace srph;
-
-
 
 void srph_matter_init(
     srph_matter * m, srph_sdf * sdf, const srph_material * material, 
@@ -254,4 +220,60 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s){
 
     vec3 v1 = { m->v[0], m->v[1], m->v[2] };
     s->r += srph_vec3_length(&v1) * t;
+}
+
+static void update_vertices(srph_matter * m){
+}
+
+void srph_matter_update_vertices(srph_matter * m, double t){
+    // make sure matter has a vertex for every sdf vertex
+    if (m->_vertices.size < m->sdf->vertices.size){
+
+        // compute average translation and velocity for inserting new vertices
+        vec3 d = srph_vec3_zero;
+        vec3 v = srph_vec3_zero;
+        for (uint32_t i = 0; i < m->_vertices.size; i++){
+            srph_vertex * vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
+            srph_vec3_add(&d, &d, &vertex->x);
+            srph_vec3_subtract(&d, &d, vertex->_x_key);
+
+            srph_vec3_add(&v, &v, &vertex->v);
+        }
+
+        if (!srph_array_is_empty(&m->_vertices)){
+            srph_vec3_scale(&d, &d, 1.0 / (double) m->_vertices.size);
+            srph_vec3_scale(&v, &v, 1.0 / (double) m->_vertices.size);
+        }
+
+        while (m->_vertices.size < m->sdf->vertices.size){
+            vec3 * x_sdf = (vec3 *) srph_array_at(&m->sdf->vertices, m->_vertices.size);
+
+            srph_vertex * vertex = (srph_vertex *) srph_array_push_back(&m->_vertices);
+            vertex->_x_key = x_sdf;
+            vertex->w = 1.0; // TODO
+            vertex->v = v;
+            srph_vec3_fill(&vertex->p, 0.0);
+            srph_vec3_add(&vertex->x, x_sdf, &d);
+        }
+    }
+
+    // update velocities using newton's second law
+    srph_vertex * vertex;
+    for (uint32_t i = 0; i < m->_vertices.size; i++){
+        vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
+        vec3 fext; // TODO
+
+        vec3 dv;
+        srph_vec3_scale(&dv, &fext, t / vertex->m);
+        srph_vec3_add(&vertex->v, &vertex->v, &dv);
+    }
+
+    // TODO: velocity dampening
+
+    // extrapolate next position
+    for (uint32_t i = 0; i < m->_vertices.size; i++){
+        vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
+        srph_vec3_scale(&vertex->p, &vertex->v, t);
+        srph_vec3_add(&vertex->p, &vertex->p, &vertex->x);
+    }
 }

@@ -10,7 +10,7 @@ typedef struct srph_vertex {
     vec3 x;
     vec3 v;
     vec3 p;
-    double w;
+    double m;
 } srph_vertex;
 
 struct srph_constraint;

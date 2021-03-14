@@ -6,6 +6,13 @@
 #include <functional>
 #include <iostream>
 
+static void update_velocities(srph_physics * p){
+    double delta_t = srph::constant::sigma;
+    for (uint32_t i = 0; i < matters.size(); i++){
+        srph_matter * m = &matters[i];
+        srph_matter_update_velocities(m, t);
+    }
+}
 
 void srph_physics_start(srph_physics * p){
     p->quit = false;
@@ -20,6 +27,10 @@ void srph_physics_destroy(srph_physics * p){
     }
 
     printf("joined physics thread\n");
+}
+
+void srph_physics_tick(srph_physics * p){
+    update_velocities(p); 
 }
 
 using namespace srph;
@@ -41,7 +52,7 @@ void srph_physics::run(){
         std::vector<srph_collision> collisions;
     
         {
-            std::lock_guard<std::mutex> lock(matters_mutex);
+           - std::lock_guard<std::mutex> lock(matters_mutex);
             
             // reset acceleration and apply gravity force
             for (auto & m : matters){
