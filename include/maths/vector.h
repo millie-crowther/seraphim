@@ -49,6 +49,8 @@ double srph_vec3_dot(const vec3 * a, const vec3 * b);
 double srph_vec2_length(const vec2 * x);
 double srph_vec3_length(const vec3 * x);
 
+void srph_vec3_cross(vec3 * axb, const vec3 * a, const vec3 * b);
+
 void srph_vec3_print(const vec3 * x);
 
 #endif

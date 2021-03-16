@@ -90,4 +90,11 @@ double srph_vec3_distance(const vec3 * a, const vec3 * b){
     srph_vec3_subtract(&d, a, b);
     return srph_vec3_length(&d);
 }
-    
+   
+void srph_vec3_cross(vec3 * axb, const vec3 * a, const vec3 * b){
+    *axb = {
+        a->y * b->z - a->z * b->y,
+        a->z * b->x - a->x * b->z,
+        a->x * b->y - a->y * b->x
+    };
+} 

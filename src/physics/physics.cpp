@@ -6,6 +6,8 @@
 #include <chrono>
 #include <iostream>
 
+#define SOLVER_ITERATIONS 10
+
 void srph_physics_init(srph_physics * p){
     p->quit = false;
     srph_array_create(&p->substances, sizeof(srph_substance *));
@@ -28,13 +30,27 @@ void srph_physics_destroy(srph_physics * p){
 }
 
 void srph_physics_tick(srph_physics * p){
-//    double t = srph::constant::sigma;
+    double t = srph::constant::sigma;
 
     // update vertices
+    srph_substance * s;
+    for (uint32_t i = 0 i < p->substances.size; i++){
+        s = * (srph_substance **) srph_array_at(&p->substances, i);
+        srph_matter_update_vertices(&s->matter, t);
+    }    
+
+    // generate collision constraints
 
     // solve constraints
+    for (int i = 0; i < SOLVER_ITERATIONS; i++){
+
+    }
 
     // update velocities
+    for (uint32_t i = 0 i < p->substances.size; i++){
+        s = * (srph_substance **) srph_array_at(&p->substances, i);
+        srph_matter_update_velocities(&s->matter, t);
+    }
 }
 
 using namespace srph;

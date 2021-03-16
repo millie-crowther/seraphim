@@ -83,4 +83,9 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s);
 void srph_matter_update_vertices(srph_matter * m, double t);
 void srph_matter_update_velocities(srph_matter * m, double t);
 
+void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x);
+void srph_matter_centre_of_mass(srph_matter * m, vec3 * com);
+
+srph_vertex * srph_matter_add_vertex(srph_matter * m, const vec3 * x);
+
 #endif

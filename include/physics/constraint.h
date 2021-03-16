@@ -6,8 +6,7 @@
 #include "maths/vector.h"
 
 typedef struct srph_vertex {
-    
-    vec3 * _x_key;
+    vec3 x0;
     vec3 x;
     vec3 v;
     vec3 p;
