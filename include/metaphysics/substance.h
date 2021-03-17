@@ -36,7 +36,6 @@ typedef struct srph_substance {
     data_t get_data(const srph::vec3_t & eye_position);
     uint32_t get_id() const;
 
-    bool _is_asleep;
     uint32_t id;
     srph_form form;
     srph_matter matter;

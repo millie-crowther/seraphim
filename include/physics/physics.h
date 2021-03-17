@@ -15,6 +15,8 @@ typedef struct srph_physics {
 
     srph_array substances;
 
+    srph_array constraints;
+
     int frames;
 
     void run();

@@ -5,13 +5,11 @@
 using namespace srph;
 
 srph_substance::srph_substance(uint32_t id) {
-    _is_asleep = false;
     this->id = id;
 }
 
 srph_substance::srph_substance(srph_form * form, srph_matter * matter){
     static uint32_t id = 0;
-    _is_asleep = false;
     this->form = *form;
     this->matter = *matter;
     this->id = id++;

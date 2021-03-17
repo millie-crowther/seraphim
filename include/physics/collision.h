@@ -3,7 +3,7 @@
 
 #include "maths/matrix.h"
 #include "maths/vector.h"
-#include "metaphysics/matter.h"
+#include "metaphysics/substance.h"
 
 typedef struct srph_collision {
     bool is_intersecting;
@@ -31,5 +31,9 @@ typedef struct srph_collision {
         bool operator()(const srph_collision & a, const srph_collision & b);
     };
 } srph_collision;
+
+
+bool srph_collision_is_detected(srph_substance * a, srph_substance * b, double dt);
+void srph_collision_push_constraints(srph_array * cs, srph_substance * a, srph_substance * b);
 
 #endif

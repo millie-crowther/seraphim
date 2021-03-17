@@ -5,6 +5,8 @@
 
 #include "maths/vector.h"
 
+#define SERAPHIM_MAX_VERTICES_PER_CONSTRAINT 4
+
 typedef struct srph_vertex {
     vec3 x0;
     vec3 x;
@@ -25,7 +27,7 @@ typedef struct srph_constraint {
     srph_constraint_derivative_func _dc_func;
     
     uint32_t n;
-    srph_vertex ** _vertices;
+    srph_vertex * _vertices[SERAPHIM_MAX_VERTICES_PER_CONSTRAINT];
 } srph_constraint;
 
 
@@ -34,7 +36,7 @@ void srph_constraint_init(
     void * data, srph_constraint_func c_func, srph_constraint_derivative_func dc_func
 );
 
-void srph_constraint_update(srph_constraint * c, vec3 * dp, uint32_t i, double s); 
+void srph_constraint_update(srph_constraint * c, vec3 * p, uint32_t i, double s); 
 double srph_constraint_scaling_factor(srph_constraint * c);
 
 #endif

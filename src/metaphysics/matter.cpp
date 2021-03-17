@@ -15,6 +15,7 @@ void srph_matter_init(
 
     m->omega = vec3_t(0.01, 0.01, 0.01);
 
+    m->is_at_rest = false;
     m->_is_mass_calculated = false;
     m->_is_inertia_tensor_valid = false;
     m->_is_inv_inertia_tensor_valid = false;
@@ -27,6 +28,10 @@ void srph_matter_init(
 
 void srph_matter_destroy(srph_matter * m){
     srph_array_destroy(&m->_vertices);
+}
+
+void srph_matter_push_internal_constraints(srph_matter * m, srph_array * a){
+    // TODO 
 }
 
 quat_t srph_matter::get_rotation() const {

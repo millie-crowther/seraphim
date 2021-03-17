@@ -11,6 +11,7 @@
 void srph_physics_init(srph_physics * p){
     p->quit = false;
     srph_array_create(&p->substances, sizeof(srph_substance *));
+    srph_array_create(&p->constraints, sizeof(srph_constraint));
 } 
 
 void srph_physics_start(srph_physics * p){
@@ -24,32 +25,51 @@ void srph_physics_destroy(srph_physics * p){
         p->thread.join();
     }
 
+    srph_array_destroy(&p->constraints);
     srph_array_destroy(&p->substances);
 
     printf("joined physics thread\n");
 }
 
 void srph_physics_tick(srph_physics * p){
-    double t = srph::constant::sigma;
+    double dt = srph::constant::sigma;
 
-    // update vertices
-    srph_substance * s;
+    // update vertices 
+    srph_substance * s, * t;
     for (uint32_t i = 0; i < p->substances.size; i++){
         s = * (srph_substance **) srph_array_at(&p->substances, i);
-        srph_matter_update_vertices(&s->matter, t);
+        srph_matter_update_vertices(&s->matter, dt);
     }    
 
-    // generate collision constraints
+    // get constraints
+    for (uint32_t i = 0; i < p->substances.size; i++){
+        s = * (srph_substance **) srph_array_at(&p->substances, i);
+    
+        // internal constraints
+        srph_matter_push_internal_constraints(&s->matter, &p->constraints);
+
+        // collision constraints
+        if (s->matter.is_at_rest){
+            continue;
+        }
+
+        for (uint32_t j = i + 1; j < p->substances.size; j++){
+            t = * (srph_substance **) srph_array_at(&p->substances, j);
+            if (srph_collision_is_detected(s, t, dt)){
+                srph_collision_push_constraints(&p->constraints, s, t);
+            }
+        }
+    }    
 
     // solve constraints
     for (int i = 0; i < SOLVER_ITERATIONS; i++){
-
+         
     }
 
     // update velocities
     for (uint32_t i = 0; i < p->substances.size; i++){
         s = * (srph_substance **) srph_array_at(&p->substances, i);
-        srph_matter_update_velocities(&s->matter, t);
+        srph_matter_update_velocities(&s->matter, dt);
     }
 }
 
@@ -87,12 +107,10 @@ void srph_physics::run(){
             for (uint32_t i = 0; i < substances.size; i++){
                 srph_substance * s = *(srph_substance **) srph_array_at(&substances, i);
                
-                if (!s->_is_asleep){                 
-                    for (uint32_t j = i + 1; j < substances.size; j++){
-                        srph_substance * t = *(srph_substance **) srph_array_at(&substances, j);
-                        
-                        collisions.emplace_back(&s->matter, &t->matter);
-                    }
+                for (uint32_t j = i + 1; j < substances.size; j++){
+                    srph_substance * t = *(srph_substance **) srph_array_at(&substances, j);
+                    
+                    collisions.emplace_back(&s->matter, &t->matter);
                 }
             }
         }
