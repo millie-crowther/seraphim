@@ -34,7 +34,7 @@ void srph_physics_tick(srph_physics * p){
 
     // update vertices
     srph_substance * s;
-    for (uint32_t i = 0 i < p->substances.size; i++){
+    for (uint32_t i = 0; i < p->substances.size; i++){
         s = * (srph_substance **) srph_array_at(&p->substances, i);
         srph_matter_update_vertices(&s->matter, t);
     }    
@@ -47,7 +47,7 @@ void srph_physics_tick(srph_physics * p){
     }
 
     // update velocities
-    for (uint32_t i = 0 i < p->substances.size; i++){
+    for (uint32_t i = 0; i < p->substances.size; i++){
         s = * (srph_substance **) srph_array_at(&p->substances, i);
         srph_matter_update_velocities(&s->matter, t);
     }

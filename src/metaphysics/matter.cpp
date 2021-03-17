@@ -37,7 +37,7 @@ vec3_t srph_matter::get_position() const {
     return transform.get_position();
 }
 
-bool srph_matter::is_inert(){
+bool srph_matter_is_inert(srph_matter * m){
     return false;
 }
 
@@ -227,7 +227,7 @@ srph_vertex * srph_matter_add_vertex(srph_matter * m , const vec3 * x){
     for (uint32_t i = 0; i < m->_vertices.size; i++){
         srph_vertex * vertex = (srph_vertex *) srph_array_at(&m->_vertices, i);
         srph_vec3_add(&d, &d, &vertex->x);
-        srph_vec3_subtract(&d, &d, vertex->_x_key);
+        srph_vec3_subtract(&d, &d, &vertex->x0);
 
         srph_vec3_add(&v, &v, &vertex->v);
     }
@@ -291,6 +291,6 @@ void srph_matter_update_velocities(srph_matter * m, double t){
     // TODO: restitution
 }
 
-void srph_matter_centre_of_mass(srph_matter * m, const vec3 * x){
+void srph_matter_centre_of_mass(srph_matter * m, vec3 * x){
     *x = { 0.0, 0.0, 0.0 };
 }

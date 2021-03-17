@@ -46,8 +46,6 @@ typedef struct srph_matter {
     void rotate(const srph::quat_t & q);
 
     srph::quat_t get_rotation() const;
-
-    bool is_inert();
     
     srph::vec3_t to_local_space(const srph::vec3_t & x) const;
 
@@ -87,5 +85,7 @@ void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x);
 void srph_matter_centre_of_mass(srph_matter * m, vec3 * com);
 
 srph_vertex * srph_matter_add_vertex(srph_matter * m, const vec3 * x);
+
+bool srph_matter_is_inert(srph_matter * m);
 
 #endif
