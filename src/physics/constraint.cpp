@@ -34,12 +34,13 @@ double srph_constraint_scaling_factor(srph_constraint * c){
     return s / q;
 }
 
-void srph_constraint_update(srph_constraint * c, vec3 * p, uint32_t i, double s){
+void srph_constraint_update(srph_constraint * c, uint32_t i, double s){
     if (c->n == 0){
         return;
     }
 
     vec3 dp;
+    vec3 * p = &c->_vertices[i]->p;
     c->_dc_func(c, i, &dp);
     srph_vec3_scale(&dp, &dp, -s / c->_vertices[i]->m);
     srph_vec3_add(p, p, &dp);

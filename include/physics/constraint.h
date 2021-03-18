@@ -36,7 +36,7 @@ void srph_constraint_init(
     void * data, srph_constraint_func c_func, srph_constraint_derivative_func dc_func
 );
 
-void srph_constraint_update(srph_constraint * c, vec3 * p, uint32_t i, double s); 
+void srph_constraint_update(srph_constraint * c, uint32_t i, double s); 
 double srph_constraint_scaling_factor(srph_constraint * c);
 
 #endif

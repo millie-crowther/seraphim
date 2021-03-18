@@ -62,8 +62,17 @@ void srph_physics_tick(srph_physics * p){
     }    
 
     // solve constraints
+    srph_constraint * c;
+    double s;
     for (int i = 0; i < SOLVER_ITERATIONS; i++){
-         
+        for (uint32_t j = 0; j < p->constraints.size; j++){
+            c = (srph_constraint *) srph_array_at(&p->constraints, j); 
+            s = srph_constraint_scaling_factor(c);
+           
+            for (uint32_t k = 0; k < c->n; k++){
+                srph_constraint_update(c, k, s);
+            } 
+        } 
     }
 
     // update velocities
