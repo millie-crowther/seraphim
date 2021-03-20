@@ -25,8 +25,6 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->_is_com_valid = false;
     sdf->_is_inertia_tensor_valid = false;
     sdf->_volume = -1.0;
-
-    srph_array_create(&sdf->vertices, sizeof(vec3));
 }
 
 srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
@@ -225,13 +223,12 @@ void srph_sdf_destroy(srph_sdf * sdf){
         if (sdf->_data != NULL){
             free(sdf->_data);
         }
-
-        srph_array_destroy(&sdf->vertices);
         
         free(sdf);
     }
 }
 
+/*
 void srph_sdf_add_sample(srph_sdf * sdf, const vec3 * x){
     assert(sdf != NULL);
 
@@ -247,4 +244,4 @@ void srph_sdf_add_sample(srph_sdf * sdf, const vec3 * x){
     }
 
     *((vec3 *) srph_array_push_back(&sdf->vertices)) = *x;
-} 
+} */

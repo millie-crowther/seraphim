@@ -13,7 +13,7 @@ typedef struct srph_collision {
     vec3 xa;
     vec3 xb;
 
-    srph_array xs;
+    srph_array(vec3) xs;
 
     srph::vec3_t n;
     srph::vec3_t vr;
@@ -32,8 +32,7 @@ typedef struct srph_collision {
     };
 } srph_collision;
 
-
 bool srph_collision_is_detected(srph_substance * a, srph_substance * b, double dt);
-void srph_collision_push_constraints(srph_array * cs, srph_substance * a, srph_substance * b);
+void srph_collision_push_constraints(srph_constraint_array * cs, srph_substance * a, srph_substance * b);
 
 #endif

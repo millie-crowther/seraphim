@@ -77,19 +77,6 @@ static double time_to_collision_func(void * data, const vec3 * x){
     return phi / vrn;        
 }
 
-static void find_contact_points(srph_array * xs, srph_matter * a, srph_matter * b){
-    for (uint32_t i = 0; i < a->sdf->vertices.size; i++){
-        vec3 * x = (vec3 *) srph_array_at(&a->sdf->vertices, i);
-        vec3 x_global, x_local_b;
-        srph_transform_to_global_space(&a->transform, &x_global, x);
-        srph_transform_to_local_space(&b->transform, &x_local_b, &x_global);
-
-        if (srph_sdf_contains(b->sdf, &x_local_b)){
-            *((vec3 *) srph_array_push_back(xs)) = x_global;
-        }
-    }
-}
-
 using namespace srph;
 
 srph_collision::srph_collision(srph_matter * a, srph_matter * b){
@@ -124,26 +111,6 @@ srph_collision::srph_collision(srph_matter * a, srph_matter * b){
         srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
         t = s.fx;
         is_intersecting = t <= constant::iota;
-    }
-
-    if (is_intersecting){
-        srph_array xs;
-        srph_array_create(&xs, sizeof(vec3));
-
-        find_contact_points(&xs, a, b);
-        find_contact_points(&xs, b, a);
-        
-        vec3 cx = srph_vec3_zero;
-        for (uint32_t i = 0; i < xs.size; i++){
-            srph_vec3_add(&cx, &cx, (vec3 *) srph_array_at(&xs, i));  
-        }
-
-        if (!srph_array_is_empty(&xs)){
-            srph_vec3_scale(&cx, &cx, 1.0 / (double) xs.size);
-            x = cx;
-        }
-
-        srph_array_destroy(&xs);
     }
 }
 
@@ -190,9 +157,6 @@ void srph_collision::colliding_correct(){
 void srph_collision::correct(){
     srph_transform_to_local_space(&a->transform, &xa, &x);
     srph_transform_to_local_space(&b->transform, &xb, &x);
-
-    srph_sdf_add_sample(a->sdf, &xa);
-    srph_sdf_add_sample(b->sdf, &xb);
  
     // choose best normal based on smallest second derivative
     auto ja = srph_sdf_jacobian(a->sdf, &xa);
@@ -250,6 +214,6 @@ bool srph_collision_is_detected(srph_substance * a, srph_substance * b, double d
     return s.fx < 0;
 }
 
-void srph_collision_push_constraints(srph_array * cs, srph_substance * a, srph_substance * b){
+void srph_collision_push_constraints(srph_constraint_array * cs, srph_substance * a, srph_substance * b){
     // TODO
 }

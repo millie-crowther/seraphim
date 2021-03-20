@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 
+#include "core/array.h"
 #include "maths/vector.h"
 
 #define SERAPHIM_MAX_VERTICES_PER_CONSTRAINT 4
@@ -30,6 +31,7 @@ typedef struct srph_constraint {
     srph_vertex * _vertices[SERAPHIM_MAX_VERTICES_PER_CONSTRAINT];
 } srph_constraint;
 
+typedef srph_array(srph_constraint) srph_constraint_array;
 
 void srph_constraint_init(
     srph_constraint * c, bool is_equality, double stiffness, uint32_t n,

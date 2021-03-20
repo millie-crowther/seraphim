@@ -15,11 +15,10 @@ typedef struct srph_matter {
     srph_material material;
     srph_sdf * sdf;
 
-    srph_array _vertices;
+    srph_array(srph_vertex) _vertices;
 
     bool is_uniform;
     bool is_at_rest;
-
 
     bool _is_mass_calculated;
     double average_density;
@@ -82,7 +81,7 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s);
 
 void srph_matter_update_vertices(srph_matter * m, double t);
 void srph_matter_update_velocities(srph_matter * m, double t);
-void srph_matter_push_internal_constraints(srph_matter * m, srph_array * a);
+void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_array * a);
 
 void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x);
 void srph_matter_centre_of_mass(srph_matter * m, vec3 * com);

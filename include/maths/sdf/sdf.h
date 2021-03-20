@@ -23,8 +23,6 @@ typedef struct srph_sdf {
 
     void * _data;
     srph_sdf_func _phi;
-    
-    srph_array vertices;
 } srph_sdf;
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);
@@ -40,7 +38,5 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
 vec3 * srph_sdf_com(srph_sdf * sdf);
 
 srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf);
-
-void srph_sdf_add_sample(srph_sdf * sdf, const vec3 * x);
 
 #endif

@@ -13,9 +13,8 @@ typedef struct srph_physics {
 
     std::mutex substances_mutex;
 
-    srph_array substances;
-
-    srph_array constraints;
+    srph_array(srph_substance *) substances;
+    srph_constraint_array constraints;
 
     int frames;
 
