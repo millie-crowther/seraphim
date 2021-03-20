@@ -22,8 +22,8 @@ void srph_matter_init(
 
     srph_vec3_fill(&m->f, 0.0);
     srph_vec3_fill(&m->t, 0.0);
-    
-    srph_array_init(&m->_vertices);
+
+    srph_array_init(&m->_vertices);   
 }
 
 void srph_matter_destroy(srph_matter * m){

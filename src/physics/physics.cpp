@@ -10,6 +10,7 @@
 
 void srph_physics_init(srph_physics * p){
     p->quit = false;
+
     srph_array_init(&p->substances);
     srph_array_init(&p->constraints);
 } 
@@ -36,8 +37,7 @@ void srph_physics_tick(srph_physics * p){
 
     // update vertices 
     for (uint32_t i = 0; i < p->substances.size; i++){
-        srph_substance * s = p->substances.data[i];
-        srph_matter_update_vertices(&s->matter, dt);
+        srph_matter_update_vertices(&p->substances.data[i]->matter, dt);
     }    
 
     // get constraints
@@ -74,8 +74,7 @@ void srph_physics_tick(srph_physics * p){
 
     // update velocities
     for (uint32_t i = 0; i < p->substances.size; i++){
-        srph_substance * s = p->substances.data[i];
-        srph_matter_update_velocities(&s->matter, dt);
+        srph_matter_update_velocities(&p->substances.data[i]->matter, dt);
     }
 }
 
@@ -169,9 +168,9 @@ void srph_physics_unregister(srph_physics * p, srph_substance * s){
     std::lock_guard<std::mutex> lock(p->substances_mutex);
     
     for (uint32_t i = 0; i < p->substances.size;){
-        srph_substance ** t = &p->substances.data[i];
-        if (s == *t){
-            *t = *srph_array_last(&p->substances);
+        srph_substance * t = p->substances.data[i];
+        if (s == t){
+            p->substances.data[i] = *srph_array_last(&p->substances);
             srph_array_pop_back(&p->substances);
         } else {       
             i++;
