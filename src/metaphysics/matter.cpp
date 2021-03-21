@@ -243,7 +243,7 @@ srph_vertex * srph_matter_add_vertex(srph_matter * m , const vec3 * x){
     }
 
     srph_array_push_back(&m->_vertices);
-    srph_vertex * vertex = srph_array_last(&m->_vertices);
+    srph_vertex * vertex = m->_vertices.last;
     *vertex = {
         .x = *x,
         .v = v,

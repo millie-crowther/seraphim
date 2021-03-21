@@ -3,6 +3,8 @@
 #include "core/scheduler.h"
 #include "physics/collision.h"
 
+#include <assert.h>
+
 #include <chrono>
 #include <iostream>
 
@@ -161,7 +163,7 @@ void srph_physics::run(){
 void srph_physics_register(srph_physics * p, srph_substance * s){
     std::lock_guard<std::mutex> lock(p->substances_mutex);
     srph_array_push_back(&p->substances);
-    *srph_array_last(&p->substances) = s;
+    *p->substances.last = s;
 }
     
 void srph_physics_unregister(srph_physics * p, srph_substance * s){
@@ -170,7 +172,7 @@ void srph_physics_unregister(srph_physics * p, srph_substance * s){
     for (uint32_t i = 0; i < p->substances.size;){
         srph_substance * t = p->substances.data[i];
         if (s == t){
-            p->substances.data[i] = *srph_array_last(&p->substances);
+            p->substances.data[i] = *p->substances.last;
             srph_array_pop_back(&p->substances);
         } else {       
             i++;
