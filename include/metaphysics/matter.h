@@ -15,7 +15,7 @@ typedef struct srph_matter {
     srph_material material;
     srph_sdf * sdf;
 
-    srph_array(srph_vertex) _vertices;
+    srph_array(srph_deform) deformations;
 
     bool is_uniform;
     bool is_at_rest;
@@ -86,7 +86,7 @@ void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_arra
 void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x);
 void srph_matter_centre_of_mass(srph_matter * m, vec3 * com);
 
-srph_vertex * srph_matter_add_vertex(srph_matter * m, const vec3 * x);
+srph_deform * srph_matter_add_deformation(srph_matter * m, const vec3 * x);
 
 bool srph_matter_is_inert(srph_matter * m);
 

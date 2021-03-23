@@ -214,6 +214,55 @@ bool srph_collision_is_detected(srph_substance * a, srph_substance * b, double d
     return s.fx < 0;
 }
 
-void srph_collision_push_constraints(srph_constraint_array * cs, srph_substance * a, srph_substance * b){
-    // TODO
+void srph_collision_push_constraints(
+    srph_constraint_array * cs, srph_substance * a, srph_substance * b
+){
+    assert(cs != NULL && a != NULL && b != NULL);
+    
+    const double stiffness = 1.0; // TODO
+    srph_matter * ms = { &a->matter, &b->matter };
+
+    for (int i = 0; i < 2; i++){
+        for (size_t j = 0; j < m[i]->deformations.size; j++){
+            srph_array_push_back(cs);
+            collision_constraint_init(cs.last, m[1 - i], &m[i]->deformations.data[j], stiffness);
+        }
+    }
+}
+
+static double collision_constraint(srph_constraint * c){
+    assert(c != NULL && c->deformations[0] != NULL && c->data != NULL);
+
+    srph_matter * m = (srph_matter *) c->data;
+    vec3 * p = &c->deformations[0]->p;
+    vec3 p_local;
+    srph_matter_to_local_space(m, &p_local, p);
+    return -srph_sdf_phi(m->sdf, &p_local);
+}
+
+static void collision_constraint_derivative(srph_constraint * c, uint32_t i, vec3 * dc){
+    assert(c != NULL && c->deformations[0] != NULL && c->data != NULL);
+   
+    srph_matter * m = (srph_matter *) c->data;
+    vec3 * p = &c->deformations[0]->p;
+    vec3 p_local;
+    srph_matter_to_local_space(m, &p_local, p);
+    vec3 n = srph_sdf_normal(m->sdf, &p_local);
+    // TODO: rotate 
+}
+
+static void collision_constraint_init(
+    srph_constraint * c, srph_matter * m, srph_deform * d, double stiffness
+){
+    assert(c != NULL && m != NULL && d != NULL);
+
+    *c = {
+        .is_equality = false,
+        .stiffness = stiffness,
+        .data = (void *) m,
+        .n = 1,
+        .c_func = collision_constraint,
+        .dc_func = collision_constraint_derivative,
+    };
+    c->deformations[0] = d;
 }

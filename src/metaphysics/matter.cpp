@@ -1,6 +1,5 @@
 #include "metaphysics/matter.h"
 
-
 using namespace srph;
 
 void srph_matter_init(
@@ -20,8 +19,8 @@ void srph_matter_init(
     m->_is_inertia_tensor_valid = false;
     m->_is_inv_inertia_tensor_valid = false;
 
-    srph_vec3_fill(&m->f, 0.0);
-    srph_vec3_fill(&m->t, 0.0);
+    m->f = srph_vec3_zero;
+    m->t = srph_vec3_zero;
 
     srph_array_init(&m->_vertices);   
 }
@@ -31,7 +30,16 @@ void srph_matter_destroy(srph_matter * m){
 }
 
 void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_array * a){
-    // TODO 
+    assert(m != NULL && a != NULL);
+    
+    for (size_t i = 0; i < m->deformations.size; i++){
+        for (size_t j = i + 1; j < m->deformations.size; j++){
+            srph_array_push_back(a);
+            srph_constraint_distance(
+                a->last, &m->deformations.data[i], &m->deformations.data[j], 1.0
+            );
+        }
+    }
 }
 
 quat_t srph_matter::get_rotation() const {
@@ -225,16 +233,16 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s){
     s->r += srph_vec3_length(&v1) * t;
 }
 
-srph_vertex * srph_matter_add_vertex(srph_matter * m , const vec3 * x){
+srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x){
     // compute average translation and velocity for inserting new vertices
     vec3 d = srph_vec3_zero;
     vec3 v = srph_vec3_zero;
     for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_vertex * vertex = &m->_vertices.data[i];
-        srph_vec3_add(&d, &d, &vertex->x);
-        srph_vec3_subtract(&d, &d, &vertex->x0);
+        srph_deform * deform = &m->_vertices.data[i];
+        srph_vec3_add(&d, &d, &deform->x);
+        srph_vec3_subtract(&d, &d, &deform->x0);
 
-        srph_vec3_add(&v, &v, &vertex->v);
+        srph_vec3_add(&v, &v, &deform->v);
     }
 
     if (!srph_array_is_empty(&m->_vertices)){
@@ -243,16 +251,16 @@ srph_vertex * srph_matter_add_vertex(srph_matter * m , const vec3 * x){
     }
 
     srph_array_push_back(&m->_vertices);
-    srph_vertex * vertex = m->_vertices.last;
-    *vertex = {
+    srph_deform * deform = m->_vertices.last;
+    *deform = {
         .x = *x,
         .v = v,
         .p = *x,
         .m = 1.0, // TODO
     };
-    srph_vec3_subtract(&vertex->x0, x, &d);
+    srph_vec3_subtract(&deform->x0, x, &d);
 
-    return vertex;
+    return deform;
 }
 
 void srph_matter_update_vertices(srph_matter * m, double t){
@@ -261,22 +269,22 @@ void srph_matter_update_vertices(srph_matter * m, double t){
     srph_matter_centre_of_mass(m, &com);
 
     for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_vertex * vertex = &m->_vertices.data[i];
-        srph_vec3_subtract(&r, &vertex->x, &com);
+        srph_deform * deform = &m->_vertices.data[i];
+        srph_vec3_subtract(&r, &deform->x, &com);
         srph_vec3_cross(&a, &m->t, &r);
         srph_vec3_add(&a, &a, &m->f);
 
-        srph_vec3_scale(&a, &a, t / vertex->m);
-        srph_vec3_add(&vertex->v, &vertex->v, &a);
+        srph_vec3_scale(&a, &a, t / deform->m);
+        srph_vec3_add(&deform->v, &deform->v, &a);
     }
 
     // TODO: velocity dampening
 
     // extrapolate next position
     for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_vertex * vertex = &m->_vertices.data[i];
-        srph_vec3_scale(&vertex->p, &vertex->v, t);
-        srph_vec3_add(&vertex->p, &vertex->p, &vertex->x);
+        srph_deform * deform = &m->_vertices.data[i];
+        srph_vec3_scale(&deform->p, &deform->v, t);
+        srph_vec3_add(&deform->p, &deform->p, &deform->x);
     }
 }
 
@@ -287,10 +295,10 @@ void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x){
 void srph_matter_update_velocities(srph_matter * m, double t){
     // update next position and velocity
     for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_vertex * vertex = &m->_vertices.data[i];
-        srph_vec3_subtract(&vertex->v, &vertex->p, &vertex->x);
-        srph_vec3_scale(&vertex->v, &vertex->v, 1.0 / t);
-        vertex->v = vertex->p;
+        srph_deform * deform = &m->_vertices.data[i];
+        srph_vec3_subtract(&deform->v, &deform->p, &deform->x);
+        srph_vec3_scale(&deform->v, &deform->v, 1.0 / t);
+        deform->v = deform->p;
     }
 
     // TODO: friction

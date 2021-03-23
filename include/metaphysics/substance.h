@@ -1,5 +1,5 @@
-#ifndef SUBSTANCE_H
-#define SUBSTANCE_H
+#ifndef SERAPHIM_SUBSTANCE_H
+#define SERAPHIM_SUBSTANCE_H
 
 #include <memory>
 
