@@ -325,6 +325,6 @@ void srph_matter_update_velocities(srph_matter * m, double t){
     // TODO: restitution
 }
 
-void srph_matter_centre_of_mass(srph_matter * m, vec3 * x){
-    *x = { 0.0, 0.0, 0.0 };
+vec3 * srph_matter_com(srph_matter * m){
+    return &centre_deform->p;
 }

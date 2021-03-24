@@ -85,7 +85,8 @@ void srph_matter_update_velocities(srph_matter * m, double t);
 void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_array * a);
 
 void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x);
-void srph_matter_centre_of_mass(srph_matter * m, vec3 * com);
+
+vec3 * srph_matter_com(srph_matter * m);
 
 srph_deform * srph_matter_add_deformation(
     srph_matter * m, const vec3 * x, srph_matter_deform_type type
