@@ -4,13 +4,15 @@ using namespace srph;
 
 void srph_matter_init(
     srph_matter * m, srph_sdf * sdf, const srph_material * material, 
-    const vec3 * x, bool is_uniform
+    const vec3 * initial_position, bool is_uniform
 ){
     m->sdf = sdf;
     m->material = *material;
     m->is_uniform = is_uniform;
     
-    m->transform.set_position(srph::vec3_t(x->x, x->y, x->z));
+    m->transform.set_position(srph::vec3_t(
+        initial_position->x, initial_position->y, initial_position->z
+    ));
 
     m->omega = vec3_t(0.01, 0.01, 0.01);
 
@@ -23,6 +25,9 @@ void srph_matter_init(
     m->t = srph_vec3_zero;
 
     srph_array_init(&m->_vertices);   
+    vec3 com;
+    srph_vec3_add(&com, srph_sdf_com(sdf), initial_position);
+    centre_deform = srph_matter_add_deformation(m, &com, srph_deform_type_centre);
 }
 
 void srph_matter_destroy(srph_matter * m){
@@ -233,7 +238,7 @@ void srph_matter_sphere_bound(const srph_matter * m, double t, srph_sphere * s){
     s->r += srph_vec3_length(&v1) * t;
 }
 
-srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x){
+srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph_deform_type type){
     // compute average translation and velocity for inserting new vertices
     vec3 d = srph_vec3_zero;
     vec3 v = srph_vec3_zero;
@@ -250,15 +255,29 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x){
         srph_vec3_scale(&v, &v, 1.0 / (double) m->_vertices.size);
     }
 
+    // check if new deformation is too close to any others
+    vec3 x0;
+    srph_vec3_subtract(&x0, x, &d);
+    if (srph_deform_type == srph_deform_type_collision){
+        for (size_t i = 0; i < m->_verices.size; i++){
+            srph_deform * d = &m->vertices.data[i];
+            if (srph_vec3_length(&x0, &d->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY){
+                return NULL;
+            }
+        }
+    } 
+
+    // create new deformation
     srph_array_push_back(&m->_vertices);
     srph_deform * deform = m->_vertices.last;
     *deform = {
-        .x = *x,
-        .v = v,
-        .p = *x,
-        .m = 1.0, // TODO
+        .x0   = x0,
+        .x    = *x,
+        .v    = v,
+        .p    = *x,
+        .m    = 1.0, // TODO
+        .type = type,
     };
-    srph_vec3_subtract(&deform->x0, x, &d);
 
     return deform;
 }

@@ -211,7 +211,14 @@ bool srph_collision_is_detected(srph_substance * a, srph_substance * b, double d
     srph_matter * matters[] = { &a->matter, &b->matter };
     srph_opt_sample s;
     srph_opt_nelder_mead(&s, intersection_func1, matters, xs1, NULL);
-    return s.fx < 0;
+    
+    if (s.fx < 0){
+        srph_matter_add_deformation(&a->matter, &s.x, srph_deform_type_collision);
+        srph_matter_add_deformation(&b->matter, &s.x, srph_deform_type_collision);
+        return true;
+    }
+    
+    return false;
 }
 
 void srph_collision_push_constraints(
