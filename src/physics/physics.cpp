@@ -30,8 +30,6 @@ void srph_physics_destroy(srph_physics * p){
 
     srph_array_clear(&p->constraints);
     srph_array_clear(&p->substances);
-
-    printf("joined physics thread\n");
 }
 
 void srph_physics_tick(srph_physics * p, double dt){

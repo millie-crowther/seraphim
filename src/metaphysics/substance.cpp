@@ -42,12 +42,15 @@ srph_substance::data_t srph_substance::get_data(const vec3_t & eye_position){
     
     float far = srph_vec3_length(&x);
 
-    return data_t(
+    data_t data(
         near, far,
         f32vec3_t(r.x, r.y, r.z),
-        id,
-        matter.get_matrix()
+        id
     );
+
+    srph_matter_transformation(&matter, data.transform);
+
+    return data;
 }
 
 bool srph_substance::data_t::comparator_t::operator()(const srph_substance::data_t & a, const srph_substance::data_t & b) const {
@@ -58,10 +61,9 @@ srph_substance::data_t::data_t(){
     id = ~0;
 }
 
-srph_substance::data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id, const f32mat4_t & transform){
+srph_substance::data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id){
     this->near = near;
     this->far = far;
     this->r = r;
     this->id = id;
-    this->transform = transform;
 }
