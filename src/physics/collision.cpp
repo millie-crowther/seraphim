@@ -237,7 +237,7 @@ void srph_collision_push_constraints(
     for (int i = 0; i < 2; i++){
         for (size_t j = 0; j < ms[i]->deformations.size; j++){
             srph_array_push_back(cs);
-            collision_constraint_init(cs->last, ms[1 - i], &ms[i]->deformations.data[j], stiffness);
+            collision_constraint_init(cs->last, ms[1 - i], ms[i]->deformations.data[j], stiffness);
         }
     }
 }

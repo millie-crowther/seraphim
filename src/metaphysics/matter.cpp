@@ -34,6 +34,10 @@ void srph_matter_init(
 }
 
 void srph_matter_destroy(srph_matter * m){
+    while (!srph_array_is_empty(&m->deformations)){
+        free(m->deformations.last);
+        srph_array_pop_back(&m->deformations);
+    }
     srph_array_clear(&m->deformations);
 }
 
@@ -44,7 +48,7 @@ void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_arra
         for (size_t j = i + 1; j < m->deformations.size; j++){
             srph_array_push_back(a);
             srph_constraint_distance(
-                a->last, &m->deformations.data[i], &m->deformations.data[j], 1.0
+                a->last, m->deformations.data[i], m->deformations.data[j], 1.0
             );
         }
     }
@@ -246,7 +250,7 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
     vec3 d = srph_vec3_zero;
     vec3 v = srph_vec3_zero;
     for (uint32_t i = 0; i < m->deformations.size; i++){
-        srph_deform * deform = &m->deformations.data[i];
+        srph_deform * deform = m->deformations.data[i];
         srph_vec3_add(&d, &d, &deform->x);
         srph_vec3_subtract(&d, &d, &deform->x0);
 
@@ -267,7 +271,7 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
         }        
 
         for (size_t i = 0; i < m->deformations.size; i++){
-            srph_deform * d = &m->deformations.data[i];
+            srph_deform * d = m->deformations.data[i];
             if (srph_vec3_distance(&x0, &d->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY){
                 return NULL;
             }
@@ -275,8 +279,7 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
     } 
 
     // create new deformation
-    srph_array_push_back(&m->deformations);
-    srph_deform * deform = m->deformations.last;
+    srph_deform * deform = (srph_deform *) malloc(sizeof(srph_deform)); 
     *deform = {
         .x0   = x0,
         .x    = *x,
@@ -285,6 +288,9 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
         .m    = 1.0, // TODO
         .type = type,
     };
+    
+    srph_array_push_back(&m->deformations);
+    *m->deformations.last = deform;    
 
     return deform;
 }
@@ -296,13 +302,8 @@ void srph_matter_update_vertices(srph_matter * m, double t){
     vec3 a, r;
     vec3 * com = srph_matter_com(m);
 
-    printf("\ndeformations size: %lu\n", m->deformations.size);
-    for (size_t i = 0; i < m->deformations.size; i++){
-        printf("%d", m->deformations.data[i].type);
-    }
-
     for (uint32_t i = 0; i < m->deformations.size; i++){
-        srph_deform * deform = &m->deformations.data[i];
+        srph_deform * deform = m->deformations.data[i];
         srph_vec3_subtract(&r, &deform->x, com);
         srph_vec3_cross(&a, &m->t, &r);
         srph_vec3_add(&a, &a, &m->f);
@@ -315,7 +316,7 @@ void srph_matter_update_vertices(srph_matter * m, double t){
 
     // extrapolate next position
     for (uint32_t i = 0; i < m->deformations.size; i++){
-        srph_deform * deform = &m->deformations.data[i];
+        srph_deform * deform = m->deformations.data[i];
         srph_vec3_scale(&deform->p, &deform->v, t);
         srph_vec3_add(&deform->p, &deform->p, &deform->x);
     }
@@ -333,7 +334,7 @@ void srph_matter_to_local_space(const srph_matter * m, vec3 * tx, const vec3 * x
 void srph_matter_update_velocities(srph_matter * m, double t){
     // update next position and velocity
     for (uint32_t i = 0; i < m->deformations.size; i++){
-        srph_deform * deform = &m->deformations.data[i];
+        srph_deform * deform = m->deformations.data[i];
         srph_vec3_subtract(&deform->v, &deform->p, &deform->x);
         srph_vec3_scale(&deform->v, &deform->v, 1.0 / t);
         deform->v = deform->p;
@@ -360,7 +361,7 @@ void srph_matter_rotation(const srph_matter * m, srph_quat * q){
     *q = { 0.0, 0.0, 0.0, 0.0 };
 
     for (size_t i = 0; i < m->deformations.size; i++){
-        srph_deform * d = &m->deformations.data[i];
+        srph_deform * d = m->deformations.data[i];
 
         vec3 x;
         srph_vec3_subtract(&x, &d->x, o);

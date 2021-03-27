@@ -17,7 +17,7 @@ typedef struct srph_matter {
 
     srph_deform * origin;
     srph_deform * com;
-    srph_array(srph_deform) deformations;
+    srph_array(srph_deform *) deformations;
 
     bool is_uniform;
     bool is_at_rest;
