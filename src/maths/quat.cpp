@@ -146,6 +146,12 @@ void srph_quat_angle_axis(srph_quat * q, double angle, const vec3 * a){
 void srph_quat_rotate_to(srph_quat * q, const vec3 * from, const vec3 * to){
     assert(q != NULL && from != NULL && to != NULL);
 
+    printf("from = ");
+    srph_vec3_print(from);
+    printf(", to = ");
+    srph_vec3_print(to);
+    printf("\n");
+
     vec3 _from, _to;
     srph_vec3_normalise(&_from, from);
     srph_vec3_normalise(&_to, to);

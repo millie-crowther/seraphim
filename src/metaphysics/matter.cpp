@@ -27,15 +27,17 @@ void srph_matter_init(
     m->t = srph_vec3_zero;
 
     srph_array_init(&m->deformations);   
+    m->origin = srph_matter_add_deformation(m, initial_position, srph_deform_type_control);
+    m->origin->x0 = srph_vec3_zero;    
+
     vec3 com;
     srph_vec3_add(&com, srph_sdf_com(sdf), initial_position);
     m->com = srph_matter_add_deformation(m, &com, srph_deform_type_control);
-    m->origin = srph_matter_add_deformation(m, initial_position, srph_deform_type_control);
 }
 
 void srph_matter_destroy(srph_matter * m){
     while (!srph_array_is_empty(&m->deformations)){
-        free(m->deformations.last);
+        free(*m->deformations.last);
         srph_array_pop_back(&m->deformations);
     }
     srph_array_clear(&m->deformations);
@@ -391,24 +393,24 @@ void srph_matter_transformation(const srph_matter * matter, float * xs){
     srph_quat_to_matrix(&q_total, m);
 
     xs[0]  = (float) m[0]; 
-    xs[1]  = (float) m[1]; 
-    xs[2]  = (float) m[2]; 
-    xs[3]  = (float) o->x,
+    xs[1]  = (float) m[3]; 
+    xs[2]  = (float) m[6]; 
+    xs[3]  = 0.0f;
     
-    xs[4]  = (float) m[3]; 
+    xs[4]  = (float) m[1]; 
     xs[5]  = (float) m[4]; 
-    xs[6]  = (float) m[5]; 
-    xs[7]  = (float) o->y,
+    xs[6]  = (float) m[7]; 
+    xs[7]  = 0.0f;
     
-    xs[8]  = (float) m[6]; 
-    xs[9]  = (float) m[7]; 
+    xs[8]  = (float) m[2]; 
+    xs[9]  = (float) m[5]; 
     xs[10] = (float) m[8]; 
-    xs[11] = (float) o->z,
+    xs[11] = 0.0f;
 
-    xs[12] = 0.0;
-    xs[13] = 0.0;
-    xs[14] = 0.0;
-    xs[15] = 1.0;
+    xs[12] = o->x;
+    xs[13] = o->y;
+    xs[14] = o->z;
+    xs[15] = 1.0f;
 }
 
 void srph_matter_normal(const srph_matter * m, const vec3 * x, vec3 * n){
