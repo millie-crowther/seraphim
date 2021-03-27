@@ -34,9 +34,7 @@ void srph_physics_destroy(srph_physics * p){
     printf("joined physics thread\n");
 }
 
-void srph_physics_tick(srph_physics * p){
-    double dt = srph::constant::sigma;
-
+void srph_physics_tick(srph_physics * p, double dt){
     // update vertices 
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_matter_update_vertices(&p->substances.data[i]->matter, dt);
@@ -96,6 +94,8 @@ void srph_physics::run(){
 
         previous = now;
 
+        srph_physics_tick(this, delta);
+/*
         std::vector<srph_collision> collisions;
     
         {
@@ -135,7 +135,7 @@ void srph_physics::run(){
             std::lock_guard<std::mutex> lock(substances_mutex);
  
             // apply acceleration and velocity changes to matters
-            /*
+            
             for (auto m : matters){
                 m->physics_tick(delta);
             } 
@@ -152,9 +152,10 @@ void srph_physics::run(){
                 } else { 
                     i++;
                 }
-            }*/
+            }
         }
 
+        */
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
     }

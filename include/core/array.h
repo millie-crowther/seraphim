@@ -10,8 +10,8 @@
     size_t element_size; \
     union { T * data; T * first; }; \
     T * last; \
-    uint32_t _offset; \
-    uint8_t * _base_ptr; \
+    uint32_t offset; \
+    uint8_t * base_ptr; \
 }
 typedef srph_array(uint8_t) _srph_base_array;
 

@@ -290,9 +290,16 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
 }
 
 void srph_matter_update_vertices(srph_matter * m, double t){
+    assert(m != NULL);
+
     // update velocities using newton's second law
     vec3 a, r;
     vec3 * com = srph_matter_com(m);
+
+    printf("\ndeformations size: %lu\n", m->deformations.size);
+    for (size_t i = 0; i < m->deformations.size; i++){
+        printf("%d", m->deformations.data[i].type);
+    }
 
     for (uint32_t i = 0; i < m->deformations.size; i++){
         srph_deform * deform = &m->deformations.data[i];
