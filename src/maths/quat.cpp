@@ -114,9 +114,11 @@ void srph_quat_rotate(const srph_quat * q, vec3 * qx, const vec3 * x){
     double xs[9];
     srph_quat_to_matrix(q, xs);
     
-    qx->x = x->x * xs[0] + x->y * xs[1] + x->z * xs[2];
-    qx->y = x->x * xs[3] + x->y * xs[4] + x->z * xs[5];
-    qx->z = x->x * xs[6] + x->y * xs[7] + x->z * xs[8];
+    *qx = {
+        x->x * xs[0] + x->y * xs[1] + x->z * xs[2],
+        x->x * xs[3] + x->y * xs[4] + x->z * xs[5],
+        x->x * xs[6] + x->y * xs[7] + x->z * xs[8]
+    };
 }
 
 void srph_quat_init(srph_quat * q, double x, double y, double z, double w){
