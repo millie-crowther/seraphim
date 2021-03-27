@@ -20,7 +20,7 @@ typedef struct srph_constraint {
     uint32_t n;
     srph_constraint_func c_func;
     srph_constraint_derivative_func dc_func;
-    srph_deform * deformations[SERAPHIM_MAX_VERTICES_PER_CONSTRAINT];
+    srph_deform * deformations[SERAPHIM_MAX_DEFORMATIONS_PER_CONSTRAINT];
 } srph_constraint;
 
 typedef srph_array(srph_constraint) srph_constraint_array;

@@ -1,5 +1,7 @@
 #include "maths/quat.h"
 
+#include <assert.h>
+
 #include "maths/vector.h"
 
 using namespace srph;
@@ -71,4 +73,84 @@ mat3_t quat_t::to_matrix() const {
     r *= 2.0;
 
     return r;
+}
+
+void srph_quat_inverse(srph_quat * qi, const srph_quat * q){
+    srph_quat_init(qi, -q->x, -q->y, -q->z, q->w);
+}
+
+void srph_quat_to_matrix(const srph_quat * q, double * xs){
+    assert(q != NULL && xs != NULL);
+
+    double wx = q->w * q->x;
+    double wy = q->w * q->y;
+    double wz = q->w * q->z;
+    
+    double xx = q->x * q->x;
+    double xy = q->x * q->y;
+    double xz = q->x * q->z;
+
+    double yy = q->y * q->y;
+    double yz = q->y * q->z;
+
+    double zz = q->z * q->z;
+
+    xs[0] = 2.0 * (0.5 - yy - zz);
+    xs[1] = 2.0 * (xy + wz);
+    xs[2] = 2.0 * (xz - wy);
+
+    xs[3] = 2.0 * (xy - wz);
+    xs[4] = 2.0 * (0.5 - xx - zz);
+    xs[5] = 2.0 * (yz + wx);
+
+    xs[6] = 2.0 * (xz + wy);
+    xs[7] = 2.0 * (yz - wx);
+    xs[8] = 2.0 * (0.5 - xx - yy);
+}
+
+void srph_quat_rotate(const srph_quat * q, vec3 * qx, const vec3 * x){
+    assert(q != NULL && x != NULL && qx != NULL);
+    
+    double xs[9];
+    srph_quat_to_matrix(q, xs);
+    
+    qx->x = x->x * xs[0] + x->y * xs[1] + x->z * xs[2];
+    qx->y = x->x * xs[3] + x->y * xs[4] + x->z * xs[5];
+    qx->z = x->x * xs[6] + x->y * xs[7] + x->z * xs[8];
+}
+
+void srph_quat_init(srph_quat * q, double x, double y, double z, double w){
+    assert(q != NULL);
+    
+    *q = { x, y, z, w };
+    double l = sqrt(x * x + y * y + z * z + w * w);
+    if (l != 0.0 && l != 1.0){
+        for (int i = 0; i < 4; i++){
+            q->raw[i] /= l;
+        }
+    }
+}
+
+void srph_quat_angle_axis(srph_quat * q, double angle, const vec3 * a){
+    assert(q != NULL && a != NULL);
+    
+    double s = sin(angle / 2);
+    vec3 _a;
+    
+    srph_vec3_normalise(&_a, a);
+    srph_quat_init(q, cos(angle / 2), _a.raw[0] * s, _a.raw[1] * s, _a.raw[2] * s);
+}
+
+void srph_quat_rotate_to(srph_quat * q, const vec3 * from, const vec3 * to){
+    assert(q != NULL && from != NULL && to != NULL);
+
+    vec3 _from, _to;
+    srph_vec3_normalise(&_from, from);
+    srph_vec3_normalise(&_to, to);
+
+    vec3 axis;
+    srph_vec3_cross(&axis, &_from, &_to);
+    
+    double angle = acos(srph_vec3_dot(&_from, &_to));
+    srph_quat_angle_axis(q, angle, &axis);
 }

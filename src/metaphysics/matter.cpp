@@ -1,5 +1,7 @@
 #include "metaphysics/matter.h"
 
+#include <assert.h>
+
 using namespace srph;
 
 void srph_matter_init(
@@ -24,14 +26,15 @@ void srph_matter_init(
     m->f = srph_vec3_zero;
     m->t = srph_vec3_zero;
 
-    srph_array_init(&m->_vertices);   
+    srph_array_init(&m->deformations);   
     vec3 com;
     srph_vec3_add(&com, srph_sdf_com(sdf), initial_position);
-    centre_deform = srph_matter_add_deformation(m, &com, srph_deform_type_centre);
+    m->com = srph_matter_add_deformation(m, &com, srph_deform_type_control);
+    m->origin = srph_matter_add_deformation(m, initial_position, srph_deform_type_control);
 }
 
 void srph_matter_destroy(srph_matter * m){
-    srph_array_clear(&m->_vertices);
+    srph_array_clear(&m->deformations);
 }
 
 void srph_matter_push_internal_constraints(srph_matter * m, srph_constraint_array * a){
@@ -242,34 +245,38 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
     // compute average translation and velocity for inserting new vertices
     vec3 d = srph_vec3_zero;
     vec3 v = srph_vec3_zero;
-    for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_deform * deform = &m->_vertices.data[i];
+    for (uint32_t i = 0; i < m->deformations.size; i++){
+        srph_deform * deform = &m->deformations.data[i];
         srph_vec3_add(&d, &d, &deform->x);
         srph_vec3_subtract(&d, &d, &deform->x0);
 
         srph_vec3_add(&v, &v, &deform->v);
     }
 
-    if (!srph_array_is_empty(&m->_vertices)){
-        srph_vec3_scale(&d, &d, 1.0 / (double) m->_vertices.size);
-        srph_vec3_scale(&v, &v, 1.0 / (double) m->_vertices.size);
+    if (!srph_array_is_empty(&m->deformations)){
+        srph_vec3_scale(&d, &d, 1.0 / (double) m->deformations.size);
+        srph_vec3_scale(&v, &v, 1.0 / (double) m->deformations.size);
     }
 
-    // check if new deformation is too close to any others
+    // check if new deformation is inside surface and not too close to any other deformations
     vec3 x0;
     srph_vec3_subtract(&x0, x, &d);
-    if (srph_deform_type == srph_deform_type_collision){
-        for (size_t i = 0; i < m->_verices.size; i++){
-            srph_deform * d = &m->vertices.data[i];
-            if (srph_vec3_length(&x0, &d->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY){
+    if (type == srph_deform_type_collision){
+        if (!srph_sdf_contains(m->sdf, &x0)){
+            return NULL;
+        }        
+
+        for (size_t i = 0; i < m->deformations.size; i++){
+            srph_deform * d = &m->deformations.data[i];
+            if (srph_vec3_distance(&x0, &d->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY){
                 return NULL;
             }
         }
     } 
 
     // create new deformation
-    srph_array_push_back(&m->_vertices);
-    srph_deform * deform = m->_vertices.last;
+    srph_array_push_back(&m->deformations);
+    srph_deform * deform = m->deformations.last;
     *deform = {
         .x0   = x0,
         .x    = *x,
@@ -284,12 +291,12 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
 
 void srph_matter_update_vertices(srph_matter * m, double t){
     // update velocities using newton's second law
-    vec3 a, r, com;
-    srph_matter_centre_of_mass(m, &com);
+    vec3 a, r;
+    vec3 * com = srph_matter_com(m);
 
-    for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_deform * deform = &m->_vertices.data[i];
-        srph_vec3_subtract(&r, &deform->x, &com);
+    for (uint32_t i = 0; i < m->deformations.size; i++){
+        srph_deform * deform = &m->deformations.data[i];
+        srph_vec3_subtract(&r, &deform->x, com);
         srph_vec3_cross(&a, &m->t, &r);
         srph_vec3_add(&a, &a, &m->f);
 
@@ -300,21 +307,26 @@ void srph_matter_update_vertices(srph_matter * m, double t){
     // TODO: velocity dampening
 
     // extrapolate next position
-    for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_deform * deform = &m->_vertices.data[i];
+    for (uint32_t i = 0; i < m->deformations.size; i++){
+        srph_deform * deform = &m->deformations.data[i];
         srph_vec3_scale(&deform->p, &deform->v, t);
         srph_vec3_add(&deform->p, &deform->p, &deform->x);
     }
 }
 
-void srph_matter_to_local_space(srph_matter * m, vec3 * tx, const vec3 * x){
-    srph_transform_to_local_space(&m->transform, tx, x); 
+void srph_matter_to_local_space(const srph_matter * m, vec3 * tx, const vec3 * x){
+    srph_vec3_subtract(tx, x, &m->origin->x);
+
+    srph_quat q;
+    srph_matter_rotation(m, &q);
+    srph_quat_inverse(&q, &q);
+    srph_quat_rotate(&q, tx, tx);
 }
 
 void srph_matter_update_velocities(srph_matter * m, double t){
     // update next position and velocity
-    for (uint32_t i = 0; i < m->_vertices.size; i++){
-        srph_deform * deform = &m->_vertices.data[i];
+    for (uint32_t i = 0; i < m->deformations.size; i++){
+        srph_deform * deform = &m->deformations.data[i];
         srph_vec3_subtract(&deform->v, &deform->p, &deform->x);
         srph_vec3_scale(&deform->v, &deform->v, 1.0 / t);
         deform->v = deform->p;
@@ -326,5 +338,80 @@ void srph_matter_update_velocities(srph_matter * m, double t){
 }
 
 vec3 * srph_matter_com(srph_matter * m){
-    return &centre_deform->p;
+    return &m->com->x;
+}
+
+void srph_matter_rotation(const srph_matter * m, srph_quat * q){
+    assert(m != NULL && q != NULL);
+
+    if (srph_array_is_empty(&m->deformations)){
+        *q = srph_quat_identity;
+        return;
+    }
+
+    vec3 * o = &m->origin->x;   
+    *q = { 0.0, 0.0, 0.0, 0.0 };
+
+    for (size_t i = 0; i < m->deformations.size; i++){
+        srph_deform * d = &m->deformations.data[i];
+
+        vec3 x;
+        srph_vec3_subtract(&x, &d->x, o);
+
+        srph_quat qi;
+        srph_quat_rotate_to(&qi, &d->x0, &x);
+
+        for (int i = 0; i < 4; i++){
+            q->raw[i] += qi.raw[i];
+        }
+    }
+
+    for (int i = 0; i < 4; i++){
+        q->raw[i] /= m->deformations.size; 
+    }
+}
+
+void srph_matter_transformation(const srph_matter * matter, float * xs){
+    assert(matter != NULL && xs != NULL);
+
+    vec3 * o = &matter->origin->x;   
+
+    srph_quat q_total;
+    srph_matter_rotation(matter, &q_total);
+
+    double m[9];
+    srph_quat_to_matrix(&q_total, m);
+
+    xs[0]  = (float) m[0]; 
+    xs[1]  = (float) m[1]; 
+    xs[2]  = (float) m[2]; 
+    xs[3]  = (float) o->x,
+    
+    xs[4]  = (float) m[3]; 
+    xs[5]  = (float) m[4]; 
+    xs[6]  = (float) m[5]; 
+    xs[7]  = (float) o->y,
+    
+    xs[8]  = (float) m[6]; 
+    xs[9]  = (float) m[7]; 
+    xs[10] = (float) m[8]; 
+    xs[11] = (float) o->z,
+
+    xs[12] = 0.0;
+    xs[13] = 0.0;
+    xs[14] = 0.0;
+    xs[15] = 1.0;
+}
+
+void srph_matter_normal(const srph_matter * m, const vec3 * x, vec3 * n){
+    assert(m != NULL && x != NULL && n != NULL);
+
+    vec3 x_local;
+    srph_matter_to_local_space(m, &x_local, x);
+   
+    *n = srph_sdf_normal(m->sdf, &x_local);
+ 
+    srph_quat q;
+    srph_matter_rotation(m, &q);
+    srph_quat_rotate(&q, n, n);    
 }

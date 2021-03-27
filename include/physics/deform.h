@@ -2,7 +2,7 @@
 #define SERAPHIM_DEFORM_H
 
 typedef enum srph_deform_type {
-    srph_deform_type_centre,
+    srph_deform_type_control,
     srph_deform_type_collision,
     srph_deform_type_generic
 } srph_deform_type;
