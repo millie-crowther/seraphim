@@ -8,6 +8,8 @@
 typedef struct srph_physics {
     int get_frame_count();
 
+    vec3 gravity;
+
     bool quit;
     std::thread thread;
 

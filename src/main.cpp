@@ -23,7 +23,7 @@ int main(){
     material.colour = { 0.1, 0.8, 0.8 };
     vec3 position = { 0.0, -100.0, 0.0 };
     srph_matter floor_matter;
-    srph_matter_init(&floor_matter, floor_sdf, &material, &position, true);
+    srph_matter_init(&floor_matter, floor_sdf, &material, &position, true, true);
     srph_create_substance(&engine, &form, &floor_matter);
 
     vec3 cube_size;
@@ -32,7 +32,7 @@ int main(){
     material.colour = { 0.8, 0.8, 0.1 };
     position = { 0.0, 3.0, 0.0 };
     srph_matter cube_matter;
-    srph_matter_init(&cube_matter, cube_sdf, &material, &position, true);
+    srph_matter_init(&cube_matter, cube_sdf, &material, &position, true, false);
     srph_create_substance(&engine, &form, &cube_matter);
 
     engine.run();

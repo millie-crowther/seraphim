@@ -6,11 +6,12 @@ using namespace srph;
 
 void srph_matter_init(
     srph_matter * m, srph_sdf * sdf, const srph_material * material, 
-    const vec3 * initial_position, bool is_uniform
+    const vec3 * initial_position, bool is_uniform, bool is_static
 ){
     m->sdf = sdf;
     m->material = *material;
     m->is_uniform = is_uniform;
+    m->is_static = is_static;
     
     m->transform.set_position(srph::vec3_t(
         initial_position->x, initial_position->y, initial_position->z
@@ -174,24 +175,6 @@ void srph_matter::reset_acceleration() {
     a = vec3_t(0.0, -9.8, 0.0);
 }
 
-void srph_matter::physics_tick(double t){
-    // update position
-    transform.translate((a * 0.5 * t + v) * t);
-    
-    // update rotation
-    transform.rotate(quat_t::euler_angles(omega * t));
-
-    // integrate accelerations into velocities
-    v += a * t;
-    
-    if (transform.get_position()[1] < -90.0){
-        transform.set_position(vec3_t(0.0, -100.0, 0.0));
-        v = vec3_t();
-        omega = vec3_t();
-        a = vec3_t();
-    }    
-}
-
 mat3_t * srph_matter::get_inv_tf_i(){
     if (!_is_inv_inertia_tensor_valid){
         inv_tf_i = *get_i();        
@@ -337,9 +320,10 @@ void srph_matter_update_velocities(srph_matter * m, double t){
     // update next position and velocity
     for (uint32_t i = 0; i < m->deformations.size; i++){
         srph_deform * deform = m->deformations.data[i];
+    
         srph_vec3_subtract(&deform->v, &deform->p, &deform->x);
         srph_vec3_scale(&deform->v, &deform->v, 1.0 / t);
-        deform->v = deform->p;
+        deform->x = deform->p;
     }
 
     // TODO: friction

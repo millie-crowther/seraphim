@@ -13,6 +13,8 @@
 void srph_physics_init(srph_physics * p){
     p->quit = false;
 
+    p->gravity = { 0.0, -9.8, 0.0 };
+
     srph_array_init(&p->substances);
     srph_array_init(&p->constraints);
 } 
@@ -35,7 +37,11 @@ void srph_physics_destroy(srph_physics * p){
 void srph_physics_tick(srph_physics * p, double dt){
     // update vertices 
     for (uint32_t i = 0; i < p->substances.size; i++){
-        srph_matter_update_vertices(&p->substances.data[i]->matter, dt);
+        srph_matter * m = &p->substances.data[i]->matter;
+        m->f = p->gravity;
+        m->t = srph_vec3_zero;
+
+        srph_matter_update_vertices(m, dt);
     }    
 
     // get constraints
@@ -72,7 +78,10 @@ void srph_physics_tick(srph_physics * p, double dt){
 
     // update velocities
     for (uint32_t i = 0; i < p->substances.size; i++){
-        srph_matter_update_velocities(&p->substances.data[i]->matter, dt);
+        srph_matter * m = &p->substances.data[i]->matter;
+        if (!m->is_static){
+            srph_matter_update_velocities(&p->substances.data[i]->matter, dt);
+        }
     }
 }
 
@@ -80,17 +89,12 @@ using namespace srph;
 
 void srph_physics::run(){
     auto t = scheduler::clock_t::now();
-    auto previous = std::chrono::steady_clock::now();
-
     printf("physics thread starting\n");
       
     while (!quit){
         frames++;
         
-        auto now = std::chrono::steady_clock::now();
         double delta = constant::sigma;
-
-        previous = now;
 
         srph_physics_tick(this, delta);
 /*
@@ -118,25 +122,9 @@ void srph_physics::run(){
                 }
             }
         }
-        
-        // correct all present collisions and anticipate the next one
-        for (auto & c : collisions){
-            if (c.is_intersecting){
-                c.correct();
-            } 
-            delta = fmin(delta, c.t);
-        }
-        
-        delta = std::max(delta, constant::iota);
        
         {
             std::lock_guard<std::mutex> lock(substances_mutex);
- 
-            // apply acceleration and velocity changes to matters
-            
-            for (auto m : matters){
-                m->physics_tick(delta);
-            } 
 
             // try to put matters to sleep
             for (uint32_t i = 0; i < matters.size();){

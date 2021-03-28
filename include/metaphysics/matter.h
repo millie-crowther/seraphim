@@ -35,6 +35,8 @@ typedef struct srph_matter {
     vec3 f;        
     vec3 t;
 
+    bool is_static;
+
     srph::vec3_t a;
     srph::vec3_t v;
     srph::vec3_t omega;
@@ -73,7 +75,8 @@ typedef struct srph_matter {
 } srph_matter;
 
 void srph_matter_init(
-    srph_matter * m, srph_sdf * sdf, const srph_material * mat, const vec3 * x, bool is_uniform
+    srph_matter * m, srph_sdf * sdf, const srph_material * mat, const vec3 * x, 
+    bool is_uniform, bool is_static
 );
 void srph_matter_destroy(srph_matter * m);
 
