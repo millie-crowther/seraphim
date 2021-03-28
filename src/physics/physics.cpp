@@ -38,10 +38,12 @@ void srph_physics_tick(srph_physics * p, double dt){
     // update vertices 
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_matter * m = &p->substances.data[i]->matter;
-        m->f = p->gravity;
-        m->t = srph_vec3_zero;
+        if (!m->is_static){
+            m->f = p->gravity;
+            m->t = srph_vec3_zero;
 
-        srph_matter_update_vertices(m, dt);
+            srph_matter_update_vertices(m, dt);
+        }
     }    
 
     // get constraints

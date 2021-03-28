@@ -391,9 +391,9 @@ void srph_matter_transformation(const srph_matter * matter, float * xs){
     xs[10] = (float) m[8]; 
     xs[11] = 0.0f;
 
-    xs[12] = o->x;
-    xs[13] = o->y;
-    xs[14] = o->z;
+    xs[12] = (float) o->x;
+    xs[13] = (float) o->y;
+    xs[14] = (float) o->z;
     xs[15] = 1.0f;
 }
 

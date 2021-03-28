@@ -1,6 +1,7 @@
 #include "physics/constraint.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 double srph_constraint_scaling_factor(srph_constraint * c){
@@ -15,7 +16,12 @@ double srph_constraint_scaling_factor(srph_constraint * c){
     if (s == 0.0 || (!c->is_equality && s < 0)){
         return 0.0;
     }
-        
+       
+
+    if (!c->is_equality && s > 0){
+        printf("collision detected\n");
+    }
+         
 
     double q = 0.0;
     vec3 dc;

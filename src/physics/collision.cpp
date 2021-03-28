@@ -31,8 +31,8 @@ static double intersection_func1(void * data, const vec3 * x){
     srph_matter * b = ((srph_matter **) data)[1];
     
     vec3 xa, xb;
-    srph_transform_to_local_space(&a->transform, &xa, x);
-    srph_transform_to_local_space(&b->transform, &xb, x);
+    srph_matter_to_local_space(a, &xa, x);
+    srph_matter_to_local_space(b, &xb, x);
 
     double phi_a = srph_sdf_phi(a->sdf, &xa);
     double phi_b = srph_sdf_phi(b->sdf, &xb);
@@ -254,10 +254,13 @@ static double collision_constraint(srph_constraint * c){
 
 static void collision_constraint_derivative(srph_constraint * c, uint32_t i, vec3 * dc){
     assert(c != NULL && c->deformations[0] != NULL && c->data != NULL);
-   
+  
+    *dc = { 0.0, -1.0, 0.0 };
+    /* 
     srph_matter * m = (srph_matter *) c->data;
     srph_matter_normal(m, &c->deformations[0]->p, dc);
     srph_vec3_scale(dc, dc, -1.0);
+    */
 }
 
 static void collision_constraint_init(
