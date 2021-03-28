@@ -1,6 +1,7 @@
 #include "maths/quat.h"
 
 #include <assert.h>
+#include <math.h>
 
 #include "maths/vector.h"
 
@@ -140,17 +141,11 @@ void srph_quat_angle_axis(srph_quat * q, double angle, const vec3 * a){
     vec3 _a;
     
     srph_vec3_normalise(&_a, a);
-    srph_quat_init(q, cos(angle / 2), _a.raw[0] * s, _a.raw[1] * s, _a.raw[2] * s);
+    srph_quat_init(q, _a.raw[0] * s, _a.raw[1] * s, _a.raw[2] * s, cos(angle / 2));
 }
 
 void srph_quat_rotate_to(srph_quat * q, const vec3 * from, const vec3 * to){
     assert(q != NULL && from != NULL && to != NULL);
-
-    printf("from = ");
-    srph_vec3_print(from);
-    printf(", to = ");
-    srph_vec3_print(to);
-    printf("\n");
 
     vec3 _from, _to;
     srph_vec3_normalise(&_from, from);
@@ -159,6 +154,15 @@ void srph_quat_rotate_to(srph_quat * q, const vec3 * from, const vec3 * to){
     vec3 axis;
     srph_vec3_cross(&axis, &_from, &_to);
     
-    double angle = acos(srph_vec3_dot(&_from, &_to));
+    double dot = srph_vec3_dot(&_from, &_to);
+    double angle;
+    if (dot >= 1.0){
+        angle = 0;
+    } else if (dot <= -1.0){
+        angle = srph::constant::pi;
+    } else {
+        angle = acos(srph_vec3_dot(&_from, &_to));
+    }
+
     srph_quat_angle_axis(q, angle, &axis);
 }

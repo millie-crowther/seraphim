@@ -50,14 +50,6 @@ srph_substance::data_t srph_substance::get_data(const vec3_t & eye_position){
 
     srph_matter_transformation(&matter, data.transform);
 
-    auto m = matter.get_matrix();
-
-    for (int i = 0; i < 16; i++){
-        printf("%f == %f\n", data.transform[i], m[i]);
-    }
-
-    throw 1;
-
     return data;
 }
 
