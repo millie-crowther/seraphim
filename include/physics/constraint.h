@@ -16,7 +16,6 @@ typedef void (*srph_constraint_derivative_func)(struct srph_constraint * c, uint
 typedef struct srph_constraint {
     bool is_equality;
     double stiffness;
-    void * data;
     uint32_t n;
     srph_constraint_func c_func;
     srph_constraint_derivative_func dc_func;
@@ -31,5 +30,7 @@ double srph_constraint_scaling_factor(srph_constraint * c);
 void srph_constraint_distance(
     srph_constraint * c, srph_deform * a, srph_deform * b, double stiffness
 );
+
+void srph_constraint_repulse_derivative(srph_constraint * c, uint32_t i, vec3 * dc);
 
 #endif

@@ -8,7 +8,7 @@
 #include "maths/vector.h"
 
 static void collision_constraint_init(
-    srph_constraint * c, srph_matter * m, srph_deform * d, double stiffness
+    srph_constraint * c, srph_deform ** d, double stiffness
 );
 
 static double intersection_func(void * data, const vec3 * x){
@@ -232,49 +232,45 @@ void srph_collision_push_constraints(
     assert(cs != NULL && a != NULL && b != NULL);
     
     const double stiffness = 1.0; // TODO
-    srph_matter * ms[] = { &a->matter, &b->matter };
-
-    for (int i = 0; i < 2; i++){
-        for (size_t j = 0; j < ms[i]->deformations.size; j++){
+    
+    for (size_t i = 0; i < a->matter.deformations.size; i++){
+        for (size_t j = 0; j < b->matter.deformations.size; j++){
+            srph_deform * ds[2] = { 
+                a->matter.deformations.data[i],
+                b->matter.deformations.data[j]
+            }; 
             srph_array_push_back(cs);
-            collision_constraint_init(cs->last, ms[1 - i], ms[i]->deformations.data[j], stiffness);
+            collision_constraint_init(cs->last, ds, stiffness);
         }
     }
 }
 
 static double collision_constraint(srph_constraint * c){
-    assert(c != NULL && c->deformations[0] != NULL && c->data != NULL);
+    assert(c != NULL && c->deformations[0] != NULL && c->deformations[1] != NULL);
 
-    srph_matter * m = (srph_matter *) c->data;
-    vec3 * p = &c->deformations[0]->p;
-    vec3 p_local;
-    srph_matter_to_local_space(m, &p_local, p);
-    return -srph_sdf_phi(m->sdf, &p_local);
-}
+    srph_deform * a = c->deformations[0];
+    srph_deform * b = c->deformations[1];
 
-static void collision_constraint_derivative(srph_constraint * c, uint32_t i, vec3 * dc){
-    assert(c != NULL && c->deformations[0] != NULL && c->data != NULL);
-  
-    *dc = { 0.0, -1.0, 0.0 };
-    /* 
-    srph_matter * m = (srph_matter *) c->data;
-    srph_matter_normal(m, &c->deformations[0]->p, dc);
-    srph_vec3_scale(dc, dc, -1.0);
-    */
+    double phi_a = srph_sdf_phi(a->matter->sdf, &a->x0);
+    double phi_b = srph_sdf_phi(b->matter->sdf, &b->x0);
+
+    double l = srph_vec3_distance(&a->p, &b->p);
+
+    return -phi_a - phi_b - l;
 }
 
 static void collision_constraint_init(
-    srph_constraint * c, srph_matter * m, srph_deform * d, double stiffness
+    srph_constraint * c, srph_deform ** ds, double stiffness
 ){
-    assert(c != NULL && m != NULL && d != NULL);
+    assert(c != NULL && ds != NULL && ds[0] != NULL && ds[1] != NULL);
 
     *c = {
         .is_equality = false,
         .stiffness = stiffness,
-        .data = (void *) m,
-        .n = 1,
+        .n = 2,
         .c_func = collision_constraint,
-        .dc_func = collision_constraint_derivative,
+        .dc_func = srph_constraint_repulse_derivative,
     };
-    c->deformations[0] = d;
+    c->deformations[0] = ds[0];
+    c->deformations[1] = ds[1];
 }

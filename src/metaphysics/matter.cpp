@@ -266,12 +266,13 @@ srph_deform * srph_matter_add_deformation(srph_matter * m , const vec3 * x, srph
     // create new deformation
     srph_deform * deform = (srph_deform *) malloc(sizeof(srph_deform)); 
     *deform = {
-        .x0   = x0,
-        .x    = *x,
-        .v    = v,
-        .p    = *x,
-        .m    = 1.0, // TODO
-        .type = type,
+        .x0     = x0,
+        .x      = *x,
+        .v      = v,
+        .p      = *x,
+        .m      = 1.0, // TODO
+        .type   = type,
+        .matter = m, 
     };
     
     srph_array_push_back(&m->deformations);
