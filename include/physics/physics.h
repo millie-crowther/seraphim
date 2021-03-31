@@ -2,6 +2,7 @@
 #define SERAPHIM_PHYSICS_H
 
 #include "metaphysics/substance.h"
+#include "physics/collision.h"
 
 #include <thread>
 
@@ -17,6 +18,7 @@ typedef struct srph_physics {
 
     srph_array(srph_substance *) substances;
     srph_constraint_array constraints;
+    srph_array(srph_collision) collisions;
 
     int frames;
 

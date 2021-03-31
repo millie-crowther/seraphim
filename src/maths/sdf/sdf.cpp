@@ -95,7 +95,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
 }
 
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return x != NULL && srph_sdf_phi(sdf, x) < 0.0;
+    return x != NULL && srph_sdf_phi(sdf, x) <= 0.0;
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){

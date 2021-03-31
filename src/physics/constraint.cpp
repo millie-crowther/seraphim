@@ -1,8 +1,6 @@
 #include "physics/constraint.h"
 
 #include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 double srph_constraint_scaling_factor(srph_constraint * c){
     assert(c != NULL);

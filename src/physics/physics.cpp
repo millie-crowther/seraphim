@@ -17,6 +17,7 @@ void srph_physics_init(srph_physics * p){
 
     srph_array_init(&p->substances);
     srph_array_init(&p->constraints);
+    srph_array_init(&p->collisions);
 } 
 
 void srph_physics_start(srph_physics * p){
@@ -32,42 +33,53 @@ void srph_physics_destroy(srph_physics * p){
 
     srph_array_clear(&p->constraints);
     srph_array_clear(&p->substances);
+    srph_array_clear(&p->collisions);
 }
 
 void srph_physics_tick(srph_physics * p, double dt){
+    srph_array_clear(&p->collisions);
+
     // update vertices 
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_matter * m = &p->substances.data[i]->matter;
-        if (!m->is_static){
-            m->f = p->gravity;
-            m->t = srph_vec3_zero;
-
-            srph_matter_update_vertices(m, dt);
+        if (m->is_at_rest || m->is_static){
+            continue;
         }
-    }    
+
+        m->f = p->gravity;
+        m->t = srph_vec3_zero;
+
+        srph_matter_update_vertices(m, dt);
+    }
 
     // get constraints
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_substance * s = p->substances.data[i];
 
+        if (s->matter.is_at_rest || s->matter.is_static){
+            continue;
+        }
+
         // internal constraints
         srph_matter_push_internal_constraints(&s->matter, &p->constraints);
 
         // collision constraints
-        if (s->matter.is_at_rest){
-            continue;
-        }
-
         for (uint32_t j = i + 1; j < p->substances.size; j++){
             srph_substance * t = p->substances.data[j];
-            if (srph_collision_is_detected(s, t, dt)){
-                srph_collision_push_constraints(&p->constraints, s, t);
+            srph_collision c;
+            if (srph_collision_is_detected(&c, s, t, dt)){
+                srph_array_push_back(&p->collisions);
+                *p->collisions.last = c;
             }
         }
     }    
 
     // solve constraints
     for (int i = 0; i < SOLVER_ITERATIONS; i++){
+        for (size_t j = 0; j < p->collisions.size; j++){
+            srph_collision_resolve_interpenetration(&p->collisions.data[j]);
+        }
+
         for (uint32_t j = 0; j < p->constraints.size; j++){
             srph_constraint * c = &p->constraints.data[j];
             double s = srph_constraint_scaling_factor(c);
@@ -81,9 +93,11 @@ void srph_physics_tick(srph_physics * p, double dt){
     // update velocities
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_matter * m = &p->substances.data[i]->matter;
-        if (!m->is_static){
-            srph_matter_update_velocities(&p->substances.data[i]->matter, dt);
+        if (m->is_at_rest || m->is_static){
+            continue;
         }
+
+        srph_matter_update_velocities(&p->substances.data[i]->matter, dt);
     }
 }
 

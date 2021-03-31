@@ -42,7 +42,6 @@ typedef struct srph_matter {
     srph::vec3_t omega;
 
     srph_material get_material(const vec3 * x);
-    srph_sdf * get_sdf() const;
     srph::vec3_t get_position() const;
 
     srph_bound3 get_moving_bound(double t) const;
@@ -54,8 +53,6 @@ typedef struct srph_matter {
     
     srph::vec3_t to_local_space(const srph::vec3_t & x) const;
 
-    void physics_tick(double delta);
-    
     srph::vec3_t get_velocity(const srph::vec3_t & x);
 
     double get_inverse_angular_mass(const srph::vec3_t & x, const srph::vec3_t & n);
