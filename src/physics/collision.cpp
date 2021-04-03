@@ -7,7 +7,7 @@
 #include "maths/optimise.h"
 #include "maths/vector.h"
 
-static double intersection_func1(void * data, const vec3 * x){
+static double intersection_func(void * data, const vec3 * x){
     srph_matter * a = ((srph_matter **) data)[0];
     srph_matter * b = ((srph_matter **) data)[1];
 
@@ -236,14 +236,15 @@ void srph_collision_correct(srph_collision *self) {
 }
 
 bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_substance * b, double dt){
-    assert(c != NULL && a != NULL && b != NULL);
+    if (srph_matter_is_at_rest(&a->matter) && srph_matter_is_at_rest(&b->matter)){
+        return false;
+    }
 
     srph_sphere sa, sb;
     srph_matter_sphere_bound(&a->matter, dt, &sa);
     srph_matter_sphere_bound(&b->matter, dt, &sb);
 
     if (!srph_sphere_intersect(&sa, &sb)){
-        c->is_colliding = false;
         return false;
     }
 
@@ -266,23 +267,23 @@ bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_sub
     srph_matter * matters[] = { &a->matter, &b->matter };
     srph_opt_sample s;
     double threshold = 0.0;
-    srph_opt_nelder_mead(&s, intersection_func1, matters, xs, &threshold);
+    srph_opt_nelder_mead(&s, intersection_func, matters, xs, &threshold);
 
-    c->is_colliding = s.fx <= 0;
+    bool is_colliding = s.fx <= 0;
     c->ms[0] = &a->matter;
     c->ms[1] = &b->matter;
     c->x = s.x;
     
-    if (c->is_colliding){
+    if (is_colliding){
         srph_matter_add_deformation(&a->matter, &s.x, srph_deform_type_collision);
         srph_matter_add_deformation(&b->matter, &s.x, srph_deform_type_collision);
     }
     
-    return c->is_colliding;
+    return is_colliding;
 }
 
 void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
-    assert(c != NULL);
+    assert(c->ms[0]->is_rigid && c->ms[1]->is_rigid);
 
     for (int i = 0; i < 2; i++){
         srph_matter * a = c->ms[i];
@@ -292,20 +293,16 @@ void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
 
         for (size_t j = 0; j < b->deformations.size; j++){
             srph_deform * d = b->deformations.data[j];
-            vec3 x_local;
-            srph_matter_to_local_position(a, &x_local, &d->p);
+            vec3 xa, xb;
+            srph_matter_to_global_position(b, &xb, &d->x0);
+            srph_matter_to_local_position(a, &xa, &xb);
 
-            double phi = srph_sdf_phi(a->sdf, &x_local) + srph_sdf_phi(b->sdf, &d->x0);
+            double phi = srph_sdf_phi(a->sdf, &xa) + srph_sdf_phi(b->sdf, &d->x0);
             if (phi <= 0){
-                vec3 n = srph_sdf_normal(a->sdf, &x_local);
-                srph_matter_to_global_direction(a, &d->p, &n, &n);
+                vec3 n = srph_sdf_normal(a->sdf, &xa);
+                srph_matter_to_global_direction(a, &d->x, &n, &n);
                 srph_vec3_scale(&n, &n, -phi * ratio);
-
-                if (b->is_rigid){
-                    srph_transform_translate(&b->transform, &n);
-                } else {
-                    srph_vec3_add(&d->p, &d->p, &n);
-                }
+                srph_transform_translate(&b->transform, &n);
             }
         }
     }

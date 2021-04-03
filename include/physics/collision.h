@@ -5,7 +5,6 @@
 #include "metaphysics/substance.h"
 
 typedef struct srph_collision {
-    bool is_colliding;
     srph_matter * ms[2];
     vec3 x;
 } srph_collision;

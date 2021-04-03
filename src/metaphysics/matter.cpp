@@ -308,7 +308,7 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
     srph_matter_rotate(self, &q);
 
     // reset forces
-    self->f = *gravity;
+    srph_vec3_scale(&self->f, gravity, m);
     self->t = srph_vec3_zero;
 }
 
@@ -379,8 +379,6 @@ void srph_matter_apply_impulse_at(srph_matter *self, const vec3 *x, const vec3 *
 }
 
 double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
-    assert(self != NULL && x != NULL && n != NULL);
-
     vec3 r, rn, irn;
     offset_from_centre_of_mass(self, &r, x);
     srph_vec3_cross(&rn, &r, n);
@@ -391,7 +389,10 @@ double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
 }
 
 void srph_matter_rotate(srph_matter *self, srph_quat *q) {
-    assert(self != NULL && q != NULL);
     srph_transform_rotate(&self->transform, q);
     self->is_inverse_inertia_tensor_valid = false;
+}
+
+bool srph_matter_is_at_rest(srph_matter *self) {
+    return self->is_at_rest || self->is_static;
 }

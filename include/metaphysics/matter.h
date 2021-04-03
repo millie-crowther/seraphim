@@ -69,5 +69,6 @@ void srph_matter_material(srph_matter *self, srph_material *mat);
 void srph_matter_apply_impulse_at(srph_matter *self, const vec3 * x, const vec3 *j);
 
 void srph_matter_rotate(srph_matter *self, srph_quat *q);
+bool srph_matter_is_at_rest(srph_matter *self);
 
 #endif

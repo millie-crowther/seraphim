@@ -13,7 +13,7 @@
 void srph_physics_init(srph_physics * p){
     p->quit = false;
 
-    p->gravity = { 0.0, -9.8, 0.0 };
+    p->gravity = { {{0.0, -9.8, 0.0}} };
 
     srph_array_init(&p->substances);
     srph_array_init(&p->constraints);
@@ -52,15 +52,10 @@ void srph_physics_tick(srph_physics * p, double dt){
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_substance * s = p->substances.data[i];
 
-        if (s->matter.is_at_rest || s->matter.is_static){
-            continue;
-        }
-
         for (uint32_t j = i + 1; j < p->substances.size; j++){
             srph_substance * t = p->substances.data[j];
             srph_collision c;
             if (srph_collision_is_detected(&c, s, t, dt)){
-                printf("collision detected!\n");
                 srph_array_push_back(&p->collisions);
                 *p->collisions.last = c;
             }
