@@ -1,54 +1,71 @@
 #include "render/camera.h"
 
+#include <assert.h>
+
 #include "maths/vector.h"
 
 using namespace srph;
 
 camera_t::camera_t(){
-    transform.set_position(vec3_t(0.0, 0.5, -5.0));
+    transform.position = {{{0.0, 0.5, -5.0}}};
+    transform.rotation = srph_quat_identity;
 }
 
 void camera_t::update(double delta, const keyboard_t & keyboard, const mouse_t & mouse){
-    vec3_t forward = transform.forward();
-    forward[1] = 0.0;
-    
-    vec3 f1 = { forward[0], forward[1], forward[2] };
-    srph_vec3_normalise(&f1, &f1);
-    forward = vec3_t(f1.x, f1.y, f1.z);
+    vec3 forward;
+    srph_transform_forward(&transform, &forward);
+    forward.y = 0.0;
+    srph_vec3_normalise(&forward, &forward);
 
-    vec3_t right = transform.right();
+    vec3 right;
+    srph_transform_right(&transform, &right);
 
+    vec3 d;
     if (keyboard.is_key_pressed(GLFW_KEY_W)){
-        transform.translate(forward * delta);
+        srph_vec3_scale(&d, &forward, delta);
+        srph_transform_translate(&transform, &d);
     }
 
     if (keyboard.is_key_pressed(GLFW_KEY_S)){
-        transform.translate(forward * -delta );
-    } 
+        srph_vec3_scale(&d, &forward, -delta);
+        srph_transform_translate(&transform, &d);
+    }
 
     if (keyboard.is_key_pressed(GLFW_KEY_A)){
-        transform.translate(right * -delta );
+        srph_vec3_scale(&d, &right, -delta);
+        srph_transform_translate(&transform, &d);
     }
 
     if (keyboard.is_key_pressed(GLFW_KEY_D)){
-        transform.translate(right * delta );
+        srph_vec3_scale(&d, &right, delta);
+        srph_transform_translate(&transform, &d);
     }
-    
-    transform.rotate(quat_t::angle_axis(
-        delta * mouse.get_velocity()[0] / 2000, 
-        vec3_t(srph_vec3_up.x, srph_vec3_up.y, srph_vec3_up.z)
-    ));
 
-    transform.rotate(quat_t::angle_axis(
-        delta * mouse.get_velocity()[1] / 2000, 
-        transform.right()
-    ));
+    double scale = 2000.0;
+
+    srph_quat q;
+    srph_quat_angle_axis(
+        &q,
+        -delta * mouse.get_velocity()[0] / scale,
+        &srph_vec3_up
+    );
+    srph_transform_rotate(&transform, &q);
+
+    srph_transform_right(&transform, &right);
+    srph_quat_angle_axis(
+        &q,
+        -delta * mouse.get_velocity()[1] / scale,
+        &right
+    );
+    srph_transform_rotate(&transform, &q);
 }
 
-f32mat4_t camera_t::get_matrix(){
-    return transform.get_matrix();
-}
+void srph_camera_transformation_matrix(srph::camera_t *c, float *xs) {
+    assert(c != NULL && xs != NULL);
+    double dxs[16];
+    srph_transform_matrix(&c->transform, dxs);
 
-vec3_t camera_t::get_position() const {
-    return transform.get_position();
+    for (int i = 0; i < 16; i++){
+        xs[i] = (float) dxs[i];
+    }
 }

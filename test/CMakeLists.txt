@@ -15,8 +15,6 @@ include_directories(${INCLUDE_DIR})
 
 set(SOURCES
     test_main.c
-
-        test_quat.h
 )
 
 add_executable(seraphim_test ${SOURCES})

@@ -34,7 +34,7 @@ namespace srph {
             uint32_t number_of_calls;
             uint32_t _1;
 
-            f32mat4_t eye_transform;
+            float eye_transform[16];
 
             uint32_t texture_size;
             uint32_t texture_depth;

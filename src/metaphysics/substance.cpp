@@ -23,24 +23,27 @@ uint32_t srph_substance::get_id() const {
     return id;
 }
 
-srph_substance::data_t srph_substance::get_data(const vec3_t & eye_position){
+srph_substance::data_t srph_substance::get_data(const vec3 * eye_position){
     vec3 r;
     srph_bound3_radius(srph_sdf_bound(matter.sdf), r.raw);
-    vec3_t eye = matter.to_local_space(eye_position);
 
-    vec3 a = { eye[0], eye[1], eye[2] };
-    srph_vec3_abs(&a, &a);
+
+
+    vec3 eye;
+    srph_matter_to_local_position(&matter, &eye, eye_position);
+
+    srph_vec3_abs(&eye, &eye);
 
     vec3 x;
-    srph_vec3_subtract(&x, &a, &r);
+    srph_vec3_subtract(&x, &eye, &r);
     srph_vec3_max_scalar(&x, &x, 0.0);
     
-    float near = srph_vec3_length(&x);
+    float near = (float) srph_vec3_length(&x);
     
-    x = { eye[0], eye[1], eye[2] };
-    srph_vec3_add(&x, &a, &r);
+    x = eye;
+    srph_vec3_add(&x, &eye, &r);
     
-    float far = srph_vec3_length(&x);
+    float far = (float) srph_vec3_length(&x);
 
     data_t data(
         near, far,
@@ -48,7 +51,7 @@ srph_substance::data_t srph_substance::get_data(const vec3_t & eye_position){
         id
     );
 
-    srph_matter_transformation(&matter, data.transform);
+    srph_matter_transformation_matrix(&matter, data.transform);
 
     return data;
 }

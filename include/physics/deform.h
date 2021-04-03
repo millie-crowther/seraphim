@@ -1,8 +1,6 @@
 #ifndef SERAPHIM_DEFORM_H
 #define SERAPHIM_DEFORM_H
 
-struct srph_matter;
-
 typedef enum srph_deform_type {
     srph_deform_type_control,
     srph_deform_type_collision,
@@ -16,7 +14,6 @@ typedef struct srph_deform {
     vec3 p;
     double m;
     srph_deform_type type;
-    struct srph_matter * matter;
 } srph_deform;
 
 #define SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY 0.1

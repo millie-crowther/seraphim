@@ -33,7 +33,7 @@ typedef struct srph_substance {
     srph_substance(uint32_t i);
     srph_substance(srph_form * form, srph_matter * matter);
 
-    data_t get_data(const srph::vec3_t & eye_position);
+    data_t get_data(const vec3 *eye_position);
     uint32_t get_id() const;
 
     uint32_t id;

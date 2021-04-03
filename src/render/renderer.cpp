@@ -546,7 +546,7 @@ void renderer_t::render(){
     // write substances
     std::vector<srph_substance::data_t> substance_data;
     for (auto s : substances){
-        substance_data.push_back(s->get_data(main_camera.lock()->get_position()));
+        substance_data.push_back(s->get_data(&main_camera.lock()->transform.position));
     }
     substance_data.resize(size);
 
@@ -560,7 +560,7 @@ void renderer_t::render(){
     light_buffer->write(lights, 0);
     
     if (auto camera = main_camera.lock()){
-        push_constants.eye_transform = camera->get_matrix();
+        srph_camera_transformation_matrix(camera.get(), push_constants.eye_transform);
     }
    
     uint32_t image_index;

@@ -19,17 +19,23 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     }
 
     sdf->_phi = phi;
-    sdf->_data = data;
+    sdf->data = data;
     
-    sdf->_is_bound_valid = false;
-    sdf->_is_com_valid = false;
-    sdf->_is_inertia_tensor_valid = false;
-    sdf->_volume = -1.0;
+    sdf->is_bound_valid = false;
+    sdf->is_com_valid = false;
+    sdf->is_inertia_tensor_valid = false;
+    sdf->volume = -1.0;
 }
 
-srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
-    if (!sdf->_is_inertia_tensor_valid){
-        srph::mat3_t m;
+
+srph_mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
+    assert(sdf != NULL);
+
+    if (!sdf->is_inertia_tensor_valid){
+        for (int i = 0; i < 9; i++){
+            sdf->inertia_tensor.xs[i] = 0.0;
+        }
+
         int hits = 0;
      
         srph_bound3 * b = srph_sdf_bound(sdf);
@@ -37,11 +43,11 @@ srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {
+            vec3 x = {{{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            };
+            }}};
 
             if (srph_sdf_contains(sdf, &x)){
                 for (int i = 0; i < 3; i++){
@@ -55,26 +61,27 @@ srph::mat3_t srph_sdf_inertia_tensor(srph_sdf * sdf){
                             iij += srph_vec3_dot(&r, &r);
                         }
 
-                        m[i * 3 + j] += iij;
-                        m[j * 3 + i] += iij;
+                        sdf->inertia_tensor.xs[i * 3 + j] += iij;
+                        sdf->inertia_tensor.xs[j * 3 + i] += iij;
                     }
                 }     
-            
-   
+
                 hits++;
             }
         }
 
-        m /= (double) VOLUME_SAMPLES;
-        sdf->_inertia_tensor = m;
-        sdf->_is_inertia_tensor_valid = true;
+        for (int i = 0; i < 9; i++){
+            sdf->inertia_tensor.xs[i] /= VOLUME_SAMPLES;
+        }
+
+        sdf->is_inertia_tensor_valid = true;
     }
 
-    return sdf->_inertia_tensor;
+    return &sdf->inertia_tensor;
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
-    return sdf->_phi(sdf->_data, x);
+    return sdf->_phi(sdf->data, x);
 }
 
 vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
@@ -116,7 +123,7 @@ double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
 }
 
 double srph_sdf_volume(srph_sdf * sdf){
-    if (sdf->_volume < 0.0){
+    if (sdf->volume < 0.0){
         int hits = 0;
      
         srph_bound3 * b = srph_sdf_bound(sdf);
@@ -124,25 +131,25 @@ double srph_sdf_volume(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {
+            vec3 x = {{{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            };
+            }}};
 
             if (srph_sdf_contains(sdf, &x)){
                 hits++;
             }
         }
 
-        sdf->_volume = srph_bound3_volume(b) * (double) hits / (double) VOLUME_SAMPLES;
+        sdf->volume = srph_bound3_volume(b) * (double) hits / (double) VOLUME_SAMPLES;
     }
 
-    return sdf->_volume;
+    return sdf->volume;
 }
 
 vec3 * srph_sdf_com(srph_sdf * sdf){
-    if (!sdf->_is_com_valid){
+    if (!sdf->is_com_valid){
         vec3 com = srph_vec3_zero;
         double hits = 0.0;
      
@@ -151,11 +158,11 @@ vec3 * srph_sdf_com(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {
+            vec3 x = {{{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            };
+            }}};
 
             if (srph_sdf_contains(sdf, &x)){
                 srph_vec3_add(&com, &com, &x);
@@ -164,35 +171,11 @@ vec3 * srph_sdf_com(srph_sdf * sdf){
         }
 
         srph_vec3_scale(&com, &com, 1.0 / hits);
-        sdf->_com = com;
-        sdf->_is_com_valid = true;
+        sdf->com = com;
+        sdf->is_com_valid = true;
     }
 
-    return &sdf->_com;    
-}
-
-srph::mat3_t srph_sdf_jacobian(srph_sdf * sdf, const vec3 * x){
-    srph::mat3_t j;
-
-    for (int col = 0; col < 3; col++){
-        vec3 x1 = *x;
-        x1.raw[col] += srph::constant::epsilon;
-
-        vec3 x2 = *x;
-        x2.raw[col] -= srph::constant::epsilon;
-        
-        vec3 n1 = srph_sdf_normal(sdf, &x1);
-        vec3 n2 = srph_sdf_normal(sdf, &x2);
-        vec3 n;
-        srph_vec3_subtract(&n, &n1, &n2);
-        srph_vec3_scale(&n, &n, 0.5 / srph::constant::epsilon);
-
-        for (int row = 0; row < 3; row++){
-            j.set(row, col, n.raw[row]);
-        } 
-    }
-
-    return j;        
+    return &sdf->com;
 }
 
 srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
@@ -200,28 +183,28 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
         return NULL;
     } 
 
-    if (!sdf->_is_bound_valid){
+    if (!sdf->is_bound_valid){
         vec3 a;
         for (int i = 0; i < 3; i++){
             srph_vec3_fill(&a, 0.0);
 
             a.raw[i] = -1.0;
-            sdf->_bound.lower[i] = -srph_sdf_project(sdf, &a); 
+            sdf->bound.lower[i] = -srph_sdf_project(sdf, &a);
 
             a.raw[i] = 1.0;
-            sdf->_bound.upper[i] =  srph_sdf_project(sdf, &a); 
+            sdf->bound.upper[i] =  srph_sdf_project(sdf, &a);
         }
 
-        sdf->_is_bound_valid = true;
+        sdf->is_bound_valid = true;
     }
 
-    return &sdf->_bound;
+    return &sdf->bound;
 }
 
 void srph_sdf_destroy(srph_sdf * sdf){
     if (sdf != NULL){
-        if (sdf->_data != NULL){
-            free(sdf->_data);
+        if (sdf->data != NULL){
+            free(sdf->data);
         }
         
         free(sdf);

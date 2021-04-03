@@ -2,6 +2,7 @@
 #define MATHS_VECTOR_H
 
 #include "core/constant.h"
+#include "vector.h"
 
 #include <algorithm>
 #include <array>
@@ -175,35 +176,13 @@ namespace srph {
         typename std::array<T, M * N>::const_iterator end() const {
             return super_t::end();
         }
-
-        // factories
-        static matrix_t<T, M, N> diagonal(const T & x){
-            matrix_t<T, M, N> a;
-            constexpr int size = std::min(M, N);
-            for (int i = 0; i < size; i++){
-                a.set(i, i, x);
-            }
-            return a;
-        }
-        
-        static matrix_t<T, M, N> identity(){
-            return diagonal(1);
-        }
     };
 
     template<class T, int N>
     using vec_t = matrix_t<T, N, 1>;
 
-    typedef vec_t<int32_t, 2> i32vec2_t;
-
-    typedef vec_t<uint16_t, 2> u16vec2_t;
-    typedef vec_t<uint16_t, 4> u16vec4_t;
-
     typedef vec_t<uint32_t, 2> u32vec2_t;
     typedef vec_t<uint32_t, 3> u32vec3_t;
-    typedef vec_t<uint32_t, 4> u32vec4_t;
-
-    typedef vec_t<int32_t, 3> i32vec3_t;
 
     typedef vec_t<float, 2> f32vec2_t;
     typedef vec_t<float, 3> f32vec3_t;
@@ -217,11 +196,9 @@ namespace srph {
     typedef f64vec3_t vec3_t;
     typedef f64vec4_t vec4_t;
 
-    typedef matrix_t<float, 3, 3> f32mat3_t;
     typedef matrix_t<float, 4, 4> f32mat4_t;
 
     typedef matrix_t<double, 3, 3> mat3_t;
-    using mat4_t = matrix_t<double, 4, 4>;
 
     namespace vec {
         template<class S, class T, int M, int N>
@@ -346,5 +323,15 @@ namespace srph {
     } 
 
 }
+
+typedef struct srph_mat3 {
+    double xs[9];
+} srph_mat3;
+
+double srph_matrix_determinant(const srph_mat3 * self);
+void srph_matrix_inverse(const srph_mat3 * self, srph_mat3 * inverse);
+void srph_matrix_transpose(const srph_mat3 *self, srph_mat3 *t);
+void srph_matrix_multiply(srph_mat3 * ab, const srph_mat3 * a, const srph_mat3 * b);
+void srph_matrix_apply(const srph_mat3 * m, const vec3 * x, vec3 * mx);
 
 #endif
