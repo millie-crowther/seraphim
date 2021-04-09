@@ -1,6 +1,7 @@
 #include "physics/transform.h"
 
 #include <assert.h>
+#include <math.h>
 
 //void srph_transform::set_position(const vec3_t & x){
 //    position = x;
@@ -24,18 +25,17 @@
 void srph_transform_to_local_position(srph_transform * tf, vec3 * tx, const vec3 * x){
     assert(tf != NULL && tx != NULL && x != NULL);
 
-    srph_vec3_subtract(tx, x, &tf->position);
+    vec3_subtract(tx, x, &tf->position);
 
-    srph_quat qi;
-    srph_quat_inverse(&qi, &tf->rotation);
-    srph_quat_rotate(&qi, tx, tx);
+    quat qi;
+    quat_inverse(&qi, &tf->rotation);
+    vec3_multiply_quat(tx, tx, &qi);
 }
 
 void srph_transform_to_global_position(const srph_transform * tf, vec3 * tx, const vec3 * x){
-    assert(tf != NULL && tx != NULL && x != NULL);
-
-    srph_quat_rotate(&tf->rotation, tx, x);
-    srph_vec3_add(tx, tx, &tf->position);
+    vec3_multiply_quat(tx, x, &tf->rotation);
+    assert(isfinite(tx->x) && isfinite(tx->y) && isfinite(tx->z));
+    vec3_add(tx, tx, &tf->position);
 }
 //
 //void srph_transform_to_global_space(srph_transform * tf, vec3 * tx, const vec3 * x){
@@ -52,61 +52,32 @@ void srph_transform_to_global_position(const srph_transform * tf, vec3 * tx, con
 //}
 
 void srph_transform_to_global_direction(const srph_transform * tf, vec3 * tx, const vec3 * x){
-    srph_quat_rotate(&tf->rotation, tx, x);
+    vec3_multiply_quat(tx, x, &tf->rotation);
 }
 
 void srph_transform_forward(const srph_transform *tf, vec3 *x) {
-    assert(tf != NULL && x != NULL);
-    srph_transform_to_global_direction(tf, x, &srph_vec3_forward);
+    srph_transform_to_global_direction(tf, x, &vec3_forward);
 }
 
 void srph_transform_up(const srph_transform *tf, vec3 *x) {
-    assert(tf != NULL && x != NULL);
-    srph_transform_to_global_direction(tf, x, &srph_vec3_up);
+    srph_transform_to_global_direction(tf, x, &vec3_up);
 }
 
 void srph_transform_right(const srph_transform *tf, vec3 *x) {
-    assert(tf != NULL && x != NULL);
-    srph_transform_to_global_direction(tf, x, &srph_vec3_right);
+    srph_transform_to_global_direction(tf, x, &vec3_right);
 }
 
 void srph_transform_translate(srph_transform *tf, const vec3 *x) {
-    assert(tf != NULL && x != NULL);
-    srph_vec3_add(&tf->position, &tf->position, x);
+    vec3_add(&tf->position, &tf->position, x);
 }
 
-void srph_transform_rotate(srph_transform *tf, const srph_quat *q) {
-    assert(tf != NULL && q != NULL);
-    srph_quat_mult(&tf->rotation, &tf->rotation, q);
+void srph_transform_rotate(srph_transform *tf, const quat *q) {
+    quat_multiply(&tf->rotation, q,  &tf->rotation);
 }
 
-void srph_transform_matrix(srph_transform *tf, double *xs) {
-    assert(tf != NULL && xs != NULL);
-
-    vec3 * o = &tf->position;
-
-    srph_mat3 m;
-    srph_quat_to_matrix(&tf->rotation, &m);
-
-    xs[0]  = m.xs[0];
-    xs[1]  = m.xs[3];
-    xs[2]  = m.xs[6];
-    xs[3]  = 0.0;
-
-    xs[4]  = m.xs[1];
-    xs[5]  = m.xs[4];
-    xs[6]  = m.xs[7];
-    xs[7]  = 0.0;
-
-    xs[8]  = m.xs[2];
-    xs[9]  = m.xs[5];
-    xs[10] = m.xs[8];
-    xs[11] = 0.0;
-
-    xs[12] = o->x;
-    xs[13] = o->y;
-    xs[14] = o->z;
-    xs[15] = 1.0;
+void srph_transform_matrix(srph_transform *tf, mat4 *xs) {
+    mat4_rotation_quat(xs, &tf->rotation);
+    mat4_translation(xs, xs, &tf->position);
 }
 
 //vec3_t srph_transform::to_global_space(const vec3_t & x) const {

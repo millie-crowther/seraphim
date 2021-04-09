@@ -1,7 +1,7 @@
 #ifndef SERAPHIM_OPTIMISE_H
 #define SERAPHIM_OPTIMISE_H
 
-#include "maths/vector.h"
+#include "maths/maths.h"
 
 typedef double (*srph_opt_func)(void * data, const vec3 * x);
 

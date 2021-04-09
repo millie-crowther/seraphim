@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.7)
-set (CMAKE_C_STANDARD  11)
+set (CMAKE_CXX_STANDARD 17)
 project (seraphim_test)
 
 SET(COMPILER_FLAGS "-fsanitize=address -Wall -Werror -Wfatal-errors")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COMPILER_FLAGS}")
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS}")
 
 
 set(INCLUDE_DIR
@@ -14,7 +14,14 @@ set(INCLUDE_DIR
 include_directories(${INCLUDE_DIR})
 
 set(SOURCES
-    test_main.c
+    ../src/maths/sdf/sdf.cpp
+    ../src/maths/sdf/primitive.cpp
+    ../src/maths/sdf/platonic.cpp
+    ../src/maths/maths.cpp
+    ../src/maths/bound.cpp
+    ../src/core/random.cpp
+    ../src/physics/transform.cpp
+    test_main.cpp
 )
 
 add_executable(seraphim_test ${SOURCES})

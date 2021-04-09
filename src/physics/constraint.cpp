@@ -19,7 +19,7 @@ double srph_constraint_scaling_factor(srph_constraint * c){
     vec3 dc;
     for (uint32_t i = 0; i < c->n; i++){
         c->dc_func(c, i, &dc);
-        q += srph_vec3_dot(&dc, &dc) / c->deformations[i]->m;
+        q += vec3_dot(&dc, &dc) / c->deformations[i]->m;
     }
 
     if (q == 0.0){
@@ -39,15 +39,15 @@ void srph_constraint_update(srph_constraint * c, uint32_t i, double s){
     vec3 dp;
     vec3 * p = &c->deformations[i]->p;
     c->dc_func(c, i, &dp);
-    srph_vec3_scale(&dp, &dp, -s / c->deformations[i]->m);
-    srph_vec3_add(p, p, &dp);
+    vec3_multiply_f(&dp, &dp, -s / c->deformations[i]->m);
+    vec3_add(p, p, &dp);
 }
 
 static double distance_constraint(srph_constraint * c){
     assert(c != NULL && c->deformations[0] != NULL && c->deformations[1] != NULL);
     
-    double l  = srph_vec3_distance(&c->deformations[0]->p,  &c->deformations[1]->p );
-    double l0 = srph_vec3_distance(&c->deformations[0]->x0, &c->deformations[1]->x0);
+    double l  = vec3_distance(&c->deformations[0]->p,  &c->deformations[1]->p );
+    double l0 = vec3_distance(&c->deformations[0]->x0, &c->deformations[1]->x0);
     
     return l0 - l;
 }
@@ -56,8 +56,8 @@ void srph_constraint_repulse_derivative(srph_constraint * c, uint32_t i, vec3 * 
     assert(c != NULL && dc != NULL && c->deformations[0] != NULL && c->deformations[1] != NULL);
     assert(c->n == 2);
 
-    srph_vec3_subtract(dc, &c->deformations[i]->p, &c->deformations[1 - i]->p);
-    srph_vec3_normalise(dc, dc);
+    vec3_subtract(dc, &c->deformations[i]->p, &c->deformations[1 - i]->p);
+    vec3_normalize(dc, dc);
 }
 
 void srph_constraint_distance(

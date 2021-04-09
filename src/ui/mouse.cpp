@@ -24,6 +24,8 @@ void mouse_t::update(double delta, const window_t & window){
     vec2_t cursor;
     glfwGetCursorPos(window.get_window(), &cursor[0], &cursor[1]);
 
+
+
     v = (cursor - c) / delta;
     glfwSetCursorPos(window.get_window(), c[0], c[1]);
 }

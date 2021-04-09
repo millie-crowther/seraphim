@@ -11,6 +11,6 @@ typedef struct srph_collision {
 
 bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_substance * b, double dt);
 void srph_collision_resolve_interpenetration_constraint(srph_collision * c);
-void srph_collision_correct(srph_collision *self);
+void srph_collision_correct(srph_collision *self, double dt);
 
 #endif

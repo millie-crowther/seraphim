@@ -1,7 +1,7 @@
 #ifndef SERAPHIM_SPHERE_H
 #define SERAPHIM_SPHERE_H
 
-#include "maths/vector.h"
+#include "maths/maths.h"
 
 typedef struct srph_sphere {
     vec3 c;

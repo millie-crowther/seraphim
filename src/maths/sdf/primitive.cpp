@@ -5,7 +5,7 @@
 
 double sphere_phi(void * data, const vec3 * x){
     double r = *((double *) data);
-    return srph_vec3_length(x) - r;
+    return vec3_length(x) - r;
 }
 
 double torus_phi(void * data, const vec3 * x){

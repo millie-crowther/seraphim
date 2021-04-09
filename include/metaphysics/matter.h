@@ -4,7 +4,6 @@
 #include "material.h"
 
 #include "maths/sdf/sdf.h"
-#include "maths/quat.h"
 #include "physics/constraint.h"
 #include "physics/sphere.h"
 #include "physics/transform.h"
@@ -28,7 +27,7 @@ typedef struct srph_matter {
     bool is_static;
 
     bool is_inverse_inertia_tensor_valid;
-    srph_mat3 inverse_inertia_tensor;
+    mat3 inverse_inertia_tensor;
 
     vec3 f;        
     vec3 t;
@@ -66,9 +65,10 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
 void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v);
 void srph_matter_material(srph_matter *self, srph_material *mat);
 
-void srph_matter_apply_impulse_at(srph_matter *self, const vec3 * x, const vec3 *j);
+void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, double j);
 
-void srph_matter_rotate(srph_matter *self, srph_quat *q);
+void srph_matter_rotate(srph_matter *self, quat *q);
 bool srph_matter_is_at_rest(srph_matter *self);
+mat3 * inverse_inertia_tensor(srph_matter *self);
 
 #endif

@@ -9,6 +9,8 @@
 #include "maths/sdf/primitive.h"
 #include "physics/sphere.h"
 
+#include "core/constant.h"
+
 #define VOLUME_SAMPLES 10000
 #define SUPPORT_ALPHA 0.5
 #define SAMPLE_DENSITY 0.1
@@ -27,13 +29,12 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->volume = -1.0;
 }
 
-
-srph_mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
+mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
     assert(sdf != NULL);
 
     if (!sdf->is_inertia_tensor_valid){
         for (int i = 0; i < 9; i++){
-            sdf->inertia_tensor.xs[i] = 0.0;
+            sdf->inertia_tensor.v[i] = 0.0;
         }
 
         int hits = 0;
@@ -43,26 +44,25 @@ srph_mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{{
+            vec3 x = {{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }}};
+            }};
 
             if (srph_sdf_contains(sdf, &x)){
                 for (int i = 0; i < 3; i++){
-                    for (int j = i; j < 3; j++){
+                    for (int j = 0; j < 3; j++){
                         vec3 r;
-                        srph_vec3_subtract(&r, &x, srph_sdf_com(sdf));
+                        vec3_subtract(&r, &x, srph_sdf_com(sdf));
 
-                        double iij = -r.raw[i] * r.raw[j];
+                        double iij = -r.v[i] * r.v[j];
 
                         if (i == j){
-                            iij += srph_vec3_dot(&r, &r);
+                            iij += vec3_dot(&r, &r);
                         }
 
-                        sdf->inertia_tensor.xs[i * 3 + j] += iij;
-                        sdf->inertia_tensor.xs[j * 3 + i] += iij;
+                        sdf->inertia_tensor.v[j * 3 + i] += iij;
                     }
                 }     
 
@@ -71,7 +71,7 @@ srph_mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
         }
 
         for (int i = 0; i < 9; i++){
-            sdf->inertia_tensor.xs[i] /= VOLUME_SAMPLES;
+            sdf->inertia_tensor.v[i] /= VOLUME_SAMPLES;
         }
 
         sdf->is_inertia_tensor_valid = true;
@@ -88,15 +88,15 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
     vec3 n;
     for (int i = 0; i < 3; i++){
         vec3 x1 = *x;
-        x1.raw[i] += srph::constant::epsilon;
+        x1.v[i] += srph::constant::epsilon;
 
         vec3 x2 = *x;
-        x2.raw[i] -= srph::constant::epsilon;
+        x2.v[i] -= srph::constant::epsilon;
         
-        n.raw[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
+        n.v[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
     }
     
-    srph_vec3_scale(&n, &n, 0.5 / srph::constant::epsilon);
+    vec3_multiply_f(&n, &n, 0.5 / srph::constant::epsilon);
 
     return n;
 }
@@ -107,18 +107,18 @@ bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
     vec3 x;
-    srph_vec3_normalise(&x, d);
-    srph_vec3_scale(&x, &x, srph::constant::rho);
+    vec3_normalize(&x, d);
+    vec3_multiply_f(&x, &x, srph::constant::rho);
 
     while (true){
         double p = srph_sdf_phi(sdf, &x);
         
         // TODO: better quit criteria
         if (p > srph::constant::rho){
-            return srph_vec3_length(&x) - p;
+            return vec3_length(&x) - p;
         }
 
-        srph_vec3_scale(&x, &x, 2.0);
+        vec3_multiply_f(&x, &x, 2.0);
     }
 }
 
@@ -131,11 +131,11 @@ double srph_sdf_volume(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{{
+            vec3 x = {{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }}};
+            }};
 
             if (srph_sdf_contains(sdf, &x)){
                 hits++;
@@ -150,7 +150,7 @@ double srph_sdf_volume(srph_sdf * sdf){
 
 vec3 * srph_sdf_com(srph_sdf * sdf){
     if (!sdf->is_com_valid){
-        vec3 com = srph_vec3_zero;
+        vec3 com = vec3_zero;
         double hits = 0.0;
      
         srph_bound3 * b = srph_sdf_bound(sdf);
@@ -158,19 +158,19 @@ vec3 * srph_sdf_com(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{{
+            vec3 x = {{
                 srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
                 srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
                 srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }}};
+            }};
 
             if (srph_sdf_contains(sdf, &x)){
-                srph_vec3_add(&com, &com, &x);
+                vec3_add(&com, &com, &x);
                 hits += 1.0;
             }
         }
 
-        srph_vec3_scale(&com, &com, 1.0 / hits);
+        vec3_multiply_f(&com, &com, 1.0 / hits);
         sdf->com = com;
         sdf->is_com_valid = true;
     }
@@ -186,12 +186,12 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
     if (!sdf->is_bound_valid){
         vec3 a;
         for (int i = 0; i < 3; i++){
-            srph_vec3_fill(&a, 0.0);
+            a = vec3_zero;
 
-            a.raw[i] = -1.0;
+            a.v[i] = -1.0;
             sdf->bound.lower[i] = -srph_sdf_project(sdf, &a);
 
-            a.raw[i] = 1.0;
+            a.v[i] = 1.0;
             sdf->bound.upper[i] =  srph_sdf_project(sdf, &a);
         }
 

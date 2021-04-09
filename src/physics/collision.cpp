@@ -1,7 +1,6 @@
 #include "physics/collision.h"
 
 #include <assert.h>
-#include <float.h>
 
 #include "maths/matrix.h"
 #include "maths/optimise.h"
@@ -148,32 +147,43 @@ static double intersection_func(void * data, const vec3 * x){
 //    colliding_correct();
 //}
 
-
-static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * bx){
-    assert(a != NULL && b != NULL && bx != NULL);
-
-    // check that it is actually colliding at this point
-    vec3 x, xa;
-    srph_matter_to_global_position(b, &x, &bx->x0);
-    srph_matter_to_local_position(a, &xa, &x);
-
-    double phi = srph_sdf_phi(a->sdf, &xa);
-    if (phi > srph::constant::epsilon){
+static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, double dt){
+    // check that deformation is a collision deformation
+    if (xb->type != srph_deform_type_collision){
         return;
     }
+//    printf("vertex type correct\n");
 
     // check that relative velocity at this point is incoming
+    vec3 x, xa;
+    srph_matter_to_global_position(b, &x, &xb->x0);
+    srph_matter_to_local_position(a, &xa, &x);
+
     vec3 va, vb, vr;
     srph_matter_velocity(a, &x, &va);
     srph_matter_velocity(b, &x, &vb);
-    srph_vec3_subtract(&vr, &va, &vb);
+    vec3_subtract(&vr, &vb, &va);
 
-    vec3 n = srph_sdf_normal(a->sdf, &xa);
+    vec3 n;
+    n = srph_sdf_normal(a->sdf, &xa);
     srph_matter_to_global_direction(a, NULL, &n, &n);
-    double vrn = srph_vec3_dot(&vr, &n);
-    if (vrn < -srph::constant::epsilon){
+
+    double vrn = vec3_dot(&vr, &n);
+    if (vrn >= 0){
         return;
     }
+
+//    printf("velocity is incoming\n");
+
+    // check that it is actually colliding at this point
+    double phi = srph_sdf_phi(a->sdf, &xa);
+    if (fabs(phi) >= srph::constant::epsilon){
+        return;
+    }
+
+//    assert(fabs(x.y) < srph::constant::epsilon);
+
+//    printf("vertex is colliding\n");
 
     // calculate collision impulse magnitude
     srph_material mata, matb;
@@ -182,55 +192,55 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * bx){
 
     double CoR = fmax(mata.restitution, matb.restitution);
 
-    double jr = (1.0 + CoR) * vrn / (
-        1.0 / srph_matter_mass(a) + srph_matter_inverse_angular_mass(a, &x, &n) +
-        1.0 / srph_matter_mass(b) + srph_matter_inverse_angular_mass(b, &x, &n)
+    double ia = srph_matter_inverse_angular_mass(a, &x, &n);
+    double ib = srph_matter_inverse_angular_mass(b, &x, &n);
+
+//    printf("ma = %f; mb = %f; ia = %f; ib = %f\n", 1.0 / srph_matter_mass(a), 1.0 / srph_matter_mass(b), ia, ib);
+//    double x3 = 1.0 / srph_matter_mass(a) + 1.0 / srph_matter_mass(b);
+//    double x4 = x3 + ia + ib;
+//    printf("x = %f, y = %f\n", x3, x4);
+
+    double jr = -(1.0 + CoR) * vrn / (
+        1.0 / srph_matter_mass(a) +
+        1.0 / srph_matter_mass(b)
+        + ia + ib
     );
 
-    vec3 ja, jb;
-    srph_vec3_scale(&ja, &n, -jr);
-    srph_vec3_scale(&jb, &n,  jr);
-
-    srph_matter_apply_impulse_at(a, &x, &ja);
-    srph_matter_apply_impulse_at(b, &x, &jb);
+    assert(jr >= 0);
+    srph_matter_apply_impulse(a, &x, &n, -jr);
+    srph_matter_apply_impulse(b, &x, &n,  jr);
 
     // apply friction force
-    vec3 t = n;
-    srph_vec3_scale(&n, &n, -vrn);
-    srph_vec3_add(&t, &t, &vr);
-    if (srph_vec3_length(&t) < srph::constant::epsilon){
-        return;
-    }
+//    vec3 t;
+//    srph_vec3_scale(&t, &n, -vrn);
+//    srph_vec3_add(&t, &t, &vr);
+//    if (srph_vec3_length(&t) < srph::constant::epsilon){
+//        return;
+//    }
+//
+//    srph_vec3_normalise(&t, &t);
 
-    srph_vec3_normalise(&t, &t);
+//    double vrt  = srph_vec3_dot(&vr, &t);
+//    double mvta = srph_matter_mass(a) * vrt;
+//    double mvtb = srph_matter_mass(b) * vrt;
+//
+//    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
+//    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
 
-    double vrt  = srph_vec3_dot(&vr, &t);
-    double mvta = srph_matter_mass(a) * vrt;
-    double mvtb = srph_matter_mass(b) * vrt;
+//    double ka = -(mvta <= js) ? mvta : jd;
+//    double kb =  (mvtb <= js) ? mvtb : jd;
 
-    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
-    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
-
-    double ka = -(mvta <= js) ? mvta : jd;
-    double kb =  (mvtb <= js) ? mvtb : jd;
-
-    vec3 ta, tb;
-    srph_vec3_scale(&ta, &t, ka);
-    srph_vec3_scale(&tb, &t, kb);
-
-    srph_matter_apply_impulse_at(a, &x, &ta);
-    srph_matter_apply_impulse_at(b, &x, &tb);
+//    srph_matter_apply_impulse(a, &x, &t, ka);
+//    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
-void srph_collision_correct(srph_collision *self) {
-    assert(self != NULL);
-
+void srph_collision_correct(srph_collision *self, double dt) {
     for (int i = 0; i < 2; i++){
         srph_matter * a = self->ms[i];
         srph_matter * b = self->ms[1 - i];
 
         for (size_t j = 0; j < b->deformations.size; j++){
-            contact_correct(a, b, b->deformations.data[j]);
+            contact_correct(a, b, b->deformations.data[j], dt);
         }
     }
 }
@@ -248,16 +258,16 @@ bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_sub
         return false;
     }
 
-    vec3 r;
-    srph_vec3_fill(&r, fmin(sa.r, sb.r) / 2);
+    double r_elem = fmin(sa.r, sb.r) / 2;
+    vec3 r = {{ r_elem, r_elem, r_elem }};
 
     vec3 xa, xb;
-    srph_vec3_scale(&xa, &sa.c, sb.r / (sa.r + sb.r));
-    srph_vec3_scale(&xb, &sb.c, sa.r / (sa.r + sb.r));
+    vec3_multiply_f(&xa, &sa.c,  sb.r / (sa.r + sb.r));
+    vec3_multiply_f(&xb, &sa.c,  sa.r / (sa.r + sb.r));
 
     vec3 x;
-    srph_vec3_add(&x, &xa, &xb);
-    srph_vec3_subtract(&x, &x, &r);
+    vec3_add(&x, &xa, &xb);
+    vec3_subtract(&x, &x, &r);
 
     vec3 xs[4] = { x, x, x, x };
     xs[1].x += r.x;
@@ -293,15 +303,15 @@ void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
 
         for (size_t j = 0; j < b->deformations.size; j++){
             srph_deform * d = b->deformations.data[j];
-            vec3 xa, xb;
-            srph_matter_to_global_position(b, &xb, &d->x0);
-            srph_matter_to_local_position(a, &xa, &xb);
+            vec3 xa, x;
+            srph_matter_to_global_position(b, &x, &d->x0);
+            srph_matter_to_local_position(a, &xa, &x);
 
             double phi = srph_sdf_phi(a->sdf, &xa) + srph_sdf_phi(b->sdf, &d->x0);
             if (phi <= 0){
                 vec3 n = srph_sdf_normal(a->sdf, &xa);
-                srph_matter_to_global_direction(a, &d->x, &n, &n);
-                srph_vec3_scale(&n, &n, -phi * ratio);
+                srph_matter_to_global_direction(a, NULL, &n, &n);
+                vec3_multiply_f(&n, &n, -phi * ratio);
                 srph_transform_translate(&b->transform, &n);
             }
         }

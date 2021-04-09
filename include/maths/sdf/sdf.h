@@ -3,9 +3,8 @@
 
 #include "core/array.h"
 
-#include "maths/vector.h"
+#include "maths/maths.h"
 #include "maths/bound.h"
-#include "maths/matrix.h"
 
 typedef double (*srph_sdf_func)(void * data, const vec3 * x);
 
@@ -19,7 +18,7 @@ typedef struct srph_sdf {
     vec3 com;
 
     bool is_inertia_tensor_valid;
-    srph_mat3 inertia_tensor;
+    mat3 inertia_tensor;
 
     void * data;
     srph_sdf_func _phi;
@@ -36,6 +35,6 @@ bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x);
 srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
 vec3 * srph_sdf_com(srph_sdf * sdf);
 
-srph_mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf);
+mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf);
 
 #endif

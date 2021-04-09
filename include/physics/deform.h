@@ -1,6 +1,8 @@
 #ifndef SERAPHIM_DEFORM_H
 #define SERAPHIM_DEFORM_H
 
+#include "maths/maths.h"
+
 typedef enum srph_deform_type {
     srph_deform_type_control,
     srph_deform_type_collision,

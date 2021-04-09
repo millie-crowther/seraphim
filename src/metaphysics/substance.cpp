@@ -25,25 +25,26 @@ uint32_t srph_substance::get_id() const {
 
 srph_substance::data_t srph_substance::get_data(const vec3 * eye_position){
     vec3 r;
-    srph_bound3_radius(srph_sdf_bound(matter.sdf), r.raw);
-
-
+    srph_bound3_radius(srph_sdf_bound(matter.sdf), r.v);
 
     vec3 eye;
     srph_matter_to_local_position(&matter, &eye, eye_position);
 
-    srph_vec3_abs(&eye, &eye);
+    vec3_abs(&eye, &eye);
 
     vec3 x;
-    srph_vec3_subtract(&x, &eye, &r);
-    srph_vec3_max_scalar(&x, &x, 0.0);
-    
-    float near = (float) srph_vec3_length(&x);
+    vec3_subtract(&x, &eye, &r);
+
+    for (int i = 0; i < 3; i++){
+        x.v[i] = fmax(x.v[i], 0.0);
+    }
+
+    float near = (float) vec3_length(&x);
     
     x = eye;
-    srph_vec3_add(&x, &eye, &r);
+    vec3_add(&x, &eye, &r);
     
-    float far = (float) srph_vec3_length(&x);
+    float far = (float) vec3_length(&x);
 
     data_t data(
         near, far,

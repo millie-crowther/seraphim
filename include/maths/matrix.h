@@ -324,14 +324,4 @@ namespace srph {
 
 }
 
-typedef struct srph_mat3 {
-    double xs[9];
-} srph_mat3;
-
-double srph_matrix_determinant(const srph_mat3 * self);
-void srph_matrix_inverse(const srph_mat3 * self, srph_mat3 * inverse);
-void srph_matrix_transpose(const srph_mat3 *self, srph_mat3 *t);
-void srph_matrix_multiply(srph_mat3 * ab, const srph_mat3 * a, const srph_mat3 * b);
-void srph_matrix_apply(const srph_mat3 * m, const vec3 * x, vec3 * mx);
-
 #endif

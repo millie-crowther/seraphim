@@ -3,8 +3,6 @@
 #include "core/scheduler.h"
 #include "physics/collision.h"
 
-#include <assert.h>
-
 #include <chrono>
 #include <iostream>
 
@@ -13,7 +11,7 @@
 void srph_physics_init(srph_physics * p){
     p->quit = false;
 
-    p->gravity = { {{0.0, -9.8, 0.0}} };
+    p->gravity = {{0.0, -9.8, 0.0}};
 
     srph_array_init(&p->substances);
     srph_array_init(&p->constraints);
@@ -71,7 +69,7 @@ void srph_physics_tick(srph_physics * p, double dt){
 
     // collision contact correct
     for (size_t i = 0; i < p->collisions.size; i++){
-        srph_collision_correct(&p->collisions.data[i]);
+        srph_collision_correct(&p->collisions.data[i], dt);
     }
 }
 

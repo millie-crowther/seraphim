@@ -1,7 +1,7 @@
 #ifndef SERAPHIM_MATERIAL_H
 #define SERAPHIM_MATERIAL_H
 
-#include "maths/vector.h"
+#include "maths/maths.h"
 
 typedef struct srph_material {
     vec3 colour;
