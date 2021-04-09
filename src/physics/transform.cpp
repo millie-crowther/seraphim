@@ -23,8 +23,6 @@
 //}
 //
 void srph_transform_to_local_position(srph_transform * tf, vec3 * tx, const vec3 * x){
-    assert(tf != NULL && tx != NULL && x != NULL);
-
     vec3_subtract(tx, x, &tf->position);
 
     quat qi;

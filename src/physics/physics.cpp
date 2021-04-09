@@ -60,16 +60,16 @@ void srph_physics_tick(srph_physics * p, double dt){
         }
     }
 
+    // collision contact correct
+    for (size_t i = 0; i < p->collisions.size; i++){
+        srph_collision_correct(&p->collisions.data[i], dt);
+    }
+
     // solve constraints
     for (int i = 0; i < SOLVER_ITERATIONS; i++){
         for (size_t j = 0; j < p->collisions.size; j++){
             srph_collision_resolve_interpenetration_constraint(&p->collisions.data[j]);
         }
-    }
-
-    // collision contact correct
-    for (size_t i = 0; i < p->collisions.size; i++){
-        srph_collision_correct(&p->collisions.data[i], dt);
     }
 }
 

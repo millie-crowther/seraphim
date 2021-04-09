@@ -125,4 +125,22 @@ extern inline const char * test_quat_multiply(){
     return TEST_SUCCESS;
 }
 
+extern inline const char * test_quat_inverse_mult() {
+    quat q = {{
+      -0.067728546147859642, 0.2031856384435789, 0.81274255377431559, -0.54182836918287713
+    }};
+
+    quat qi;
+    quat_inverse(&qi, &q);
+
+    vec3 x = {{1.0, 2.0, 3.0}};
+    vec3 y;
+    vec3_multiply_quat(&y, &x, &q);
+    vec3_multiply_quat(&y, &y, &qi);
+
+    TEST_ASSERT(vec3_distance(&x, &y) < 0.00001, "vectors must be same after undoing rotation");
+
+    return TEST_SUCCESS;
+}
+
 #endif

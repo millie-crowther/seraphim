@@ -157,6 +157,9 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     // check that relative velocity at this point is incoming
     vec3 x, xa;
     srph_matter_to_global_position(b, &x, &xb->x0);
+
+    assert(srph_sdf_contains(b->sdf, &xb->x0));
+
     srph_matter_to_local_position(a, &xa, &x);
 
     vec3 va, vb, vr;
@@ -191,14 +194,9 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     srph_matter_material(b, &matb);
 
     double CoR = fmax(mata.restitution, matb.restitution);
-
+//
     double ia = srph_matter_inverse_angular_mass(a, &x, &n);
     double ib = srph_matter_inverse_angular_mass(b, &x, &n);
-
-//    printf("ma = %f; mb = %f; ia = %f; ib = %f\n", 1.0 / srph_matter_mass(a), 1.0 / srph_matter_mass(b), ia, ib);
-//    double x3 = 1.0 / srph_matter_mass(a) + 1.0 / srph_matter_mass(b);
-//    double x4 = x3 + ia + ib;
-//    printf("x = %f, y = %f\n", x3, x4);
 
     double jr = -(1.0 + CoR) * vrn / (
         1.0 / srph_matter_mass(a) +
@@ -211,27 +209,27 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     srph_matter_apply_impulse(b, &x, &n,  jr);
 
     // apply friction force
-//    vec3 t;
-//    srph_vec3_scale(&t, &n, -vrn);
-//    srph_vec3_add(&t, &t, &vr);
-//    if (srph_vec3_length(&t) < srph::constant::epsilon){
-//        return;
-//    }
-//
-//    srph_vec3_normalise(&t, &t);
+    vec3 t;
+    vec3_multiply_f(&t, &n, -vrn);
+    vec3_add(&t, &t, &vr);
+    if (vec3_length(&t) < srph::constant::epsilon){
+        return;
+    }
 
-//    double vrt  = srph_vec3_dot(&vr, &t);
-//    double mvta = srph_matter_mass(a) * vrt;
-//    double mvtb = srph_matter_mass(b) * vrt;
-//
-//    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
-//    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
+    vec3_normalize(&t, &t);
 
-//    double ka = -(mvta <= js) ? mvta : jd;
-//    double kb =  (mvtb <= js) ? mvtb : jd;
+    double vrt  = vec3_dot(&vr, &t);
+    double mvta = srph_matter_mass(a) * vrt;
+    double mvtb = srph_matter_mass(b) * vrt;
 
-//    srph_matter_apply_impulse(a, &x, &t, ka);
-//    srph_matter_apply_impulse(b, &x, &t, kb);
+    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
+    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
+
+    double ka = -(mvta <= js) ? mvta : jd;
+    double kb =  (mvtb <= js) ? mvtb : jd;
+
+    srph_matter_apply_impulse(a, &x, &t, ka);
+    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
 void srph_collision_correct(srph_collision *self, double dt) {

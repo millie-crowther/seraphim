@@ -103,15 +103,15 @@ mat3 * inverse_inertia_tensor(srph_matter *self){
         mat3_rotation_quat(&r, &self->transform.rotation);
         mat3_transpose(&rt, &r);
 
+        // invert
         mat3 i;
-        mat3_multiply_f(&i, srph_sdf_inertia_tensor(self->sdf), srph_matter_mass(self));
+        mat3_inverse(&i, srph_sdf_inertia_tensor(self->sdf));
+        mat3_multiply_f(&i, &i, srph_matter_mass(self));
 
         mat3 ri;
         mat3_multiply(&ri, &i, &rt);
         mat3_multiply(&ri, &r, &ri);
 
-        // invert
-        mat3_inverse(&self->inverse_inertia_tensor, &ri);
         self->is_inverse_inertia_tensor_valid = true;
 
         for (int j = 0; j < 9; j++){
@@ -313,8 +313,8 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
 
     // integrate torque
     // TODO: inertia tensor here??
-    vec3_multiply_f(&d, &self->t, t / m);
-    vec3_add(&self->omega, &self->omega, &d);
+//    vec3_multiply_f(&d, &self->t, t / m);
+//    vec3_add(&self->omega, &self->omega, &d);
 
     // integrate linear velocity
     vec3_multiply_f(&d, &self->v, t);
@@ -323,7 +323,7 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
     // integrate angular velocity
     vec3_multiply_f(&d, &self->omega, t);
     quat q;
-    quat_from_euler_angles(&q, &self->omega);
+    quat_from_euler_angles(&q, &d);
     assert(isfinite(q.x));
     assert(isfinite(self->omega.x));
     srph_matter_rotate(self, &q);
@@ -380,14 +380,13 @@ void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, 
 }
 
 double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
-    vec3 r, rn, rnr;
+    vec3 r, rn, irn;
     offset_from_centre_of_mass(self, &r, x);
     vec3_cross(&rn, &r, n);
-    vec3_cross(&rnr, &rn, &r);
-
     mat3 * i = inverse_inertia_tensor(self);
-    vec3_multiply_mat3(&rnr, &rnr, i);
-    double im = vec3_dot(&rnr, n);
+    vec3_multiply_mat3(&irn, &rn, i);
+
+    double im = vec3_dot(&rn, &irn);
     assert(isfinite(im));
     return im;
 }

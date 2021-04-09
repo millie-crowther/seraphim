@@ -20,6 +20,7 @@ int main(){
     RUN_TEST(test_quat_to_mat4);
     RUN_TEST(test_quat_to_matrix_and_back);
     RUN_TEST(test_quat_multiply);
+    RUN_TEST(test_quat_inverse_mult);
 
     RUN_TEST(test_sdf_inertia_tensor_cube);
 
