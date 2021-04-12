@@ -49,8 +49,7 @@ set(SOURCES
     ../src/metaphysics/form.cpp
     ../src/metaphysics/matter.cpp
 
-    ../src/maths/matrix.cpp
-    ../src/maths/bound.cpp
+        ../src/maths/bound.cpp
         ../src/maths/optimise.cpp
     ../src/maths/maths.cpp
         ../src/maths/sdf/sdf.cpp
