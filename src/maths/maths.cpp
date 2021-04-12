@@ -24,7 +24,9 @@ the following restrictions:
 
 #include "maths/maths.h"
 
-#include <stdio.h>
+#include <math.h>
+
+#define MAP_UNARY_FUNCTION(f, fx, x, n) for (int i = 0; i < (n); i++){ (fx)[i] = f(x[i]); }
 
 mint_t clampi(mint_t value, mint_t min, mint_t max)
 {
@@ -1069,16 +1071,6 @@ mfloat_t _vec2_angle(mfloat_t *v0)
     return MATAN2(v0[1], v0[0]);
 }
 
-mfloat_t _vec2_length(mfloat_t *v0)
-{
-    return MSQRT(v0[0] * v0[0] + v0[1] * v0[1]);
-}
-
-mfloat_t _vec2_length_squared(mfloat_t *v0)
-{
-    return v0[0] * v0[0] + v0[1] * v0[1];
-}
-
 mfloat_t _vec2_distance(mfloat_t *v0, mfloat_t *v1)
 {
     return MSQRT((v0[0] - v1[0]) * (v0[0] - v1[0]) + (v0[1] - v1[1]) * (v0[1] - v1[1]));
@@ -1451,24 +1443,9 @@ mfloat_t *_vec3_bezier4(mfloat_t *result, mfloat_t *v0, mfloat_t *v1, mfloat_t *
     return result;
 }
 
-mfloat_t _vec3_length(const mfloat_t *v0)
-{
-    return MSQRT(v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2]);
-}
-
 mfloat_t _vec3_length_squared(const mfloat_t *v0)
 {
     return v0[0] * v0[0] + v0[1] * v0[1] + v0[2] * v0[2];
-}
-
-mfloat_t _vec3_distance(const mfloat_t *v0, const mfloat_t *v1)
-{
-    return MSQRT((v0[0] - v1[0]) * (v0[0] - v1[0]) + (v0[1] - v1[1]) * (v0[1] - v1[1]) + (v0[2] - v1[2]) * (v0[2] - v1[2]));
-}
-
-mfloat_t _vec3_distance_squared(mfloat_t *v0, mfloat_t *v1)
-{
-    return (v0[0] - v1[0]) * (v0[0] - v1[0]) + (v0[1] - v1[1]) * (v0[1] - v1[1]) + (v0[2] - v1[2]) * (v0[2] - v1[2]);
 }
 
 bool _vec3_linear_independent(mfloat_t *v0, mfloat_t *v1, mfloat_t *v2)
@@ -1840,11 +1817,6 @@ mfloat_t *_quat_null(mfloat_t *result)
     result[1] = MFLOAT_C(0.0);
     result[2] = MFLOAT_C(0.0);
     result[3] = MFLOAT_C(1.0);
-    return result;
-}
-
-mfloat_t *_quat_multiply(mfloat_t *result, const mfloat_t *q0, const mfloat_t *q1)
-{
     return result;
 }
 
@@ -3451,16 +3423,6 @@ vec2i *vec2i_assign_vec2(vec2i *result, vec2 *v0)
 }
 #endif
 
-vec2i *vec2i_zero(vec2i *result)
-{
-    return (vec2i *)_vec2i_zero((mint_t *)result);
-}
-
-vec2i *vec2i_one(vec2i *result)
-{
-    return (vec2i *)_vec2i_one((mint_t *)result);
-}
-
 vec2i *vec2i_sign(vec2i *result, vec2i *v0)
 {
     return (vec2i *)_vec2i_sign((mint_t *)result, (mint_t *)v0);
@@ -3572,16 +3534,6 @@ vec3i *vec3i_assign_vec3(vec3i *result, vec3 *v0)
 	return (vec3i *)_vec3i_assign_vec3((mint_t *)result, (mfloat_t *)v0);
 }
 #endif
-
-vec3i *vec3i_zero(vec3i *result)
-{
-    return (vec3i *)_vec3i_zero((mint_t *)result);
-}
-
-vec3i *vec3i_one(vec3i *result)
-{
-    return (vec3i *)_vec3i_one((mint_t *)result);
-}
 
 vec3i *vec3i_sign(vec3i *result, vec3i *v0)
 {
@@ -3695,16 +3647,6 @@ vec4i *vec4i_assign_vec4(vec4i *result, vec4 *v0)
 }
 #endif
 
-vec4i *vec4i_zero(vec4i *result)
-{
-    return (vec4i *)_vec4i_zero((mint_t *)result);
-}
-
-vec4i *vec4i_one(vec4i *result)
-{
-    return (vec4i *)_vec4i_one((mint_t *)result);
-}
-
 vec4i *vec4i_sign(vec4i *result, vec4i *v0)
 {
     return (vec4i *)_vec4i_sign((mint_t *)result, (mint_t *)v0);
@@ -3811,16 +3753,6 @@ vec2 *vec2_assign_vec2i(vec2 *result, vec2i *v0)
 	return (vec2 *)_vec2_assign_vec2i((mfloat_t *)result, (mint_t *)v0);
 }
 #endif
-
-vec2 *vec2_zero(vec2 *result)
-{
-    return (vec2 *)_vec2_zero((mfloat_t *)result);
-}
-
-vec2 *vec2_one(vec2 *result)
-{
-    return (vec2 *)_vec2_one((mfloat_t *)result);
-}
 
 vec2 *vec2_sign(vec2 *result, vec2 *v0)
 {
@@ -3979,12 +3911,12 @@ mfloat_t vec2_angle(vec2 *v0)
 
 mfloat_t vec2_length(vec2 *v0)
 {
-    return _vec2_length((mfloat_t *)v0);
+    return hypot(v0->x, v0->y);
 }
 
 mfloat_t vec2_length_squared(vec2 *v0)
 {
-    return _vec2_length_squared((mfloat_t *)v0);
+    return vec2_dot(v0, v0);
 }
 
 mfloat_t vec2_distance(vec2 *v0, vec2 *v1)
@@ -4087,9 +4019,9 @@ vec3 *vec3_negative(vec3 *result, vec3 *v0)
     return (vec3 *)_vec3_negative((mfloat_t *)result, (mfloat_t *)v0);
 }
 
-vec3 *vec3_abs(vec3 *result, vec3 *v0)
+void vec3_abs(vec3 *result, const vec3 *v0)
 {
-    return (vec3 *)_vec3_abs((mfloat_t *)result, (mfloat_t *)v0);
+    MAP_UNARY_FUNCTION(fabs, result->v, v0->v, 3);
 }
 
 vec3 *vec3_floor(vec3 *result, vec3 *v0)
@@ -4174,22 +4106,24 @@ vec3 *vec3_bezier4(vec3 *result, vec3 *v0, vec3 *v1, vec3 *v2, vec3 *v3, mfloat_
 
 mfloat_t vec3_length(const vec3 *v0)
 {
-    return _vec3_length((const mfloat_t *)v0);
+    return sqrt(vec3_length_squared(v0));
 }
 
 mfloat_t vec3_length_squared(const vec3 *v0)
 {
-    return _vec3_length_squared((const mfloat_t *)v0);
+    return vec3_dot(v0, v0);
 }
 
 mfloat_t vec3_distance(const vec3 *v0, const vec3 *v1)
 {
-    return _vec3_distance((const mfloat_t *)v0, (const mfloat_t *)v1);
+    return sqrt(vec3_distance_squared(v0, v1));
 }
 
-mfloat_t vec3_distance_squared(vec3 *v0, vec3 *v1)
+mfloat_t vec3_distance_squared(const vec3 *v0, const vec3 *v1)
 {
-    return _vec3_distance_squared((mfloat_t *)v0, (mfloat_t *)v1);
+    vec3 d;
+    vec3_subtract(&d, v0, v1);
+    return vec3_length_squared(&d);
 }
 
 bool vec4_is_zero(vec4 *v0)
@@ -4212,12 +4146,10 @@ vec4 *vec4_assign(vec4 *result, vec4 *v0)
     return (vec4 *)_vec4_assign((mfloat_t *)result, (mfloat_t *)v0);
 }
 
-#if defined(MATHC_USE_INT)
 vec4 *vec4_assign_vec4i(vec4 *result, vec4i *v0)
 {
 	return (vec4 *)_vec4_assign_vec4i((mfloat_t *)result, (mint_t *)v0);
 }
-#endif
 
 vec4 *vec4_zero(vec4 *result)
 {
@@ -4359,16 +4291,6 @@ quat *quat_assign(quat *result, quat *q0)
     return (quat *)_quat_assign((mfloat_t *)result, (mfloat_t *)q0);
 }
 
-quat *quat_zero(quat *result)
-{
-    return (quat *)_quat_zero((mfloat_t *)result);
-}
-
-quat *quat_null(quat *result)
-{
-    return (quat *)_quat_null((mfloat_t *)result);
-}
-
 quat *quat_multiply(quat *result, const quat *q0, const quat *q1)
 {
     result->v[0] = q0->v[3] * q1->v[0] + q0->v[0] * q1->v[3] + q0->v[1] * q1->v[2] - q0->v[2] * q1->v[1];
@@ -4477,16 +4399,6 @@ mat2 *mat2_new(mat2 *result, mfloat_t m11, mfloat_t m12, mfloat_t m21, mfloat_t 
     return (mat2 *)_mat2_new((mfloat_t *)result, m11, m12, m21, m22);
 }
 
-mat2 *mat2_zero(mat2 *result)
-{
-    return (mat2 *)_mat2_zero((mfloat_t *)result);
-}
-
-mat2 *mat2_identity(mat2 *result)
-{
-    return (mat2 *)_mat2_identity((mfloat_t *)result);
-}
-
 mfloat_t mat2_determinant(mat2 *m0)
 {
     return _mat2_determinant((mfloat_t *)m0);
@@ -4557,11 +4469,6 @@ mat3 *mat3_new(mat3 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t 
     return (mat3 *)_mat3_new((mfloat_t *)result, m11, m12, m13, m21, m22, m23, m31, m32, m33);
 }
 
-mat3 *mat3_zero(mat3 *result)
-{
-    return (mat3 *)_mat3_zero((mfloat_t *)result);
-}
-
 mfloat_t mat3_determinant(mat3 *m0)
 {
     return _mat3_determinant((mfloat_t *)m0);
@@ -4592,15 +4499,14 @@ mat3 *mat3_multiply(mat3 *result, mat3 *m0, mat3 *m1)
     return (mat3 *)_mat3_multiply((mfloat_t *)result, (mfloat_t *)m0, (mfloat_t *)m1);
 }
 
-mat3 *mat3_multiply_f(mat3 *result, mat3 *m0, mfloat_t f)
+void mat3_multiply_f(mat3 *result, const mat3 *m0, mfloat_t f)
 {
-    return (mat3 *)_mat3_multiply_f((mfloat_t *)result, (mfloat_t *)m0, f);
+    MAP_UNARY_FUNCTION(f*, result->v, m0->v, MAT3_SIZE);
 }
 
 mat3 *mat3_inverse(mat3 *result, const mat3 *m0)
 {
-    mat4 m1;
-    mat4_identity(&m1);
+    mat4 m1 = mat4_identity;
     m1.m11 = m0->m11;
     m1.m12 = m0->m12;
     m1.m13 = m0->m13;
@@ -4673,16 +4579,6 @@ mat3 *mat3_lerp(mat3 *result, mat3 *m0, mat3 *m1, mfloat_t f)
 mat4 *mat4_new(mat4 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m14, mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m24, mfloat_t m31, mfloat_t m32, mfloat_t m33, mfloat_t m34, mfloat_t m41, mfloat_t m42, mfloat_t m43, mfloat_t m44)
 {
     return (mat4 *)_mat4_new((mfloat_t *)result, m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44);
-}
-
-mat4 *mat4_zero(mat4 *result)
-{
-    return (mat4 *)_mat4_zero((mfloat_t *)result);
-}
-
-mat4 *mat4_identity(mat4 *result)
-{
-    return (mat4 *)_mat4_identity((mfloat_t *)result);
 }
 
 mfloat_t mat4_determinant(mat4 *m0)

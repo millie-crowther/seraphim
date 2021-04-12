@@ -209,6 +209,13 @@ static const mat3 mat3_identity = {{
     0.0, 0.0, 1.0
 }};
 
+static const mat4 mat4_identity = {{
+    1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0
+}};
+
 mint_t clampi(mint_t value, mint_t min, mint_t max);
 
 #define MRADIANS(degrees) (degrees * MPI / MFLOAT_C(180.0))
@@ -222,8 +229,6 @@ bool vec2i_is_zero(vec2i *v0);
 bool vec2i_is_equal(vec2i *v0, vec2i *v1);
 vec2i *vec2i_assign(vec2i *result, vec2i *v0);
 vec2i *vec2i_assign_vec2(vec2i *result, vec2 *v0);
-vec2i *vec2i_zero(vec2i *result);
-vec2i *vec2i_one(vec2i *result);
 vec2i *vec2i_sign(vec2i *result, vec2i *v0);
 vec2i *vec2i_add(vec2i *result, vec2i *v0, vec2i *v1);
 vec2i *vec2i_add_i(vec2i *result, vec2i *v0, mint_t i);
@@ -245,8 +250,6 @@ bool vec3i_is_zero(vec3i *v0);
 bool vec3i_is_equal(vec3i *v0, vec3i *v1);
 vec3i *vec3i_assign(vec3i *result, vec3i *v0);
 vec3i *vec3i_assign_vec3(vec3i *result, vec3 *v0);
-vec3i *vec3i_zero(vec3i *result);
-vec3i *vec3i_one(vec3i *result);
 vec3i *vec3i_sign(vec3i *result, vec3i *v0);
 vec3i *vec3i_add(vec3i *result, vec3i *v0, vec3i *v1);
 vec3i *vec3i_add_i(vec3i *result, vec3i *v0, mint_t i);
@@ -268,8 +271,6 @@ bool vec4i_is_zero(vec4i *v0);
 bool vec4i_is_equal(vec4i *v0, vec4i *v1);
 vec4i *vec4i_assign(vec4i *result, vec4i *v0);
 vec4i *vec4i_assign_vec4(vec4i *result, vec4 *v0);
-vec4i *vec4i_zero(vec4i *result);
-vec4i *vec4i_one(vec4i *result);
 vec4i *vec4i_sign(vec4i *result, vec4i *v0);
 vec4i *vec4i_add(vec4i *result, vec4i *v0, vec4i *v1);
 vec4i *vec4i_add_i(vec4i *result, vec4i *v0, mint_t i);
@@ -291,8 +292,6 @@ bool vec2_is_equal(vec2 *v0, vec2 *v1);
 vec2 *vec2_new(vec2 *result, mfloat_t x, mfloat_t y);
 vec2 *vec2_assign(vec2 *result, vec2 *v0);
 vec2 *vec2_assign_vec2i(vec2 *result, vec2i *v0);
-vec2 *vec2_zero(vec2 *result);
-vec2 *vec2_one(vec2 *result);
 vec2 *vec2_sign(vec2 *result, vec2 *v0);
 vec2 *vec2_add(vec2 *result, vec2 *v0, vec2 *v1);
 vec2 *vec2_add_f(vec2 *result, vec2 *v0, mfloat_t f);
@@ -332,7 +331,6 @@ bool vec3_is_zero(vec3 *v0);
 bool vec3_is_equal(vec3 *v0, vec3 *v1);
 vec3 *vec3_assign(vec3 *result, vec3 *v0);
 vec3 *vec3_assign_vec3i(vec3 *result, vec3i *v0);
-vec3 *vec3_one(vec3 *result);
 vec3 *vec3_sign(vec3 *result, vec3 *v0);
 vec3 *vec3_add(vec3 *result, const vec3 *v0, const vec3 *v1);
 vec3 *vec3_add_f(vec3 *result, const vec3 *v0, mfloat_t f);
@@ -347,7 +345,7 @@ vec3 *vec3_divide_f(vec3 *result, vec3 *v0, mfloat_t f);
 vec3 *vec3_snap(vec3 *result, vec3 *v0, vec3 *v1);
 vec3 *vec3_snap_f(vec3 *result, vec3 *v0, mfloat_t f);
 vec3 *vec3_negative(vec3 *result, vec3 *v0);
-vec3 *vec3_abs(vec3 *result, vec3 *v0);
+void vec3_abs(vec3 *result, const vec3 *v0);
 vec3 *vec3_floor(vec3 *result, vec3 *v0);
 vec3 *vec3_ceil(vec3 *result, vec3 *v0);
 vec3 *vec3_round(vec3 *result, vec3 *v0);
@@ -401,8 +399,6 @@ bool quat_is_zero(quat *q0);
 bool quat_is_equal(quat *q0, quat *q1);
 quat *quat_new(quat *result, mfloat_t x, mfloat_t y, mfloat_t z, mfloat_t w);
 quat *quat_assign(quat *result, quat *q0);
-quat *quat_zero(quat *result);
-quat *quat_null(quat *result);
 quat *quat_multiply(quat *result, const quat *q0, const quat *q1);
 quat *quat_multiply_f(quat *result, quat *q0, mfloat_t f);
 quat *quat_divide(quat *result, quat *q0, quat *q1);
@@ -423,8 +419,6 @@ mfloat_t quat_length(quat *q0);
 mfloat_t quat_length_squared(quat *q0);
 mfloat_t quat_angle(quat *q0, quat *q1);
 mat2 *mat2_new(mat2 *result, mfloat_t m11, mfloat_t m12, mfloat_t m21, mfloat_t m22);
-mat2 *mat2_zero(mat2 *result);
-mat2 *mat2_identity(mat2 *result);
 mfloat_t mat2_determinant(mat2 *m0);
 mat2 *mat2_assign(mat2 *result, mat2 *m0);
 mat2 *mat2_negative(mat2 *result, mat2 *m0);
@@ -439,14 +433,13 @@ mat2 *mat2_scale(mat2 *result, mat2 *m0, vec2 *v0);
 mat2 *mat2_rotation_z(mat2 *result, mfloat_t f);
 mat2 *mat2_lerp(mat2 *result, mat2 *m0, mat2 *m1, mfloat_t f);
 mat3 *mat3_new(mat3 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m31, mfloat_t m32, mfloat_t m33);
-mat3 *mat3_zero(mat3 *result);
 mfloat_t mat3_determinant(mat3 *m0);
 mat3 *mat3_assign(mat3 *result, mat3 *m0);
 mat3 *mat3_negative(mat3 *result, mat3 *m0);
 mat3 *mat3_transpose(mat3 *result, mat3 *m0);
 mat3 *mat3_cofactor(mat3 *result, mat3 *m0);
 mat3 *mat3_multiply(mat3 *result, mat3 *m0, mat3 *m1);
-mat3 *mat3_multiply_f(mat3 *result, mat3 *m0, mfloat_t f);
+void mat3_multiply_f(mat3 *result, const mat3 *m0, mfloat_t f);
 mat3 *mat3_inverse(mat3 *result, const mat3 *m0);
 mat3 *mat3_scaling(mat3 *result, vec3 *v0);
 mat3 *mat3_scale(mat3 *result, const mat3 *m0, const vec3 *v0);
@@ -457,8 +450,6 @@ mat3 *mat3_rotation_axis(mat3 *result, vec3 *v0, mfloat_t f);
 mat3 *mat3_rotation_quat(mat3 *result, const quat *q0);
 mat3 *mat3_lerp(mat3 *result, mat3 *m0, mat3 *m1, mfloat_t f);
 mat4 *mat4_new(mat4 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m14, mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m24, mfloat_t m31, mfloat_t m32, mfloat_t m33, mfloat_t m34, mfloat_t m41, mfloat_t m42, mfloat_t m43, mfloat_t m44);
-mat4 *mat4_zero(mat4 *result);
-mat4 *mat4_identity(mat4 *result);
 mfloat_t mat4_determinant(mat4 *m0);
 mat4 *mat4_assign(mat4 *result, mat4 *m0);
 mat4 *mat4_negative(mat4 *result, mat4 *m0);
