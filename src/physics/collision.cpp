@@ -4,7 +4,6 @@
 
 #include "maths/matrix.h"
 #include "maths/optimise.h"
-#include "maths/vector.h"
 
 static double intersection_func(void * data, const vec3 * x){
     srph_matter * a = ((srph_matter **) data)[0];
@@ -158,7 +157,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     vec3 x, xa;
     srph_matter_to_global_position(b, &x, &xb->x0);
 
-    assert(srph_sdf_contains(b->sdf, &xb->x0));
+//    assert(srph_sdf_contains(b->sdf, &xb->x0));
 
     srph_matter_to_local_position(a, &xa, &x);
 
@@ -168,8 +167,14 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     vec3_subtract(&vr, &vb, &va);
 
     vec3 n;
-    n = srph_sdf_normal(a->sdf, &xa);
-    srph_matter_to_global_direction(a, NULL, &n, &n);
+    if (srph_sdf_discontinuity(a->sdf, &xa) < srph_sdf_discontinuity(b->sdf, &xb->x0)){
+        n = srph_sdf_normal(a->sdf, &xa);
+        srph_matter_to_global_direction(a, NULL, &n, &n);
+    } else {
+        n = srph_sdf_normal(b->sdf, &xb->x0);
+        vec3_negative(&n, &n);
+        srph_matter_to_global_direction(b, NULL, &n, &n);
+    }
 
     double vrn = vec3_dot(&vr, &n);
     if (vrn >= 0){
@@ -180,7 +185,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 
     // check that it is actually colliding at this point
     double phi = srph_sdf_phi(a->sdf, &xa);
-    if (fabs(phi) >= srph::constant::epsilon){
+    if (phi > fabs(vrn) * dt){
         return;
     }
 
@@ -194,17 +199,22 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     srph_matter_material(b, &matb);
 
     double CoR = fmax(mata.restitution, matb.restitution);
-//
-    double ia = srph_matter_inverse_angular_mass(a, &x, &n);
-    double ib = srph_matter_inverse_angular_mass(b, &x, &n);
 
-    double jr = -(1.0 + CoR) * vrn / (
-        1.0 / srph_matter_mass(a) +
-        1.0 / srph_matter_mass(b)
-        + ia + ib
-    );
+    double inverse_mass =
+        srph_matter_inverse_mass(a) +
+        srph_matter_inverse_mass(b) +
+        srph_matter_inverse_angular_mass(a, &x, &n) +
+        srph_matter_inverse_angular_mass(b, &x, &n);
 
-    assert(jr >= 0);
+    if (inverse_mass == 0.0){
+        return;
+    }
+    assert(inverse_mass > 0.0);
+
+    double jr = -(1.0 + CoR) * vrn / inverse_mass;
+
+//    assert(jr > 0);
+
     srph_matter_apply_impulse(a, &x, &n, -jr);
     srph_matter_apply_impulse(b, &x, &n,  jr);
 
@@ -218,21 +228,30 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 
     vec3_normalize(&t, &t);
 
-    double vrt  = vec3_dot(&vr, &t);
-    double mvta = srph_matter_mass(a) * vrt;
-    double mvtb = srph_matter_mass(b) * vrt;
+//    double vrt  = vec3_dot(&vr, &t);
+//    double mvta = srph_matter_mass(a) * vrt;
+//    double mvtb = srph_matter_mass(b) * vrt;
+//
+//    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
+//    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
 
-    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
-    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
+//    double ka = -(mvta <= js) ? mvta : jd;
+//    double kb = (mvtb <= js) ? mvtb : jd;
 
-    double ka = -(mvta <= js) ? mvta : jd;
-    double kb =  (mvtb <= js) ? mvtb : jd;
-
-    srph_matter_apply_impulse(a, &x, &t, ka);
-    srph_matter_apply_impulse(b, &x, &t, kb);
+//    srph_matter_apply_impulse(a, &x, &t, ka);
+//    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
 void srph_collision_correct(srph_collision *self, double dt) {
+//    srph_deform xb;
+//    srph_matter_to_local_position(self->ms[0], &xb.x0, &self->x);
+//
+//    contact_correct(
+//        self->ms[0], self->ms[1],
+//        &xb,
+//        dt
+//    );
+
     for (int i = 0; i < 2; i++){
         srph_matter * a = self->ms[i];
         srph_matter * b = self->ms[1 - i];

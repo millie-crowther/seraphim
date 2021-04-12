@@ -22,6 +22,8 @@ typedef struct srph_sdf {
 
     void * data;
     srph_sdf_func _phi;
+
+    double bounding_radius;
 } srph_sdf;
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);
@@ -36,5 +38,7 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
 vec3 * srph_sdf_com(srph_sdf * sdf);
 
 mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf);
+
+double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x);
 
 #endif

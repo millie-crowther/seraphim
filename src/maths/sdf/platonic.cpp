@@ -67,7 +67,22 @@ srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
     }
     *r_ptr = *r;
 
-    srph_sdf_create(sdf, cuboid_phi, r_ptr); 
+    srph_sdf_create(sdf, cuboid_phi, r_ptr);
+
+    vec3 inertia;
+    vec3_multiply_f(&inertia, r, 2.0);
+    vec3_multiply(&inertia, &inertia, &inertia);
+    vec3_multiply_f(&inertia, &inertia, 1.0 / 6.0);
+
+    for (int i = 0; i < 9; i++){
+        sdf->inertia_tensor.v[i] = 0.0;
+    }
+
+    mat3_scale(&sdf->inertia_tensor, &mat3_identity, &inertia);
+    sdf->is_inertia_tensor_valid = true;
+
+    sdf->com = vec3_zero;
+    sdf->is_com_valid = true;
     return sdf;
 }
 

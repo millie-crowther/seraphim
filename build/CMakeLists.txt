@@ -50,13 +50,10 @@ set(SOURCES
     ../src/metaphysics/matter.cpp
 
     ../src/maths/matrix.cpp
-    ../src/maths/bound.cpp    
-    ../src/maths/quat.cpp
-    ../src/maths/vector.cpp
-    ../src/maths/optimise.cpp
+    ../src/maths/bound.cpp
+        ../src/maths/optimise.cpp
     ../src/maths/maths.cpp
-
-    ../src/maths/sdf/sdf.cpp
+        ../src/maths/sdf/sdf.cpp
     ../src/maths/sdf/primitive.cpp
     ../src/maths/sdf/platonic.cpp
 

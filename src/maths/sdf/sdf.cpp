@@ -13,7 +13,6 @@
 
 #define VOLUME_SAMPLES 10000
 #define SUPPORT_ALPHA 0.5
-#define SAMPLE_DENSITY 0.1
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     if (sdf == NULL){
@@ -27,11 +26,10 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->is_com_valid = false;
     sdf->is_inertia_tensor_valid = false;
     sdf->volume = -1.0;
+    sdf->bounding_radius = -1.0;
 }
 
 mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
-    assert(sdf != NULL);
-
     if (!sdf->is_inertia_tensor_valid){
         for (int i = 0; i < 9; i++){
             sdf->inertia_tensor.v[i] = 0.0;
@@ -59,7 +57,7 @@ mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
                         double iij = -r.v[i] * r.v[j];
 
                         if (i == j){
-                            iij += vec3_dot(&r, &r);
+                            iij += vec3_length_squared(&r);
                         }
 
                         sdf->inertia_tensor.v[j * 3 + i] += iij;
@@ -70,10 +68,7 @@ mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
             }
         }
 
-        for (int i = 0; i < 9; i++){
-            sdf->inertia_tensor.v[i] /= VOLUME_SAMPLES;
-        }
-
+        mat3_multiply_f(&sdf->inertia_tensor, &sdf->inertia_tensor, 1.0 / VOLUME_SAMPLES);
         sdf->is_inertia_tensor_valid = true;
     }
 
@@ -81,7 +76,11 @@ mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
-    return sdf->_phi(sdf->data, x);
+    double phi = sdf->_phi(sdf->data, x);
+
+    sdf->bounding_radius = fmax(sdf->bounding_radius, vec3_length(x) - phi);
+
+    return phi;
 }
 
 vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
@@ -209,6 +208,25 @@ void srph_sdf_destroy(srph_sdf * sdf){
         
         free(sdf);
     }
+}
+
+double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x) {
+    vec3 ns[3];
+
+    for (int axis = 0; axis < 3; axis++){
+        vec3 x1 = *x;
+        x1.v[axis] -= srph::constant::epsilon;
+        vec3 x2 = *x;
+        x2.v[axis] += srph::constant::epsilon;
+
+        vec3 n1 = srph_sdf_normal(sdf, &x1);
+        vec3 n2 = srph_sdf_normal(sdf, &x2);
+        vec3_subtract(&ns[axis], &n2, &n1);
+
+        vec3_divide_f(&ns[axis], &ns[axis], srph::constant::epsilon * 2);
+    }
+
+    return fabs(mat3_determinant((mat3 *) ns));
 }
 
 /*

@@ -67,8 +67,10 @@ void srph_matter_material(srph_matter *self, srph_material *mat);
 
 void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, double j);
 
-void srph_matter_rotate(srph_matter *self, quat *q);
+//void srph_matter_rotate(srph_matter *self, quat *q);
 bool srph_matter_is_at_rest(srph_matter *self);
-mat3 * inverse_inertia_tensor(srph_matter *self);
+void inverse_inertia_tensor(srph_matter *self, mat3 * ri);
+
+double srph_matter_inverse_mass(srph_matter *self);
 
 #endif

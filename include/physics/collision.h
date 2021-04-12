@@ -1,7 +1,6 @@
 #ifndef SERAPHIM_COLLISION_H
 #define SERAPHIM_COLLISION_H
 
-#include "maths/vector.h"
 #include "metaphysics/substance.h"
 
 typedef struct srph_collision {

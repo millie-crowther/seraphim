@@ -6,7 +6,9 @@
 #include <chrono>
 #include <iostream>
 
-#define SOLVER_ITERATIONS 10
+#include <assert.h>
+
+#define SOLVER_ITERATIONS 20
 
 void srph_physics_init(srph_physics * p){
     p->quit = false;
@@ -37,7 +39,7 @@ void srph_physics_destroy(srph_physics * p){
 void srph_physics_tick(srph_physics * p, double dt){
     srph_array_clear(&p->collisions);
 
-    // update vertices 
+    // integrate forces
     for (uint32_t i = 0; i < p->substances.size; i++){
         srph_matter * m = &p->substances.data[i]->matter;
 
@@ -60,17 +62,42 @@ void srph_physics_tick(srph_physics * p, double dt){
         }
     }
 
-    // collision contact correct
-    for (size_t i = 0; i < p->collisions.size; i++){
-        srph_collision_correct(&p->collisions.data[i], dt);
+    for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
+        for (size_t collision = 0; collision < p->collisions.size; collision++){
+            srph_collision_correct(&p->collisions.data[collision], dt);
+        }
     }
 
     // solve constraints
-    for (int i = 0; i < SOLVER_ITERATIONS; i++){
-        for (size_t j = 0; j < p->collisions.size; j++){
-            srph_collision_resolve_interpenetration_constraint(&p->collisions.data[j]);
+    for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
+        for (size_t collision = 0; collision < p->collisions.size; collision++){
+            srph_collision_resolve_interpenetration_constraint(&p->collisions.data[collision]);
         }
     }
+
+    // integrate velocities
+    for (uint32_t i = 0; i < p->substances.size; i++) {
+        srph_matter *m = &p->substances.data[i]->matter;
+
+        // integrate linear velocity
+        vec3 dv;
+        vec3_multiply_f(&dv, &m->v, dt);
+        srph_transform_translate(&m->transform, &dv);
+
+        // integrate angular velocity
+        vec3 dw;
+        vec3_multiply_f(&dw, &m->omega, dt);
+        quat q;
+        quat_from_euler_angles(&q, &dw);
+        assert(isfinite(m->omega.x));
+        srph_transform_rotate(&m->transform, &q);
+
+        // dampen velocities
+//        const double dampening = 0.99;
+//        vec3_multiply_f(&m->v, &m->v, dampening);
+//        vec3_multiply_f(&m->omega, &m->omega, dampening);
+    }
+
 }
 
 using namespace srph;

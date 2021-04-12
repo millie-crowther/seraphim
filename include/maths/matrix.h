@@ -2,7 +2,6 @@
 #define MATHS_VECTOR_H
 
 #include "core/constant.h"
-#include "vector.h"
 
 #include <algorithm>
 #include <array>

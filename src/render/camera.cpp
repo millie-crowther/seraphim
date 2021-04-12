@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <math.h>
 
-#include "maths/vector.h"
-
 using namespace srph;
 
 camera_t::camera_t(){

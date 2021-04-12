@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #include "core/array.h"
-#include "maths/vector.h"
 #include "physics/deform.h"
 
 #define SERAPHIM_MAX_DEFORMATIONS_PER_CONSTRAINT 4

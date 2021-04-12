@@ -3,6 +3,8 @@
 #include <assert.h>
 #include <math.h>
 
+#include "core/constant.h"
+
 
 void srph_matter_init(
     srph_matter * m, srph_sdf * sdf, const srph_material * material,
@@ -17,9 +19,17 @@ void srph_matter_init(
     // initialise fields for rigid bodies
     m->transform.position = *initial_position;
     m->transform.rotation = quat_identity;
+
+//    if (initial_position->y > -90) {
+//        quat_from_axis_angle(&m->transform.rotation, &vec3_forward, srph::constant::pi / 3.0);
+//    }
+
     m->v = vec3_zero;
     m->omega = vec3_zero;
 
+    if (m->transform.position.y > -90){
+        m->omega = {{ 0.1, 0.1, 0.1 }};
+    }
     m->is_at_rest = false;
     m->is_inverse_inertia_tensor_valid = false;
 
@@ -96,30 +106,29 @@ double srph_matter_mass(srph_matter * self){
 //    return &inv_tf_i;
 //}
 
-mat3 * inverse_inertia_tensor(srph_matter *self){
-    if (!self->is_inverse_inertia_tensor_valid){
-        // rotate
-        mat3 r, rt;
-        mat3_rotation_quat(&r, &self->transform.rotation);
-        mat3_transpose(&rt, &r);
-
-        // invert
-        mat3 i;
-        mat3_inverse(&i, srph_sdf_inertia_tensor(self->sdf));
-        mat3_multiply_f(&i, &i, srph_matter_mass(self));
-
-        mat3 ri;
-        mat3_multiply(&ri, &i, &rt);
-        mat3_multiply(&ri, &r, &ri);
-
-        self->is_inverse_inertia_tensor_valid = true;
-
-        for (int j = 0; j < 9; j++){
-            assert(isfinite(self->inverse_inertia_tensor.v[j]));
-        }
+void inverse_inertia_tensor(srph_matter *self, mat3 * ri){
+    if (self->is_static){
+        return;
     }
 
-    return &self->inverse_inertia_tensor;
+//    if (!self->is_inverse_inertia_tensor_valid) {
+    mat3 * i = srph_sdf_inertia_tensor(self->sdf);
+    double m = srph_matter_mass(self);
+    mat3_multiply_f(&self->inverse_inertia_tensor, i, m);
+//        self->is_inverse_inertia_tensor_valid = true;
+//    }
+
+    mat3 r, rt;
+    mat3_rotation_quat(&r, &self->transform.rotation);
+    mat3_transpose(&rt, &r);
+
+    mat3_multiply(ri, &self->inverse_inertia_tensor, &rt);
+    mat3_multiply(ri, &r, ri);
+    mat3_inverse(ri, ri);
+
+    for (int j = 0; j < 9; j++){
+        assert(isfinite(self->inverse_inertia_tensor.v[j]));
+    }
 }
 
 //
@@ -316,18 +325,6 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
 //    vec3_multiply_f(&d, &self->t, t / m);
 //    vec3_add(&self->omega, &self->omega, &d);
 
-    // integrate linear velocity
-    vec3_multiply_f(&d, &self->v, t);
-    srph_transform_translate(&self->transform, &d);
-
-    // integrate angular velocity
-    vec3_multiply_f(&d, &self->omega, t);
-    quat q;
-    quat_from_euler_angles(&q, &d);
-    assert(isfinite(q.x));
-    assert(isfinite(self->omega.x));
-    srph_matter_rotate(self, &q);
-
     // reset forces
     vec3_multiply_f(&self->f, gravity, m);
     self->t = vec3_zero;
@@ -362,41 +359,52 @@ void srph_matter_material(srph_matter *self, srph_material *mat) {
 }
 
 void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, double j) {
-    double m = srph_matter_mass(self);
-    assert(m > 0);
-//    assert(n->y > 0);
+    if (self->is_static || j == 0){
+        return;
+    }
+
     vec3 dv;
-    vec3_multiply_f(&dv, n, j / m);
+    vec3_multiply_f(&dv, n, j * srph_matter_inverse_mass(self));
     vec3_add(&self->v, &self->v, &dv);
 
-    vec3 r, dw;
+    vec3 r, rn, dw;
     offset_from_centre_of_mass(self, &r, x);
-    vec3_cross(&dw, &r, n);
+    vec3_cross(&rn, &r, n);
 
-    mat3 * i = inverse_inertia_tensor(self);
-    vec3_multiply_mat3(&dw, &dw, i);
-    vec3_multiply_f(&dw, &dw, j);
+    mat3 i;
+    vec3 irn;
+    inverse_inertia_tensor(self, &i);
+    vec3_multiply_mat3(&irn, &rn, &i);
+    vec3_multiply_f(&dw, &irn, j);
     vec3_add(&self->omega, &self->omega, &dw);
 }
 
 double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
+    if (self->is_static){
+        return 0;
+    }
+
     vec3 r, rn, irn;
     offset_from_centre_of_mass(self, &r, x);
     vec3_cross(&rn, &r, n);
-    mat3 * i = inverse_inertia_tensor(self);
-    vec3_multiply_mat3(&irn, &rn, i);
+    mat3 i;
+    inverse_inertia_tensor(self, &i);
+    vec3_multiply_mat3(&irn, &rn, &i);
 
     double im = vec3_dot(&rn, &irn);
     assert(isfinite(im));
+    assert(im >= 0);
     return im;
-}
-
-void srph_matter_rotate(srph_matter *self, quat *q) {
-    srph_transform_rotate(&self->transform, q);
-    assert(isfinite(q->x));
-    self->is_inverse_inertia_tensor_valid = false;
 }
 
 bool srph_matter_is_at_rest(srph_matter *self) {
     return self->is_at_rest || self->is_static;
+}
+
+double srph_matter_inverse_mass(srph_matter *self) {
+    if (self->is_static){
+        return 0;
+    } else {
+        return 1.0 / srph_matter_mass(self);
+    }
 }
