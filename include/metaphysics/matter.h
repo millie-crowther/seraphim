@@ -44,7 +44,7 @@ void srph_matter_linear_velocity(const srph_matter *self, vec3 * v);
 double srph_matter_inverse_angular_mass(srph_matter * self, vec3 * x, vec3 * n);
 double srph_matter_mass(srph_matter * self);
 
-void srph_matter_sphere_bound(const srph_matter * self, double t, srph_sphere * s);
+void srph_matter_sphere_bound(const srph_matter * self, double dt, srph_sphere * s);
 
 //void srph_matter_update_vertices(srph_matter * m, double t);
 //void srph_matter_extrapolate_next_position_and_velocity(srph_matter * m, double t);

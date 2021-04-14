@@ -1,15 +1,11 @@
 #include "core/array.h"
 
 #include <assert.h>
-#include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 static void fix_ptrs(_srph_base_array * a){
-    assert(a != NULL);
-
     if (a->size == 0){
         free(a->base_ptr);
         a->base_ptr = NULL;
@@ -26,21 +22,16 @@ static void fix_ptrs(_srph_base_array * a){
 }
 
 void _srph_array_init(_srph_base_array * a, size_t element_size){
-    assert(a != NULL);
-    
     a->element_size = element_size;
     a->base_ptr = NULL;
     srph_array_clear(a);
 }
 
 bool _srph_array_is_empty(_srph_base_array * a){
-    assert(a != NULL);
     return a->size == 0;
 }
 
 void _srph_array_clear(_srph_base_array * a){
-    assert(a != NULL);
-    
     a->size = 0;
     a->capacity = 0;
     a->offset = 0;
@@ -48,8 +39,6 @@ void _srph_array_clear(_srph_base_array * a){
 }
 
 void _srph_array_push_back(_srph_base_array * a){
-    assert(a != NULL);
-    
     if (a->size + a->offset >= a->capacity){
         a->capacity = a->capacity == 0 ? 1 : a->capacity * 2;
         a->base_ptr = (uint8_t *) realloc(a->base_ptr, a->capacity * a->element_size);
@@ -60,8 +49,6 @@ void _srph_array_push_back(_srph_base_array * a){
 }
 
 void _srph_array_push_front(_srph_base_array * a){
-    assert(a != NULL);
-    
     if (a->offset == 0){
         size_t new_capacity = a->capacity == 0 ? 1 : a->capacity * 2;
         size_t new_offset = new_capacity - a->capacity;
@@ -87,7 +74,7 @@ void _srph_array_push_front(_srph_base_array * a){
 }
 
 void _srph_array_pop_front(_srph_base_array * a){
-    assert(a != NULL && !_srph_array_is_empty(a));
+    assert(!_srph_array_is_empty(a));
     
     if (a->offset > a->capacity / 2){
         size_t new_capacity = a->capacity / 2;
@@ -112,7 +99,7 @@ void _srph_array_pop_front(_srph_base_array * a){
 }
 
 void _srph_array_pop_back(_srph_base_array * a){
-    assert(a != NULL && !_srph_array_is_empty(a));
+    assert(!_srph_array_is_empty(a));
 
     if (a->offset + a->size < a->capacity / 2){
         a->capacity = a->capacity / 2;
@@ -121,4 +108,33 @@ void _srph_array_pop_back(_srph_base_array * a){
     
     a->size--;
     fix_ptrs(a);
+}
+
+void _srph_array_sort(_srph_base_array *a, int (*comparator)(const void *, const void *)) {
+    if (a->size <= 1){
+        return;
+    }
+
+    qsort(a->base_ptr, a->size, a->element_size, comparator);
+}
+
+static uint8_t * raw_array_at(_srph_base_array *a, size_t i){
+    return a->raw_data + i * a->element_size;
+}
+
+void _srph_array_insertion_sort(_srph_base_array *a, int (*cmp)(const void *, const void *)) {
+    if (a->size <= 1){
+        return;
+    }
+
+    for (size_t i = 0; i < a->size; i++){
+        char x[a->element_size];
+        memcpy(x, raw_array_at(a, i), a->element_size);
+
+        int j = i - 1;
+        for (; j >= 0 && cmp(raw_array_at(a, j), x) > 0; j--){
+            memcpy(raw_array_at(a, j + 1), raw_array_at(a, j), a->element_size);
+        }
+        memcpy(raw_array_at(a, j + 1), x, a->element_size);
+    }
 }

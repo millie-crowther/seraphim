@@ -8,6 +8,7 @@
 #include "test_matrix.h"
 #include "test_quat.h"
 #include "test_transform.h"
+#include "test_array.h"
 
 int main(){
     int passed_tests = 0;
@@ -37,6 +38,8 @@ int main(){
     RUN_TEST(test_matrix_inverse_multiply_identity);
 
     RUN_TEST(test_transform_matrix);
+
+    RUN_TEST(test_int_array_insertion_sort);
 
     printf("Total tests run: %d\n", total_tests);
     printf("Total tests passed: %d\n", passed_tests);

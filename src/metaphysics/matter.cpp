@@ -146,20 +146,9 @@ void inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
 //}
 //
 
-void srph_matter_sphere_bound(const srph_matter *self, double t, srph_sphere *s) {
-    srph_bound3 *b = srph_sdf_bound(self->sdf);
-    srph_bound3_midpoint(b, s->c.v);
-
-    vec3 p = self->transform.position;
-    vec3_add(&s->c, &s->c, &p);
-
-    vec3 r3;
-    srph_bound3_radius(b, r3.v);
-    s->r = vec3_length(&r3);
-
-    vec3 v;
-    srph_matter_linear_velocity(self, &v);
-    s->r += vec3_length(&v) * t;
+void srph_matter_sphere_bound(const srph_matter *self, double dt, srph_sphere *s) {
+    s->c = self->transform.position;
+    s->r = self->sdf->bounding_radius + vec3_length(&self->v) * dt;
 }
 
 srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_deform_type type) {

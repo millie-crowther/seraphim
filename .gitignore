@@ -41,3 +41,6 @@ build
 *.bin
 *.ipch
 .vscode
+
+# clion files
+*cmake-build-debug

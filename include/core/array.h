@@ -8,7 +8,7 @@
     size_t size;  \
     size_t capacity; \
     size_t element_size; \
-    union { T * data; T * first; }; \
+    union { T * data; T * first; uint8_t * raw_data; }; \
     T * last; \
     uint32_t offset; \
     uint8_t * base_ptr; \
@@ -16,6 +16,7 @@
 typedef srph_array(uint8_t) _srph_base_array;
 
 #define SRPH_ARRAY_CAST(x) ((_srph_base_array *) x)
+#define SRPH_ARRAY_COMPARATOR_CAST(f)
 
 #define srph_array_init(x) _srph_array_init(SRPH_ARRAY_CAST(x), sizeof((x)->data[0]))
 void _srph_array_init(_srph_base_array * a, size_t element_size);
@@ -37,5 +38,11 @@ void _srph_array_pop_front(_srph_base_array * a);
 
 #define srph_array_pop_back(x) _srph_array_pop_back(SRPH_ARRAY_CAST(x))
 void _srph_array_pop_back(_srph_base_array * a);
+
+#define srph_array_sort(x, f) _srph_array_sort(SRPH_ARRAY_CAST(x), (f))
+void _srph_array_sort(_srph_base_array * a, int (*comparator)(const void *, const void *));
+
+#define srph_array_insertion_sort(x, f) _srph_array_insertion_sort(SRPH_ARRAY_CAST(x), (f))
+void _srph_array_insertion_sort(_srph_base_array *a, int (*comparator)(const void *, const void *));
 
 #endif

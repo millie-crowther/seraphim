@@ -17,9 +17,11 @@ set(SOURCES
     ../src/maths/sdf/sdf.cpp
     ../src/maths/sdf/primitive.cpp
     ../src/maths/sdf/platonic.cpp
-        ../src/maths/bound.cpp
+    ../src/maths/bound.cpp
     ../src/core/random.cpp
     ../src/physics/transform.cpp
+    ../src/core/array.cpp
+    ../src/maths/maths.cpp
     test_main.cpp
 )
 
