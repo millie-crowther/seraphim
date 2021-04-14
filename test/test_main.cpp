@@ -40,6 +40,7 @@ int main(){
     RUN_TEST(test_transform_matrix);
 
     RUN_TEST(test_int_array_insertion_sort);
+    RUN_TEST(test_int_array_quick_sort);
 
     printf("Total tests run: %d\n", total_tests);
     printf("Total tests passed: %d\n", passed_tests);

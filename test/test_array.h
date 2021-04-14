@@ -45,4 +45,28 @@ extern inline const char * test_int_array_insertion_sort(){
     return TEST_SUCCESS;
 }
 
+
+extern inline const char * test_int_array_quick_sort(){
+    srph_array(int) xs {};
+    srph_array_init(&xs);
+
+    for (int i = 0; i < 5; i++){
+        srph_array_push_back(&xs);
+    }
+
+    xs.data[0] = 4;
+    xs.data[1] = 3;
+    xs.data[2] = 2;
+    xs.data[3] = 1;
+    xs.data[4] = 0;
+
+    srph_array_sort(&xs, int_comparator);
+
+    for (size_t i = 0; i < xs.size; i++){
+        TEST_ASSERT(xs.data[i] == (int) i, "array not sorted properly");
+    }
+
+    return TEST_SUCCESS;
+}
+
 #endif //SERAPHIM_TEST_ARRAY_H
