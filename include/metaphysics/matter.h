@@ -29,6 +29,8 @@ typedef struct srph_matter {
     bool is_inverse_inertia_tensor_valid;
     mat3 inverse_inertia_tensor;
 
+    srph_sphere bounding_sphere;
+
     vec3 f;        
     vec3 t;
 } srph_matter;
@@ -44,7 +46,7 @@ void srph_matter_linear_velocity(const srph_matter *self, vec3 * v);
 double srph_matter_inverse_angular_mass(srph_matter * self, vec3 * x, vec3 * n);
 double srph_matter_mass(srph_matter * self);
 
-void srph_matter_sphere_bound(const srph_matter * self, double dt, srph_sphere * s);
+void srph_matter_calculate_sphere_bound(srph_matter * self, double dt);
 
 //void srph_matter_update_vertices(srph_matter * m, double t);
 //void srph_matter_extrapolate_next_position_and_velocity(srph_matter * m, double t);

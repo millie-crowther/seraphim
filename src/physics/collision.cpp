@@ -68,8 +68,8 @@ static double intersection_func(void * data, const vec3 * x){
 //    t = constant::sigma;
 //
 //    srph_sphere sa, sb;
-//    srph_matter_sphere_bound(a, constant::sigma, &sa);
-//    srph_matter_sphere_bound(b, constant::sigma, &sb);
+//    srph_matter_calculate_sphere_bound(a, constant::sigma, &sa);
+//    srph_matter_calculate_sphere_bound(b, constant::sigma, &sb);
 //
 //    if (srph_sphere_intersect(&sa, &sb)){
 //        srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
@@ -262,25 +262,20 @@ void srph_collision_correct(srph_collision *self, double dt) {
     }
 }
 
-bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_substance * b, double dt){
-    if (srph_matter_is_at_rest(&a->matter) && srph_matter_is_at_rest(&b->matter)){
-        return false;
+void srph_narrow_phase_collision(srph_collision * c, double dt){
+    srph_sphere * sa = &c->ms[0]->bounding_sphere;
+    srph_sphere * sb = &c->ms[1]->bounding_sphere;
+
+    if (!srph_sphere_intersect(sa, sb)){
+        return;
     }
 
-    srph_sphere sa, sb;
-    srph_matter_sphere_bound(&a->matter, dt, &sa);
-    srph_matter_sphere_bound(&b->matter, dt, &sb);
-
-    if (!srph_sphere_intersect(&sa, &sb)){
-        return false;
-    }
-
-    double r_elem = fmin(sa.r, sb.r) / 2;
+    double r_elem = fmin(sa->r, sb->r) / 2;
     vec3 r = {{ r_elem, r_elem, r_elem }};
 
     vec3 xa, xb;
-    vec3_multiply_f(&xa, &sa.c,  sb.r / (sa.r + sb.r));
-    vec3_multiply_f(&xb, &sa.c,  sa.r / (sa.r + sb.r));
+    vec3_multiply_f(&xa, &sa->c,  sb->r / (sa->r + sb->r));
+    vec3_multiply_f(&xb, &sa->c,  sa->r / (sa->r + sb->r));
 
     vec3 x;
     vec3_add(&x, &xa, &xb);
@@ -291,22 +286,17 @@ bool srph_collision_is_detected(srph_collision * c, srph_substance * a, srph_sub
     xs[2].y += r.y;
     xs[3].z += r.z;
 
-    srph_matter * matters[] = { &a->matter, &b->matter };
     srph_opt_sample s;
     double threshold = 0.0;
-    srph_opt_nelder_mead(&s, intersection_func, matters, xs, &threshold);
+    srph_opt_nelder_mead(&s, intersection_func, c->ms, xs, &threshold);
 
-    bool is_colliding = s.fx <= 0;
-    c->ms[0] = &a->matter;
-    c->ms[1] = &b->matter;
+    c->is_colliding = s.fx <= 0;
     c->x = s.x;
     
-    if (is_colliding){
-        srph_matter_add_deformation(&a->matter, &s.x, srph_deform_type_collision);
-        srph_matter_add_deformation(&b->matter, &s.x, srph_deform_type_collision);
+    if (c->is_colliding){
+        srph_matter_add_deformation(c->ms[0], &s.x, srph_deform_type_collision);
+        srph_matter_add_deformation(c->ms[1], &s.x, srph_deform_type_collision);
     }
-    
-    return is_colliding;
 }
 
 void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {

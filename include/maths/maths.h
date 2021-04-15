@@ -33,6 +33,11 @@ the following restrictions:
 #include <stdint.h>
 #include <float.h>
 
+#define X_AXIS 0
+#define Y_AXIS 1
+#define Z_AXIS 2
+#define W_AXIS 3
+
 #define VEC2_SIZE 2
 #define VEC3_SIZE 3
 #define VEC4_SIZE 4

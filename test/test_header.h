@@ -12,7 +12,7 @@
 
 #define TEST_ASSERT(cond, message) do { \
     if (!(cond)){              \
-        return message;   \
+        return message == NULL ? TEST_FAILURE : message;   \
     }                          \
 } while (0)
 

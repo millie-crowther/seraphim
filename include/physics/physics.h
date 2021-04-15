@@ -2,6 +2,7 @@
 #define SERAPHIM_PHYSICS_H
 
 #include "metaphysics/substance.h"
+#include "physics/broad_phase.h"
 #include "physics/collision.h"
 
 #include <thread>
@@ -16,9 +17,9 @@ typedef struct srph_physics {
 
     std::mutex substances_mutex;
 
-    srph_array(srph_substance *) substances;
+    srph_broad_phase broad;
     srph_constraint_array constraints;
-    srph_array(srph_collision) collisions;
+    srph_collision_array collisions;
 
     int frames;
 
