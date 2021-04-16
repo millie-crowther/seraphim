@@ -29,24 +29,24 @@ void srph_broad_phase_collision(const srph_broad_phase *phase, srph_collision_ar
     srph_array_insertion_sort(&phase->x, x_comparator);
 
     for (size_t i = 0; i < phase->x.size; i++){
-        srph_substance * a = phase->x.data[i];
-        srph_sphere * sa = &a->matter.bounding_sphere;
+        srph_matter * a = &phase->x.data[i]->matter;
+        srph_sphere * sa = &a->bounding_sphere;
 
         for (size_t j = i + 1; j < phase->x.size; i++){
-            srph_substance * b = phase->x.data[j];
-            srph_sphere * sb = &b->matter.bounding_sphere;
+            srph_matter * b = &phase->x.data[j]->matter;
+            srph_sphere * sb = &b->bounding_sphere;
 
             if (sa->c.x + sa->r < sb->c.x - sb->r){
                 break;
             }
 
-            if (srph_matter_is_at_rest(&a->matter) && srph_matter_is_at_rest(&b->matter)){
+            if (srph_matter_is_at_rest(a) && srph_matter_is_at_rest(b)){
                 continue;
             }
 
             srph_array_push_back(cs);
             *(cs->last) = {
-                .ms = { &a->matter, &b->matter },
+                .ms = { a, b },
                 .x = vec3_zero,
                 .is_colliding = false,
             };
