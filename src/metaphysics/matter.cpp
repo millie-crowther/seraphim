@@ -355,6 +355,8 @@ void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, 
         return;
     }
 
+    self->is_at_rest = false;
+
     vec3 dv;
     vec3_multiply_f(&dv, n, j * srph_matter_inverse_mass(self));
     vec3_add(&self->v, &self->v, &dv);
