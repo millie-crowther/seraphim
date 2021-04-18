@@ -12,6 +12,7 @@ void srph_bound3_vertex(const srph_bound3 * b, int i, double * v);
 void srph_bound3_midpoint(const srph_bound3 * b, double * v);
 void srph_bound3_radius(const srph_bound3 * b, double * v);
 void srph_bound3_capture(srph_bound3 * b, double * v);
+bool srph_bound3_contains(srph_bound3 * b, const double * v);
 
 bool srph_bound3_is_valid(const srph_bound3 * b);
 double srph_bound3_volume(const srph_bound3 * b);

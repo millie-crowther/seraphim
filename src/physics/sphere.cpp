@@ -1,9 +1,37 @@
 #include "physics/sphere.h"
 
-bool srph_sphere_intersect(const srph_sphere * a, const srph_sphere * b){
+bool srph_sphere_intersect(const srph_sphere *a, const srph_sphere *b) {
     return a->r + b->r >= vec3_distance(&a->c, &b->c);
 }
 
-bool srph_sphere_contains(const srph_sphere * a, const srph_sphere * b){
+bool srph_sphere_contains(const srph_sphere *a, const srph_sphere *b) {
     return a->r >= vec3_distance(&a->c, &b->c) + b->r;
+}
+
+bool srph_sphere_contains_point(const srph_sphere *s, const vec3 *x) {
+    return vec3_distance(&s->c, x) <= s->r;
+}
+
+void srph_sphere_capture(srph_sphere *a, const srph_sphere *b) {
+    if (srph_sphere_contains(a, b)){
+        return;
+    }
+
+    vec3 ab, ax, bx, centre;
+    vec3_subtract(&ab, &b->c, &a->c);
+    vec3_normalize(&ab, &ab);
+
+    vec3_multiply_f(&ax, &ab, -a->r);
+    vec3_multiply_f(&bx, &ab,  b->r);
+
+    vec3_add(&ax, &ax, &a->c);
+    vec3_add(&bx, &bx, &b->c);
+
+    vec3_add(&centre, &ax, &bx);
+    vec3_divide_f(&centre, &centre, 2);
+
+    *a = {
+        .c = centre,
+        .r = vec3_distance(&ax, &bx) / 2.0,
+    };
 }

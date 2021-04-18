@@ -58,11 +58,9 @@ double srph_random_f64_range(srph_random *r, double l, double u) {
 
 void srph_random_direction(srph_random *r, vec3 *x) {
     do {
-        *x = {
-            .x = srph_random_f64_range(r, -1, 1),
-            .y = srph_random_f64_range(r, -1, 1),
-            .z = srph_random_f64_range(r, -1, 1),
-        };
+        x->x = srph_random_f64_range(r, -1, 1);
+        x->y = srph_random_f64_range(r, -1, 1);
+        x->z = srph_random_f64_range(r, -1, 1);
     } while (vec3_length(x) >= 1.0);
     vec3_normalize(x, x);
 }

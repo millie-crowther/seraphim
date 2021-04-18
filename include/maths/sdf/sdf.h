@@ -5,6 +5,7 @@
 
 #include "maths/maths.h"
 #include "maths/bound.h"
+#include "physics/sphere.h"
 
 typedef double (*srph_sdf_func)(void * data, const vec3 * x);
 
@@ -22,8 +23,6 @@ typedef struct srph_sdf {
 
     void * data;
     srph_sdf_func _phi;
-
-    double bounding_radius;
 } srph_sdf;
 
 void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data);

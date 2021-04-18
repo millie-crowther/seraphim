@@ -82,3 +82,12 @@ double srph_bound3_volume(const srph_bound3 * b){
     }
     return v;
 }
+
+bool srph_bound3_contains(srph_bound3 *b, const double *v) {
+    for (int i = 0; i < 3; i++){
+        if (v[i] < b->lower[i] || v[i] > b->upper[i]){
+            return false;
+        }
+    }
+    return true;
+}

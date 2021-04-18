@@ -1,12 +1,8 @@
 #include "maths/sdf/sdf.h"
 
-#include <iostream>
-
-#include <assert.h>
 #include <stdlib.h>
 
 #include "core/random.h"
-#include "maths/sdf/primitive.h"
 #include "physics/sphere.h"
 
 #include "core/constant.h"
@@ -26,7 +22,6 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->is_com_valid = false;
     sdf->is_inertia_tensor_valid = false;
     sdf->volume = -1.0;
-    sdf->bounding_radius = -1.0;
 }
 
 mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
@@ -42,11 +37,10 @@ mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{
-                srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
-                srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
-                srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }};
+            vec3 x;
+            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
+            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
+            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
 
             if (srph_sdf_contains(sdf, &x)){
                 for (int i = 0; i < 3; i++){
@@ -76,11 +70,7 @@ mat3 * srph_sdf_inertia_tensor(srph_sdf * sdf){
 }
 
 double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
-    double phi = sdf->_phi(sdf->data, x);
-
-    sdf->bounding_radius = fmax(sdf->bounding_radius, vec3_length(x) - phi);
-
-    return phi;
+    return sdf->_phi(sdf->data, x);
 }
 
 vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
@@ -101,7 +91,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
 }
 
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return x != NULL && srph_sdf_phi(sdf, x) <= 0.0;
+    return srph_bound3_contains(&sdf->bound, x->v) && srph_sdf_phi(sdf, x) <= 0.0;
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
@@ -130,11 +120,10 @@ double srph_sdf_volume(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{
-                srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
-                srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
-                srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }};
+            vec3 x;
+            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
+            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
+            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
 
             if (srph_sdf_contains(sdf, &x)){
                 hits++;
@@ -157,11 +146,10 @@ vec3 * srph_sdf_com(srph_sdf * sdf){
         srph_random_default_seed(&rng);
     
         while (hits < VOLUME_SAMPLES){
-            vec3 x = {{
-                srph_random_f64_range(&rng, b->lower[0], b->upper[0]),
-                srph_random_f64_range(&rng, b->lower[1], b->upper[1]),
-                srph_random_f64_range(&rng, b->lower[2], b->upper[2])
-            }};
+            vec3 x;
+            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
+            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
+            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
 
             if (srph_sdf_contains(sdf, &x)){
                 vec3_add(&com, &com, &x);

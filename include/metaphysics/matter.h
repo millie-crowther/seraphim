@@ -31,7 +31,7 @@ typedef struct srph_matter {
 
     srph_sphere bounding_sphere;
 
-    vec3 f;        
+    vec3 f;
     vec3 t;
 } srph_matter;
 

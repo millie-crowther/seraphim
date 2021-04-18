@@ -147,8 +147,11 @@ void inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
 //
 
 void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
-    self->bounding_sphere.c = self->transform.position;
-    self->bounding_sphere.r = self->sdf->bounding_radius + vec3_length(&self->v) * dt;
+    vec3 midpoint, radius;
+    srph_bound3_midpoint(&self->sdf->bound, midpoint.v);
+    srph_bound3_radius(&self->sdf->bound, radius.v);
+    srph_matter_to_global_position(self, &self->bounding_sphere.c, &midpoint);
+    self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
 
 srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_deform_type type) {
