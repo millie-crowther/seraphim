@@ -25,43 +25,41 @@ static int x_comparator(const void *a, const void *b) {
 }
 
 
-void
-srph_broad_phase_collision(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
+void srph_broad_phase_collision(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
     srph_array_clear(cs);
 
     srph_array(srph_substance *) substances{};
     srph_array_init(&substances);
 
-    for (size_t i = 0; i < num_substances; i++){
+    for (size_t i = 0; i < num_substances; i++) {
         srph_array_push_back(&substances);
         substances.data[i] = &substance_ptrs[i];
     }
 
     srph_array_sort(&substances, x_comparator);
 
-    for (size_t i = 0; i < num_substances; i++){
-        srph_matter * a = &substances.data[i]->matter;
-        srph_sphere * sa = &a->bounding_sphere;
+    for (size_t i = 0; i < num_substances; i++) {
+        srph_matter *a = &substances.data[i]->matter;
+        srph_sphere *sa = &a->bounding_sphere;
 
-        for (size_t j = i + 1; j < num_substances; j++){
-            srph_matter * b = &substances.data[j]->matter;
-            srph_sphere * sb = &b->bounding_sphere;
+        for (size_t j = i + 1; j < num_substances; j++) {
+            srph_matter *b = &substances.data[j]->matter;
+            srph_sphere *sb = &b->bounding_sphere;
 
-            if (sa->c.x + sa->r < sb->c.x - sb->r){
+            if (sa->c.x + sa->r < sb->c.x - sb->r) {
                 break;
             }
 
-            if (srph_matter_is_at_rest(a) && srph_matter_is_at_rest(b)){
+            if (srph_matter_is_at_rest(a) && srph_matter_is_at_rest(b)) {
                 continue;
             }
 
             srph_array_push_back(cs);
             *(cs->last) = {
-                    .ms = { a, b },
+                    .ms = {a, b},
                     .x = vec3_zero,
                     .is_colliding = false,
             };
         }
     }
-
 }
