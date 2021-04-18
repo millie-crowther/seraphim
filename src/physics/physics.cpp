@@ -10,14 +10,15 @@
 
 #define SOLVER_ITERATIONS 20
 
-void srph_physics_init(srph_physics * p){
+void srph_physics_init(srph_physics *p, srph_substance *substances, size_t *num_substances) {
     p->quit = false;
 
     p->gravity = {{0.0, -9.8, 0.0}};
 
-    srph_broad_phase_init(&p->broad);
     srph_array_init(&p->constraints);
     srph_array_init(&p->collisions);
+    p->substances = substances;
+    p->num_substances = num_substances;
 } 
 
 void srph_physics_start(srph_physics * p){
@@ -33,13 +34,12 @@ void srph_physics_destroy(srph_physics * p){
 
     srph_array_clear(&p->constraints);
     srph_array_clear(&p->collisions);
-    srph_broad_phase_destroy(&p->broad);
 }
 
 void srph_physics_tick(srph_physics * p, double dt){
     // update substances and integrate forces
-    for (uint32_t i = 0; i < p->broad.x.size; i++){
-        srph_matter * m = &p->broad.x.data[i]->matter;
+    for (uint32_t i = 0; i < *p->num_substances; i++){
+        srph_matter * m = &p->substances[i].matter;
 
         srph_matter_calculate_sphere_bound(m, dt);
 
@@ -49,7 +49,7 @@ void srph_physics_tick(srph_physics * p, double dt){
     }
 
     // broad phase
-    srph_broad_phase_collision(&p->broad, &p->collisions);
+    srph_broad_phase_collision(p->substances, *p->num_substances, &p->collisions);
 
     // collision detection
     for (size_t i = 0; i < p->collisions.size; i++){
@@ -76,8 +76,8 @@ void srph_physics_tick(srph_physics * p, double dt){
     }
 
     // integrate velocities
-    for (uint32_t i = 0; i < p->broad.x.size; i++) {
-        srph_matter *m = &p->broad.x.data[i]->matter;
+    for (uint32_t i = 0; i < *p->num_substances; i++) {
+        srph_matter *m = &p->substances[i].matter;
 
         // integrate linear velocity
         vec3 dv;
@@ -159,26 +159,6 @@ void srph_physics::run(){
         */
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
-    }
-}
-
-void srph_physics_register(srph_physics * p, srph_substance * s){
-    std::lock_guard<std::mutex> lock(p->substances_mutex);
-    srph_array_push_back(&p->broad.x);
-    *p->broad.x.last = s;
-}
-    
-void srph_physics_unregister(srph_physics * p, srph_substance * s){
-    std::lock_guard<std::mutex> lock(p->substances_mutex);
-    
-    for (uint32_t i = 0; i < p->broad.x.size;){
-        srph_substance * t = p->broad.x.data[i];
-        if (s == t){
-            p->broad.x.data[i] = *p->broad.x.last;
-            srph_array_pop_back(&p->broad.x);
-        } else {       
-            i++;
-        }
     }
 }
 

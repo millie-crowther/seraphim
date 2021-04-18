@@ -117,24 +117,3 @@ void _srph_array_sort(_srph_base_array *a, int (*comparator)(const void *, const
 
     qsort(a->base_ptr, a->size, a->element_size, comparator);
 }
-
-static uint8_t * raw_array_at(_srph_base_array *a, size_t i){
-    return a->raw_data + i * a->element_size;
-}
-
-void _srph_array_insertion_sort(_srph_base_array *a, int (*cmp)(const void *, const void *)) {
-    if (a->size <= 1){
-        return;
-    }
-
-    for (size_t i = 0; i < a->size; i++){
-        char x[a->element_size];
-        memcpy(x, raw_array_at(a, i), a->element_size);
-
-        int j = i - 1;
-        for (; j >= 0 && cmp(raw_array_at(a, j), x) > 0; j--){
-            memcpy(raw_array_at(a, j + 1), raw_array_at(a, j), a->element_size);
-        }
-        memcpy(raw_array_at(a, j + 1), x, a->element_size);
-    }
-}

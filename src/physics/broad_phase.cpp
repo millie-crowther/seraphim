@@ -21,19 +21,30 @@ static int axis_comparator(const srph_substance *a, const srph_substance *b, int
 }
 
 static int x_comparator(const void *a, const void *b) {
-    return axis_comparator((const srph_substance *) a, (const srph_substance *) b, X_AXIS);
+    return axis_comparator(*(const srph_substance **) a, *(const srph_substance **) b, X_AXIS);
 }
 
-void srph_broad_phase_collision(const srph_broad_phase *phase, srph_collision_array *cs) {
-    srph_array_clear(cs);
-    srph_array_insertion_sort(&phase->x, x_comparator);
 
-    for (size_t i = 0; i < phase->x.size; i++){
-        srph_matter * a = &phase->x.data[i]->matter;
+void
+srph_broad_phase_collision(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
+    srph_array_clear(cs);
+
+    srph_array(srph_substance *) substances{};
+    srph_array_init(&substances);
+
+    for (size_t i = 0; i < num_substances; i++){
+        srph_array_push_back(&substances);
+        substances.data[i] = &substance_ptrs[i];
+    }
+
+    srph_array_sort(&substances, x_comparator);
+
+    for (size_t i = 0; i < num_substances; i++){
+        srph_matter * a = &substances.data[i]->matter;
         srph_sphere * sa = &a->bounding_sphere;
 
-        for (size_t j = i + 1; j < phase->x.size; i++){
-            srph_matter * b = &phase->x.data[j]->matter;
+        for (size_t j = i + 1; j < num_substances; j++){
+            srph_matter * b = &substances.data[j]->matter;
             srph_sphere * sb = &b->bounding_sphere;
 
             if (sa->c.x + sa->r < sb->c.x - sb->r){
@@ -46,18 +57,11 @@ void srph_broad_phase_collision(const srph_broad_phase *phase, srph_collision_ar
 
             srph_array_push_back(cs);
             *(cs->last) = {
-                .ms = { a, b },
-                .x = vec3_zero,
-                .is_colliding = false,
+                    .ms = { a, b },
+                    .x = vec3_zero,
+                    .is_colliding = false,
             };
         }
     }
-}
 
-void srph_broad_phase_init(srph_broad_phase *self) {
-    srph_array_init(&self->x);
-}
-
-void srph_broad_phase_destroy(srph_broad_phase *self) {
-    srph_array_clear(&self->x);
 }

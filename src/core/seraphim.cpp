@@ -89,7 +89,7 @@ srph::seraphim_t::seraphim_t(){
         surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
 
-    srph_physics_init(&physics);
+    srph_physics_init(&physics, substances, &num_substances);
 }
 
 void srph_cleanup(srph::seraphim_t * engine){
