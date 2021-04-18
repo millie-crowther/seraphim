@@ -11,6 +11,7 @@ using namespace srph;
 
 renderer_t::renderer_t(
     device_t * device,
+    srph_substance * substances, size_t * num_substances,
     VkSurfaceKHR surface, window_t * window,
     std::shared_ptr<camera_t> test_camera,
     u32vec2_t work_group_count, u32vec2_t work_group_size,
@@ -18,9 +19,11 @@ renderer_t::renderer_t(
 ){
     this->device = device;
     this->surface = surface;
-
     this->work_group_count = work_group_count;
     this->work_group_size = work_group_size;
+    this->substances = substances;
+    this->num_substances = num_substances;
+
     patch_image_size = max_image_size / patch_sample_size;
 
     start = std::chrono::high_resolution_clock::now();
@@ -545,7 +548,8 @@ void renderer_t::render(){
 
     // write substances
     std::vector<srph_substance::data_t> substance_data;
-    for (auto s : substances){
+    for (size_t i = 0; i < *num_substances; i++){
+        srph_substance * s = &substances[i];
         substance_data.push_back(s->get_data(&main_camera.lock()->transform.position));
     }
     substance_data.resize(size);
@@ -644,25 +648,24 @@ void renderer_t::handle_requests(uint32_t frame){
 
     for (auto & call : calls){
         if (call.is_valid()){
-            auto lookup_substance = std::make_shared<srph_substance>(call.get_substance_ID());
-            auto substance_iterator = substances.find(lookup_substance);
+            size_t substance_index = call.get_substance_ID();
+            if (substance_index >= *num_substances){
+                continue;
+            }
+            auto response = get_response(call, &substances[substance_index]);
+            patch_buffer->write_element(response.get_patch(), call.get_index());
 
-            if (substance_iterator != substances.end()){
-                auto response = get_response(call, *substance_iterator);
-                patch_buffer->write_element(response.get_patch(), call.get_index());
+            u32vec3_t p = u32vec3_t(
+                call.get_index() % patch_image_size,
+                (call.get_index() % (patch_image_size * patch_image_size)) / patch_image_size,
+                call.get_index() / patch_image_size / patch_image_size
+            ) * patch_sample_size;
 
-                u32vec3_t p = u32vec3_t(
-                    call.get_index() % patch_image_size,
-                    (call.get_index() % (patch_image_size * patch_image_size)) / patch_image_size,
-                    call.get_index() / patch_image_size / patch_image_size
-                ) * patch_sample_size;
+            normal_texture->write(p, response.get_normals());
+            colour_texture->write(p, response.get_colours());
 
-                normal_texture->write(p, response.get_normals());
-                colour_texture->write(p, response.get_colours());
-
-                indices.insert(call.get_index());
-                hashes.insert(call.get_hash());
-            } 
+            indices.insert(call.get_index());
+            hashes.insert(call.get_hash());
         }
     }   
 }
@@ -681,7 +684,7 @@ void renderer_t::create_buffers(){
 }
 
 
-response_t renderer_t::get_response(const call_t & call, std::weak_ptr<srph_substance> substance){
+response_t renderer_t::get_response(const call_t & call, srph_substance * substance){
     if (response_cache.size() > max_cache_size){
         response_cache.erase(*prev_calls.begin());
         prev_calls.pop_front();     
@@ -695,17 +698,6 @@ response_t renderer_t::get_response(const call_t & call, std::weak_ptr<srph_subs
     }    
 
     return response_cache[call];
-}
-
-void renderer_t::register_substance(std::shared_ptr<srph_substance> substance){
-    substances.insert(substance);
-}
-
-void renderer_t::unregister_substance(std::shared_ptr<srph_substance> substance){
-    auto it = substances.find(substance);
-    if (it != substances.end()){
-        substances.erase(it);
-    }
 }
 
 int renderer_t::get_frame_count(){

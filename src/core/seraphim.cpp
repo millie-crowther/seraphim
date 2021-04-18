@@ -12,6 +12,7 @@
 
 #include "core/scheduler.h"
 #include "render/renderer.h"
+#include <assert.h>
 
 using namespace srph;
 
@@ -80,8 +81,12 @@ srph::seraphim_t::seraphim_t(){
 
     scheduler::initialise();
 
+    num_substances = 0;
+
     renderer = std::make_unique<renderer_t>(
-        device.get(), surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
+        device.get(),
+        substances, &num_substances,
+        surface, window.get(), test_camera, work_group_count, work_group_size, max_image_size
     );
 
     srph_physics_init(&physics);
@@ -299,20 +304,11 @@ void srph::seraphim_t::run(){
     }
 }
 
-void srph::seraphim_t::annihilate(std::shared_ptr<srph_substance> substance){
-    renderer->unregister_substance(substance);
-    srph_physics_unregister(&physics, substance.get());
-
-    auto it = substances.find(substance);
-    if (it != substances.end()){
-        substances.erase(it);
-    }
-}
-
 srph_substance * srph_create_substance(seraphim_t * srph, srph_form * form, srph_matter * matter){
-    auto substance = std::make_shared<srph_substance>(form, matter);
-    srph->substances.insert(substance);
-    srph->renderer->register_substance(substance);
-    srph_physics_register(&srph->physics, substance.get());
-    return substance.get();
+    assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
+
+    srph_substance * new_substance = &srph->substances[srph->num_substances];
+    *new_substance = srph_substance(form, matter, srph->num_substances);
+    srph->num_substances++;
+    return new_substance;
 }

@@ -4,15 +4,10 @@
 
 using namespace srph;
 
-srph_substance::srph_substance(uint32_t id) {
-    this->id = id;
-}
-
-srph_substance::srph_substance(srph_form *form, srph_matter *matter) {
-    static uint32_t id = 0;
+srph_substance::srph_substance(srph_form *form, srph_matter *matter, uint32_t id) {
     this->form = *form;
     this->matter = *matter;
-    this->id = id++;
+    this->id = id;
 }
 
 bool
@@ -56,6 +51,10 @@ srph_substance::data_t srph_substance::get_data(const vec3 *eye_position) {
     srph_matter_transformation_matrix(&matter, data.transform);
 
     return data;
+}
+
+srph_substance::srph_substance() {
+
 }
 
 bool srph_substance::data_t::comparator_t::operator()(const srph_substance::data_t &a,

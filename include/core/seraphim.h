@@ -12,6 +12,8 @@
 #include "render/renderer.h"
 #include "ui/window.h"
 
+#define SERAPHIM_MAX_SUBSTANCES 100
+
 namespace srph {
     struct seraphim_t {
         // debug fields
@@ -42,7 +44,8 @@ namespace srph {
 
         std::shared_ptr<camera_t> test_camera;
 
-        std::set<std::shared_ptr<srph_substance>> substances;
+        size_t num_substances;
+        srph_substance substances[SERAPHIM_MAX_SUBSTANCES];
 
         bool fps_monitor_quit;
 
@@ -54,8 +57,6 @@ namespace srph {
         seraphim_t();
 
         void run();
-
-        void annihilate(std::shared_ptr<srph_substance> substance);
     };
 }
 

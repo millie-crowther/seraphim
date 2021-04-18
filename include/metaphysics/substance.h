@@ -32,8 +32,8 @@ typedef struct srph_substance {
         bool operator()(std::shared_ptr<srph_substance> a, std::shared_ptr<srph_substance> b) const;
     };
 
-    srph_substance(uint32_t i);
-    srph_substance(srph_form * form, srph_matter * matter);
+    srph_substance();
+    srph_substance(srph_form *form, srph_matter *matter, uint32_t i);
 
     data_t get_data(const vec3 *eye_position);
     uint32_t get_id() const;
@@ -41,6 +41,6 @@ typedef struct srph_substance {
     uint32_t id;
     srph_form form;
     srph_matter matter;
-} srph_substance;
+} bsrph_substance;
 
 #endif

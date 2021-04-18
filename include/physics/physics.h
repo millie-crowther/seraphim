@@ -31,7 +31,4 @@ void srph_physics_start(srph_physics * p);
 void srph_physics_destroy(srph_physics *p);
 void srph_physics_tick(srph_physics * p, double dt);
 
-void srph_physics_register(srph_physics * p, srph_substance * s);
-void srph_physics_unregister(srph_physics * p, srph_substance * s);
-
 #endif

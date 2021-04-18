@@ -85,7 +85,8 @@ namespace srph {
         std::string fragment_shader_code;
         std::string vertex_shader_code;
 
-        std::set<std::shared_ptr<srph_substance>, srph_substance::comparator_t> substances;
+        srph_substance * substances;
+        size_t * num_substances;
 
         std::unique_ptr<swapchain_t> swapchain;
         std::weak_ptr<camera_t> main_camera;
@@ -131,12 +132,13 @@ namespace srph {
         void cleanup_swapchain();
         void handle_requests(uint32_t frame);
         void present(uint32_t image_index) const;
-        response_t get_response(const call_t & call, std::weak_ptr<srph_substance> substance);   
+        response_t get_response(const call_t & call, srph_substance *substance);
         
     public:
         // constructors and destructors
         renderer_t(
             device_t * device,
+            srph_substance * substances, size_t * num_substances,
             VkSurfaceKHR surface, window_t * window,
             std::shared_ptr<camera_t> test_camera,
             u32vec2_t work_group_count, u32vec2_t work_group_size,
@@ -147,9 +149,6 @@ namespace srph {
         // public functions
         void render();
         void set_main_camera(std::weak_ptr<camera_t> camera);
-
-        void register_substance(std::shared_ptr<srph_substance> substance);
-        void unregister_substance(std::shared_ptr<srph_substance> substance);
 
         int get_frame_count();
     };
