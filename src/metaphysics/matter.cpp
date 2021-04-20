@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "core/constant.h"
+#include "core/random.h"
 
 
 void srph_matter_init(
@@ -37,12 +38,6 @@ void srph_matter_init(
     m->t = vec3_zero;
 
     srph_array_init(&m->deformations);
-    m->origin = srph_matter_add_deformation(m, initial_position, srph_deform_type_control);
-    m->origin->x0 = vec3_zero;
-
-    vec3 com;
-    vec3_add(&com, srph_sdf_com(sdf), initial_position);
-    m->com = srph_matter_add_deformation(m, &com, srph_deform_type_control);
 }
 
 void srph_matter_destroy(srph_matter *m) {
@@ -106,23 +101,18 @@ double srph_matter_mass(srph_matter *self) {
 //    return &inv_tf_i;
 //}
 
-void inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
+void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
     if (self->is_static) {
         return;
     }
 
-//    if (!self->is_inverse_inertia_tensor_valid) {
-    mat3 *i = srph_sdf_inertia_tensor(self->sdf);
-    double m = srph_matter_mass(self);
-    mat3_multiply_f(&self->inverse_inertia_tensor, i, m);
-//        self->is_inverse_inertia_tensor_valid = true;
-//    }
+    mat3 *i = srph_matter_inertia_tensor(self);
 
     mat3 r, rt;
     mat3_rotation_quat(&r, &self->transform.rotation);
     mat3_transpose(&rt, &r);
 
-    mat3_multiply(ri, &self->inverse_inertia_tensor, &rt);
+    mat3_multiply(ri, i, &rt);
     mat3_multiply(ri, &r, ri);
     mat3_inverse(ri, ri);
 
@@ -133,13 +123,13 @@ void inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
 
 //
 //mat3_t * srph_matter::get_i(){
-//    if (!is_inertia_tensor_valid){
+//    if (!is_mass_valid){
 //        if (is_uniform){
 //            i = srph_sdf_inertia_tensor(sdf) * srph_matter_mass(this);
 //        } else {
 //            throw std::runtime_error("Error: non uniform substances not yet supported.");
 //        }
-//        is_inertia_tensor_valid = true;
+//        is_mass_valid = true;
 //    }
 //
 //    return &i;
@@ -293,15 +283,6 @@ void srph_matter_to_global_direction(const srph_matter *m, const vec3 *position,
 //    }
 //}
 
-void srph_matter_linear_velocity(const srph_matter *self, vec3 *v) {
-    if (self->is_rigid) {
-        *v = self->v;
-    } else {
-        *v = self->com->v;
-        assert(false);
-    }
-}
-
 void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravity) {
     assert(!self->is_static && !self->is_at_rest);
 
@@ -324,14 +305,7 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
 
 static void offset_from_centre_of_mass(srph_matter *self, vec3 *r, const vec3 *x) {
     vec3 com;
-
-    if (self->is_rigid) {
-        srph_matter_to_global_position(self, &com, srph_sdf_com(self->sdf));
-    } else {
-        com = self->com->x;
-        assert(false);
-    }
-
+    srph_matter_to_global_position(self, &com, srph_matter_com(self));
     vec3_subtract(r, x, &com);
 }
 
@@ -346,7 +320,8 @@ void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v) {
     }
 }
 
-void srph_matter_material(srph_matter *self, srph_material *mat) {
+void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x) {
+    // TODO: sample at point
     *mat = self->material;
 }
 
@@ -367,7 +342,7 @@ void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, 
 
     mat3 i;
     vec3 irn;
-    inverse_inertia_tensor(self, &i);
+    srph_matter_inverse_inertia_tensor(self, &i);
     vec3_multiply_mat3(&irn, &rn, &i);
     vec3_multiply_f(&dw, &irn, j);
     vec3_add(&self->omega, &self->omega, &dw);
@@ -382,7 +357,7 @@ double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
     offset_from_centre_of_mass(self, &r, x);
     vec3_cross(&rn, &r, n);
     mat3 i;
-    inverse_inertia_tensor(self, &i);
+    srph_matter_inverse_inertia_tensor(self, &i);
     vec3_multiply_mat3(&irn, &rn, &i);
 
     double im = vec3_dot(&rn, &irn);
@@ -403,3 +378,112 @@ double srph_matter_inverse_mass(srph_matter *self) {
     }
 }
 
+mat3 * srph_matter_inertia_tensor(srph_matter * matter){
+    if (!matter->is_inertia_tensor_valid){
+        if (matter->is_uniform && matter->sdf->is_inertia_tensor_valid){
+            matter->inertia_tensor = matter->sdf->inertia_tensor;
+        } else {
+            for (int i = 0; i < 9; i++){
+                matter->inertia_tensor.v[i] = 0.0;
+            }
+
+            srph_bound3 * b = srph_sdf_bound(matter->sdf);
+            srph_random rng;
+            srph_random_default_seed(&rng);
+            int hits = 0;
+            double total = 0.0;
+            srph_material mat;
+            srph_matter_material(matter, &mat, NULL);
+
+            while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
+                vec3 x;
+                x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
+                x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
+                x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
+
+                if (!matter->is_uniform){
+                    srph_matter_material(matter, &mat, NULL);
+                }
+
+                if (srph_sdf_contains(matter->sdf, &x)){
+                    for (int i = 0; i < 3; i++){
+                        for (int j = 0; j < 3; j++){
+                            vec3 r;
+                            vec3_subtract(&r, &x, srph_matter_com(matter));
+
+                            double iij = -r.v[i] * r.v[j];
+
+                            if (i == j){
+                                iij += vec3_length_squared(&r);
+                            }
+
+                            matter->inertia_tensor.v[j * 3 + i] += iij * mat.density;
+                        }
+                    }
+
+                    hits++;
+                    total += mat.density;
+                }
+            }
+
+            mat3_multiply_f(&matter->inertia_tensor, &matter->inertia_tensor, 1.0 / total);
+
+            if (matter->is_uniform && !matter->sdf->is_inertia_tensor_valid){
+                matter->sdf->inertia_tensor = matter->inertia_tensor;
+                matter->sdf->is_inertia_tensor_valid = true;
+            }
+        }
+
+        mat3_multiply_f(&matter->inertia_tensor, &matter->inertia_tensor, srph_matter_mass(matter));
+        matter->is_inertia_tensor_valid = true;
+    }
+
+    return &matter->inertia_tensor;
+}
+
+vec3 * srph_matter_com(srph_matter * matter){
+    if (matter->is_uniform && matter->sdf->is_com_valid){
+        return &matter->sdf->com;
+    }
+
+    if (!matter->is_com_valid){
+        vec3 com = vec3_zero;
+
+        srph_bound3 * b = srph_sdf_bound(matter->sdf);
+        srph_random rng;
+        srph_random_default_seed(&rng);
+        int hits = 0;
+        double total = 0.0;
+        srph_material mat;
+        srph_matter_material(matter, &mat, NULL);
+
+        while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
+            vec3 x;
+            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
+            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
+            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
+
+            if (!matter->is_uniform){
+                srph_matter_material(matter, &mat, NULL);
+            }
+            vec3_multiply_f(&x, &x, mat.density);
+
+            if (srph_sdf_contains(matter->sdf, &x)){
+                vec3_add(&com, &com, &x);
+                hits++;
+                total += mat.density;
+            }
+        }
+
+        vec3_divide_f(&com, &com, total);
+        matter->com = com;
+        matter->is_com_valid = true;
+
+        if (matter->is_uniform && !matter->sdf->is_com_valid){
+            matter->sdf->com = com;
+            matter->sdf->is_com_valid = true;
+        }
+    }
+
+    return &matter->com;
+}

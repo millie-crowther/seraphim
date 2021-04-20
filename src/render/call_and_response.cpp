@@ -84,7 +84,7 @@ response_t::response_t(const call_t & call, srph_substance *substance){
         normals[o] = squash(vec4_t(n, 0.0));
 
         srph_material mat;
-        srph_matter_material(&substance->matter, &mat);
+        srph_matter_material(&substance->matter, &mat, nullptr);
         vec3 c = mat.colour;
         colours[o] = squash(vec4_t(c.x, c.y, c.z, 0.0));
     }

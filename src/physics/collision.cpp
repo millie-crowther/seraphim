@@ -195,8 +195,8 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 
     // calculate collision impulse magnitude
     srph_material mata, matb;
-    srph_matter_material(a, &mata);
-    srph_matter_material(b, &matb);
+    srph_matter_material(a, &mata, nullptr);
+    srph_matter_material(b, &matb, nullptr);
 
     double CoR = fmax(mata.restitution, matb.restitution);
 
