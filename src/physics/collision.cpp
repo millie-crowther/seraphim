@@ -324,3 +324,41 @@ void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
         }
     }
 }
+
+static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
+    srph_bound3 sub_bounds[2];
+    srph_bound3_bisect(bound, sub_bounds);
+    double sub_bound_distances[2];
+
+    for (int sub_bound_index = 0; sub_bound_index < 2; sub_bound_index++){
+        vec3 global_position;
+        double phis[2];
+        srph_bound3_midpoint(&sub_bounds[sub_bound_index], global_position.v);
+
+        for (int matter_index = 0; matter_index < 2; matter_index++){
+            vec3 local_position;
+            srph_matter_to_local_position(ms[matter_index], &local_position, &global_position);
+            phis[matter_index] = srph_sdf_phi(ms[matter_index]->sdf, &local_position);
+        }
+
+        sub_bound_distances[sub_bound_index] = phis[0] + phis[1];
+
+        if (sub_bound_distances[sub_bound_index] <= 0){
+            return true;
+        }
+
+        vec3 radius;
+        srph_bound3_radius(&sub_bounds[sub_bound_index], radius.v);
+        double radius_length = vec3_length(&radius);
+
+        if (phis[0] >= radius_length || phis[1] >= radius_length || radius_length < srph::constant::epsilon){
+            return false;
+        }
+    }
+
+    if (sub_bound_distances[0] < sub_bound_distances[1]){
+        return is_colliding_in_bound(ms, &sub_bounds[0]) || is_colliding_in_bound(ms, &sub_bounds[1]);
+    } else {
+        return is_colliding_in_bound(ms, &sub_bounds[1]) || is_colliding_in_bound(ms, &sub_bounds[0]);
+    }
+}

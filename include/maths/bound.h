@@ -16,5 +16,6 @@ bool srph_bound3_contains(srph_bound3 * b, const double * v);
 
 bool srph_bound3_is_valid(const srph_bound3 * b);
 double srph_bound3_volume(const srph_bound3 * b);
+void srph_bound3_bisect(const srph_bound3 * self, srph_bound3 * subbounds);
 
 #endif
