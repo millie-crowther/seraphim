@@ -1,4 +1,5 @@
 #include "render/call_and_response.h"
+#include "core/constant.h"
 
 using namespace srph;
 
@@ -36,7 +37,7 @@ bool call_t::comparator_t::operator()(const call_t & a, const call_t & b) const 
         return a.substanceID < b.substanceID;
     }
     
-    if (std::abs(a.radius - b.radius) > constant::epsilon){
+    if (std::abs(a.radius - b.radius) > epsilon){
         return a.radius < b.radius;
     }
 

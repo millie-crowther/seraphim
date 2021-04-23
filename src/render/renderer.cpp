@@ -2,6 +2,7 @@
 
 #include "ui/resources.h"
 #include "render/texture.h"
+#include "core/constant.h"
 
 #include <chrono>
 #include <ctime>
@@ -32,7 +33,7 @@ renderer_t::renderer_t(
 
     current_frame = 0;
     push_constants.current_frame = 0;
-    push_constants.render_distance = constant::rho;
+    push_constants.render_distance = rho;
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
@@ -40,7 +41,7 @@ renderer_t::renderer_t(
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth = number_of_patches / patch_image_size / patch_image_size + 1;
     push_constants.patch_pool_size = number_of_patches;
-    push_constants.epsilon = constant::epsilon;
+    push_constants.epsilon = epsilon;
 
     set_main_camera(test_camera);
 

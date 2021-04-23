@@ -40,7 +40,7 @@ void srph_opt_nelder_mead(
             double x = xs[0].x.v[j];
             
             for (int k = 1; k < N + 1; k++){
-                if (fabs(x - xs[k].x.v[j]) > srph::constant::epsilon){
+                if (fabs(x - xs[k].x.v[j]) > epsilon){
                     should_terminate = false;
                     break;
                 }

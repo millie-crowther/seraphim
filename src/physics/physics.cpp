@@ -2,6 +2,7 @@
 
 #include "core/scheduler.h"
 #include "physics/collision.h"
+#include "core/constant.h"
 
 #include <chrono>
 #include <iostream>
@@ -113,7 +114,7 @@ void srph_physics::run(){
     while (!quit){
         frames++;
         
-        double delta = constant::sigma;
+        double delta = sigma;
 
         srph_physics_tick(this, delta);
 /*

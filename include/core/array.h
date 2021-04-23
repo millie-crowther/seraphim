@@ -16,7 +16,6 @@
 typedef srph_array(uint8_t) _srph_base_array;
 
 #define SRPH_ARRAY_CAST(x) ((_srph_base_array *) x)
-#define SRPH_ARRAY_COMPARATOR_CAST(f)
 
 #define srph_array_init(x) _srph_array_init(SRPH_ARRAY_CAST(x), sizeof((x)->data[0]))
 void _srph_array_init(_srph_base_array * a, size_t element_size);

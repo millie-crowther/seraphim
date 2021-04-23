@@ -31,15 +31,15 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
     vec3 n;
     for (int i = 0; i < 3; i++){
         vec3 x1 = *x;
-        x1.v[i] += srph::constant::epsilon;
+        x1.v[i] += epsilon;
 
         vec3 x2 = *x;
-        x2.v[i] -= srph::constant::epsilon;
+        x2.v[i] -= epsilon;
         
         n.v[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
     }
     
-    vec3_multiply_f(&n, &n, 0.5 / srph::constant::epsilon);
+    vec3_multiply_f(&n, &n, 0.5 / epsilon);
 
     return n;
 }
@@ -51,13 +51,13 @@ bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
     vec3 x;
     vec3_normalize(&x, d);
-    vec3_multiply_f(&x, &x, srph::constant::rho);
+    vec3_multiply_f(&x, &x, rho);
 
     while (true){
         double p = srph_sdf_phi(sdf, &x);
         
         // TODO: better quit criteria
-        if (p > srph::constant::rho){
+        if (p > rho){
             return vec3_length(&x) - p;
         }
 
@@ -129,15 +129,15 @@ double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x) {
 
     for (int axis = 0; axis < 3; axis++){
         vec3 x1 = *x;
-        x1.v[axis] -= srph::constant::epsilon;
+        x1.v[axis] -= epsilon;
         vec3 x2 = *x;
-        x2.v[axis] += srph::constant::epsilon;
+        x2.v[axis] += epsilon;
 
         vec3 n1 = srph_sdf_normal(sdf, &x1);
         vec3 n2 = srph_sdf_normal(sdf, &x2);
         vec3_subtract(&ns[axis], &n2, &n1);
 
-        vec3_divide_f(&ns[axis], &ns[axis], srph::constant::epsilon * 2);
+        vec3_divide_f(&ns[axis], &ns[axis], epsilon * 2);
     }
 
     return fabs(mat3_determinant((mat3 *) ns));

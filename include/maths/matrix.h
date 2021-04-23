@@ -211,7 +211,7 @@ namespace srph {
     template<class T, int N>
     bool operator==(const vec_t<T, N> & a, const vec_t<T, N> & b){
         if constexpr (std::is_floating_point<T>::value){
-            return vec::length(a - b) < constant::epsilon;
+            return vec::length(a - b) < epsilon;
         } else {
             return std::equal(a.begin(), a.end(), b.begin());
         }

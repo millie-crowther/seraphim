@@ -4,6 +4,7 @@
 
 #include "maths/matrix.h"
 #include "maths/optimise.h"
+#include "core/constant.h"
 
 static double intersection_func(void * data, const vec3 * x){
     srph_matter * a = ((srph_matter **) data)[0];
@@ -222,7 +223,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     vec3 t;
     vec3_multiply_f(&t, &n, -vrn);
     vec3_add(&t, &t, &vr);
-    if (vec3_length(&t) < srph::constant::epsilon){
+    if (vec3_length(&t) < epsilon){
         return;
     }
 
@@ -326,7 +327,7 @@ void srph_collision_resolve_interpenetration_constraint(collision_t * c) {
 static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
     vec3 radius;
     srph_bound3_radius(bound, &radius);
-    if (vec3_length(&radius) <= srph::constant::epsilon){
+    if (vec3_length(&radius) <= epsilon){
         return false;
     }
 
@@ -347,7 +348,7 @@ static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
 
         sub_bound_distances[sub_bound_index] = phis[0] + phis[1];
 
-        if (sub_bound_distances[sub_bound_index] <= srph::constant::epsilon){
+        if (sub_bound_distances[sub_bound_index] <= epsilon){
             return true;
         }
 
