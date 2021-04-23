@@ -20,7 +20,7 @@ static double intersection_func(void * data, const vec3 * x){
 }
 
 //static double time_to_collision_func(void * data, const vec3 * x){
-//    srph_collision * collision = (srph_collision *) data;
+//    collision_t * collision = (collision_t *) data;
 //    srph_matter * a = collision->a;
 //    srph_matter * b = collision->b;
 //
@@ -61,7 +61,7 @@ static double intersection_func(void * data, const vec3 * x){
 //    return phi / vrn;
 //}
 
-//srph_collision::srph_collision(srph_matter * a, srph_matter * b){
+//collision_t::collision_t(srph_matter * a, srph_matter * b){
 //    this->a = a;
 //    this->b = b;
 //    is_intersecting = false;
@@ -96,7 +96,7 @@ static double intersection_func(void * data, const vec3 * x){
 //    }
 //}
 
-//void srph_collision::colliding_correct(){
+//void collision_t::colliding_correct(){
 //    // calculate collision impulse magnitude
 //    auto mata = a->get_material(&xa);
 //    auto matb = b->get_material(&xb);
@@ -136,7 +136,7 @@ static double intersection_func(void * data, const vec3 * x){
 //    }
 //}
 
-//void srph_collision::correct(){
+//void collision_t::correct(){
 //    srph_transform_to_local_position(&a->transform, &xa, &x);
 //    srph_transform_to_local_position(&b->transform, &xb, &x);
 //
@@ -242,7 +242,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 //    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
-void srph_collision_correct(srph_collision *self, double dt) {
+void srph_collision_correct(collision_t *self, double dt) {
 //    srph_deform xb;
 //    srph_matter_to_local_position(self->ms[0], &xb.x0, &self->x);
 //
@@ -262,20 +262,21 @@ void srph_collision_correct(srph_collision *self, double dt) {
     }
 }
 
-void srph_narrow_phase_collision(srph_collision * c, double dt){
+void collision_generate_manifold(collision_t * c, double dt){
     srph_sphere * sa = &c->ms[0]->bounding_sphere;
     srph_sphere * sb = &c->ms[1]->bounding_sphere;
 
-    if (!srph_sphere_intersect(sa, sb)){
+    double r_elem = fmin(sa->r, sb->r) / 2;
+    vec3 r = {{ r_elem, r_elem, r_elem }};
+    vec3 xa, xb;
+    double radius_sum = sa->r + sb->r;
+
+    if (radius_sum <= 0){
         return;
     }
 
-    double r_elem = fmin(sa->r, sb->r) / 2;
-    vec3 r = {{ r_elem, r_elem, r_elem }};
-
-    vec3 xa, xb;
-    vec3_multiply_f(&xa, &sa->c,  sb->r / (sa->r + sb->r));
-    vec3_multiply_f(&xb, &sa->c,  sa->r / (sa->r + sb->r));
+    vec3_multiply_f(&xa, &sa->c,  sb->r / radius_sum);
+    vec3_multiply_f(&xb, &sa->c,  sa->r / radius_sum);
 
     vec3 x;
     vec3_add(&x, &xa, &xb);
@@ -290,16 +291,13 @@ void srph_narrow_phase_collision(srph_collision * c, double dt){
     double threshold = 0.0;
     srph_opt_nelder_mead(&s, intersection_func, c->ms, xs, &threshold);
 
-    c->is_colliding = s.fx <= 0;
-    c->x = s.x;
-    
-    if (c->is_colliding){
+    if (s.fx <= 0){
         srph_matter_add_deformation(c->ms[0], &s.x, srph_deform_type_collision);
         srph_matter_add_deformation(c->ms[1], &s.x, srph_deform_type_collision);
     }
 }
 
-void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
+void srph_collision_resolve_interpenetration_constraint(collision_t * c) {
     assert(c->ms[0]->is_rigid && c->ms[1]->is_rigid);
 
     for (int i = 0; i < 2; i++){
@@ -326,6 +324,12 @@ void srph_collision_resolve_interpenetration_constraint(srph_collision * c) {
 }
 
 static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
+    vec3 radius;
+    srph_bound3_radius(bound, &radius);
+    if (vec3_length(&radius) <= srph::constant::epsilon){
+        return false;
+    }
+
     srph_bound3 sub_bounds[2];
     srph_bound3_bisect(bound, sub_bounds);
     double sub_bound_distances[2];
@@ -343,15 +347,14 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
 
         sub_bound_distances[sub_bound_index] = phis[0] + phis[1];
 
-        if (sub_bound_distances[sub_bound_index] <= 0){
+        if (sub_bound_distances[sub_bound_index] <= srph::constant::epsilon){
             return true;
         }
 
-        vec3 radius;
         srph_bound3_radius(&sub_bounds[sub_bound_index], &radius);
         double radius_length = vec3_length(&radius);
 
-        if (phis[0] >= radius_length || phis[1] >= radius_length || radius_length < srph::constant::epsilon){
+        if (phis[0] >= radius_length || phis[1] >= radius_length){
             return false;
         }
     }
@@ -363,7 +366,7 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
     }
 }
 
-bool branch_and_bound_narrow_phase(srph_collision *c){
+bool collision_narrow_phase_branch_and_bound(collision_t *c){
     srph_bound3 bounds[2];
     for (int matter_index = 0; matter_index < 2; matter_index++){
         srph_sphere * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
@@ -371,7 +374,12 @@ bool branch_and_bound_narrow_phase(srph_collision *c){
         vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c, bounding_sphere->r);
     }
 
-    srph_bound3 intersection;
-    srph_bound3_intersection(&bounds[0], &bounds[1], &intersection);
-    return is_colliding_in_bound(c->ms, &intersection);
+
+    srph_bound3_intersection(&bounds[0], &bounds[1], &c->bound);
+
+    if (!bound3_is_valid(&c->bound)){
+        return false;
+    }
+
+    return is_colliding_in_bound(c->ms, &c->bound);
 }

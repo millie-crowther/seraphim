@@ -53,13 +53,16 @@ void srph_physics_tick(srph_physics * p, double dt){
 
     // collision detection
     for (size_t i = 0; i < p->collisions.size; i++){
-        srph_narrow_phase_collision(&p->collisions.data[i], dt);
-        branch_and_bound_narrow_phase(&p->collisions.data[i]);
+        collision_t * collision = &p->collisions.data[i];
+        collision->is_colliding = collision_narrow_phase_branch_and_bound(collision);
+        if (collision->is_colliding){
+            collision_generate_manifold(collision, dt);
+        }
     }
 
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
         for (size_t collision = 0; collision < p->collisions.size; collision++){
-            srph_collision * c = &p->collisions.data[collision];
+            collision_t * c = &p->collisions.data[collision];
             if (c->is_colliding){
                 srph_collision_correct(c, dt);
             }
@@ -69,7 +72,7 @@ void srph_physics_tick(srph_physics * p, double dt){
     // solve constraints
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
         for (size_t collision = 0; collision < p->collisions.size; collision++){
-            srph_collision * c = &p->collisions.data[collision];
+            collision_t * c = &p->collisions.data[collision];
             if (c->is_colliding) {
                 srph_collision_resolve_interpenetration_constraint(c);
             }
@@ -114,7 +117,7 @@ void srph_physics::run(){
 
         srph_physics_tick(this, delta);
 /*
-        std::vector<srph_collision> collisions;
+        std::vector<collision_t> collisions;
     
         {
             std::lock_guard<std::mutex> lock(substances_mutex);

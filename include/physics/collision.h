@@ -3,15 +3,15 @@
 
 #include "metaphysics/substance.h"
 
-typedef struct srph_collision {
+typedef struct collision_t {
     srph_matter * ms[2];
-    vec3 x;
     bool is_colliding;
-} srph_collision;
+    srph_bound3 bound;
+} collision_t;
 
-void srph_narrow_phase_collision(srph_collision * c, double dt);
-void srph_collision_resolve_interpenetration_constraint(srph_collision * c);
-void srph_collision_correct(srph_collision *self, double dt);
-bool branch_and_bound_narrow_phase(srph_collision *c);
+void srph_collision_resolve_interpenetration_constraint(collision_t * c);
+void srph_collision_correct(collision_t *self, double dt);
+bool collision_narrow_phase_branch_and_bound(collision_t *c);
+void collision_generate_manifold(collision_t * c, double dt);
 
 #endif

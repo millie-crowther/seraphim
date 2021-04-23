@@ -15,6 +15,7 @@ void srph_bound3_midpoint(const srph_bound3 * b, vec3 * v);
 void srph_bound3_radius(const srph_bound3 * b, vec3 * v);
 void srph_bound3_capture(srph_bound3 * b, vec3 * v);
 bool srph_bound3_contains(srph_bound3 * b, const vec3 * v);
+bool bound3_is_valid(srph_bound3 * b);
 
 double srph_bound3_volume(const srph_bound3 * b);
 void srph_bound3_bisect(const srph_bound3 * self, srph_bound3 * sub_bounds);

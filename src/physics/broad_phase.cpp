@@ -56,9 +56,9 @@ void srph_broad_phase_collision(srph_substance *substance_ptrs, size_t num_subst
 
             srph_array_push_back(cs);
             *(cs->last) = {
-                    .ms = {a, b},
-                    .x = vec3_zero,
-                    .is_colliding = false,
+                .ms = {a, b},
+//                    .x = vec3_zero,
+                .is_colliding = false,
             };
         }
     }

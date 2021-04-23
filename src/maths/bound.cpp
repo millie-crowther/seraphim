@@ -87,3 +87,17 @@ void srph_bound3_bisect(const srph_bound3 *self, srph_bound3 *sub_bounds) {
     sub_bounds[0].upper.v[max_axis] = midpoint;
     sub_bounds[1].lower.v[max_axis] = midpoint;
 }
+
+bool bound3_is_valid(srph_bound3 *b) {
+    if (b == NULL){
+        return false;
+    }
+
+    for (int i = 0; i < 3; i++){
+        if (b->lower.v[i] > b->upper.v[i]){
+            return false;
+        }
+    }
+
+    return true;
+}
