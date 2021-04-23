@@ -134,22 +134,6 @@ namespace srph {
             return (*this)[column * M + row];
         }
 
-        matrix_t<T, M, 1> get_column(int c) const {
-            matrix_t<T, M, 1> column;
-            for (int row = 0; row < M; row++){
-                column[row] = get(row, c);
-            }
-            return column;
-        }
-
-        matrix_t<T, N, 1> get_row(int r) const {
-            matrix_t<T, N, 1> row;
-            for (int column = 0; column < N; column++){
-                row[column] = get(r, column);
-            }
-            return row;
-        }
-
         // setters
         void set(int row, int column, const T & x){
             (*this)[column * M + row] = x;
@@ -195,10 +179,6 @@ namespace srph {
     typedef f64vec3_t vec3_t;
     typedef f64vec4_t vec4_t;
 
-    typedef matrix_t<float, 4, 4> f32mat4_t;
-
-    typedef matrix_t<double, 3, 3> mat3_t;
-
     namespace vec {
         template<class S, class T, int M, int N>
         decltype(S() * T()) dot(const matrix_t<S, M, N> & x, const matrix_t<T, M, N> & y){
@@ -208,66 +188,10 @@ namespace srph {
         template<class T, int M, int N>
         T length(const matrix_t<T, M, N> & x){
             return std::sqrt(dot(x, x));
-        }   
-
-        template<class S, class T>
-        vec_t<decltype(S() * T()), 3> cross(const vec_t<S, 3> & x, const vec_t<T, 3> & y){
-            return vec_t<decltype(S()* T()), 3>(
-                x[1] * y[2] - x[2] * y[1],
-                x[2] * y[0] - x[0] * y[2],
-                x[0] * y[1] - x[1] * y[0]
-            );
         }
     }
 
     namespace mat {
-        template<class T>
-        T determinant(const matrix_t<T, 3, 3> & a){
-            return vec::dot(a.get_column(0), vec::cross(a.get_column(1), a.get_column(2)));
-        }
-
-        template<class T, int M, int N> 
-        matrix_t<T, N, M> transpose(const matrix_t<T, M, N> & a){
-            matrix_t<T, N, M> at;
-        
-            for (int row = 0; row < M; row++){
-                for (int col = 0; col < N; col++){
-                    at.set(col, row, a.get(row, col));
-                }
-            }
-            
-            return at;
-        }
-
-        template<class T>
-        matrix_t<T, 3, 3> inverse(const matrix_t<T, 3, 3> & a){
-            matrix_t<T, 3, 3> a1(
-                vec::cross(a.get_column(1), a.get_column(2)),
-                vec::cross(a.get_column(2), a.get_column(0)),
-                vec::cross(a.get_column(0), a.get_column(1))
-            );
-
-            T det = determinant(a);
-            if (std::abs(det) < constant::epsilon){
-                throw std::runtime_error("Error: tried to invert a singular matrix.");
-            } else {
-                return transpose(a1) / det;
-            }
-        } 
-
-        template<class T, class S, int X, int Y, int Z>
-        matrix_t<decltype(T() * S()), X, Z> multiply(const matrix_t<T, X, Y> & a, const matrix_t<S, Y, Z> & b){
-            matrix_t<decltype(T() * S()), X, Z> ab;
-            
-            for (int m = 0; m < X; m++){
-                for (int n = 0; n < Z; n++){
-                    ab.set(m, n, vec::dot(a.get_row(m), b.get_column(n)));
-                }
-            }
-            
-            return ab; 
-        }
-        
         template<class S, class T, int M, int N>
         matrix_t<S, M, N> cast(const matrix_t<T, M, N> & m){
             matrix_t<S, M, N> a;
@@ -276,11 +200,6 @@ namespace srph {
             });
             return a;
         }
-    }
-
-    template<class S, class T, int X, int Y, int Z>
-    matrix_t<decltype(S() * T()), X, Z> operator*(const matrix_t<T, X, Y> & a, const matrix_t<S, Y, Z> & b){
-        return mat::multiply(a, b);
     }
 
     template<class T, int M, int N>
@@ -303,13 +222,6 @@ namespace srph {
         return !(a == b);
     }
 
-    template<class T, int M, int N>
-    void operator/=(matrix_t<T, M, N> & ms, T s){
-        for (auto & m : ms){
-            m /= s;
-        }
-    }
-
 // output operators
     template<class T, int M, int N>
     std::ostream & operator<<(std::ostream & os, const matrix_t<T, M, N> & v){
@@ -320,7 +232,6 @@ namespace srph {
         os << v[M * N - 1] << ")";
         return os;
     } 
-
 }
 
 #endif

@@ -32,7 +32,7 @@ typedef struct srph_matter {
     bool is_inverse_inertia_tensor_valid;
     mat3 inverse_inertia_tensor;
 
-    srph_sphere bounding_sphere;
+    sphere_t bounding_sphere;
 
     vec3 f;
     vec3 t;

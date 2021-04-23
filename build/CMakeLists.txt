@@ -30,9 +30,8 @@ set(SOURCES
     ../src/core/scheduler.cpp
     ../src/core/seraphim.cpp
     ../src/core/array.cpp
-    ../src/core/set.cpp
 
-    ../src/physics/collision.cpp
+        ../src/physics/collision.cpp
     ../src/physics/constraint.cpp    
     ../src/physics/physics.cpp
     ../src/physics/sphere.cpp
@@ -49,7 +48,7 @@ set(SOURCES
     ../src/metaphysics/form.cpp
     ../src/metaphysics/matter.cpp
 
-        ../src/maths/bound.cpp
+        ../src/physics/bound.cpp
         ../src/maths/optimise.cpp
     ../src/maths/maths.cpp
         ../src/maths/sdf/sdf.cpp

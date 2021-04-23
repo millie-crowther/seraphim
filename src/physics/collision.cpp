@@ -67,15 +67,15 @@ static double intersection_func(void * data, const vec3 * x){
 //    is_intersecting = false;
 //    t = constant::sigma;
 //
-//    srph_sphere sa, sb;
+//    sphere_t sa, sb;
 //    srph_matter_calculate_sphere_bound(a, constant::sigma, &sa);
 //    srph_matter_calculate_sphere_bound(b, constant::sigma, &sb);
 //
 //    if (srph_sphere_intersect(&sa, &sb)){
-//        srph_bound3 bound_a = a->get_moving_bound(constant::sigma);
-//        srph_bound3 bound_b = b->get_moving_bound(constant::sigma);
+//        bound3_t bound_a = a->get_moving_bound(constant::sigma);
+//        bound3_t bound_b = b->get_moving_bound(constant::sigma);
 //
-//        srph_bound3 bound_i;
+//        bound3_t bound_i;
 //        srph_bound3_intersection(&bound_a, &bound_b, &bound_i);
 //
 //        vec3 xs1[4];
@@ -263,8 +263,8 @@ void srph_collision_correct(collision_t *self, double dt) {
 }
 
 void collision_generate_manifold(collision_t * c, double dt){
-    srph_sphere * sa = &c->ms[0]->bounding_sphere;
-    srph_sphere * sb = &c->ms[1]->bounding_sphere;
+    sphere_t * sa = &c->ms[0]->bounding_sphere;
+    sphere_t * sb = &c->ms[1]->bounding_sphere;
 
     double r_elem = fmin(sa->r, sb->r) / 2;
     vec3 r = {{ r_elem, r_elem, r_elem }};
@@ -323,14 +323,14 @@ void srph_collision_resolve_interpenetration_constraint(collision_t * c) {
     }
 }
 
-static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
+static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
     vec3 radius;
     srph_bound3_radius(bound, &radius);
     if (vec3_length(&radius) <= srph::constant::epsilon){
         return false;
     }
 
-    srph_bound3 sub_bounds[2];
+    bound3_t sub_bounds[2];
     srph_bound3_bisect(bound, sub_bounds);
     double sub_bound_distances[2];
 
@@ -367,9 +367,9 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
 }
 
 bool collision_narrow_phase_branch_and_bound(collision_t *c){
-    srph_bound3 bounds[2];
+    bound3_t bounds[2];
     for (int matter_index = 0; matter_index < 2; matter_index++){
-        srph_sphere * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
+        sphere_t * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
         vec3_subtract_f(&bounds[matter_index].lower, &bounding_sphere->c, bounding_sphere->r);
         vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c, bounding_sphere->r);
     }

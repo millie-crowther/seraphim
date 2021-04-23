@@ -3,14 +3,14 @@
 
 #include "maths/maths.h"
 
-typedef struct srph_sphere {
+typedef struct sphere_t {
     vec3 c;
     double r;
-} srph_sphere;
+} sphere_t;
 
-bool srph_sphere_contains_point(const srph_sphere * s, const vec3 * x);
-bool srph_sphere_contains(const srph_sphere * a, const srph_sphere * b);
-bool srph_sphere_intersect(const srph_sphere * a, const srph_sphere * b);
-void srph_sphere_capture(srph_sphere *a, const srph_sphere *b);
+bool srph_sphere_contains_point(const sphere_t * s, const vec3 * x);
+bool srph_sphere_contains(const sphere_t * a, const sphere_t * b);
+bool srph_sphere_intersect(const sphere_t * a, const sphere_t * b);
+void srph_sphere_capture(sphere_t *a, const sphere_t *b);
 
 #endif

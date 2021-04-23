@@ -69,7 +69,7 @@ double srph_sdf_volume(srph_sdf * sdf){
     if (sdf->volume < 0.0){
         int hits = 0;
      
-        srph_bound3 * b = srph_sdf_bound(sdf);
+        bound3_t * b = srph_sdf_bound(sdf);
         srph_random rng;
         srph_random_default_seed(&rng);
     
@@ -91,7 +91,7 @@ double srph_sdf_volume(srph_sdf * sdf){
 }
 
 
-srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
+bound3_t * srph_sdf_bound(srph_sdf * sdf){
     if (sdf == NULL){
         return NULL;
     } 

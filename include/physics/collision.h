@@ -6,7 +6,7 @@
 typedef struct collision_t {
     srph_matter * ms[2];
     bool is_colliding;
-    srph_bound3 bound;
+    bound3_t bound;
 } collision_t;
 
 void srph_collision_resolve_interpenetration_constraint(collision_t * c);

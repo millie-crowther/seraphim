@@ -387,7 +387,7 @@ mat3 * srph_matter_inertia_tensor(srph_matter * matter){
                 matter->inertia_tensor.v[i] = 0.0;
             }
 
-            srph_bound3 * b = srph_sdf_bound(matter->sdf);
+            bound3_t * b = srph_sdf_bound(matter->sdf);
             srph_random rng;
             srph_random_default_seed(&rng);
             int hits = 0;
@@ -449,7 +449,7 @@ vec3 * srph_matter_com(srph_matter * matter){
     if (!matter->is_com_valid){
         vec3 com = vec3_zero;
 
-        srph_bound3 * b = srph_sdf_bound(matter->sdf);
+        bound3_t * b = srph_sdf_bound(matter->sdf);
         srph_random rng;
         srph_random_default_seed(&rng);
         int hits = 0;

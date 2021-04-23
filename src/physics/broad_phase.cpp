@@ -5,8 +5,8 @@
 #include "physics//broad_phase.h"
 
 static int axis_comparator(const srph_substance *a, const srph_substance *b, int axis) {
-    const srph_sphere *sa = &a->matter.bounding_sphere;
-    const srph_sphere *sb = &b->matter.bounding_sphere;
+    const sphere_t *sa = &a->matter.bounding_sphere;
+    const sphere_t *sb = &b->matter.bounding_sphere;
 
     double lower_a = sa->c.v[axis] - sa->r;
     double lower_b = sb->c.v[axis] - sb->r;
@@ -40,11 +40,11 @@ void srph_broad_phase_collision(srph_substance *substance_ptrs, size_t num_subst
 
     for (size_t i = 0; i < num_substances; i++) {
         srph_matter *a = &substances.data[i]->matter;
-        srph_sphere *sa = &a->bounding_sphere;
+        sphere_t *sa = &a->bounding_sphere;
 
         for (size_t j = i + 1; j < num_substances; j++) {
             srph_matter *b = &substances.data[j]->matter;
-            srph_sphere *sb = &b->bounding_sphere;
+            sphere_t *sb = &b->bounding_sphere;
 
             if (sa->c.x + sa->r < sb->c.x - sb->r) {
                 break;

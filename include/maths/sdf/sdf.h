@@ -4,7 +4,7 @@
 #include "core/array.h"
 
 #include "maths/maths.h"
-#include "maths/bound.h"
+#include "physics/bound.h"
 #include "physics/sphere.h"
 
 #define SERAPHIM_SDF_VOLUME_SAMPLES 10000
@@ -13,7 +13,7 @@ typedef double (*srph_sdf_func)(void * data, const vec3 * x);
 
 typedef struct srph_sdf {
     bool is_bound_valid;
-    srph_bound3 bound;
+    bound3_t bound;
 
     double volume;
 
@@ -34,7 +34,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x);
 double srph_sdf_volume(srph_sdf * sdf);
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d);
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x);
-srph_bound3 * srph_sdf_bound(srph_sdf * sdf);
+bound3_t * srph_sdf_bound(srph_sdf * sdf);
 double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x);
 
 #endif
