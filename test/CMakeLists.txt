@@ -22,6 +22,7 @@ set(SOURCES
     ../src/physics/transform.cpp
     ../src/core/array.cpp
     ../src/maths/maths.cpp
+    ../src/metaphysics/matter.cpp
     test_main.cpp
 )
 

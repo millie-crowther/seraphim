@@ -3175,7 +3175,7 @@ vec3 *vec3_add(vec3 *result, const vec3 *v0, const vec3 *v1) {
     return (vec3 *) _vec3_add((mfloat_t *) result, (const mfloat_t *) v0, (const mfloat_t *) v1);
 }
 
-void vec3_add_f(vec3 *result, vec3 *v0, mfloat_t f) {
+void vec3_add_f(vec3 *result, const vec3 *v0, mfloat_t f) {
     MAP_UNARY_FUNCTION(f+, result->v, v0->v, 3);
 }
 

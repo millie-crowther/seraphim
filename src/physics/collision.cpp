@@ -333,7 +333,7 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
     for (int sub_bound_index = 0; sub_bound_index < 2; sub_bound_index++){
         vec3 global_position;
         double phis[2];
-        srph_bound3_midpoint(&sub_bounds[sub_bound_index], global_position.v);
+        srph_bound3_midpoint(&sub_bounds[sub_bound_index], &global_position);
 
         for (int matter_index = 0; matter_index < 2; matter_index++){
             vec3 local_position;
@@ -348,7 +348,7 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
         }
 
         vec3 radius;
-        srph_bound3_radius(&sub_bounds[sub_bound_index], radius.v);
+        srph_bound3_radius(&sub_bounds[sub_bound_index], &radius);
         double radius_length = vec3_length(&radius);
 
         if (phis[0] >= radius_length || phis[1] >= radius_length || radius_length < srph::constant::epsilon){
@@ -361,4 +361,17 @@ static bool is_colliding_in_bound(srph_matter ** ms, srph_bound3 * bound){
     } else {
         return is_colliding_in_bound(ms, &sub_bounds[1]) || is_colliding_in_bound(ms, &sub_bounds[0]);
     }
+}
+
+bool branch_and_bound_narrow_phase(srph_collision *c){
+    srph_bound3 bounds[2];
+    for (int matter_index = 0; matter_index < 2; matter_index++){
+        srph_sphere * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
+        vec3_subtract_f(&bounds[matter_index].lower, &bounding_sphere->c, bounding_sphere->r);
+        vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c, bounding_sphere->r);
+    }
+
+    srph_bound3 intersection;
+    srph_bound3_intersection(&bounds[0], &bounds[1], &intersection);
+    return is_colliding_in_bound(c->ms, &intersection);
 }

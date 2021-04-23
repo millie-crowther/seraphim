@@ -21,7 +21,7 @@ uint32_t srph_substance::get_id() const {
 
 srph_substance::data_t srph_substance::get_data(const vec3 *eye_position) {
     vec3 r;
-    srph_bound3_radius(srph_sdf_bound(matter.sdf), r.v);
+    srph_bound3_radius(srph_sdf_bound(matter.sdf), &r);
 
     vec3 eye;
     srph_matter_to_local_position(&matter, &eye, eye_position);

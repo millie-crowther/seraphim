@@ -45,7 +45,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
 }
 
 bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return srph_bound3_contains(&sdf->bound, x->v) && srph_sdf_phi(sdf, x) <= 0.0;
+    return srph_bound3_contains(&sdf->bound, x) && srph_sdf_phi(sdf, x) <= 0.0;
 }
     
 double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
@@ -75,9 +75,9 @@ double srph_sdf_volume(srph_sdf * sdf){
     
         while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
             vec3 x;
-            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
-            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
-            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
+            x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+            x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+            x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
             if (srph_sdf_contains(sdf, &x)){
                 hits++;
@@ -102,10 +102,10 @@ srph_bound3 * srph_sdf_bound(srph_sdf * sdf){
             a = vec3_zero;
 
             a.v[i] = -1.0;
-            sdf->bound.lower[i] = -srph_sdf_project(sdf, &a);
+            sdf->bound.lower.v[i] = -srph_sdf_project(sdf, &a);
 
             a.v[i] = 1.0;
-            sdf->bound.upper[i] =  srph_sdf_project(sdf, &a);
+            sdf->bound.upper.v[i] =  srph_sdf_project(sdf, &a);
         }
 
         sdf->is_bound_valid = true;

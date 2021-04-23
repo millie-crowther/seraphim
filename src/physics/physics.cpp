@@ -54,6 +54,7 @@ void srph_physics_tick(srph_physics * p, double dt){
     // collision detection
     for (size_t i = 0; i < p->collisions.size; i++){
         srph_narrow_phase_collision(&p->collisions.data[i], dt);
+        branch_and_bound_narrow_phase(&p->collisions.data[i]);
     }
 
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){

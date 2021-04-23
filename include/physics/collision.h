@@ -12,5 +12,6 @@ typedef struct srph_collision {
 void srph_narrow_phase_collision(srph_collision * c, double dt);
 void srph_collision_resolve_interpenetration_constraint(srph_collision * c);
 void srph_collision_correct(srph_collision *self, double dt);
+bool branch_and_bound_narrow_phase(srph_collision *c);
 
 #endif

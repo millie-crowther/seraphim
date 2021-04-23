@@ -4,11 +4,11 @@
 #include <stdio.h>
 
 #include "test_header.h"
-#include "test_sdf.h"
 #include "test_matrix.h"
 #include "test_quat.h"
 #include "test_transform.h"
 #include "test_array.h"
+#include "test_matter.h"
 
 int main(){
     int passed_tests = 0;
@@ -23,7 +23,7 @@ int main(){
     RUN_TEST(test_quat_multiply);
     RUN_TEST(test_quat_inverse_mult);
 
-    RUN_TEST(test_sdf_inertia_tensor_cube);
+    RUN_TEST(test_matter_inertia_tensor_uniform_cube);
 
     RUN_TEST(test_matrix_inverse_identity);
     RUN_TEST(test_matrix_inverse_scale);
@@ -39,7 +39,6 @@ int main(){
 
     RUN_TEST(test_transform_matrix);
 
-    RUN_TEST(test_int_array_insertion_sort);
     RUN_TEST(test_int_array_quick_sort);
 
     printf("Total tests run: %d\n", total_tests);

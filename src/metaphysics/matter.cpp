@@ -8,8 +8,8 @@
 
 
 void srph_matter_init(
-        srph_matter *m, srph_sdf *sdf, const srph_material *material,
-        const vec3 *initial_position, bool is_uniform, bool is_static
+    srph_matter *m, srph_sdf *sdf, const srph_material *material,
+    const vec3 *initial_position, bool is_uniform, bool is_static
 ) {
     m->sdf = sdf;
     m->material = *material;
@@ -18,7 +18,7 @@ void srph_matter_init(
     m->is_rigid = true;
 
     // initialise fields for rigid bodies
-    m->transform.position = *initial_position;
+    m->transform.position = initial_position == NULL ? vec3_zero : *initial_position;
     m->transform.rotation = quat_identity;
 
 //    if (initial_position->y > -90) {
@@ -138,8 +138,8 @@ void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
 
 void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
     vec3 midpoint, radius;
-    srph_bound3_midpoint(&self->sdf->bound, midpoint.v);
-    srph_bound3_radius(&self->sdf->bound, radius.v);
+    srph_bound3_midpoint(&self->sdf->bound, &midpoint);
+    srph_bound3_radius(&self->sdf->bound, &radius);
     srph_matter_to_global_position(self, &self->bounding_sphere.c, &midpoint);
     self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
@@ -397,9 +397,9 @@ mat3 * srph_matter_inertia_tensor(srph_matter * matter){
 
             while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
                 vec3 x;
-                x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
-                x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
-                x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
+                x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+                x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+                x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
                 if (!matter->is_uniform){
                     srph_matter_material(matter, &mat, NULL);
@@ -459,9 +459,9 @@ vec3 * srph_matter_com(srph_matter * matter){
 
         while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
             vec3 x;
-            x.x = srph_random_f64_range(&rng, b->lower[0], b->upper[0]);
-            x.y = srph_random_f64_range(&rng, b->lower[1], b->upper[1]);
-            x.z = srph_random_f64_range(&rng, b->lower[2], b->upper[2]);
+            x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+            x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+            x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
             if (!matter->is_uniform){
                 srph_matter_material(matter, &mat, NULL);
