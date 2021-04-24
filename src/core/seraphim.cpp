@@ -10,7 +10,6 @@
 #include <cstring>
 #include <memory>
 
-#include "core/scheduler.h"
 #include "render/renderer.h"
 #include <assert.h>
 
@@ -79,8 +78,6 @@ srph::seraphim_t::seraphim_t(){
 
     test_camera = std::make_shared<camera_t>();
 
-    scheduler::initialise();
-
     num_substances = 0;
 
     renderer = std::make_unique<renderer_t>(
@@ -97,8 +94,6 @@ void srph_cleanup(srph::seraphim_t * engine){
 
     srph_physics_destroy(&engine->physics);
  
-    scheduler::terminate();
-
     vkDeviceWaitIdle(engine->device->get_device());
 
     engine->fps_cv.notify_all();

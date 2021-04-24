@@ -295,7 +295,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 //    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
-void collision_resolve_velocity_constraint(collision_t *self, double dt) {
+static void collision_resolve_velocity_constraint(collision_t *self, double dt) {
     for (int i = 0; i < 2; i++){
         srph_matter * a = self->ms[i];
         srph_matter * b = self->ms[1 - i];
@@ -307,6 +307,8 @@ void collision_resolve_velocity_constraint(collision_t *self, double dt) {
 }
 
 static void collision_generate_manifold(collision_t * c, double dt){
+    srph_array_init(&c->manifold);
+
     sphere_t * sa = &c->ms[0]->bounding_sphere;
     sphere_t * sb = &c->ms[1]->bounding_sphere;
 
@@ -338,10 +340,13 @@ static void collision_generate_manifold(collision_t * c, double dt){
     if (s.fx <= 0){
         srph_matter_add_deformation(c->ms[0], &s.x, srph_deform_type_collision);
         srph_matter_add_deformation(c->ms[1], &s.x, srph_deform_type_collision);
+
+        srph_array_push_back(&c->manifold);
+        c->manifold.data[0] = s.x;
     }
 }
 
-void collision_resolve_interpenetration_constraint(collision_t * c) {
+static void collision_resolve_interpenetration_constraint(collision_t * c) {
     assert(c->ms[0]->is_rigid && c->ms[1]->is_rigid);
 
     for (int i = 0; i < 2; i++){
@@ -429,6 +434,10 @@ static bool collision_narrow_phase(collision_t *c){
 }
 
 void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {
+    // clear collisions from last iteration
+    for (size_t i = 0; i < cs->size; i++){
+        srph_array_clear(&cs->data[i].manifold);
+    }
     srph_array_clear(cs);
 
     srph_collision_array broad_phase_collisions;
@@ -439,11 +448,16 @@ void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srp
     for (size_t i = 0; i < broad_phase_collisions.size; i++){
         collision_t * collision = &broad_phase_collisions.data[i];
         if (collision_narrow_phase(collision)){
-            collision_generate_manifold(collision, dt);
             srph_array_push_back(cs);
             *(cs->last) = *collision;
+            collision_generate_manifold(cs->last, dt);
         }
     }
 
     srph_array_clear(&broad_phase_collisions);
+}
+
+void collision_resolve(collision_t *self, double dt) {
+    collision_resolve_velocity_constraint(self, dt);
+    collision_resolve_interpenetration_constraint(self);
 }

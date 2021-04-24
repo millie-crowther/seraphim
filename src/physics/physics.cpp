@@ -1,6 +1,5 @@
 #include "physics/physics.h"
 
-#include "core/scheduler.h"
 #include "physics/collision.h"
 #include "core/constant.h"
 
@@ -9,7 +8,7 @@
 
 #include <assert.h>
 
-#define SOLVER_ITERATIONS 20
+#define SOLVER_ITERATIONS 10
 
 void srph_physics_init(srph_physics *p, srph_substance *substances, size_t *num_substances) {
     p->quit = false;
@@ -52,18 +51,10 @@ void srph_physics_tick(srph_physics * p, double dt){
     // detect collisions
     collision_detect(p->substances, *p->num_substances, &p->collisions, dt);
 
+    // resolve collisions
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
         for (size_t collision = 0; collision < p->collisions.size; collision++){
-            collision_t * c = &p->collisions.data[collision];
-            collision_resolve_velocity_constraint(c, dt);
-        }
-    }
-
-    // solve constraints
-    for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
-        for (size_t collision = 0; collision < p->collisions.size; collision++){
-            collision_t * c = &p->collisions.data[collision];
-            collision_resolve_interpenetration_constraint(c);
+            collision_resolve(&p->collisions.data[collision], dt);
         }
     }
 
@@ -95,7 +86,7 @@ void srph_physics_tick(srph_physics * p, double dt){
 using namespace srph;
 
 void srph_physics::run(){
-    auto t = scheduler::clock_t::now();
+    auto t = std::chrono::steady_clock::now();
     printf("physics thread starting\n");
       
     while (!quit){
