@@ -70,7 +70,7 @@ double srph_sdf_volume(srph_sdf * sdf){
         int hits = 0;
      
         bound3_t * b = srph_sdf_bound(sdf);
-        srph_random rng;
+        random_t rng;
         srph_random_default_seed(&rng);
     
         while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){

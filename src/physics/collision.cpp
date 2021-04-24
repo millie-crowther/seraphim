@@ -28,7 +28,11 @@ static int x_comparator(const void *a, const void *b) {
     return axis_comparator(*(const srph_substance **) a, *(const srph_substance **) b, X_AXIS);
 }
 
-static void collision_broad_phase(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
+static void collision_broad_phase(
+    srph_substance *substance_pointers,
+    size_t num_substances,
+    srph_collision_array *cs
+) {
     srph_array_clear(cs);
 
     srph_array(srph_substance *) substances{};
@@ -36,7 +40,7 @@ static void collision_broad_phase(srph_substance *substance_ptrs, size_t num_sub
 
     for (size_t i = 0; i < num_substances; i++) {
         srph_array_push_back(&substances);
-        substances.data[i] = &substance_ptrs[i];
+        substances.data[i] = &substance_pointers[i];
     }
 
     srph_array_sort(&substances, x_comparator);
@@ -65,9 +69,9 @@ static void collision_broad_phase(srph_substance *substance_ptrs, size_t num_sub
 }
 
 
-static double intersection_func(void * data, const vec3 * x){
-    srph_matter * a = ((srph_matter **) data)[0];
-    srph_matter * b = ((srph_matter **) data)[1];
+static double intersection_func(void *data, const vec3 *x) {
+    srph_matter *a = ((srph_matter **) data)[0];
+    srph_matter *b = ((srph_matter **) data)[1];
 
     vec3 xa, xb;
     srph_matter_to_local_position(a, &xa, x);
@@ -121,9 +125,9 @@ static double intersection_func(void * data, const vec3 * x){
 //    return phi / vrn;
 //}
 
-static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, double dt){
+static void contact_correct(srph_matter *a, srph_matter *b, srph_deform *xb, double dt) {
     // check that deformation is a collision deformation
-    if (xb->type != srph_deform_type_collision){
+    if (xb->type != srph_deform_type_collision) {
         return;
     }
 
@@ -139,7 +143,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     vec3_subtract(&vr, &vb, &va);
 
     vec3 n;
-    if (srph_sdf_discontinuity(a->sdf, &xa) < srph_sdf_discontinuity(b->sdf, &xb->x0)){
+    if (srph_sdf_discontinuity(a->sdf, &xa) < srph_sdf_discontinuity(b->sdf, &xb->x0)) {
         n = srph_sdf_normal(a->sdf, &xa);
         srph_matter_to_global_direction(a, NULL, &n, &n);
     } else {
@@ -149,13 +153,13 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     }
 
     double vrn = vec3_dot(&vr, &n);
-    if (vrn >= 0){
+    if (vrn >= 0) {
         return;
     }
 
     // check that it is actually colliding at this point
     double phi = srph_sdf_phi(a->sdf, &xa);
-    if (phi > fabs(vrn) * dt){
+    if (phi > fabs(vrn) * dt) {
         return;
     }
 
@@ -167,12 +171,12 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     double CoR = fmax(mata.restitution, matb.restitution);
 
     double inverse_mass =
-        srph_matter_inverse_mass(a) +
-        srph_matter_inverse_mass(b) +
-        srph_matter_inverse_angular_mass(a, &x, &n) +
-        srph_matter_inverse_angular_mass(b, &x, &n);
+            srph_matter_inverse_mass(a) +
+            srph_matter_inverse_mass(b) +
+            srph_matter_inverse_angular_mass(a, &x, &n) +
+            srph_matter_inverse_angular_mass(b, &x, &n);
 
-    if (inverse_mass == 0.0){
+    if (inverse_mass == 0.0) {
         return;
     }
 
@@ -185,7 +189,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     vec3 t;
     vec3_multiply_f(&t, &n, -vrn);
     vec3_add(&t, &t, &vr);
-    if (vec3_length(&t) < epsilon){
+    if (vec3_length(&t) < epsilon) {
         return;
     }
 
@@ -193,7 +197,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 
     double mvrt = (srph_matter_mass(a) + srph_matter_mass(b)) * vec3_dot(&vr, &t);
 
-    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
+    double js = fmax(mata.static_friction, matb.static_friction) * jr;
     double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
 
     double ka = -(mvrt <= js) ? mvrt : jd;
@@ -204,39 +208,39 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 }
 
 static void collision_resolve_velocity_constraint(collision_t *self, double dt) {
-    for (int i = 0; i < 2; i++){
-        srph_matter * a = self->ms[i];
-        srph_matter * b = self->ms[1 - i];
+    for (int i = 0; i < 2; i++) {
+        srph_matter *a = self->ms[i];
+        srph_matter *b = self->ms[1 - i];
 
-        for (size_t j = 0; j < b->deformations.size; j++){
+        for (size_t j = 0; j < b->deformations.size; j++) {
             contact_correct(a, b, b->deformations.data[j], dt);
         }
     }
 }
 
-static void collision_generate_manifold(collision_t * c, double dt){
+static void collision_generate_manifold(collision_t *c, double dt) {
     srph_array_init(&c->manifold);
 
-    sphere_t * sa = &c->ms[0]->bounding_sphere;
-    sphere_t * sb = &c->ms[1]->bounding_sphere;
+    sphere_t *sa = &c->ms[0]->bounding_sphere;
+    sphere_t *sb = &c->ms[1]->bounding_sphere;
 
     double r_elem = fmin(sa->r, sb->r) / 2;
-    vec3 r = {{ r_elem, r_elem, r_elem }};
+    vec3 r = {{r_elem, r_elem, r_elem}};
     vec3 xa, xb;
     double radius_sum = sa->r + sb->r;
 
-    if (radius_sum <= 0){
+    if (radius_sum <= 0) {
         return;
     }
 
-    vec3_multiply_f(&xa, &sa->c,  sb->r / radius_sum);
-    vec3_multiply_f(&xb, &sa->c,  sa->r / radius_sum);
+    vec3_multiply_f(&xa, &sa->c, sb->r / radius_sum);
+    vec3_multiply_f(&xb, &sa->c, sa->r / radius_sum);
 
     vec3 x;
     vec3_add(&x, &xa, &xb);
     vec3_subtract(&x, &x, &r);
 
-    vec3 xs[4] = { x, x, x, x };
+    vec3 xs[4] = {x, x, x, x};
     xs[1].x += r.x;
     xs[2].y += r.y;
     xs[3].z += r.z;
@@ -245,7 +249,7 @@ static void collision_generate_manifold(collision_t * c, double dt){
     double threshold = 0.0;
     srph_opt_nelder_mead(&s, intersection_func, c->ms, xs, &threshold);
 
-    if (s.fx <= 0){
+    if (s.fx <= 0) {
         srph_matter_add_deformation(c->ms[0], &s.x, srph_deform_type_collision);
         srph_matter_add_deformation(c->ms[1], &s.x, srph_deform_type_collision);
 
@@ -254,23 +258,23 @@ static void collision_generate_manifold(collision_t * c, double dt){
     }
 }
 
-static void collision_resolve_interpenetration_constraint(collision_t * c) {
+static void collision_resolve_interpenetration_constraint(collision_t *c) {
     assert(c->ms[0]->is_rigid && c->ms[1]->is_rigid);
 
-    for (int i = 0; i < 2; i++){
-        srph_matter * a = c->ms[i];
-        srph_matter * b = c->ms[1 - i];
+    for (int i = 0; i < 2; i++) {
+        srph_matter *a = c->ms[i];
+        srph_matter *b = c->ms[1 - i];
 
         double ratio = srph_matter_mass(a) / (srph_matter_mass(a) + srph_matter_mass(b));
 
-        for (size_t j = 0; j < b->deformations.size; j++){
-            srph_deform * d = b->deformations.data[j];
+        for (size_t j = 0; j < b->deformations.size; j++) {
+            srph_deform *d = b->deformations.data[j];
             vec3 xa, x;
             srph_matter_to_global_position(b, &x, &d->x0);
             srph_matter_to_local_position(a, &xa, &x);
 
             double phi = srph_sdf_phi(a->sdf, &xa) + srph_sdf_phi(b->sdf, &d->x0);
-            if (phi <= 0){
+            if (phi <= 0) {
                 vec3 n = srph_sdf_normal(a->sdf, &xa);
                 srph_matter_to_global_direction(a, NULL, &n, &n);
                 vec3_multiply_f(&n, &n, -phi * ratio);
@@ -280,10 +284,10 @@ static void collision_resolve_interpenetration_constraint(collision_t * c) {
     }
 }
 
-static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
+static bool is_colliding_in_bound(srph_matter **ms, bound3_t *bound) {
     vec3 radius;
     srph_bound3_radius(bound, &radius);
-    if (vec3_length(&radius) <= epsilon){
+    if (vec3_length(&radius) <= epsilon) {
         return false;
     }
 
@@ -291,12 +295,12 @@ static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
     srph_bound3_bisect(bound, sub_bounds);
     double sub_bound_distances[2];
 
-    for (int sub_bound_index = 0; sub_bound_index < 2; sub_bound_index++){
+    for (int sub_bound_index = 0; sub_bound_index < 2; sub_bound_index++) {
         vec3 global_position;
         double phis[2];
         srph_bound3_midpoint(&sub_bounds[sub_bound_index], &global_position);
 
-        for (int matter_index = 0; matter_index < 2; matter_index++){
+        for (int matter_index = 0; matter_index < 2; matter_index++) {
             vec3 local_position;
             srph_matter_to_local_position(ms[matter_index], &local_position, &global_position);
             phis[matter_index] = srph_sdf_phi(ms[matter_index]->sdf, &local_position);
@@ -304,29 +308,29 @@ static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
 
         sub_bound_distances[sub_bound_index] = phis[0] + phis[1];
 
-        if (sub_bound_distances[sub_bound_index] <= epsilon){
+        if (sub_bound_distances[sub_bound_index] <= epsilon) {
             return true;
         }
 
         srph_bound3_radius(&sub_bounds[sub_bound_index], &radius);
         double radius_length = vec3_length(&radius);
 
-        if (phis[0] >= radius_length || phis[1] >= radius_length){
+        if (phis[0] >= radius_length || phis[1] >= radius_length) {
             return false;
         }
     }
 
-    if (sub_bound_distances[0] < sub_bound_distances[1]){
+    if (sub_bound_distances[0] < sub_bound_distances[1]) {
         return is_colliding_in_bound(ms, &sub_bounds[0]) || is_colliding_in_bound(ms, &sub_bounds[1]);
     } else {
         return is_colliding_in_bound(ms, &sub_bounds[1]) || is_colliding_in_bound(ms, &sub_bounds[0]);
     }
 }
 
-static bool collision_narrow_phase(collision_t *c){
+static bool collision_narrow_phase(collision_t *c) {
     bound3_t bounds[2];
-    for (int matter_index = 0; matter_index < 2; matter_index++){
-        sphere_t * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
+    for (int matter_index = 0; matter_index < 2; matter_index++) {
+        sphere_t *bounding_sphere = &c->ms[matter_index]->bounding_sphere;
         vec3_subtract_f(&bounds[matter_index].lower, &bounding_sphere->c, bounding_sphere->r);
         vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c, bounding_sphere->r);
     }
@@ -334,7 +338,7 @@ static bool collision_narrow_phase(collision_t *c){
 
     srph_bound3_intersection(&bounds[0], &bounds[1], &c->bound);
 
-    if (!bound3_is_valid(&c->bound)){
+    if (!bound3_is_valid(&c->bound)) {
         return false;
     }
 
@@ -343,7 +347,7 @@ static bool collision_narrow_phase(collision_t *c){
 
 void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {
     // clear collisions from last iteration
-    for (size_t i = 0; i < cs->size; i++){
+    for (size_t i = 0; i < cs->size; i++) {
         srph_array_clear(&cs->data[i].manifold);
     }
     srph_array_clear(cs);
@@ -353,9 +357,9 @@ void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srp
 
     collision_broad_phase(substance_ptrs, num_substances, &broad_phase_collisions);
 
-    for (size_t i = 0; i < broad_phase_collisions.size; i++){
-        collision_t * collision = &broad_phase_collisions.data[i];
-        if (collision_narrow_phase(collision)){
+    for (size_t i = 0; i < broad_phase_collisions.size; i++) {
+        collision_t *collision = &broad_phase_collisions.data[i];
+        if (collision_narrow_phase(collision)) {
             srph_array_push_back(cs);
             *(cs->last) = *collision;
             collision_generate_manifold(cs->last, dt);

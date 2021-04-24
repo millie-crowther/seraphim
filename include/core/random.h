@@ -5,18 +5,18 @@
 
 #include "maths/maths.h"
 
-typedef struct srph_random {
+typedef struct random_t {
     uint64_t state;
     uint64_t sequence;
-} srph_random;
+} random_t;
 
-void srph_random_default_seed(srph_random * r);
-void srph_random_seed(srph_random * r, uint64_t state, uint64_t sequence);
+void srph_random_default_seed(random_t * r);
+void srph_random_seed(random_t * r, uint64_t state, uint64_t sequence);
 
-uint32_t srph_random_u32(srph_random * r);
+uint32_t srph_random_u32(random_t * r);
 
-double srph_random_f64(srph_random * r);
-double srph_random_f64_range(srph_random * r, double l, double u);
-void srph_random_direction(srph_random *r, vec3 *x);
+double srph_random_f64(random_t * r);
+double srph_random_f64_range(random_t * r, double l, double u);
+void srph_random_direction(random_t *r, vec3 *x);
 
 #endif

@@ -7,7 +7,7 @@
 
 // *Really* minimal PCG32 code / (c) 2014 M.E. O'Neill / pcg-random.org
 // Licensed under Apache License 2.0 (NO WARRANTY, etc. see website)
-uint32_t srph_random_u32(srph_random *r) {
+uint32_t srph_random_u32(random_t *r) {
     uint64_t oldstate = r->state;
 
     // Advance internal state
@@ -19,7 +19,7 @@ uint32_t srph_random_u32(srph_random *r) {
     return (xorshifted >> rot) | (xorshifted << ((-rot) & 31));
 }
 
-void srph_random_seed(srph_random *r, uint64_t state, uint64_t sequence) {
+void srph_random_seed(random_t *r, uint64_t state, uint64_t sequence) {
     if (r == NULL) {
         return;
     }
@@ -29,11 +29,11 @@ void srph_random_seed(srph_random *r, uint64_t state, uint64_t sequence) {
     srph_random_u32(r);
 }
 
-void srph_random_default_seed(srph_random *r) {
+void srph_random_default_seed(random_t *r) {
     srph_random_seed(r, time(NULL), (uint64_t) r);
 }
 
-double srph_random_f64(srph_random *r) {
+double srph_random_f64(random_t *r) {
     union {
         uint32_t u[2];
         double d;
@@ -52,11 +52,11 @@ double srph_random_f64(srph_random *r) {
     return d;
 }
 
-double srph_random_f64_range(srph_random *r, double l, double u) {
+double srph_random_f64_range(random_t *r, double l, double u) {
     return srph_random_f64(r) * (u - l) + l;
 }
 
-void srph_random_direction(srph_random *r, vec3 *x) {
+void srph_random_direction(random_t *r, vec3 *x) {
     do {
         x->x = srph_random_f64_range(r, -1, 1);
         x->y = srph_random_f64_range(r, -1, 1);
