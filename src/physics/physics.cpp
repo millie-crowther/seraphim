@@ -49,24 +49,13 @@ void srph_physics_tick(srph_physics * p, double dt){
         }
     }
 
-    // broad phase
-    srph_broad_phase_collision(p->substances, *p->num_substances, &p->collisions);
-
-    // collision detection
-    for (size_t i = 0; i < p->collisions.size; i++){
-        collision_t * collision = &p->collisions.data[i];
-        collision->is_colliding = collision_narrow_phase_branch_and_bound(collision);
-        if (collision->is_colliding){
-            collision_generate_manifold(collision, dt);
-        }
-    }
+    // detect collisions
+    collision_detect(p->substances, *p->num_substances, &p->collisions, dt);
 
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
         for (size_t collision = 0; collision < p->collisions.size; collision++){
             collision_t * c = &p->collisions.data[collision];
-            if (c->is_colliding){
-                srph_collision_correct(c, dt);
-            }
+            collision_resolve_velocity_constraint(c, dt);
         }
     }
 
@@ -74,9 +63,7 @@ void srph_physics_tick(srph_physics * p, double dt){
     for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
         for (size_t collision = 0; collision < p->collisions.size; collision++){
             collision_t * c = &p->collisions.data[collision];
-            if (c->is_colliding) {
-                srph_collision_resolve_interpenetration_constraint(c);
-            }
+            collision_resolve_interpenetration_constraint(c);
         }
     }
 

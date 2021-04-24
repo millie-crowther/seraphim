@@ -3,15 +3,19 @@
 
 #include "metaphysics/substance.h"
 
+#define COLLISION_MANIFOLD_MAX_SIZE 3
+
 typedef struct collision_t {
     srph_matter * ms[2];
-    bool is_colliding;
     bound3_t bound;
+    vec3 manifold[COLLISION_MANIFOLD_MAX_SIZE];
+    size_t manifold_size;
 } collision_t;
 
-void srph_collision_resolve_interpenetration_constraint(collision_t * c);
-void srph_collision_correct(collision_t *self, double dt);
-bool collision_narrow_phase_branch_and_bound(collision_t *c);
-void collision_generate_manifold(collision_t * c, double dt);
+typedef srph_array(collision_t) srph_collision_array;
+
+void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt);
+void collision_resolve_interpenetration_constraint(collision_t * c);
+void collision_resolve_velocity_constraint(collision_t *self, double dt);
 
 #endif

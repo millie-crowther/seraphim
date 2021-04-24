@@ -2,7 +2,6 @@
 #define SERAPHIM_PHYSICS_H
 
 #include "metaphysics/substance.h"
-#include "physics/broad_phase.h"
 #include "physics/collision.h"
 
 #include <thread>

@@ -52,8 +52,7 @@ set(SOURCES
         ../src/maths/optimise.cpp
     ../src/maths/maths.cpp
         ../src/maths/sdf/sdf.cpp
-        ../src/physics/broad_phase.cpp
-    ../src/maths/sdf/primitive.cpp
+        ../src/maths/sdf/primitive.cpp
     ../src/maths/sdf/platonic.cpp
 
     ../src/ui/keyboard.cpp

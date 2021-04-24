@@ -1,10 +1,70 @@
+//
+// Created by millie on 14/04/2021.
+//
 #include "physics/collision.h"
 
 #include <assert.h>
 
-#include "maths/matrix.h"
 #include "maths/optimise.h"
 #include "core/constant.h"
+
+static int axis_comparator(const srph_substance *a, const srph_substance *b, int axis) {
+    const sphere_t *sa = &a->matter.bounding_sphere;
+    const sphere_t *sb = &b->matter.bounding_sphere;
+
+    double lower_a = sa->c.v[axis] - sa->r;
+    double lower_b = sb->c.v[axis] - sb->r;
+
+    if (lower_a < lower_b) {
+        return -1;
+    } else if (lower_a > lower_b) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+static int x_comparator(const void *a, const void *b) {
+    return axis_comparator(*(const srph_substance **) a, *(const srph_substance **) b, X_AXIS);
+}
+
+
+static void collision_broad_phase(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
+    srph_array_clear(cs);
+
+    srph_array(srph_substance *) substances{};
+    srph_array_init(&substances);
+
+    for (size_t i = 0; i < num_substances; i++) {
+        srph_array_push_back(&substances);
+        substances.data[i] = &substance_ptrs[i];
+    }
+
+    srph_array_sort(&substances, x_comparator);
+
+    for (size_t i = 0; i < num_substances; i++) {
+        srph_matter *a = &substances.data[i]->matter;
+        sphere_t *sa = &a->bounding_sphere;
+
+        for (size_t j = i + 1; j < num_substances; j++) {
+            srph_matter *b = &substances.data[j]->matter;
+            sphere_t *sb = &b->bounding_sphere;
+
+            if (sa->c.x + sa->r < sb->c.x - sb->r) {
+                break;
+            }
+
+            if (srph_matter_is_at_rest(a) && srph_matter_is_at_rest(b)) {
+                continue;
+            }
+
+            srph_array_push_back(cs);
+            cs->last->ms[0] = a;
+            cs->last->ms[1] = b;
+        }
+    }
+}
+
 
 static double intersection_func(void * data, const vec3 * x){
     srph_matter * a = ((srph_matter **) data)[0];
@@ -182,17 +242,11 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
         return;
     }
 
-//    printf("velocity is incoming\n");
-
     // check that it is actually colliding at this point
     double phi = srph_sdf_phi(a->sdf, &xa);
     if (phi > fabs(vrn) * dt){
         return;
     }
-
-//    assert(fabs(x.y) < srph::constant::epsilon);
-
-//    printf("vertex is colliding\n");
 
     // calculate collision impulse magnitude
     srph_material mata, matb;
@@ -213,8 +267,6 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     assert(inverse_mass > 0.0);
 
     double jr = -(1.0 + CoR) * vrn / inverse_mass;
-
-//    assert(jr > 0);
 
     srph_matter_apply_impulse(a, &x, &n, -jr);
     srph_matter_apply_impulse(b, &x, &n,  jr);
@@ -243,16 +295,7 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 //    srph_matter_apply_impulse(b, &x, &t, kb);
 }
 
-void srph_collision_correct(collision_t *self, double dt) {
-//    srph_deform xb;
-//    srph_matter_to_local_position(self->ms[0], &xb.x0, &self->x);
-//
-//    contact_correct(
-//        self->ms[0], self->ms[1],
-//        &xb,
-//        dt
-//    );
-
+void collision_resolve_velocity_constraint(collision_t *self, double dt) {
     for (int i = 0; i < 2; i++){
         srph_matter * a = self->ms[i];
         srph_matter * b = self->ms[1 - i];
@@ -263,7 +306,7 @@ void srph_collision_correct(collision_t *self, double dt) {
     }
 }
 
-void collision_generate_manifold(collision_t * c, double dt){
+static void collision_generate_manifold(collision_t * c, double dt){
     sphere_t * sa = &c->ms[0]->bounding_sphere;
     sphere_t * sb = &c->ms[1]->bounding_sphere;
 
@@ -298,7 +341,7 @@ void collision_generate_manifold(collision_t * c, double dt){
     }
 }
 
-void srph_collision_resolve_interpenetration_constraint(collision_t * c) {
+void collision_resolve_interpenetration_constraint(collision_t * c) {
     assert(c->ms[0]->is_rigid && c->ms[1]->is_rigid);
 
     for (int i = 0; i < 2; i++){
@@ -367,7 +410,7 @@ static bool is_colliding_in_bound(srph_matter ** ms, bound3_t * bound){
     }
 }
 
-bool collision_narrow_phase_branch_and_bound(collision_t *c){
+static bool collision_narrow_phase(collision_t *c){
     bound3_t bounds[2];
     for (int matter_index = 0; matter_index < 2; matter_index++){
         sphere_t * bounding_sphere = &c->ms[matter_index]->bounding_sphere;
@@ -383,4 +426,24 @@ bool collision_narrow_phase_branch_and_bound(collision_t *c){
     }
 
     return is_colliding_in_bound(c->ms, &c->bound);
+}
+
+void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {
+    srph_array_clear(cs);
+
+    srph_collision_array broad_phase_collisions;
+    srph_array_init(&broad_phase_collisions);
+
+    collision_broad_phase(substance_ptrs, num_substances, &broad_phase_collisions);
+
+    for (size_t i = 0; i < broad_phase_collisions.size; i++){
+        collision_t * collision = &broad_phase_collisions.data[i];
+        if (collision_narrow_phase(collision)){
+            collision_generate_manifold(collision, dt);
+            srph_array_push_back(cs);
+            *(cs->last) = *collision;
+        }
+    }
+
+    srph_array_clear(&broad_phase_collisions);
 }
