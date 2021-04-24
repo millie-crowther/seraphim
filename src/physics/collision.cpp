@@ -267,9 +267,9 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     assert(inverse_mass > 0.0);
 
     double jr = -(1.0 + CoR) * vrn / inverse_mass;
-
-    srph_matter_apply_impulse(a, &x, &n, -jr);
-    srph_matter_apply_impulse(b, &x, &n,  jr);
+    vec3 j;
+    vec3_multiply_f(&j, &n, -jr);
+    matter_apply_impulse(a, b, &x, &j);
 
     // apply friction force
     vec3 t;
@@ -281,18 +281,16 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
 
     vec3_normalize(&t, &t);
 
-//    double vrt  = vec3_dot(&vr, &t);
-//    double mvta = srph_matter_mass(a) * vrt;
-//    double mvtb = srph_matter_mass(b) * vrt;
-//
-//    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
-//    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
+    double mvrt = (srph_matter_mass(a) + srph_matter_mass(b)) * vec3_dot(&vr, &t);
 
-//    double ka = -(mvta <= js) ? mvta : jd;
-//    double kb = (mvtb <= js) ? mvtb : jd;
+    double js = fmax(mata.static_friction,  matb.static_friction ) * jr;
+    double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
 
-//    srph_matter_apply_impulse(a, &x, &t, ka);
-//    srph_matter_apply_impulse(b, &x, &t, kb);
+    double ka = -(mvrt <= js) ? mvrt : jd;
+
+    vec3 fr;
+    vec3_multiply_f(&fr, &t, ka);
+    matter_apply_impulse(a, b, &x, &fr);
 }
 
 static void collision_resolve_velocity_constraint(collision_t *self, double dt) {

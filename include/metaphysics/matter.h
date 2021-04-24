@@ -15,7 +15,7 @@ typedef struct srph_matter {
     vec3 omega;
 
     srph_material material;
-    srph_sdf * sdf;
+    srph_sdf *sdf;
 
     srph_array(srph_deform *) deformations;
 
@@ -39,46 +39,54 @@ typedef struct srph_matter {
 } srph_matter;
 
 void srph_matter_init(
-    srph_matter * m, srph_sdf * sdf, const srph_material * mat, const vec3 * x, 
-    bool is_uniform, bool is_static
+        srph_matter *m, srph_sdf *sdf, const srph_material *mat, const vec3 *x,
+        bool is_uniform, bool is_static
 );
-void srph_matter_destroy(srph_matter * m);
+
+void srph_matter_destroy(srph_matter *m);
 
 
-void srph_matter_calculate_sphere_bound(srph_matter * self, double dt);
+void srph_matter_calculate_sphere_bound(srph_matter *self, double dt);
 
 //void srph_matter_update_vertices(srph_matter * m, double t);
 //void srph_matter_extrapolate_next_position_and_velocity(srph_matter * m, double t);
 //void srph_matter_resolve_internal_constraints(const srph_matter * m);
 
-void srph_matter_to_global_position(const srph_matter * m, vec3 * tx, const vec3 * x);
-void srph_matter_to_local_position(srph_matter *m, vec3 * tx, const vec3 * x);
-void srph_matter_to_global_direction(const srph_matter * m, const vec3 * position, vec3 * td, const vec3 * d);
+void srph_matter_to_global_position(const srph_matter *m, vec3 *tx, const vec3 *x);
 
-srph_deform * srph_matter_add_deformation(srph_matter * self, const vec3 * x, srph_deform_type type);
+void srph_matter_to_local_position(srph_matter *m, vec3 *tx, const vec3 *x);
 
-void srph_matter_transformation_matrix(srph_matter * m, float * xs);
+void srph_matter_to_global_direction(const srph_matter *m, const vec3 *position, vec3 *td, const vec3 *d);
 
-bool srph_matter_is_inert(srph_matter * m);
+srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_deform_type type);
+
+void srph_matter_transformation_matrix(srph_matter *m, float *xs);
+
+bool srph_matter_is_inert(srph_matter *m);
 
 void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravity);
 
 void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v);
-void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x);
 
-void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, double j);
+void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x);
 
 //void srph_matter_rotate(srph_matter *self, quat *q);
 bool srph_matter_is_at_rest(srph_matter *self);
 
 // mass
-vec3 * srph_matter_com(srph_matter * matter);
-double srph_matter_mass(srph_matter * self);
+vec3 *srph_matter_com(srph_matter *matter);
+
+double srph_matter_mass(srph_matter *self);
+
 double srph_matter_inverse_mass(srph_matter *self);
 
 // angular mass
-mat3 * srph_matter_inertia_tensor(srph_matter * matter);
-void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 * ri);
-double srph_matter_inverse_angular_mass(srph_matter * self, vec3 * x, vec3 * n);
+mat3 *srph_matter_inertia_tensor(srph_matter *matter);
+
+void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri);
+
+double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n);
+
+void matter_apply_impulse(srph_matter *a, srph_matter *b, const vec3 *x, const vec3 *j);
 
 #endif

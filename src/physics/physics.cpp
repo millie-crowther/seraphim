@@ -8,7 +8,7 @@
 
 #include <assert.h>
 
-#define SOLVER_ITERATIONS 10
+#define SOLVER_ITERATIONS 1
 
 void srph_physics_init(srph_physics *p, srph_substance *substances, size_t *num_substances) {
     p->quit = false;

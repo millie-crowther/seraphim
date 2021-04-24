@@ -325,28 +325,6 @@ void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x) 
     *mat = self->material;
 }
 
-void srph_matter_apply_impulse(srph_matter *self, const vec3 *x, const vec3 *n, double j) {
-    if (self->is_static || j == 0) {
-        return;
-    }
-
-    self->is_at_rest = false;
-
-    vec3 dv;
-    vec3_multiply_f(&dv, n, j * srph_matter_inverse_mass(self));
-    vec3_add(&self->v, &self->v, &dv);
-
-    vec3 r, rn, dw;
-    offset_from_centre_of_mass(self, &r, x);
-    vec3_cross(&rn, &r, n);
-
-    mat3 i;
-    vec3 irn;
-    srph_matter_inverse_inertia_tensor(self, &i);
-    vec3_multiply_mat3(&irn, &rn, &i);
-    vec3_multiply_f(&dw, &irn, j);
-    vec3_add(&self->omega, &self->omega, &dw);
-}
 
 double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
     if (self->is_static) {
@@ -486,4 +464,40 @@ vec3 * srph_matter_com(srph_matter * matter){
     }
 
     return &matter->com;
+}
+
+
+void apply_impulse(srph_matter *self, const vec3 *x, const vec3 *j) {
+    vec3 n;
+    vec3_normalize(&n, j);
+    double j_length = vec3_length(j);
+
+    if (self->is_static || j_length == 0) {
+        return;
+    }
+
+    self->is_at_rest = false;
+
+    vec3 dv;
+    vec3_multiply_f(&dv, &n, j_length * srph_matter_inverse_mass(self));
+    vec3_add(&self->v, &self->v, &dv);
+
+    vec3 r, rn, dw;
+    offset_from_centre_of_mass(self, &r, x);
+    vec3_cross(&rn, &r, &n);
+
+    mat3 i;
+    vec3 irn;
+    srph_matter_inverse_inertia_tensor(self, &i);
+    vec3_multiply_mat3(&irn, &rn, &i);
+    vec3_multiply_f(&dw, &irn, j_length);
+    vec3_add(&self->omega, &self->omega, &dw);
+}
+
+void matter_apply_impulse(srph_matter *a, srph_matter *b, const vec3 *x, const vec3 *j) {
+    vec3 j_negative;
+    vec3_negative(&j_negative, j);
+
+    apply_impulse(a, x, j);
+    apply_impulse(b, x, &j_negative);
 }
