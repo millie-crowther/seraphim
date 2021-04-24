@@ -10,7 +10,7 @@ typedef struct collision_t {
 } collision_t;
 typedef srph_array(collision_t) srph_collision_array;
 
-void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt);
+void collision_detect(substance_t *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt);
 void collision_resolve(collision_t *self, double dt);
 
 #endif

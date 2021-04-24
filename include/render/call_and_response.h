@@ -40,7 +40,7 @@ namespace srph {
         };  
 
         response_t();
-        response_t(const call_t & call, srph_substance *substance);
+        response_t(const call_t & call, substance_t *substance);
 
         const std::array<uint32_t, 8> & get_normals() const;
         const std::array<uint32_t, 8> & get_colours() const;

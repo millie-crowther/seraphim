@@ -10,7 +10,7 @@
 
 #define SOLVER_ITERATIONS 1
 
-void srph_physics_init(srph_physics *p, srph_substance *substances, size_t *num_substances) {
+void srph_physics_init(srph_physics *p, substance_t *substances, size_t *num_substances) {
     p->quit = false;
 
     p->gravity = {{0.0, -9.8, 0.0}};
@@ -101,7 +101,7 @@ void srph_physics::run(){
             
             // reset acceleration and apply gravity force
             for (uint32_t i = 0; i < substances.size; i++){
-                srph_substance * s = substances.data[i];
+                substance_t * s = substances.data[i];
                 
                 if (s->matter.get_position()[1] > -90.0){
                     s->matter.reset_acceleration();
@@ -110,10 +110,10 @@ void srph_physics::run(){
 
             // collide awake substances with each other
             for (uint32_t i = 0; i < substances.size; i++){
-                srph_substance * s = substances.data[i];
+                substance_t * s = substances.data[i];
                
                 for (uint32_t j = i + 1; j < substances.size; j++){
-                    srph_substance * t = substances.data[j];
+                    substance_t * t = substances.data[j];
                     collisions.emplace_back(&s->matter, &t->matter);
                 }
             }

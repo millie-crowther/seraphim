@@ -11,12 +11,12 @@
 using namespace srph;
 
 renderer_t::renderer_t(
-    device_t * device,
-    srph_substance * substances, size_t * num_substances,
-    VkSurfaceKHR surface, window_t * window,
-    std::shared_ptr<camera_t> test_camera,
-    u32vec2_t work_group_count, u32vec2_t work_group_size,
-    uint32_t max_image_size
+        device_t * device,
+        substance_t * substances, size_t * num_substances,
+        VkSurfaceKHR surface, window_t * window,
+        std::shared_ptr<camera_t> test_camera,
+        u32vec2_t work_group_count, u32vec2_t work_group_size,
+        uint32_t max_image_size
 ){
     this->device = device;
     this->surface = surface;
@@ -548,14 +548,14 @@ void renderer_t::render(){
     uint32_t size = work_group_size[0] * work_group_size[1];
 
     // write substances
-    std::vector<srph_substance::data_t> substance_data;
+    std::vector<substance_t::data_t> substance_data;
     for (size_t i = 0; i < *num_substances; i++){
-        srph_substance * s = &substances[i];
+        substance_t * s = &substances[i];
         substance_data.push_back(s->get_data(&main_camera.lock()->transform.position));
     }
     substance_data.resize(size);
 
-    std::sort(substance_data.begin(), substance_data.end(), srph_substance::data_t::comparator_t());
+    std::sort(substance_data.begin(), substance_data.end(), substance_t::data_t::comparator_t());
 
     substance_buffer->write(substance_data, 0);
 
@@ -678,14 +678,14 @@ void renderer_t::create_buffers(){
     patch_buffer = std::make_unique<device_buffer_t<response_t::patch_t>>(1, device, number_of_patches);
     call_buffer = std::make_unique<device_buffer_t<call_t>>(2, device, number_of_calls);
     light_buffer = std::make_unique<device_buffer_t<light_t>>(3, device, s);
-    substance_buffer = std::make_unique<device_buffer_t<srph_substance::data_t>>(4, device, s);
+    substance_buffer = std::make_unique<device_buffer_t<substance_t::data_t>>(4, device, s);
     pointer_buffer = std::make_unique<device_buffer_t<uint32_t>>(5, device, c * s);
     frustum_buffer = std::make_unique<device_buffer_t<f32vec2_t>>(6, device, c);
     lighting_buffer = std::make_unique<device_buffer_t<f32vec4_t>>(7, device, c);
 }
 
 
-response_t renderer_t::get_response(const call_t & call, srph_substance * substance){
+response_t renderer_t::get_response(const call_t & call, substance_t * substance){
     if (response_cache.size() > max_cache_size){
         response_cache.erase(*prev_calls.begin());
         prev_calls.pop_front();     

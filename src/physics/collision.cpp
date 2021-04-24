@@ -8,7 +8,7 @@
 #include "maths/optimise.h"
 #include "core/constant.h"
 
-static int axis_comparator(const srph_substance *a, const srph_substance *b, int axis) {
+static int axis_comparator(const substance_t *a, const substance_t *b, int axis) {
     const sphere_t *sa = &a->matter.bounding_sphere;
     const sphere_t *sb = &b->matter.bounding_sphere;
 
@@ -25,17 +25,17 @@ static int axis_comparator(const srph_substance *a, const srph_substance *b, int
 }
 
 static int x_comparator(const void *a, const void *b) {
-    return axis_comparator(*(const srph_substance **) a, *(const srph_substance **) b, X_AXIS);
+    return axis_comparator(*(const substance_t **) a, *(const substance_t **) b, X_AXIS);
 }
 
 static void collision_broad_phase(
-    srph_substance *substance_pointers,
-    size_t num_substances,
-    srph_collision_array *cs
+        substance_t *substance_pointers,
+        size_t num_substances,
+        srph_collision_array *cs
 ) {
     srph_array_clear(cs);
 
-    srph_array(srph_substance *) substances{};
+    srph_array(substance_t *) substances{};
     srph_array_init(&substances);
 
     for (size_t i = 0; i < num_substances; i++) {
@@ -345,7 +345,7 @@ static bool collision_narrow_phase(collision_t *c) {
     return is_colliding_in_bound(c->ms, &c->bound);
 }
 
-void collision_detect(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {
+void collision_detect(substance_t *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {
     // clear collisions from last iteration
     for (size_t i = 0; i < cs->size; i++) {
         srph_array_clear(&cs->data[i].manifold);

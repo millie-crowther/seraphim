@@ -9,8 +9,7 @@
 
 namespace srph {
     template<bool is_device_local, class T>
-    class buffer_t {
-    private:
+    struct buffer_t {
         device_t * device;
         VkBuffer buffer;
         VkDeviceMemory memory;
@@ -21,7 +20,6 @@ namespace srph {
         std::unique_ptr<buffer_t<false, T>> staging_buffer;
         std::vector<VkBufferCopy> updates;
 
-    public:
         // constructors and destructors
         buffer_t(uint32_t binding, device_t * device, uint64_t size){
             this->device = device;
@@ -117,7 +115,7 @@ namespace srph {
 
         void record_write(VkCommandBuffer command_buffer){
             vkCmdCopyBuffer(
-                command_buffer, staging_buffer->get_buffer(), buffer, 
+                command_buffer, staging_buffer->buffer, buffer,
                 updates.size(), updates.data()
             );
             updates.clear();
@@ -128,7 +126,7 @@ namespace srph {
             region.srcOffset = 0;
             region.dstOffset = 0;
             region.size = size;
-            vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->get_buffer(), 1, &region);
+            vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->buffer, 1, &region);
             vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
         }
 
@@ -155,10 +153,6 @@ namespace srph {
             layout_binding.pImmutableSamplers = nullptr;
             layout_binding.binding = binding;
             return layout_binding;
-        }
-
-        VkBuffer get_buffer() const {
-            return buffer;
         }
 
         uint64_t get_size() const {

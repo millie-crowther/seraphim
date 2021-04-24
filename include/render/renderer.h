@@ -85,7 +85,7 @@ namespace srph {
         std::string fragment_shader_code;
         std::string vertex_shader_code;
 
-        srph_substance * substances;
+        substance_t * substances;
         size_t * num_substances;
 
         std::unique_ptr<swapchain_t> swapchain;
@@ -102,7 +102,7 @@ namespace srph {
 
         // buffers
         std::unique_ptr<device_buffer_t<response_t::patch_t>> patch_buffer;
-        std::unique_ptr<device_buffer_t<srph_substance::data_t>> substance_buffer;
+        std::unique_ptr<device_buffer_t<substance_t::data_t>> substance_buffer;
         std::unique_ptr<device_buffer_t<call_t>> call_buffer;
         std::unique_ptr<device_buffer_t<light_t>> light_buffer;
         std::unique_ptr<device_buffer_t<uint32_t>> pointer_buffer;
@@ -132,17 +132,17 @@ namespace srph {
         void cleanup_swapchain();
         void handle_requests(uint32_t frame);
         void present(uint32_t image_index) const;
-        response_t get_response(const call_t & call, srph_substance *substance);
+        response_t get_response(const call_t & call, substance_t *substance);
         
     public:
         // constructors and destructors
         renderer_t(
-            device_t * device,
-            srph_substance * substances, size_t * num_substances,
-            VkSurfaceKHR surface, window_t * window,
-            std::shared_ptr<camera_t> test_camera,
-            u32vec2_t work_group_count, u32vec2_t work_group_size,
-            uint32_t max_image_size
+                device_t * device,
+                substance_t * substances, size_t * num_substances,
+                VkSurfaceKHR surface, window_t * window,
+                std::shared_ptr<camera_t> test_camera,
+                u32vec2_t work_group_count, u32vec2_t work_group_size,
+                uint32_t max_image_size
         );
         ~renderer_t();
 

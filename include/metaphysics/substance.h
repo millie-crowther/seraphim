@@ -8,7 +8,7 @@
 
 #include "maths/matrix.h"
 
-typedef struct srph_substance {
+typedef struct substance_t {
     struct data_t {
         float near;
         float far;
@@ -28,19 +28,14 @@ typedef struct srph_substance {
         };
     };
 
-    struct comparator_t {
-        bool operator()(std::shared_ptr<srph_substance> a, std::shared_ptr<srph_substance> b) const;
-    };
-
-    srph_substance();
-    srph_substance(form_t *form, srph_matter *matter, uint32_t i);
+    substance_t();
+    substance_t(form_t *form, srph_matter *matter, uint32_t i);
 
     data_t get_data(const vec3 *eye_position);
-    uint32_t get_id() const;
 
     uint32_t id;
     form_t form;
     srph_matter matter;
-} bsrph_substance;
+} substance_t;
 
 #endif

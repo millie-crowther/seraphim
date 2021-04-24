@@ -194,7 +194,7 @@ VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const {
 
 void texture_t::record_write(VkCommandBuffer command_buffer){
     vkCmdCopyBufferToImage(
-        command_buffer, staging_buffer->get_buffer(), image, 
+        command_buffer, staging_buffer->buffer, image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
         updates.size(), updates.data()
     );

@@ -44,7 +44,7 @@ namespace srph {
         std::shared_ptr<camera_t> test_camera;
 
         size_t num_substances;
-        srph_substance substances[SERAPHIM_MAX_SUBSTANCES];
+        substance_t substances[SERAPHIM_MAX_SUBSTANCES];
 
         bool fps_monitor_quit;
 
@@ -59,7 +59,7 @@ namespace srph {
     };
 }
 
-srph_substance *srph_create_substance(srph::seraphim_t *srph, form_t *form, srph_matter *matter);
+substance_t *srph_create_substance(srph::seraphim_t *srph, form_t *form, srph_matter *matter);
 
 void srph_cleanup(srph::seraphim_t *engine);
 

@@ -61,7 +61,7 @@ vec3_t vertices[8] = {
 
 response_t::response_t(){}
 
-response_t::response_t(const call_t & call, srph_substance *substance){
+response_t::response_t(const call_t & call, substance_t *substance){
     srph_sdf * sdf = substance->matter.sdf;
 
     bound3_t * bound = srph_sdf_bound(sdf);
