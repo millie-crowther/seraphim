@@ -19,7 +19,6 @@ typedef struct srph_physics {
     srph_substance * substances;
     size_t * num_substances;
 
-    srph_constraint_array constraints;
     srph_collision_array collisions;
 
     int frames;

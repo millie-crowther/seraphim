@@ -31,8 +31,7 @@ set(SOURCES
     ../src/core/array.cpp
 
         ../src/physics/collision.cpp
-    ../src/physics/constraint.cpp    
-    ../src/physics/physics.cpp
+        ../src/physics/physics.cpp
     ../src/physics/sphere.cpp
     ../src/physics/transform.cpp
 

@@ -4,7 +4,7 @@
 #include "material.h"
 
 #include "maths/sdf/sdf.h"
-#include "physics/constraint.h"
+#include "physics/deform.h"
 #include "physics/sphere.h"
 #include "physics/transform.h"
 

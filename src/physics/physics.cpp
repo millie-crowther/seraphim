@@ -15,7 +15,6 @@ void srph_physics_init(srph_physics *p, srph_substance *substances, size_t *num_
 
     p->gravity = {{0.0, -9.8, 0.0}};
 
-    srph_array_init(&p->constraints);
     srph_array_init(&p->collisions);
     p->substances = substances;
     p->num_substances = num_substances;
@@ -32,7 +31,6 @@ void srph_physics_destroy(srph_physics * p){
         p->thread.join();
     }
 
-    srph_array_clear(&p->constraints);
     srph_array_clear(&p->collisions);
 }
 
