@@ -57,7 +57,7 @@ static void collision_broad_phase(
                 break;
             }
 
-            if (srph_matter_is_at_rest(a) && srph_matter_is_at_rest(b)) {
+            if ((a->is_at_rest || a->is_static) && (b->is_at_rest || b->is_static)) {
                 continue;
             }
 
@@ -335,14 +335,19 @@ static bool collision_narrow_phase(collision_t *c) {
         vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c, bounding_sphere->r);
     }
 
-
     srph_bound3_intersection(&bounds[0], &bounds[1], &c->bound);
 
     if (!bound3_is_valid(&c->bound)) {
         return false;
     }
 
-    return is_colliding_in_bound(c->ms, &c->bound);
+    if (is_colliding_in_bound(c->ms, &c->bound)){
+        c->ms[0]->has_collided = true;
+        c->ms[1]->has_collided = true;
+        return true;
+    }
+
+    return false;
 }
 
 void collision_detect(substance_t *substance_ptrs, size_t num_substances, srph_collision_array *cs, double dt) {

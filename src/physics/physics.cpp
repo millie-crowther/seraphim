@@ -38,6 +38,7 @@ void srph_physics_tick(srph_physics * p, double dt){
     // update substances and integrate forces
     for (uint32_t i = 0; i < *p->num_substances; i++){
         srph_matter * m = &p->substances[i].matter;
+        m->has_collided = false;
 
         srph_matter_calculate_sphere_bound(m, dt);
 
@@ -60,6 +61,10 @@ void srph_physics_tick(srph_physics * p, double dt){
     for (uint32_t i = 0; i < *p->num_substances; i++) {
         srph_matter *m = &p->substances[i].matter;
 
+        if (m->is_static || m->is_at_rest){
+            continue;
+        }
+
         // integrate linear velocity
         vec3 dv;
         vec3_multiply_f(&dv, &m->v, dt);
@@ -70,15 +75,16 @@ void srph_physics_tick(srph_physics * p, double dt){
         vec3_multiply_f(&dw, &m->omega, dt);
         quat q;
         quat_from_euler_angles(&q, &dw);
-        assert(isfinite(m->omega.x));
         srph_transform_rotate(&m->transform, &q);
-
-        // dampen velocities
-//        const double dampening = 0.99;
-//        vec3_multiply_f(&m->v, &m->v, dampening);
-//        vec3_multiply_f(&m->omega, &m->omega, dampening);
     }
 
+    // attempt to put substances to sleep
+    for (size_t i = 0; i < *p->num_substances; i++){
+        srph_matter *m = &p->substances[i].matter;
+        if (matter_is_at_rest(m)){
+            m->is_at_rest = true;
+        }
+    }
 }
 
 using namespace srph;

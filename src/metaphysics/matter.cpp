@@ -3,9 +3,10 @@
 #include <assert.h>
 #include <math.h>
 
-#include "core/constant.h"
 #include "core/random.h"
 
+#define LINEAR_VELOCITY_REST_THRESHOLD 0.075
+#define ANGULAR_VELOCITY_REST_THRESHOLD 0.2
 
 void srph_matter_init(
     srph_matter *m, srph_sdf *sdf, const material_t *material,
@@ -16,25 +17,18 @@ void srph_matter_init(
     m->is_uniform = is_uniform;
     m->is_static = is_static;
     m->is_rigid = true;
-
-    // initialise fields for rigid bodies
+    m->is_at_rest = false;
+    m->has_collided = false;
     m->transform.position = initial_position == NULL ? vec3_zero : *initial_position;
     m->transform.rotation = quat_identity;
-
-//    if (initial_position->y > -90) {
-//        quat_from_axis_angle(&m->transform.rotation, &vec3_forward, srph::constant::pi / 3.0);
-//    }
-
     m->v = vec3_zero;
     m->omega = vec3_zero;
+    m->f = vec3_zero;
+    m->t = vec3_zero;
 
     if (m->transform.position.y > -90) {
         m->omega = {{0.1, 0.1, 0.1}};
     }
-    m->is_at_rest = false;
-
-    m->f = vec3_zero;
-    m->t = vec3_zero;
 
     srph_array_init(&m->deformations);
 }
@@ -47,8 +41,14 @@ void srph_matter_destroy(srph_matter *m) {
     srph_array_clear(&m->deformations);
 }
 
-bool srph_matter_is_inert(srph_matter *m) {
-    return false;
+bool matter_is_at_rest(srph_matter *m) {
+    double v = vec3_length(&m->v);
+    double w = vec3_length(&m->omega);
+
+    return
+        m->has_collided &&
+        v <= LINEAR_VELOCITY_REST_THRESHOLD &&
+        w <= ANGULAR_VELOCITY_REST_THRESHOLD;
 }
 
 double srph_matter_average_density(srph_matter *self) {
@@ -79,10 +79,6 @@ void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
     mat3_multiply(ri, i, &rt);
     mat3_multiply(ri, &r, ri);
     mat3_inverse(ri, ri);
-
-    for (int j = 0; j < 9; j++) {
-        assert(isfinite(self->inverse_inertia_tensor.v[j]));
-    }
 }
 
 void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
@@ -171,9 +167,8 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
     vec3_add(&self->v, &self->v, &d);
 
     // integrate torque
-    // TODO: inertia tensor here??
-//    vec3_multiply_f(&d, &self->t, t / m);
-//    vec3_add(&self->omega, &self->omega, &d);
+    vec3_multiply_f(&d, &self->t, t / m);
+    vec3_add(&self->omega, &self->omega, &d);
 
     // reset forces
     vec3_multiply_f(&self->f, gravity, m);
@@ -202,7 +197,6 @@ void srph_matter_material(srph_matter *self, material_t *mat, const vec3 *x) {
     *mat = self->material;
 }
 
-
 double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
     if (self->is_static) {
         return 0;
@@ -215,14 +209,7 @@ double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
     srph_matter_inverse_inertia_tensor(self, &i);
     vec3_multiply_mat3(&irn, &rn, &i);
 
-    double im = vec3_dot(&rn, &irn);
-    assert(isfinite(im));
-    assert(im >= 0);
-    return im;
-}
-
-bool srph_matter_is_at_rest(srph_matter *self) {
-    return self->is_at_rest || self->is_static;
+    return vec3_dot(&rn, &irn);
 }
 
 double srph_matter_inverse_mass(srph_matter *self) {
@@ -342,7 +329,6 @@ vec3 * srph_matter_com(srph_matter * matter){
 
     return &matter->com;
 }
-
 
 void apply_impulse(srph_matter *self, const vec3 *x, const vec3 *j) {
     vec3 n;

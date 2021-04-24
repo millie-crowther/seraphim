@@ -9,7 +9,6 @@
 #include "physics/transform.h"
 
 typedef struct srph_matter {
-    // fields for rigidbodies
     transform_t transform;
     vec3 v;
     vec3 omega;
@@ -26,6 +25,7 @@ typedef struct srph_matter {
 
     bool is_inertia_tensor_valid;
     bool is_com_valid;
+    bool has_collided;
     mat3 inertia_tensor;
     vec3 com;
 
@@ -38,8 +38,8 @@ typedef struct srph_matter {
 } srph_matter;
 
 void srph_matter_init(
-        srph_matter *m, srph_sdf *sdf, const material_t *mat, const vec3 *x,
-        bool is_uniform, bool is_static
+    srph_matter *m, srph_sdf *sdf, const material_t *mat, const vec3 *x,
+    bool is_uniform, bool is_static
 );
 
 void srph_matter_destroy(srph_matter *m);
@@ -55,15 +55,13 @@ srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_
 
 void srph_matter_transformation_matrix(srph_matter *m, float *xs);
 
-bool srph_matter_is_inert(srph_matter *m);
+bool matter_is_at_rest(srph_matter *m);
 
 void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravity);
 
 void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v);
 
 void srph_matter_material(srph_matter *self, material_t *mat, const vec3 *x);
-
-bool srph_matter_is_at_rest(srph_matter *self);
 
 // mass
 vec3 *srph_matter_com(srph_matter *matter);
