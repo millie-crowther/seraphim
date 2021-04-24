@@ -28,7 +28,6 @@ static int x_comparator(const void *a, const void *b) {
     return axis_comparator(*(const srph_substance **) a, *(const srph_substance **) b, X_AXIS);
 }
 
-
 static void collision_broad_phase(srph_substance *substance_ptrs, size_t num_substances, srph_collision_array *cs) {
     srph_array_clear(cs);
 
@@ -122,103 +121,15 @@ static double intersection_func(void * data, const vec3 * x){
 //    return phi / vrn;
 //}
 
-//collision_t::collision_t(srph_matter * a, srph_matter * b){
-//    this->a = a;
-//    this->b = b;
-//    is_intersecting = false;
-//    t = constant::sigma;
-//
-//    sphere_t sa, sb;
-//    srph_matter_calculate_sphere_bound(a, constant::sigma, &sa);
-//    srph_matter_calculate_sphere_bound(b, constant::sigma, &sb);
-//
-//    if (srph_sphere_intersect(&sa, &sb)){
-//        bound3_t bound_a = a->get_moving_bound(constant::sigma);
-//        bound3_t bound_b = b->get_moving_bound(constant::sigma);
-//
-//        bound3_t bound_i;
-//        srph_bound3_intersection(&bound_a, &bound_b, &bound_i);
-//
-//        vec3 xs1[4];
-//        srph_bound3_vertex(&bound_i, 0, xs1[0].raw);
-//        srph_bound3_vertex(&bound_i, 3, xs1[1].raw);
-//        srph_bound3_vertex(&bound_i, 5, xs1[2].raw);
-//        srph_bound3_vertex(&bound_i, 6, xs1[3].raw);
-//
-//        srph_opt_sample s;
-//        srph_opt_nelder_mead(&s, intersection_func, this, xs1, NULL);
-//        depth = fabs(s.fx);
-//        x = s.x;
-//
-//        double iota = constant::iota;
-//        srph_opt_nelder_mead(&s, time_to_collision_func, this, xs1, &iota);
-//        t = s.fx;
-//        is_intersecting = t <= constant::iota;
-//    }
-//}
-
-//void collision_t::colliding_correct(){
-//    // calculate collision impulse magnitude
-//    auto mata = a->get_material(&xa);
-//    auto matb = b->get_material(&xb);
-//
-//    double CoR = std::max(mata.restitution, matb.restitution);
-//
-//    srph::vec3_t x1(x.x, x.y, x.z);
-//
-//    double jr = (1.0 + CoR) * vec::dot(vr, n) / (
-//        1.0 / srph_matter_mass(a) + a->get_inverse_angular_mass(x1, n) +
-//        1.0 / srph_matter_mass(b) + b->get_inverse_angular_mass(x1, n)
-//    );
-//
-//    a->apply_impulse_at(n * -jr, x1);
-//    b->apply_impulse_at(n *  jr, x1);
-//
-//    // apply friction force
-//    vec3_t t = vr - n * vec::dot(vr, n);
-//    if (t != vec3_t()){
-//        // no surface friction because impact vector is perpendicular to surface
-//        vec3 t1 = { t[0], t[1], t[2] };
-//        srph_vec3_normalise(&t1, &t1);
-//        t = vec3_t(t1.x, t1.y, t1.z);
-//
-//        double vrt = vec::dot(vr, t);
-//        auto mvta = srph_matter_mass(a) * vrt;
-//        auto mvtb = srph_matter_mass(b) * vrt;
-//
-//        double js = std::max(mata.static_friction,  matb.static_friction ) * jr;
-//        double jd = std::max(mata.dynamic_friction, matb.dynamic_friction) * jr;
-//
-//        double ka = -(mvta <= js) ? mvta : jd;
-//        double kb =  (mvtb <= js) ? mvtb : jd;
-//
-//        a->apply_impulse_at(t * ka, x1);
-//        b->apply_impulse_at(t * kb, x1);
-//    }
-//}
-
-//void collision_t::correct(){
-//    srph_transform_to_local_position(&a->transform, &xa, &x);
-//    srph_transform_to_local_position(&b->transform, &xb, &x);
-//
-//    // find relative velocity at point
-//    srph::vec3_t x1(x.x, x.y, x.z);
-//    vr = a->get_velocity(x1) - b->get_velocity(x1);
-//    colliding_correct();
-//}
-
 static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, double dt){
     // check that deformation is a collision deformation
     if (xb->type != srph_deform_type_collision){
         return;
     }
-//    printf("vertex type correct\n");
 
     // check that relative velocity at this point is incoming
     vec3 x, xa;
     srph_matter_to_global_position(b, &x, &xb->x0);
-
-//    assert(srph_sdf_contains(b->sdf, &xb->x0));
 
     srph_matter_to_local_position(a, &xa, &x);
 
@@ -264,7 +175,6 @@ static void contact_correct(srph_matter * a, srph_matter * b, srph_deform * xb, 
     if (inverse_mass == 0.0){
         return;
     }
-    assert(inverse_mass > 0.0);
 
     double jr = -(1.0 + CoR) * vrn / inverse_mass;
     vec3 j;
