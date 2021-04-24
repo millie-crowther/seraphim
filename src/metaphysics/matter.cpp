@@ -32,7 +32,6 @@ void srph_matter_init(
         m->omega = {{0.1, 0.1, 0.1}};
     }
     m->is_at_rest = false;
-    m->is_inverse_inertia_tensor_valid = false;
 
     m->f = vec3_zero;
     m->t = vec3_zero;
@@ -52,19 +51,6 @@ bool srph_matter_is_inert(srph_matter *m) {
     return false;
 }
 
-//double srph_matter::get_inverse_angular_mass(const vec3_t & r_global, const vec3_t & n){
-//    auto r = r_global - transform.to_global_space(get_centre_of_mass());
-//    auto rn = vec::cross(r, n);
-//
-//    return vec::dot(rn, *get_inv_tf_i() * rn);
-//}
-//
-//void srph_matter::apply_impulse_at(const vec3_t & j, const vec3_t & r_global){
-//    v += j / srph_matter_mass(this);
-//    auto r = r_global - transform.to_global_space(get_centre_of_mass());
-//    omega += *get_inv_tf_i() * vec::cross(r, j);
-//}
-
 double srph_matter_average_density(srph_matter *self) {
     if (self->is_uniform) {
         return self->material.density;
@@ -78,28 +64,6 @@ double srph_matter_average_density(srph_matter *self) {
 double srph_matter_mass(srph_matter *self) {
     return srph_matter_average_density(self) * srph_sdf_volume(self->sdf);
 }
-
-//void srph_matter::rotate(const quat_t & q){
-//    transform.rotate(q);
-//    _is_inv_inertia_tensor_valid = false;
-//}
-
-//mat3_t * srph_matter::get_inv_tf_i(){
-//    if (!_is_inv_inertia_tensor_valid){
-//        inv_tf_i = *get_i();
-//
-//        // rotate
-//        auto r = transform.get_rotation().to_matrix();
-//        inv_tf_i = r * i * mat::transpose(r);
-//
-//
-//        // invert
-//        inv_tf_i = mat::inverse(inv_tf_i);
-//        _is_inv_inertia_tensor_valid = true;
-//    }
-//
-//    return &inv_tf_i;
-//}
 
 void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
     if (self->is_static) {
@@ -120,21 +84,6 @@ void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
         assert(isfinite(self->inverse_inertia_tensor.v[j]));
     }
 }
-
-//
-//mat3_t * srph_matter::get_i(){
-//    if (!is_mass_valid){
-//        if (is_uniform){
-//            i = srph_sdf_inertia_tensor(sdf) * srph_matter_mass(this);
-//        } else {
-//            throw std::runtime_error("Error: non uniform substances not yet supported.");
-//        }
-//        is_mass_valid = true;
-//    }
-//
-//    return &i;
-//}
-//
 
 void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
     vec3 midpoint, radius;
@@ -190,49 +139,9 @@ srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_
     return deform;
 }
 
-//void srph_matter_update_vertices(srph_matter * m, double t){
-//    assert(m != NULL);
-
-// update velocities using newton's second law
-//    vec3 a, r;
-//
-//    for (uint32_t i = 0; i < m->deformations.size; i++){
-//        srph_deform * deform = m->deformations.data[i];
-//        srph_vec3_subtract(&r, &deform->x, &m->com->x);
-//        srph_vec3_cross(&a, &m->t, &r);
-//        srph_vec3_add(&a, &a, &m->f);
-//
-//        srph_vec3_scale(&a, &a, t / deform->m);
-//        srph_vec3_add(&deform->v, &deform->v, &a);
-//    }
-
-// TODO: velocity dampening
-
-// extrapolate next position
-//    for (uint32_t i = 0; i < m->deformations.size; i++){
-//        srph_deform * deform = m->deformations.data[i];
-//        srph_vec3_scale(&deform->p, &deform->v, t);
-//        srph_vec3_add(&deform->p, &deform->p, &deform->x);
-//    }
-//}
-
 void srph_matter_to_local_position(srph_matter *m, vec3 *tx, const vec3 *x) {
     srph_transform_to_local_position(&m->transform, tx, x);
 }
-
-//void srph_matter_extrapolate_next_position_and_velocity(srph_matter * m, double t){
-//    if (m->is_rigid){
-//
-//    } else {
-//        for (uint32_t i = 0; i < m->deformations.size; i++) {
-//            srph_deform *deform = m->deformations.data[i];
-//
-//            srph_vec3_subtract(&deform->v, &deform->p, &deform->x);
-//            srph_vec3_scale(&deform->v, &deform->v, 1.0 / t);
-//            deform->x = deform->p;
-//        }
-//    }
-//}
 
 void srph_matter_transformation_matrix(srph_matter *m, float *xs) {
     mat4 dxs;
@@ -250,38 +159,6 @@ void srph_matter_to_global_position(const srph_matter *m, vec3 *tx, const vec3 *
 void srph_matter_to_global_direction(const srph_matter *m, const vec3 *position, vec3 *td, const vec3 *d) {
     srph_transform_to_global_direction(&m->transform, td, d);
 }
-
-//void srph_matter_resolve_internal_constraints(const srph_matter * m){
-//    assert(m != NULL);
-//
-//    if (m->is_rigid){
-//        return;
-//    }
-//
-//    // resolve distance constraint
-//    for (size_t i = 0; i < m->deformations.size; i++){
-//        srph_deform * a = m->deformations.data[i];
-//
-//        for (size_t j = i + 1; j < m->deformations.size; j++){
-//            srph_deform * b = m->deformations.data[j];
-//
-//            vec3 ab;
-//            srph_vec3_subtract(&ab, &b->p, &a->p);
-//
-//            double d = srph_vec3_length(&ab) - srph_vec3_distance(&a->x0, &b->x0);
-//
-//            if (d == 0.0){
-//                continue;
-//            }
-//
-//            srph_vec3_normalise(&ab, &ab);
-//            srph_vec3_scale(&ab, &ab, d / 2);
-//
-//            srph_vec3_add(&a->p, &a->p, &ab);
-//            srph_vec3_subtract(&b->p, &b->p, &ab);
-//        }
-//    }
-//}
 
 void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravity) {
     assert(!self->is_static && !self->is_at_rest);

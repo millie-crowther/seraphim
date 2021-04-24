@@ -4,7 +4,7 @@
 
 using namespace srph;
 
-srph_substance::srph_substance(srph_form *form, srph_matter *matter, uint32_t id) {
+srph_substance::srph_substance(form_t *form, srph_matter *matter, uint32_t id) {
     this->form = *form;
     this->matter = *matter;
     this->id = id;

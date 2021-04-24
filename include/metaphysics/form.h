@@ -1,8 +1,8 @@
 #ifndef SERAPHIM_FORM_H
 #define SERAPHIM_FORM_H
 
-typedef struct srph_form {
+typedef struct form_t {
 
-} srph_form;
+} form_t;
 
 #endif

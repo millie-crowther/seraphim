@@ -33,13 +33,13 @@ typedef struct srph_substance {
     };
 
     srph_substance();
-    srph_substance(srph_form *form, srph_matter *matter, uint32_t i);
+    srph_substance(form_t *form, srph_matter *matter, uint32_t i);
 
     data_t get_data(const vec3 *eye_position);
     uint32_t get_id() const;
 
     uint32_t id;
-    srph_form form;
+    form_t form;
     srph_matter matter;
 } bsrph_substance;
 

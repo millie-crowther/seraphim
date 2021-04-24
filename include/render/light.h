@@ -4,17 +4,15 @@
 #include "maths/matrix.h"
 
 namespace srph {
-    class light_t {
-    private:
+    typedef struct light_t {
         f32vec3_t x;
         uint32_t id;
 
         f32vec4_t colour;
 
-    public:
         light_t();
         light_t(const f32vec3_t & x, const f32vec4_t & colour);
-    };
+    } light_t;
 }
 
 #endif

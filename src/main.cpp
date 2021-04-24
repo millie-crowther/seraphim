@@ -11,7 +11,7 @@ int main(){
     material.density = 700.0;
     material.restitution = 0.5;
 
-    srph_form form;
+    form_t form;
 
     vec3 floor_size = {{ 100.0, 100.0, 100.0}};
     srph_sdf * floor_sdf = srph_sdf_cuboid_create(&floor_size);

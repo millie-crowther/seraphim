@@ -59,7 +59,7 @@ namespace srph {
     };
 }
 
-srph_substance *srph_create_substance(srph::seraphim_t *srph, srph_form *form, srph_matter *matter);
+srph_substance *srph_create_substance(srph::seraphim_t *srph, form_t *form, srph_matter *matter);
 
 void srph_cleanup(srph::seraphim_t *engine);
 
