@@ -8,7 +8,7 @@
 
 
 void srph_matter_init(
-    srph_matter *m, srph_sdf *sdf, const srph_material *material,
+    srph_matter *m, srph_sdf *sdf, const material_t *material,
     const vec3 *initial_position, bool is_uniform, bool is_static
 ) {
     m->sdf = sdf;
@@ -320,7 +320,7 @@ void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v) {
     }
 }
 
-void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x) {
+void srph_matter_material(srph_matter *self, material_t *mat, const vec3 *x) {
     // TODO: sample at point
     *mat = self->material;
 }
@@ -370,7 +370,7 @@ mat3 * srph_matter_inertia_tensor(srph_matter * matter){
             srph_random_default_seed(&rng);
             int hits = 0;
             double total = 0.0;
-            srph_material mat;
+            material_t mat;
             srph_matter_material(matter, &mat, NULL);
 
             while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){
@@ -432,7 +432,7 @@ vec3 * srph_matter_com(srph_matter * matter){
         srph_random_default_seed(&rng);
         int hits = 0;
         double total = 0.0;
-        srph_material mat;
+        material_t mat;
         srph_matter_material(matter, &mat, NULL);
 
         while (hits < SERAPHIM_SDF_VOLUME_SAMPLES){

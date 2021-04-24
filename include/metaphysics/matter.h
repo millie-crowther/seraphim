@@ -14,7 +14,7 @@ typedef struct srph_matter {
     vec3 v;
     vec3 omega;
 
-    srph_material material;
+    material_t material;
     srph_sdf *sdf;
 
     srph_array(srph_deform *) deformations;
@@ -38,8 +38,8 @@ typedef struct srph_matter {
 } srph_matter;
 
 void srph_matter_init(
-    srph_matter *m, srph_sdf *sdf, const srph_material *mat, const vec3 *x,
-    bool is_uniform, bool is_static
+        srph_matter *m, srph_sdf *sdf, const material_t *mat, const vec3 *x,
+        bool is_uniform, bool is_static
 );
 
 void srph_matter_destroy(srph_matter *m);
@@ -61,7 +61,7 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
 
 void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v);
 
-void srph_matter_material(srph_matter *self, srph_material *mat, const vec3 *x);
+void srph_matter_material(srph_matter *self, material_t *mat, const vec3 *x);
 
 bool srph_matter_is_at_rest(srph_matter *self);
 

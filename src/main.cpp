@@ -5,7 +5,7 @@
 int main(){
     srph::seraphim_t engine;
 
-    srph_material material;
+    material_t material;
     material.static_friction = 0.2;
     material.dynamic_friction = 0.1;
     material.density = 700.0;

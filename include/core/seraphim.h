@@ -25,7 +25,6 @@ namespace srph {
         bool setup_debug_callback();
 
 #endif
-
         // initialisation functions
         void create_instance();
 

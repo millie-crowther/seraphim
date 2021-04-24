@@ -3,12 +3,12 @@
 
 #include "maths/maths.h"
 
-typedef struct srph_material {
+typedef struct material_t {
     vec3 colour;
     double density;
     double restitution;
     double static_friction;
     double dynamic_friction;
-} srph_material;
+} material_t;
 
 #endif

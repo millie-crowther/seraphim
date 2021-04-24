@@ -164,7 +164,7 @@ static void contact_correct(srph_matter *a, srph_matter *b, srph_deform *xb, dou
     }
 
     // calculate collision impulse magnitude
-    srph_material mata, matb;
+    material_t mata, matb;
     srph_matter_material(a, &mata, nullptr);
     srph_matter_material(b, &matb, nullptr);
 
