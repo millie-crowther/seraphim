@@ -10,7 +10,7 @@
 
 typedef struct srph_matter {
     // fields for rigidbodies
-    srph_transform transform;
+    transform_t transform;
     vec3 v;
     vec3 omega;
 

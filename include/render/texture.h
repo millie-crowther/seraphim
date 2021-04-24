@@ -39,14 +39,7 @@ namespace srph {
         );
         ~texture_t();
 
-        // getters
-        VkImage get_image() const;
-        VkImageView get_image_view();
-        VkFormat get_format();
-        VkImageLayout get_image_layout() const;
-        VkSampler get_sampler() const;
-        VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const; 
-
+        VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
         void record_write(VkCommandBuffer command_buffer);
         void write(u32vec3_t p, const std::array<uint32_t, 8> & x);

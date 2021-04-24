@@ -7,7 +7,7 @@
 
 namespace srph {
     typedef struct camera_t {
-        srph_transform transform;
+        transform_t transform;
         camera_t();
 
         void update(double delta, const keyboard_t & keyboard, const mouse_t & mouse);

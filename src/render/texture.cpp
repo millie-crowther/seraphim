@@ -91,18 +91,6 @@ texture_t::texture_t(
     staging_buffer = std::make_unique<host_buffer_t<std::array<uint32_t, 8>>>(~0, device, staging_buffer_size);
 }
 
-VkFormat texture_t::get_format(){
-    return format;
-}
-
-VkSampler texture_t::get_sampler() const {
-    return sampler;
-}
-
-VkImageLayout texture_t::get_image_layout() const {
-    return layout;
-}
-
 VkImageView texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format){
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -127,10 +115,6 @@ texture_t::~texture_t(){
     vkDestroyImage(device->get_device(), image, nullptr);
     vkFreeMemory(device->get_device(), memory, nullptr);
     vkDestroySampler(device->get_device(), sampler, nullptr);
-}
-
-VkImageView texture_t::get_image_view(){
-    return image_view;
 }
 
 void texture_t::check_format_supported(
@@ -159,10 +143,6 @@ VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) c
     descriptor_write.dstSet = desc_set;
 
     return descriptor_write;
-}
-
-VkImage texture_t::get_image() const {
-    return image;
 }
 
 void texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> & x){
