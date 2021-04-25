@@ -8,14 +8,6 @@
 #include <ui/file.h>
 
 int main(){
-    cJSON *parsedJSON = file_load_json("../game.json");
-    cJSON *title = cJSON_GetObjectItem(parsedJSON, "title");
-
-    printf("game title = %s\n", title->valuestring);
-
-    cJSON_Delete(parsedJSON);
-    return 0;
-
     srph::seraphim_t engine;
 
     material_t material;

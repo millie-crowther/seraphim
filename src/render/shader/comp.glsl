@@ -60,6 +60,7 @@ const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
 const int max_hash_retries = 10;
+const float geometry_epsilon = 1.0 / 300.0;
 
 const ivec3 p1 = ivec3(
     904601,
@@ -146,7 +147,7 @@ uint work_group_offset(){
 }
 
 patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request, out uint hash){
-    float size = pc.epsilon * order * 2;
+    float size = geometry_epsilon * order * 2;
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
 
