@@ -12,6 +12,7 @@
 
 #include "render/renderer.h"
 #include <assert.h>
+#include <ui/file.h>
 
 using namespace srph;
 
@@ -39,6 +40,22 @@ srph::seraphim_t::seraphim_t(){
         work_group_count[0] * work_group_size[0],
         work_group_count[1] * work_group_size[1]
     ));
+
+
+    cJSON * game_json = file_load_json("../game.json");
+    cJSON * title_json = cJSON_GetObjectItem(game_json, "title");
+    const char * title_string = "Seraphim";
+    if (
+        title_json != NULL &&
+        title_json->type == cJSON_String &&
+        strlen(title_json->valuestring) < SERAPHIM_MAX_TITLE_LENGTH
+    ){
+        title_string = title_json->valuestring;
+    }
+    strcpy(title, title_string);
+    cJSON_Delete(game_json);
+
+    window_set_title(window.get(), title);
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);

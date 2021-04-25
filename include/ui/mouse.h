@@ -10,7 +10,7 @@
 
 namespace srph {
     // forward declaration of window
-    class window_t;
+    struct window_t;
 
     class mouse_t {
     private:

@@ -7,7 +7,7 @@
 
 namespace srph {
     // forward declaration of window class
-    class window_t;
+    struct window_t;
 
     class keyboard_t {
     public:

@@ -49,10 +49,6 @@ bool window_t::should_close() const {
     return glfwWindowShouldClose(window) || keyboard->is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
-void window_t::set_title(const std::string & title){
-    glfwSetWindowTitle(window, title.c_str());
-}
-
 keyboard_t & window_t::get_keyboard() const {
     return *keyboard;
 }
@@ -63,4 +59,8 @@ mouse_t & window_t::get_mouse() const {
 
 void window_t::show(){
     glfwShowWindow(window);
+}
+
+void window_set_title(srph::window_t *window, const char *title) {
+    glfwSetWindowTitle(window->window, title);
 }
