@@ -1,22 +1,21 @@
 #include "render/renderer.h"
 
-#include "ui/resources.h"
 #include "render/texture.h"
 #include "core/constant.h"
 
 #include <chrono>
-#include <ctime>
 #include <stdexcept>
+#include <ui/file.h>
 
 using namespace srph;
 
 renderer_t::renderer_t(
-        device_t * device,
-        substance_t * substances, size_t * num_substances,
-        VkSurfaceKHR surface, window_t * window,
-        std::shared_ptr<camera_t> test_camera,
-        u32vec2_t work_group_count, u32vec2_t work_group_size,
-        uint32_t max_image_size
+    device_t * device,
+    substance_t * substances, size_t * num_substances,
+    VkSurfaceKHR surface, window_t * window,
+    std::shared_ptr<camera_t> test_camera,
+    u32vec2_t work_group_count, u32vec2_t work_group_size,
+    uint32_t max_image_size
 ){
     this->device = device;
     this->surface = surface;
@@ -45,8 +44,8 @@ renderer_t::renderer_t(
 
     set_main_camera(test_camera);
 
-    fragment_shader_code = resources::load_file("../src/render/shader/frag.glsl");
-    vertex_shader_code   = resources::load_file("../src/render/shader/vert.glsl");
+    fragment_shader_code = file_load_text("../src/render/shader/frag.glsl", NULL);
+    vertex_shader_code   = file_load_text("../src/render/shader/vert.glsl", NULL);
 
     vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
 
@@ -126,6 +125,9 @@ void renderer_t::cleanup_swapchain(){
 }
 
 renderer_t::~renderer_t(){
+    free(fragment_shader_code);
+    free(vertex_shader_code);
+
     vkDestroyDescriptorSetLayout(device->get_device(), descriptor_layout, nullptr);
 
     cleanup_swapchain();
@@ -160,9 +162,9 @@ void renderer_t::create_compute_pipeline(){
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
-    std::string compute_shader_code = resources::load_file("../src/render/shader/comp.glsl");
-
+    char * compute_shader_code = file_load_text("../src/render/shader/comp.glsl", NULL);
     VkShaderModule module = create_shader_module(compute_shader_code);
+    free(compute_shader_code);
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

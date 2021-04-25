@@ -82,8 +82,8 @@ namespace srph {
 
         VkQueue present_queue;
         
-        std::string fragment_shader_code;
-        std::string vertex_shader_code;
+        char * fragment_shader_code;
+        char * vertex_shader_code;
 
         substance_t * substances;
         size_t * num_substances;
@@ -137,12 +137,12 @@ namespace srph {
     public:
         // constructors and destructors
         renderer_t(
-                device_t * device,
-                substance_t * substances, size_t * num_substances,
-                VkSurfaceKHR surface, window_t * window,
-                std::shared_ptr<camera_t> test_camera,
-                u32vec2_t work_group_count, u32vec2_t work_group_size,
-                uint32_t max_image_size
+            device_t * device,
+            substance_t * substances, size_t * num_substances,
+            VkSurfaceKHR surface, window_t * window,
+            std::shared_ptr<camera_t> test_camera,
+            u32vec2_t work_group_count, u32vec2_t work_group_size,
+            uint32_t max_image_size
         );
         ~renderer_t();
 

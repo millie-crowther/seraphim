@@ -17,6 +17,7 @@ add_subdirectory("glfw")
 
 set(INCLUDE_DIR
     ../include
+    ../include/lib
 )
 
 include_directories(${INCLUDE_DIR})
@@ -27,11 +28,12 @@ set(SOURCES
     ../src/core/command.cpp
     ../src/core/device.cpp
     ../src/core/random.cpp
-        ../src/core/seraphim.cpp
+    ../src/core/seraphim.cpp
     ../src/core/array.cpp
+        ../src/lib/cJSON.c
 
-        ../src/physics/collision.cpp
-        ../src/physics/physics.cpp
+    ../src/physics/collision.cpp
+    ../src/physics/physics.cpp
     ../src/physics/sphere.cpp
     ../src/physics/transform.cpp
 
@@ -46,17 +48,17 @@ set(SOURCES
     ../src/metaphysics/form.cpp
     ../src/metaphysics/matter.cpp
 
-        ../src/physics/bound.cpp
-        ../src/maths/optimise.cpp
+    ../src/physics/bound.cpp
+    ../src/maths/optimise.cpp
     ../src/maths/maths.cpp
-        ../src/maths/sdf/sdf.cpp
-        ../src/maths/sdf/primitive.cpp
+    ../src/maths/sdf/sdf.cpp
+    ../src/maths/sdf/primitive.cpp
     ../src/maths/sdf/platonic.cpp
 
     ../src/ui/keyboard.cpp
-    ../src/ui/resources.cpp
-    ../src/ui/window.cpp
+        ../src/ui/window.cpp
     ../src/ui/mouse.cpp
+    ../src/ui/file.cpp
 )
 
 add_executable(seraphim ${SOURCES})
