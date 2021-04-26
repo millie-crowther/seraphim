@@ -13,6 +13,7 @@
 #include "ui/window.h"
 
 #define SERAPHIM_MAX_SUBSTANCES 100
+#define SERAPHIM_MAX_SDFS 100
 #define SERAPHIM_MAX_TITLE_LENGTH 256
 
 namespace srph {
@@ -49,6 +50,9 @@ namespace srph {
         size_t num_substances;
         substance_t substances[SERAPHIM_MAX_SUBSTANCES];
 
+        size_t num_sdfs;
+        sdf_t sdfs[SERAPHIM_MAX_SDFS];
+
         bool fps_monitor_quit;
 
         void monitor_fps();
@@ -62,6 +66,7 @@ namespace srph {
     };
 }
 
+sdf_t *seraphim_create_sdf(srph::seraphim_t *seraphim, sdf_func_t f, void * data);
 substance_t *srph_create_substance(srph::seraphim_t *srph, form_t *form, srph_matter *matter);
 
 void srph_cleanup(srph::seraphim_t *engine);

@@ -62,7 +62,7 @@ vec3_t vertices[8] = {
 response_t::response_t(){}
 
 response_t::response_t(const call_t & call, substance_t *substance){
-    srph_sdf * sdf = substance->matter.sdf;
+    sdf_t * sdf = substance->matter.sdf;
 
     bound3_t * bound = srph_sdf_bound(sdf);
     vec3 m;
@@ -92,7 +92,7 @@ response_t::response_t(const call_t & call, substance_t *substance){
 
     vec3_t c = p + call.get_radius();
     vec3 c1 = {{ c[0], c[1], c[2] }};
-    float phi = static_cast<float>(srph_sdf_phi(sdf, &c1));
+    float phi = static_cast<float>(sdf_distance(sdf, &c1));
 
     vec3 n1 = srph_sdf_normal(sdf, &c1);
     vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;

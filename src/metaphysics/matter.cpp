@@ -9,8 +9,8 @@
 #define ANGULAR_VELOCITY_REST_THRESHOLD 0.2
 
 void srph_matter_init(
-    srph_matter *m, srph_sdf *sdf, const material_t *material,
-    const vec3 *initial_position, bool is_uniform, bool is_static
+        srph_matter *m, sdf_t *sdf, const material_t *material,
+        const vec3 *initial_position, bool is_uniform, bool is_static
 ) {
     m->sdf = sdf;
     m->material = *material;

@@ -9,13 +9,10 @@
 
 #define SUPPORT_ALPHA 0.5
 
-void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
-    if (sdf == NULL){
-        return;
-    }
-
-    sdf->_phi = phi;
+void sdf_create(sdf_t *sdf, sdf_func_t phi, void *data, uint32_t id) {
+    sdf->distance_function = phi;
     sdf->data = data;
+    sdf->id = id;
     
     sdf->is_bound_valid = false;
     sdf->is_com_valid = false;
@@ -23,11 +20,11 @@ void srph_sdf_create(srph_sdf * sdf, srph_sdf_func phi, void * data){
     sdf->volume = -1.0;
 }
 
-double srph_sdf_phi(srph_sdf * sdf, const vec3 * x){
-    return sdf->_phi(sdf->data, x);
+double sdf_distance(sdf_t * sdf, const vec3 * x){
+    return sdf->distance_function(sdf->data, x);
 }
 
-vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
+vec3 srph_sdf_normal(sdf_t * sdf, const vec3 * x){
     vec3 n;
     for (int i = 0; i < 3; i++){
         vec3 x1 = *x;
@@ -36,7 +33,7 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
         vec3 x2 = *x;
         x2.v[i] -= epsilon;
         
-        n.v[i] = srph_sdf_phi(sdf, &x1) - srph_sdf_phi(sdf, &x2);
+        n.v[i] = sdf_distance(sdf, &x1) - sdf_distance(sdf, &x2);
     }
     
     vec3_multiply_f(&n, &n, 0.5 / epsilon);
@@ -44,17 +41,17 @@ vec3 srph_sdf_normal(srph_sdf * sdf, const vec3 * x){
     return n;
 }
 
-bool srph_sdf_contains(srph_sdf * sdf, const vec3 * x){
-    return srph_bound3_contains(&sdf->bound, x) && srph_sdf_phi(sdf, x) <= 0.0;
+bool srph_sdf_contains(sdf_t * sdf, const vec3 * x){
+    return srph_bound3_contains(&sdf->bound, x) && sdf_distance(sdf, x) <= 0.0;
 }
     
-double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
+double srph_sdf_project(sdf_t * sdf, const vec3 * d){
     vec3 x;
     vec3_normalize(&x, d);
     vec3_multiply_f(&x, &x, rho);
 
     while (true){
-        double p = srph_sdf_phi(sdf, &x);
+        double p = sdf_distance(sdf, &x);
         
         // TODO: better quit criteria
         if (p > rho){
@@ -65,7 +62,7 @@ double srph_sdf_project(srph_sdf * sdf, const vec3 * d){
     }
 }
 
-double srph_sdf_volume(srph_sdf * sdf){
+double srph_sdf_volume(sdf_t * sdf){
     if (sdf->volume < 0.0){
         int hits = 0;
      
@@ -91,7 +88,7 @@ double srph_sdf_volume(srph_sdf * sdf){
 }
 
 
-bound3_t * srph_sdf_bound(srph_sdf * sdf){
+bound3_t * srph_sdf_bound(sdf_t * sdf){
     if (sdf == NULL){
         return NULL;
     } 
@@ -114,17 +111,12 @@ bound3_t * srph_sdf_bound(srph_sdf * sdf){
     return &sdf->bound;
 }
 
-void srph_sdf_destroy(srph_sdf * sdf){
-    if (sdf != NULL){
-        if (sdf->data != NULL){
-            free(sdf->data);
-        }
-        
-        free(sdf);
-    }
+void sdf_destroy(sdf_t * sdf){
+    free(sdf->data);
+    sdf->data = NULL;
 }
 
-double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x) {
+double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
     vec3 ns[3];
 
     for (int axis = 0; axis < 3; axis++){
@@ -144,7 +136,7 @@ double srph_sdf_discontinuity(srph_sdf *sdf, const vec3 *x) {
 }
 
 /*
-void srph_sdf_add_sample(srph_sdf * sdf, const vec3 * x){
+void srph_sdf_add_sample(sdf_t * sdf, const vec3 * x){
     assert(sdf != NULL);
 
     if (!srph_sdf_contains(sdf, x)){

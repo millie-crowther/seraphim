@@ -77,8 +77,8 @@ static double intersection_func(void *data, const vec3 *x) {
     srph_matter_to_local_position(a, &xa, x);
     srph_matter_to_local_position(b, &xb, x);
 
-    double phi_a = srph_sdf_phi(a->sdf, &xa);
-    double phi_b = srph_sdf_phi(b->sdf, &xb);
+    double phi_a = sdf_distance(a->sdf, &xa);
+    double phi_b = sdf_distance(b->sdf, &xb);
 
     return std::max(phi_a, phi_b);
 }
@@ -92,11 +92,11 @@ static double intersection_func(void *data, const vec3 *x) {
 //    srph_transform_to_local_position(&a->transform, &xa, x);
 //    srph_transform_to_local_position(&b->transform, &xb, x);
 //
-//    double phi_a = srph_sdf_phi(a->sdf, &xa);
-//    double phi_b = srph_sdf_phi(b->sdf, &xb);
-//    double phi = phi_a + phi_b;
+//    double phi_a = sdf_distance(a->sdf, &xa);
+//    double phi_b = sdf_distance(b->sdf, &xb);
+//    double distance_function = phi_a + phi_b;
 //
-//    if (phi <= 0){
+//    if (distance_function <= 0){
 //        return 0;
 //    }
 //
@@ -122,7 +122,7 @@ static double intersection_func(void *data, const vec3 *x) {
 //    }
 //
 //    // estimate of time to collision
-//    return phi / vrn;
+//    return distance_function / vrn;
 //}
 
 static void contact_correct(srph_matter *a, srph_matter *b, srph_deform *xb, double dt) {
@@ -158,7 +158,7 @@ static void contact_correct(srph_matter *a, srph_matter *b, srph_deform *xb, dou
     }
 
     // check that it is actually colliding at this point
-    double phi = srph_sdf_phi(a->sdf, &xa);
+    double phi = sdf_distance(a->sdf, &xa);
     if (phi > fabs(vrn) * dt) {
         return;
     }
@@ -273,7 +273,7 @@ static void collision_resolve_interpenetration_constraint(collision_t *c) {
             srph_matter_to_global_position(b, &x, &d->x0);
             srph_matter_to_local_position(a, &xa, &x);
 
-            double phi = srph_sdf_phi(a->sdf, &xa) + srph_sdf_phi(b->sdf, &d->x0);
+            double phi = sdf_distance(a->sdf, &xa) + sdf_distance(b->sdf, &d->x0);
             if (phi <= 0) {
                 vec3 n = srph_sdf_normal(a->sdf, &xa);
                 srph_matter_to_global_direction(a, NULL, &n, &n);
@@ -303,7 +303,7 @@ static bool is_colliding_in_bound(srph_matter **ms, bound3_t *bound) {
         for (int matter_index = 0; matter_index < 2; matter_index++) {
             vec3 local_position;
             srph_matter_to_local_position(ms[matter_index], &local_position, &global_position);
-            phis[matter_index] = srph_sdf_phi(ms[matter_index]->sdf, &local_position);
+            phis[matter_index] = sdf_distance(ms[matter_index]->sdf, &local_position);
         }
 
         sub_bound_distances[sub_bound_index] = phis[0] + phis[1];

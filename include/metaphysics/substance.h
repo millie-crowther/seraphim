@@ -12,7 +12,7 @@ typedef struct substance_t {
     struct data_t {
         float near;
         float far;
-        float _1;
+        uint32_t sdf_id;
         float _2;
 
         srph::f32vec3_t r;

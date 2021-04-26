@@ -34,12 +34,13 @@ substance_t::data_t substance_t::get_data(const vec3 *eye_position) {
     float far = (float) vec3_length(&x);
 
     data_t data(
-            near, far,
-            f32vec3_t(r.x, r.y, r.z),
-            id
+        near, far,
+        f32vec3_t(r.x, r.y, r.z),
+        id
     );
 
     srph_matter_transformation_matrix(&matter, data.transform);
+    data.sdf_id = matter.sdf->id;
 
     return data;
 }

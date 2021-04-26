@@ -50,24 +50,11 @@ static double octahedron_phi(void * data, const vec3 * x){
     return vec3_length(&r);
 }
 
-srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
-    if (r == NULL){
-        return NULL;
-    }
-
-    srph_sdf * sdf = (srph_sdf *) malloc(sizeof(srph_sdf));
-    if (sdf == NULL){
-        return NULL;
-    }
-    
+sdf_t *sdf_cuboid_initialise(srph::seraphim_t *seraphim, const vec3 *r) {
     vec3 * r_ptr = (vec3 *) malloc(sizeof(vec3));
-    if (r_ptr == NULL){
-        free(sdf);
-        return NULL;
-    }
     *r_ptr = *r;
 
-    srph_sdf_create(sdf, cuboid_phi, r_ptr);
+    sdf_t * sdf = seraphim_create_sdf(seraphim, cuboid_phi, r_ptr);
 
     vec3 inertia;
     vec3_multiply_f(&inertia, r, 2.0);
@@ -86,19 +73,8 @@ srph_sdf * srph_sdf_cuboid_create(const vec3 * r){
     return sdf;
 }
 
-srph_sdf * srph_sdf_octahedron_create(double e){
-    srph_sdf * sdf = (srph_sdf *) malloc(sizeof(srph_sdf));
-    if (sdf == NULL){
-        return NULL;
-    }
-    
+sdf_t *sdf_octahedron_initialise(srph::seraphim_t *seraphim, double e) {
     double * e2 = (double *) malloc(sizeof(double));
-    if (e2 == NULL){
-        free(sdf);
-        return NULL;
-    }
     *e2 = e;
-
-    srph_sdf_create(sdf, octahedron_phi, e2);
-    return sdf;
+    return seraphim_create_sdf(seraphim, octahedron_phi, e2);
 }

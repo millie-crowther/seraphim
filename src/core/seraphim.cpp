@@ -4,10 +4,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
-#include <set>
 #include <algorithm>
-#include <fstream>
-#include <cstring>
 #include <memory>
 
 #include "render/renderer.h"
@@ -29,6 +26,8 @@ srph::seraphim_t::seraphim_t(){
     std::cout << "Running in release mode." << std::endl;
 #endif
 
+    num_substances = 0;
+    num_sdfs = 0;
     work_group_count = u32vec2_t(48u, 20u);
     work_group_size = u32vec2_t(32u);
 
@@ -94,8 +93,6 @@ srph::seraphim_t::seraphim_t(){
 #endif
 
     test_camera = std::make_shared<camera_t>();
-
-    num_substances = 0;
 
     renderer = std::make_unique<renderer_t>(
         device.get(),
@@ -323,4 +320,14 @@ substance_t * srph_create_substance(seraphim_t * srph, form_t * form, srph_matte
     *new_substance = substance_t(form, matter, srph->num_substances);
     srph->num_substances++;
     return new_substance;
+}
+
+sdf_t *seraphim_create_sdf(srph::seraphim_t *seraphim, sdf_func_t f, void *data) {
+    assert(seraphim->num_sdfs < SERAPHIM_MAX_SDFS - 1);
+
+    sdf_t *new_sdf = &seraphim->sdfs[seraphim->num_sdfs];
+    sdf_create(new_sdf, f, data, seraphim->num_sdfs);
+    seraphim->num_sdfs++;
+
+    return new_sdf;
 }
