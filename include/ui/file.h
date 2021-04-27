@@ -7,8 +7,6 @@
 
 #include "cJSON.h"
 
-#include <stdbool.h>
-
 char *file_load_text(const char *filename, size_t *size);
 cJSON *file_load_json(const char *filename);
 

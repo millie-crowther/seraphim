@@ -15,12 +15,9 @@
 
 #define SERAPHIM_MAX_SUBSTANCES 100
 #define SERAPHIM_MAX_SDFS 100
-#define SERAPHIM_MAX_TITLE_LENGTH 256
 
 namespace srph {
 	struct seraphim_t {
-		char title[SERAPHIM_MAX_TITLE_LENGTH];
-
 		// debug fields
 #if SERAPHIM_DEBUG
 		VkDebugReportCallbackEXT callback;
@@ -61,7 +58,7 @@ namespace srph {
 		 std::thread fps_monitor_thread;
 		 std::condition_variable fps_cv;
 
-		 seraphim_t();
+		 seraphim_t(const char *title);
 
 		void run();
 	};

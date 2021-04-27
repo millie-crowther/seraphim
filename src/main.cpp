@@ -1,15 +1,30 @@
+#include <cJSON.h>
+#include <ui/file.h>
 #include "core/seraphim.h"
 #include "maths/sdf/primitive.h"
 #include "maths/sdf/platonic.h"
 
-#include "cJSON.h"
 #include <stdio.h>
-#include <assert.h>
-#include <ui/file.h>
 
 int main()
 {
-	srph::seraphim_t engine;
+    const char * game_filepath = "/home/millie/seraphim_game/";
+    const char * json_filename = "game.json";
+    char filepath[100] = {0};
+    sprintf(filepath, "%s%s", game_filepath, json_filename);
+
+    cJSON *game_json = file_load_json(filepath);
+    cJSON *title_json = cJSON_GetObjectItem(game_json, "title");
+    char title_string[100] = "Seraphim";
+    if (
+        title_json != NULL &&
+        title_json->type == cJSON_String
+    ) {
+        strcpy(title_string, title_json->valuestring);
+    }
+    cJSON_Delete(game_json);
+
+	srph::seraphim_t engine(title_string);
 
 	material_t material;
 	material.static_friction = 0.2;
