@@ -12,7 +12,6 @@ char *file_load_text(const char *filename, size_t *size)
 	FILE *file = fopen(filename, "r");
 
 	if (file == NULL) {
-		fclose(file);
 		return NULL;
 	}
 
