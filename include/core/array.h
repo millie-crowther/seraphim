@@ -39,6 +39,7 @@ void _srph_array_pop_front(_srph_base_array * a);
 void _srph_array_pop_back(_srph_base_array * a);
 
 #define srph_array_sort(x, f) _srph_array_sort(SRPH_ARRAY_CAST(x), (f))
-void _srph_array_sort(_srph_base_array * a, int (*comparator)(const void *, const void *));
+void _srph_array_sort(_srph_base_array * a,
+		      int (*comparator)(const void *, const void *));
 
 #endif

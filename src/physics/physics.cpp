@@ -10,95 +10,102 @@
 
 #define SOLVER_ITERATIONS 1
 
-void srph_physics_init(srph_physics *p, substance_t *substances, size_t *num_substances) {
-    p->quit = false;
+void srph_physics_init(srph_physics * p, substance_t * substances,
+		       size_t *num_substances)
+{
+	p->quit = false;
 
-    p->gravity = {{0.0, -9.8, 0.0}};
+	p->gravity = { {0.0, -9.8, 0.0} };
 
-    srph_array_init(&p->collisions);
-    p->substances = substances;
-    p->num_substances = num_substances;
-} 
-
-void srph_physics_start(srph_physics * p){
-    p->thread = std::thread(&srph_physics::run, p);
+	srph_array_init(&p->collisions);
+	p->substances = substances;
+	p->num_substances = num_substances;
 }
 
-void srph_physics_destroy(srph_physics * p){
-    p->quit = true;
-
-    if (p->thread.joinable()){
-        p->thread.join();
-    }
-
-    srph_array_clear(&p->collisions);
+void srph_physics_start(srph_physics * p)
+{
+	p->thread = std::thread(&srph_physics::run, p);
 }
 
-void srph_physics_tick(srph_physics * p, double dt){
-    // update substances and integrate forces
-    for (uint32_t i = 0; i < *p->num_substances; i++){
-        matter_t * m = &p->substances[i].matter;
-        m->has_collided = false;
+void srph_physics_destroy(srph_physics * p)
+{
+	p->quit = true;
 
-        srph_matter_calculate_sphere_bound(m, dt);
+	if (p->thread.joinable()) {
+		p->thread.join();
+	}
 
-        if (!m->is_at_rest && !m->is_static){
-            srph_matter_integrate_forces(m, dt, &p->gravity);
-        }
-    }
+	srph_array_clear(&p->collisions);
+}
 
-    // detect collisions
-    collision_detect(p->substances, *p->num_substances, &p->collisions, dt);
+void srph_physics_tick(srph_physics * p, double dt)
+{
+	// update substances and integrate forces
+	for (uint32_t i = 0; i < *p->num_substances; i++) {
+		matter_t *m = &p->substances[i].matter;
+		m->has_collided = false;
 
-    // resolve collisions
-    for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS; solver_iteration++){
-        for (size_t collision = 0; collision < p->collisions.size; collision++){
-            collision_resolve(&p->collisions.data[collision], dt);
-        }
-    }
+		srph_matter_calculate_sphere_bound(m, dt);
 
-    // integrate velocities
-    for (uint32_t i = 0; i < *p->num_substances; i++) {
-        matter_t *m = &p->substances[i].matter;
+		if (!m->is_at_rest && !m->is_static) {
+			srph_matter_integrate_forces(m, dt, &p->gravity);
+		}
+	}
 
-        if (m->is_static || m->is_at_rest){
-            continue;
-        }
+	// detect collisions
+	collision_detect(p->substances, *p->num_substances, &p->collisions, dt);
 
-        // integrate linear velocity
-        vec3 dv;
-        vec3_multiply_f(&dv, &m->v, dt);
-        srph_transform_translate(&m->transform, &dv);
+	// resolve collisions
+	for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS;
+	     solver_iteration++) {
+		for (size_t collision = 0; collision < p->collisions.size;
+		     collision++) {
+			collision_resolve(&p->collisions.data[collision], dt);
+		}
+	}
 
-        // integrate angular velocity
-        vec3 dw;
-        vec3_multiply_f(&dw, &m->omega, dt);
-        quat q;
-        quat_from_euler_angles(&q, &dw);
-        srph_transform_rotate(&m->transform, &q);
-    }
+	// integrate velocities
+	for (uint32_t i = 0; i < *p->num_substances; i++) {
+		matter_t *m = &p->substances[i].matter;
 
-    // attempt to put substances to sleep
-    for (size_t i = 0; i < *p->num_substances; i++){
-        matter_t *m = &p->substances[i].matter;
-        if (matter_is_at_rest(m)){
-            m->is_at_rest = true;
-        }
-    }
+		if (m->is_static || m->is_at_rest) {
+			continue;
+		}
+		// integrate linear velocity
+		vec3 dv;
+		vec3_multiply_f(&dv, &m->v, dt);
+		srph_transform_translate(&m->transform, &dv);
+
+		// integrate angular velocity
+		vec3 dw;
+		vec3_multiply_f(&dw, &m->omega, dt);
+		quat q;
+		quat_from_euler_angles(&q, &dw);
+		srph_transform_rotate(&m->transform, &q);
+	}
+
+	// attempt to put substances to sleep
+	for (size_t i = 0; i < *p->num_substances; i++) {
+		matter_t *m = &p->substances[i].matter;
+		if (matter_is_at_rest(m)) {
+			m->is_at_rest = true;
+		}
+	}
 }
 
 using namespace srph;
 
-void srph_physics::run(){
-    auto t = std::chrono::steady_clock::now();
-    printf("physics thread starting\n");
-      
-    while (!quit){
-        frames++;
-        
-        double delta = sigma;
+void srph_physics::run()
+{
+	auto t = std::chrono::steady_clock::now();
+	printf("physics thread starting\n");
 
-        srph_physics_tick(this, delta);
+	while (!quit) {
+		frames++;
+
+		double delta = sigma;
+
+		srph_physics_tick(this, delta);
 /*
         std::vector<collision_t> collisions;
     
@@ -144,13 +151,15 @@ void srph_physics::run(){
         }
 
         */
-        t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
-        std::this_thread::sleep_until(t);
-    }
+		t += std::chrono::microseconds(static_cast < int64_t >
+					       (delta * 1000000.0));
+		std::this_thread::sleep_until(t);
+	}
 }
 
-int srph_physics::get_frame_count(){
-    int f = frames;
-    frames = 0;
-    return f;
+int srph_physics::get_frame_count()
+{
+	int f = frames;
+	frames = 0;
+	return f;
 }

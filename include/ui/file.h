@@ -9,7 +9,7 @@
 
 #include <stdbool.h>
 
-char * file_load_text(const char *filename, size_t *size);
-cJSON * file_load_json(const char * filename);
+char *file_load_text(const char *filename, size_t *size);
+cJSON *file_load_json(const char *filename);
 
-#endif //SERAPHIM_FILE_H
+#endif				//SERAPHIM_FILE_H

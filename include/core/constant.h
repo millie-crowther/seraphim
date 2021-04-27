@@ -13,9 +13,9 @@ static const double sigma = 0.01;
 static const double iota = 0.001;
 
 // largest distance (metres)
-static const double rho     = 2048;
+static const double rho = 2048;
 
 // ratio of a circle's diameter to its circumference
-static const double pi      = 3.14159265358979323;
+static const double pi = 3.14159265358979323;
 
 #endif
