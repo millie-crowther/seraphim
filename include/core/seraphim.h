@@ -11,6 +11,7 @@
 #include "physics/physics.h"
 #include "render/renderer.h"
 #include "ui/window.h"
+#include "device.h"
 
 #define SERAPHIM_MAX_SUBSTANCES 100
 #define SERAPHIM_MAX_SDFS 100

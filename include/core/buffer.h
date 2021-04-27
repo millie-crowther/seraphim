@@ -3,6 +3,7 @@
 
 #include "core/command.h"
 #include "core/device.h"
+#include "device.h"
 
 #include <cstring>
 #include <memory>
@@ -41,23 +42,23 @@ namespace srph {
                 memory_property = static_cast<VkMemoryPropertyFlagBits>(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             }
 
-            if (vkCreateBuffer(device->get_device(), &buffer_info, nullptr, &buffer) != VK_SUCCESS){
+            if (vkCreateBuffer(device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS){
                 throw std::runtime_error("Error: Failed to create buffer.");
             }
 
             VkMemoryRequirements mem_req;
-            vkGetBufferMemoryRequirements(device->get_device(), buffer, &mem_req);
+            vkGetBufferMemoryRequirements(device->device, buffer, &mem_req);
 
             VkMemoryAllocateInfo alloc_info = {};
             alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
             alloc_info.allocationSize = mem_req.size;
             alloc_info.memoryTypeIndex = find_memory_type(device, mem_req.memoryTypeBits, memory_property);
 
-            if (vkAllocateMemory(device->get_device(), &alloc_info, nullptr, &memory) != VK_SUCCESS){
+            if (vkAllocateMemory(device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS){
                 throw std::runtime_error("Error: Failed to allocate buffer memory.");
             } 
 
-            if (vkBindBufferMemory(device->get_device(), buffer, memory, 0) != VK_SUCCESS){
+            if (vkBindBufferMemory(device->device, buffer, memory, 0) != VK_SUCCESS){
                 throw std::runtime_error("Error: Failed to bind buffer memory.");
             } 
 
@@ -74,8 +75,8 @@ namespace srph {
         }
         
         ~buffer_t(){
-            vkDestroyBuffer(device->get_device(), buffer, nullptr);
-            vkFreeMemory(device->get_device(), memory, nullptr);
+            vkDestroyBuffer(device->device, buffer, nullptr);
+            vkFreeMemory(device->device, memory, nullptr);
         }    
 
         template<class F>
@@ -84,9 +85,9 @@ namespace srph {
                 staging_buffer->map(offset, size, f);
             } else {
                 void * memory_map;
-                vkMapMemory(device->get_device(), memory, sizeof(T) * offset, sizeof(T) * size, 0, &memory_map);
+                vkMapMemory(device->device, memory, sizeof(T) * offset, sizeof(T) * size, 0, &memory_map);
                 f(memory_map);
-                vkUnmapMemory(device->get_device(), memory);
+                vkUnmapMemory(device->device, memory);
             }
         }
 
@@ -161,7 +162,7 @@ namespace srph {
 
         static uint32_t find_memory_type(device_t * device, uint32_t type_filter, VkMemoryPropertyFlags prop){
             VkPhysicalDeviceMemoryProperties mem_prop;
-            vkGetPhysicalDeviceMemoryProperties(device->get_physical_device(), &mem_prop);
+            vkGetPhysicalDeviceMemoryProperties(device->physical_device, &mem_prop);
 
             for (uint32_t i = 0; i < mem_prop.memoryTypeCount; i++) {
                 if ((type_filter & (1 << i)) && (mem_prop.memoryTypes[i].propertyFlags & prop) == prop) {

@@ -47,7 +47,7 @@ renderer_t::renderer_t(
     fragment_shader_code = file_load_text("../src/render/shader/frag.glsl", NULL);
     vertex_shader_code   = file_load_text("../src/render/shader/vert.glsl", NULL);
 
-    vkGetDeviceQueue(device->get_device(), device->get_present_family(), 0, &present_queue);
+    vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
 
     swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
 
@@ -77,8 +77,8 @@ renderer_t::renderer_t(
     create_graphics_pipeline();
     create_compute_pipeline();
 
-    graphics_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_graphics_family());
-    compute_command_pool = std::make_unique<command_pool_t>(device->get_device(), device->get_compute_family());
+    graphics_command_pool = std::make_unique<command_pool_t>(device->device, device->graphics_family);
+    compute_command_pool = std::make_unique<command_pool_t>(device->device, device->compute_family);
 
     create_framebuffers();
     create_descriptor_pool();
@@ -105,21 +105,21 @@ renderer_t::renderer_t(
         write_desc_sets.push_back(lighting_buffer->get_write_descriptor_set(descriptor_set));
     }
 
-    vkUpdateDescriptorSets(device->get_device(), write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(device->device, write_desc_sets.size(), write_desc_sets.data(), 0, nullptr);
 
     create_command_buffers();
 }
 
 void renderer_t::cleanup_swapchain(){
     for (auto framebuffer : framebuffers){
-	    vkDestroyFramebuffer(device->get_device(), framebuffer, nullptr);
+	    vkDestroyFramebuffer(device->device, framebuffer, nullptr);
     }
 
     command_buffers.clear();
 
-    vkDestroyPipeline(device->get_device(), graphics_pipeline, nullptr);
-    vkDestroyPipelineLayout(device->get_device(), pipeline_layout, nullptr);
-    vkDestroyRenderPass(device->get_device(), render_pass, nullptr);
+    vkDestroyPipeline(device->device, graphics_pipeline, nullptr);
+    vkDestroyPipelineLayout(device->device, pipeline_layout, nullptr);
+    vkDestroyRenderPass(device->device, render_pass, nullptr);
 
     swapchain.reset(nullptr);
 }
@@ -128,18 +128,18 @@ renderer_t::~renderer_t(){
     free(fragment_shader_code);
     free(vertex_shader_code);
 
-    vkDestroyDescriptorSetLayout(device->get_device(), descriptor_layout, nullptr);
+    vkDestroyDescriptorSetLayout(device->device, descriptor_layout, nullptr);
 
     cleanup_swapchain();
 
-    vkDestroyPipeline(device->get_device(), compute_pipeline, nullptr);
-    vkDestroyPipelineLayout(device->get_device(), compute_pipeline_layout, nullptr);
+    vkDestroyPipeline(device->device, compute_pipeline, nullptr);
+    vkDestroyPipelineLayout(device->device, compute_pipeline_layout, nullptr);
 
     for (int i = 0; i < frames_in_flight; i++){
-        vkDestroySemaphore(device->get_device(), image_available_semas[i], nullptr);
-        vkDestroySemaphore(device->get_device(), compute_done_semas[i], nullptr);
-        vkDestroySemaphore(device->get_device(), render_finished_semas[i], nullptr);
-        vkDestroyFence(device->get_device(), in_flight_fences[i], nullptr);
+        vkDestroySemaphore(device->device, image_available_semas[i], nullptr);
+        vkDestroySemaphore(device->device, compute_done_semas[i], nullptr);
+        vkDestroySemaphore(device->device, render_finished_semas[i], nullptr);
+        vkDestroyFence(device->device, in_flight_fences[i], nullptr);
     }
 }
   
@@ -157,7 +157,7 @@ void renderer_t::create_compute_pipeline(){
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
-	    device->get_device(), &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
+	    device->device, &pipeline_layout_info, nullptr, &compute_pipeline_layout) != VK_SUCCESS
     ){
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
@@ -174,15 +174,15 @@ void renderer_t::create_compute_pipeline(){
     pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
 
-    if (vkCreateComputePipelines(device->get_device(), VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
+    if (vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &compute_pipeline) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create compute pipeline.");
     }
 
-    vkDestroyShaderModule(device->get_device(), module, nullptr);    
+    vkDestroyShaderModule(device->device, module, nullptr);    
 }
 
 void renderer_t::recreate_swapchain(){
-    vkDeviceWaitIdle(device->get_device());
+    vkDeviceWaitIdle(device->device);
   
     cleanup_swapchain();    
     swapchain = std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
@@ -232,7 +232,7 @@ void renderer_t::create_render_pass(){
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(device->get_device(), &render_pass_info, nullptr, &render_pass) != VK_SUCCESS){
+    if (vkCreateRenderPass(device->device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create render pass.");
     }
 }
@@ -349,7 +349,7 @@ void renderer_t::create_graphics_pipeline(){
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
     if (vkCreatePipelineLayout(
-	    device->get_device(), &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
+	    device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS
     ){
         throw std::runtime_error("Error: Failed to create graphics pipeline layout.");
     }
@@ -380,14 +380,14 @@ void renderer_t::create_graphics_pipeline(){
     pipeline_info.basePipelineIndex = -1;
 
     if (vkCreateGraphicsPipelines(
-	    device->get_device(), VK_NULL_HANDLE, 1, 
+	    device->device, VK_NULL_HANDLE, 1, 
         &pipeline_info, nullptr, &graphics_pipeline
     ) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
 
-    vkDestroyShaderModule(device->get_device(), vert_shader_module, nullptr);
-    vkDestroyShaderModule(device->get_device(), frag_shader_module, nullptr);
+    vkDestroyShaderModule(device->device, vert_shader_module, nullptr);
+    vkDestroyShaderModule(device->device, frag_shader_module, nullptr);
 }
 
 void renderer_t::create_framebuffers(){
@@ -407,7 +407,7 @@ void renderer_t::create_framebuffers(){
         framebuffer_info.layers = 1;
 
         if (vkCreateFramebuffer(
-            device->get_device(), &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
+            device->device, &framebuffer_info, nullptr, &framebuffers[i]) != VK_SUCCESS
         ){
             throw std::runtime_error("Error: Failed to create framebuffer.");
         }
@@ -455,7 +455,7 @@ void renderer_t::create_descriptor_pool(){
     pool_info.pPoolSizes    = pool_sizes.data();
     pool_info.maxSets       = swapchain->get_size();
 
-    if (vkCreateDescriptorPool(device->get_device(), &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
+    if (vkCreateDescriptorPool(device->device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create descriptor pool.");
     }
 
@@ -468,7 +468,7 @@ void renderer_t::create_descriptor_pool(){
     alloc_info.pSetLayouts        = layouts.data();
 
     desc_sets.resize(swapchain->get_size());
-    if (vkAllocateDescriptorSets(device->get_device(), &alloc_info, desc_sets.data()) != VK_SUCCESS){
+    if (vkAllocateDescriptorSets(device->device, &alloc_info, desc_sets.data()) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate descriptor sets.");
     }
 }
@@ -499,7 +499,7 @@ void renderer_t::create_descriptor_set_layout(){
     layout_info.bindingCount = layouts.size();
     layout_info.pBindings    = layouts.data();
 
-    if (vkCreateDescriptorSetLayout(device->get_device(), &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
+    if (vkCreateDescriptorSetLayout(device->device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create descriptor set layout.");
     }
 }
@@ -519,10 +519,10 @@ void renderer_t::create_sync(){
  
     uint32_t result = VK_SUCCESS;
     for (int i = 0; i < frames_in_flight; i++){
-        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &image_available_semas[i]);
-        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &render_finished_semas[i]);
-        result |= vkCreateSemaphore(device->get_device(), &create_info, nullptr, &compute_done_semas[i]);
-        result |= vkCreateFence(device->get_device(), &fence_info, nullptr, &in_flight_fences[i]);
+        result |= vkCreateSemaphore(device->device, &create_info, nullptr, &image_available_semas[i]);
+        result |= vkCreateSemaphore(device->device, &create_info, nullptr, &render_finished_semas[i]);
+        result |= vkCreateSemaphore(device->device, &create_info, nullptr, &compute_done_semas[i]);
+        result |= vkCreateFence(device->device, &fence_info, nullptr, &in_flight_fences[i]);
     }
 
     if (result != VK_SUCCESS){
@@ -572,7 +572,7 @@ void renderer_t::render(){
    
     uint32_t image_index;
     vkAcquireNextImageKHR(
-        device->get_device(), swapchain->get_handle(), ~static_cast<uint64_t>(0), image_available_semas[current_frame], 
+        device->device, swapchain->get_handle(), ~static_cast<uint64_t>(0), image_available_semas[current_frame], 
         VK_NULL_HANDLE, &image_index
     );
 
@@ -612,8 +612,8 @@ void renderer_t::render(){
 
     present(image_index);
 
-    vkWaitForFences(device->get_device(), 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
-    vkResetFences(device->get_device(), 1, &in_flight_fences[current_frame]);   
+    vkWaitForFences(device->device, 1, &in_flight_fences[current_frame], VK_TRUE, ~((uint64_t) 0));
+    vkResetFences(device->device, 1, &in_flight_fences[current_frame]);   
     
     push_constants.current_frame++;
     current_frame = (current_frame + 1) % frames_in_flight; 
@@ -628,7 +628,7 @@ VkShaderModule renderer_t::create_shader_module(std::string code){
     create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
 
     VkShaderModule shader_module;
-    if (vkCreateShaderModule(device->get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS){
+    if (vkCreateShaderModule(device->device, &create_info, nullptr, &shader_module) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create shader module.");
     }
     return shader_module;
@@ -639,7 +639,7 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera){
 }
 
 void renderer_t::handle_requests(uint32_t frame){
-    vkDeviceWaitIdle(device->get_device()); 
+    vkDeviceWaitIdle(device->device); 
 
     std::vector<call_t> calls(number_of_calls);
     std::vector<call_t> empty_calls(number_of_calls);

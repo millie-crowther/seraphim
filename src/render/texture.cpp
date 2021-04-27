@@ -34,32 +34,32 @@ texture_t::texture_t(
     image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     check_format_supported(
-        device->get_physical_device(), format,
+        device->physical_device, format,
         image_create_info.tiling, format_feature 
     );
 
     // allocate memory 
-    if (vkCreateImage(device->get_device(), &image_create_info, nullptr, &image) != VK_SUCCESS){
+    if (vkCreateImage(device->device, &image_create_info, nullptr, &image) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to create image.");
     }
     VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(device->get_device(), image, &mem_req);
+    vkGetImageMemoryRequirements(device->device, image, &mem_req);
 
     VkMemoryAllocateInfo mem_alloc_info = {};
     mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     mem_alloc_info.allocationSize = mem_req.size;
     mem_alloc_info.memoryTypeIndex = host_buffer_t<float>::find_memory_type(device, mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    if (vkAllocateMemory(device->get_device(), &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
+    if (vkAllocateMemory(device->device, &mem_alloc_info, nullptr, &memory) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to allocate image memory.");
     }
 
-    if (vkBindImageMemory(device->get_device(), image, memory, 0) != VK_SUCCESS){
+    if (vkBindImageMemory(device->device, image, memory, 0) != VK_SUCCESS){
 	    throw std::runtime_error("Error: Failed to bind image.");
     }
 
     // create image view
-    image_view = create_image_view(device->get_device(), image, format);
+    image_view = create_image_view(device->device, image, format);
 
     // create sampler
     VkSamplerCreateInfo sampler_info = {};
@@ -79,7 +79,7 @@ texture_t::texture_t(
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
     
-    if (vkCreateSampler(device->get_device(), &sampler_info, nullptr, &sampler) != VK_SUCCESS){
+    if (vkCreateSampler(device->device, &sampler_info, nullptr, &sampler) != VK_SUCCESS){
         throw std::runtime_error("Error: Failed to create texture sampler.");
     } 
 
@@ -111,10 +111,10 @@ VkImageView texture_t::create_image_view(VkDevice device, VkImage image, VkForma
 }
 
 texture_t::~texture_t(){
-    vkDestroyImageView(device->get_device(), image_view, nullptr);
-    vkDestroyImage(device->get_device(), image, nullptr);
-    vkFreeMemory(device->get_device(), memory, nullptr);
-    vkDestroySampler(device->get_device(), sampler, nullptr);
+    vkDestroyImageView(device->device, image_view, nullptr);
+    vkDestroyImage(device->device, image, nullptr);
+    vkFreeMemory(device->device, memory, nullptr);
+    vkDestroySampler(device->device, sampler, nullptr);
 }
 
 void texture_t::check_format_supported(

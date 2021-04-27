@@ -5,11 +5,10 @@
 #include <stdexcept>
 #include <string>
 
-using namespace srph;
-
 const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+
 
 device_t::device_t(VkInstance instance, VkSurfaceKHR surface, std::vector<const char *> enabled_validation_layers){
     physical_device = select_physical_device(instance, surface);
@@ -70,14 +69,13 @@ bool device_t::device_has_extension(VkPhysicalDevice phys_device, const char * e
     return false;
 }
 
-
 VkPhysicalDevice device_t::select_physical_device(VkInstance instance, VkSurfaceKHR surface) const {
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
-   
+
     for (auto physical_device : devices){
         if (is_suitable_device(physical_device, surface)){
             return physical_device;
@@ -87,7 +85,6 @@ VkPhysicalDevice device_t::select_physical_device(VkInstance instance, VkSurface
     throw std::runtime_error("Error: Unable to find a suitable physical device!");
 }
 
-
 bool device_t::has_adequate_queue_families(VkPhysicalDevice physical_device, VkSurfaceKHR surface) const {
     bool queue_families_found[3] = { false, false, false };
 
@@ -96,7 +93,7 @@ bool device_t::has_adequate_queue_families(VkPhysicalDevice physical_device, VkS
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
-   
+
     for (uint32_t i = 0; i < queue_family_count; i++){
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
@@ -117,7 +114,7 @@ void device_t::select_queue_families(VkSurfaceKHR surface){
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
-   
+
     for (uint32_t i = 0; i < queue_family_count; i++){
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
@@ -141,7 +138,7 @@ void device_t::select_queue_families(VkSurfaceKHR surface){
 VkDevice device_t::create_device(std::vector<const char *> enabled_validation_layers) const {
     std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = { graphics_family, present_family, compute_family };
-    
+
     float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create_info = {};
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -168,7 +165,7 @@ VkDevice device_t::create_device(std::vector<const char *> enabled_validation_la
     VkDevice device;
     if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
 	    throw std::runtime_error("Error: failed to create device");
-    }    
+    }
 
     return device;
 }
@@ -177,22 +174,3 @@ device_t::~device_t(){
     vkDestroyDevice(device, nullptr);
 }
 
-VkPhysicalDevice device_t::get_physical_device() const {
-    return physical_device;
-}
-
-VkDevice device_t::get_device() const {
-    return device;
-}
-
-uint32_t device_t::get_compute_family() const {
-    return compute_family;
-}
-
-uint32_t device_t::get_graphics_family() const {
-    return graphics_family;
-}
-
-uint32_t device_t::get_present_family() const {
-    return present_family;
-}

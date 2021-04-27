@@ -82,7 +82,7 @@ srph::seraphim_t::seraphim_t(){
 
 #if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
-    vkGetPhysicalDeviceProperties(device->get_physical_device(), &properties);
+    vkGetPhysicalDeviceProperties(device->physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: " << properties.limits.maxStorageBufferRange << std::endl;
     std::cout << "\tMaximum shared memory  size: " << properties.limits.maxComputeSharedMemorySize << std::endl;
@@ -108,7 +108,7 @@ void srph_cleanup(srph::seraphim_t * engine){
 
     srph_physics_destroy(&engine->physics);
  
-    vkDeviceWaitIdle(engine->device->get_device());
+    vkDeviceWaitIdle(engine->device->device);
 
     engine->fps_cv.notify_all();
     if (engine->fps_monitor_thread.joinable()){
