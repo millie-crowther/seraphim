@@ -44,3 +44,4 @@ build
 
 # clion files
 *cmake-build-debug
+.idea/*
