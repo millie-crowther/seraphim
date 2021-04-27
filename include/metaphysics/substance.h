@@ -29,13 +29,13 @@ typedef struct substance_t {
     };
 
     substance_t();
-    substance_t(form_t *form, srph_matter *matter, uint32_t i);
+    substance_t(form_t *form, matter_t *matter, uint32_t i);
 
     data_t get_data(const vec3 *eye_position);
 
     uint32_t id;
     form_t form;
-    srph_matter matter;
+    matter_t matter;
 } substance_t;
 
 #endif

@@ -53,7 +53,36 @@ static bool has_adequate_queue_families(VkPhysicalDevice physical_device, VkSurf
 device_t::device_t(VkInstance instance, VkSurfaceKHR surface, std::vector<const char *> enabled_validation_layers){
     physical_device = select_physical_device(instance, surface);
     select_queue_families(surface);
-    device = create_device(enabled_validation_layers);
+
+    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+    std::set<uint32_t> unique_queue_families = { graphics_family, present_family, compute_family };
+
+    float queue_priority = 1.0f;
+    VkDeviceQueueCreateInfo queue_create_info = {};
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueCount = 1;
+    queue_create_info.pQueuePriorities = &queue_priority;
+    for (uint32_t queue_family : unique_queue_families){
+        queue_create_info.queueFamilyIndex = queue_family;
+        queue_create_infos.push_back(queue_create_info);
+    }
+
+    VkPhysicalDeviceFeatures device_features = {};
+    device_features.samplerAnisotropy        = VK_TRUE;
+
+    VkDeviceCreateInfo create_info      = {};
+    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.pQueueCreateInfos       = queue_create_infos.data();
+    create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pEnabledFeatures        = &device_features;
+    create_info.enabledExtensionCount   = device_extensions.size();
+    create_info.ppEnabledExtensionNames = device_extensions.data();
+    create_info.enabledLayerCount       = static_cast<uint32_t>(enabled_validation_layers.size());
+    create_info.ppEnabledLayerNames     = enabled_validation_layers.data();
+
+    if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
+        throw std::runtime_error("Error: failed to create device");
+    }
 }
 
 bool device_t::is_suitable_device(VkPhysicalDevice physical_device, VkSurfaceKHR surface) const {
@@ -132,41 +161,6 @@ void device_t::select_queue_families(VkSurfaceKHR surface){
             }
         }
     }
-}
-
-VkDevice device_t::create_device(std::vector<const char *> enabled_validation_layers) const {
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    std::set<uint32_t> unique_queue_families = { graphics_family, present_family, compute_family };
-
-    float queue_priority = 1.0f;
-    VkDeviceQueueCreateInfo queue_create_info = {};
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pQueuePriorities = &queue_priority;
-    for (uint32_t queue_family : unique_queue_families){
-        queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_infos.push_back(queue_create_info);
-    }
-
-    VkPhysicalDeviceFeatures device_features = {};
-    device_features.samplerAnisotropy        = VK_TRUE;
-
-    VkDeviceCreateInfo create_info      = {};
-    create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    create_info.pQueueCreateInfos       = queue_create_infos.data();
-    create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
-    create_info.pEnabledFeatures        = &device_features;
-    create_info.enabledExtensionCount   = device_extensions.size();
-    create_info.ppEnabledExtensionNames = device_extensions.data();
-    create_info.enabledLayerCount       = static_cast<uint32_t>(enabled_validation_layers.size());
-    create_info.ppEnabledLayerNames     = enabled_validation_layers.data();
-
-    VkDevice device;
-    if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS){
-	    throw std::runtime_error("Error: failed to create device");
-    }
-
-    return device;
 }
 
 device_t::~device_t(){

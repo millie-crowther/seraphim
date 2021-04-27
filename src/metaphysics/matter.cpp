@@ -9,7 +9,7 @@
 #define ANGULAR_VELOCITY_REST_THRESHOLD 0.2
 
 void srph_matter_init(
-        srph_matter *m, sdf_t *sdf, const material_t *material,
+        matter_t *m, sdf_t *sdf, const material_t *material,
         const vec3 *initial_position, bool is_uniform, bool is_static
 ) {
     m->sdf = sdf;
@@ -33,7 +33,7 @@ void srph_matter_init(
     srph_array_init(&m->deformations);
 }
 
-void srph_matter_destroy(srph_matter *m) {
+void srph_matter_destroy(matter_t *m) {
     while (!srph_array_is_empty(&m->deformations)) {
         free(*m->deformations.last);
         srph_array_pop_back(&m->deformations);
@@ -41,7 +41,7 @@ void srph_matter_destroy(srph_matter *m) {
     srph_array_clear(&m->deformations);
 }
 
-bool matter_is_at_rest(srph_matter *m) {
+bool matter_is_at_rest(matter_t *m) {
     double v = vec3_length(&m->v);
     double w = vec3_length(&m->omega);
 
@@ -51,7 +51,7 @@ bool matter_is_at_rest(srph_matter *m) {
         w <= ANGULAR_VELOCITY_REST_THRESHOLD;
 }
 
-double srph_matter_average_density(srph_matter *self) {
+double srph_matter_average_density(matter_t *self) {
     if (self->is_uniform) {
         return self->material.density;
     }
@@ -61,11 +61,11 @@ double srph_matter_average_density(srph_matter *self) {
     return 0.0;
 }
 
-double srph_matter_mass(srph_matter *self) {
+double srph_matter_mass(matter_t *self) {
     return srph_matter_average_density(self) * srph_sdf_volume(self->sdf);
 }
 
-void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
+void srph_matter_inverse_inertia_tensor(matter_t *self, mat3 *ri) {
     if (self->is_static) {
         return;
     }
@@ -81,7 +81,7 @@ void srph_matter_inverse_inertia_tensor(srph_matter *self, mat3 *ri) {
     mat3_inverse(ri, ri);
 }
 
-void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
+void srph_matter_calculate_sphere_bound(matter_t *self, double dt) {
     vec3 midpoint, radius;
     srph_bound3_midpoint(&self->sdf->bound, &midpoint);
     srph_bound3_radius(&self->sdf->bound, &radius);
@@ -89,7 +89,7 @@ void srph_matter_calculate_sphere_bound(srph_matter *self, double dt) {
     self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
 
-srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_deform_type type) {
+srph_deform *srph_matter_add_deformation(matter_t *self, const vec3 *x, srph_deform_type type) {
     // transform position into local space
     vec3 x0;
     srph_matter_to_local_position(self, &x0, x);
@@ -135,11 +135,11 @@ srph_deform *srph_matter_add_deformation(srph_matter *self, const vec3 *x, srph_
     return deform;
 }
 
-void srph_matter_to_local_position(srph_matter *m, vec3 *tx, const vec3 *x) {
+void srph_matter_to_local_position(matter_t *m, vec3 *tx, const vec3 *x) {
     srph_transform_to_local_position(&m->transform, tx, x);
 }
 
-void srph_matter_transformation_matrix(srph_matter *m, float *xs) {
+void srph_matter_transformation_matrix(matter_t *m, float *xs) {
     mat4 dxs;
     srph_transform_matrix(&m->transform, &dxs);
 
@@ -148,15 +148,15 @@ void srph_matter_transformation_matrix(srph_matter *m, float *xs) {
     }
 }
 
-void srph_matter_to_global_position(const srph_matter *m, vec3 *tx, const vec3 *x) {
+void srph_matter_to_global_position(const matter_t *m, vec3 *tx, const vec3 *x) {
     srph_transform_to_global_position(&m->transform, tx, x);
 }
 
-void srph_matter_to_global_direction(const srph_matter *m, const vec3 *position, vec3 *td, const vec3 *d) {
+void srph_matter_to_global_direction(const matter_t *m, const vec3 *position, vec3 *td, const vec3 *d) {
     srph_transform_to_global_direction(&m->transform, td, d);
 }
 
-void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravity) {
+void srph_matter_integrate_forces(matter_t *self, double t, const vec3 *gravity) {
     assert(!self->is_static && !self->is_at_rest);
 
     double m = srph_matter_mass(self);
@@ -175,13 +175,13 @@ void srph_matter_integrate_forces(srph_matter *self, double t, const vec3 *gravi
     self->t = vec3_zero;
 }
 
-static void offset_from_centre_of_mass(srph_matter *self, vec3 *r, const vec3 *x) {
+static void offset_from_centre_of_mass(matter_t *self, vec3 *r, const vec3 *x) {
     vec3 com;
     srph_matter_to_global_position(self, &com, srph_matter_com(self));
     vec3_subtract(r, x, &com);
 }
 
-void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v) {
+void srph_matter_velocity(matter_t *self, const vec3 *x, vec3 *v) {
     if (self->is_rigid) {
         vec3 r;
         offset_from_centre_of_mass(self, &r, x);
@@ -192,12 +192,12 @@ void srph_matter_velocity(srph_matter *self, const vec3 *x, vec3 *v) {
     }
 }
 
-void srph_matter_material(srph_matter *self, material_t *mat, const vec3 *x) {
+void srph_matter_material(matter_t *self, material_t *mat, const vec3 *x) {
     // TODO: sample at point
     *mat = self->material;
 }
 
-double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
+double srph_matter_inverse_angular_mass(matter_t *self, vec3 *x, vec3 *n) {
     if (self->is_static) {
         return 0;
     }
@@ -212,7 +212,7 @@ double srph_matter_inverse_angular_mass(srph_matter *self, vec3 *x, vec3 *n) {
     return vec3_dot(&rn, &irn);
 }
 
-double srph_matter_inverse_mass(srph_matter *self) {
+double srph_matter_inverse_mass(matter_t *self) {
     if (self->is_static) {
         return 0;
     } else {
@@ -220,7 +220,7 @@ double srph_matter_inverse_mass(srph_matter *self) {
     }
 }
 
-mat3 * srph_matter_inertia_tensor(srph_matter * matter){
+mat3 * srph_matter_inertia_tensor(matter_t * matter){
     if (!matter->is_inertia_tensor_valid){
         if (matter->is_uniform && matter->sdf->is_inertia_tensor_valid){
             matter->inertia_tensor = matter->sdf->inertia_tensor;
@@ -283,7 +283,7 @@ mat3 * srph_matter_inertia_tensor(srph_matter * matter){
     return &matter->inertia_tensor;
 }
 
-vec3 * srph_matter_com(srph_matter * matter){
+vec3 * srph_matter_com(matter_t * matter){
     if (matter->is_uniform && matter->sdf->is_com_valid){
         return &matter->sdf->com;
     }
@@ -330,7 +330,7 @@ vec3 * srph_matter_com(srph_matter * matter){
     return &matter->com;
 }
 
-void apply_impulse(srph_matter *self, const vec3 *x, const vec3 *j) {
+void apply_impulse(matter_t *self, const vec3 *x, const vec3 *j) {
     vec3 n;
     vec3_normalize(&n, j);
     double j_length = vec3_length(j);
@@ -357,7 +357,7 @@ void apply_impulse(srph_matter *self, const vec3 *x, const vec3 *j) {
     vec3_add(&self->omega, &self->omega, &dw);
 }
 
-void matter_apply_impulse(srph_matter *a, srph_matter *b, const vec3 *x, const vec3 *j) {
+void matter_apply_impulse(matter_t *a, matter_t *b, const vec3 *x, const vec3 *j) {
     vec3 j_negative;
     vec3_negative(&j_negative, j);
 

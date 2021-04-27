@@ -313,7 +313,7 @@ void srph::seraphim_t::run(){
     }
 }
 
-substance_t * srph_create_substance(seraphim_t * srph, form_t * form, srph_matter * matter){
+substance_t * srph_create_substance(seraphim_t * srph, form_t * form, matter_t * matter){
     assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
 
     substance_t * new_substance = &srph->substances[srph->num_substances];

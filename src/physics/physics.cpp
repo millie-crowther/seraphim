@@ -37,7 +37,7 @@ void srph_physics_destroy(srph_physics * p){
 void srph_physics_tick(srph_physics * p, double dt){
     // update substances and integrate forces
     for (uint32_t i = 0; i < *p->num_substances; i++){
-        srph_matter * m = &p->substances[i].matter;
+        matter_t * m = &p->substances[i].matter;
         m->has_collided = false;
 
         srph_matter_calculate_sphere_bound(m, dt);
@@ -59,7 +59,7 @@ void srph_physics_tick(srph_physics * p, double dt){
 
     // integrate velocities
     for (uint32_t i = 0; i < *p->num_substances; i++) {
-        srph_matter *m = &p->substances[i].matter;
+        matter_t *m = &p->substances[i].matter;
 
         if (m->is_static || m->is_at_rest){
             continue;
@@ -80,7 +80,7 @@ void srph_physics_tick(srph_physics * p, double dt){
 
     // attempt to put substances to sleep
     for (size_t i = 0; i < *p->num_substances; i++){
-        srph_matter *m = &p->substances[i].matter;
+        matter_t *m = &p->substances[i].matter;
         if (matter_is_at_rest(m)){
             m->is_at_rest = true;
         }
