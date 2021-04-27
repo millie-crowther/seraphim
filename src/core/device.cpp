@@ -9,6 +9,46 @@ const std::vector<const char *> device_extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
+static bool device_has_extension(VkPhysicalDevice phys_device, const char * extension) {
+    uint32_t extension_count = 0;
+    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count, nullptr);
+
+    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    vkEnumerateDeviceExtensionProperties(
+            phys_device, nullptr, &extension_count, available_extensions.data()
+    );
+
+    for (auto available_extension : available_extensions){
+        if (std::string(extension) == std::string(available_extension.extensionName)){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static bool has_adequate_queue_families(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+    bool queue_families_found[3] = { false, false, false };
+
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
+
+    for (uint32_t i = 0; i < queue_family_count; i++){
+        VkBool32 present_support = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
+
+        if (queue_families[i].queueCount > 0){
+            queue_families_found[0] |= present_support;
+            queue_families_found[1] |= queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
+            queue_families_found[2] |= queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT;
+        }
+    }
+
+    return queue_families_found[0] && queue_families_found[1] && queue_families_found[2];
+}
 
 device_t::device_t(VkInstance instance, VkSurfaceKHR surface, std::vector<const char *> enabled_validation_layers){
     physical_device = select_physical_device(instance, surface);
@@ -51,24 +91,6 @@ bool device_t::is_suitable_device(VkPhysicalDevice physical_device, VkSurfaceKHR
     return true;
 }
 
-bool device_t::device_has_extension(VkPhysicalDevice phys_device, const char * extension) const {
-    uint32_t extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
-    vkEnumerateDeviceExtensionProperties(
-        phys_device, nullptr, &extension_count, available_extensions.data()
-    );
-
-    for (auto available_extension : available_extensions){
-        if (std::string(extension) == std::string(available_extension.extensionName)){
-            return true;
-        }
-    }
-
-    return false;
-}
-
 VkPhysicalDevice device_t::select_physical_device(VkInstance instance, VkSurfaceKHR surface) const {
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -83,29 +105,6 @@ VkPhysicalDevice device_t::select_physical_device(VkInstance instance, VkSurface
     }
 
     throw std::runtime_error("Error: Unable to find a suitable physical device!");
-}
-
-bool device_t::has_adequate_queue_families(VkPhysicalDevice physical_device, VkSurfaceKHR surface) const {
-    bool queue_families_found[3] = { false, false, false };
-
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, nullptr);
-
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_families.data());
-
-    for (uint32_t i = 0; i < queue_family_count; i++){
-        VkBool32 present_support = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &present_support);
-
-        if (queue_families[i].queueCount > 0){
-            queue_families_found[0] |= present_support;
-            queue_families_found[1] |= queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT;
-            queue_families_found[2] |= queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT;
-        }
-    }
-
-    return queue_families_found[0] && queue_families_found[1] && queue_families_found[2];
 }
 
 void device_t::select_queue_families(VkSurfaceKHR surface){
