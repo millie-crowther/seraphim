@@ -345,23 +345,23 @@ vec4 reduce_min(uint i, vec4 value){
     workspace[i] = value;
     barrier();
 
-    if ((i &   1) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
+    if ((i &   1u) == 0) workspace[i] = min(workspace[i], workspace[i +   1]);
     barrier();
-    if ((i &   3) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
+    if ((i &   3u) == 0) workspace[i] = min(workspace[i], workspace[i +   2]);
     barrier();
-    if ((i &   7) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
+    if ((i &   7u) == 0) workspace[i] = min(workspace[i], workspace[i +   4]);
     barrier();
-    if ((i &  15) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
+    if ((i &  15u) == 0) workspace[i] = min(workspace[i], workspace[i +   8]);
     barrier();
-    if ((i &  31) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
+    if ((i &  31u) == 0) workspace[i] = min(workspace[i], workspace[i +  16]);
     barrier();
-    if ((i &  63) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
+    if ((i &  63u) == 0) workspace[i] = min(workspace[i], workspace[i +  32]);
     barrier();
-    if ((i & 127) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
+    if ((i & 127u) == 0) workspace[i] = min(workspace[i], workspace[i +  64]);
     barrier();
-    if ((i & 255) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
+    if ((i & 255u) == 0) workspace[i] = min(workspace[i], workspace[i + 128]);
     barrier();
-    if ((i & 511) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
+    if ((i & 511u) == 0) workspace[i] = min(workspace[i], workspace[i + 256]);
     barrier();
     
     return min(workspace[0], workspace[512]);
@@ -483,29 +483,27 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
         sub.id != ~0 && sub.near < pc.render_distance && 
         (all(greaterThan(phis, ds)) || is_eye_inside) && !is_behind;
 
-    
-
     return is_visible;
 }
 
-bool is_shadow_visible(substance_t s, float near, float far, vec3 lc, float lr){
-    vec3 eye = pc.eye_transform[3].xyz;
-    vec3 ed = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
-    vec3 ec = ed * (near + far) / 2;
-    float er = length(ed * far - ec);
-    ec += eye;
+bool is_shadow_visible(substance_t s, vec2 view_frustum, vec3 light_position){
+    vec3 eye_position = pc.eye_transform[3].xyz;
+    vec3 eye_direction = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
+    vec3 view_centre = eye_direction * (view_frustum.x + view_frustum.y) / 2;
+    float view_radius = length(eye_direction * view_frustum.y - view_centre);
+    view_centre += eye_position;
 
-    vec3 sc = s.transform[3].xyz;
-    float sr = length(s.radius);
+    vec3 substance_origin = s.transform[3].xyz;
+    float substance_radius = length(s.radius);
 
-    vec3 d = normalize(lc - ec);
-    float alpha = dot(d, sc - ec) / length(lc - ec);
+    vec3 d = normalize(light_position - view_centre);
+    float alpha = dot(d, substance_origin - view_centre) / length(light_position - view_centre);
     alpha = clamp(alpha, 0, 1);
 
-    vec3 c = mix(ec, lc, alpha);
-    float r = mix(er, lr, alpha);
+    vec3 c = mix(view_centre, light_position, alpha);
+    float r = mix(view_radius, 0, alpha);
 
-    return s.id != ~0 && near < far && length(sc - c) < r + sr;
+    return s.id != ~0 && view_frustum.x < view_frustum.y && length(substance_origin - c) < r + substance_radius;
 }
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
@@ -522,18 +520,18 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     );
 
     // load shit
-    bool directly_visible = is_substance_visible(s, normals);
     light_t l = lights_global.data[i];
-    vec2 f = frustum.data[j].xy;
-    vec4 li = lighting.data[j];
-    barrier();
-    bool light_visible = is_light_visible(l, f.x, f.y, normals);
-    bool shadow_visible = is_shadow_visible(s, f.x, f.y, li.xyz, li.w);
+    vec2 view_frustum = frustum.data[j].xy;
+    vec4 light = lighting.data[j];
 
-   
     // visibility check on substances and load into shared memory
     barrier();
-    bvec4 hits = bvec4(directly_visible, light_visible, shadow_visible, false);
+    bvec4 hits = bvec4(
+        is_substance_visible(s, normals),
+        is_light_visible(l, view_frustum.x, view_frustum.y, normals),
+        is_shadow_visible(s, view_frustum, light.xyz),
+        false
+    );
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals);
 
