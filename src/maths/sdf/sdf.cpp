@@ -19,6 +19,7 @@ void sdf_create(sdf_t * sdf, sdf_func_t phi, void *data, uint32_t id)
 	sdf->is_com_valid = false;
 	sdf->is_inertia_tensor_valid = false;
 	sdf->volume = -1.0;
+	sdf->is_convex = false;
 }
 
 double sdf_distance(sdf_t * sdf, const vec3 * x)

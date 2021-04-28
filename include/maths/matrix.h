@@ -30,8 +30,7 @@ namespace srph {
 			if constexpr(sizeof ... (Xs) != 0) {
 				construct < K + P > (xs ...);
 			}
-		}
-		template < int K, typename ... Xs >
+		} template < int K, typename ... Xs >
 		    void construct(const T & x, Xs ... xs) {
 			construct < K > (matrix_t < T, 1, 1 > (x), xs ...);
 		}
@@ -79,24 +78,21 @@ namespace srph {
 			std::transform(this->begin(), this->end(), x.begin(),
 				       r.begin(), std::plus());
 			return r;
-		}
-		template < class S >
+		} template < class S >
 		    matrix_t < decltype(T() - S()), M,
 		    N > operator-(const matrix_t < S, M, N > &x) const {
 			matrix_t < decltype(T() - S()), M, N > r;
 			std::transform(this->begin(), this->end(), x.begin(),
 				       r.begin(), std::minus());
 			return r;
-		}
-		template < class S >
+		} template < class S >
 		    matrix_t < decltype(T() * S()), M,
 		    N > scaled(const matrix_t < S, M, N > &x) const {
 			matrix_t < decltype(T() * S()), M, N > r;
 			std::transform(this->begin(), this->end(), x.begin(),
 				       r.begin(), std::multiplies());
 			return r;
-		}
-		matrix_t < T, M, N > operator/(const matrix_t < T, M, N > &x) const {
+		} matrix_t < T, M, N > operator/(const matrix_t < T, M, N > &x) const {
 			matrix_t < T, M, N > r;
 			std::transform(this->begin(), this->end(), x.begin(),
 				       r.begin(), std::divides < T > ());
@@ -105,11 +101,9 @@ namespace srph {
 		// scalar accessor operators
 		    matrix_t < T, M, N > operator-(const T & x) const {
 			return *this - matrix_t < T, M, N > (x);
-		}
-		matrix_t < T, M, N > operator+(const T & x) const {
+		} matrix_t < T, M, N > operator+(const T & x) const {
 			return *this + matrix_t < T, M, N > (x);
-		}
-		template < class S >
+		} template < class S >
 		    matrix_t < decltype(T() * S()), M,
 		    N > operator*(const S & x) const {
 			matrix_t < decltype(T() * S()), M, N > ms;
@@ -120,23 +114,19 @@ namespace srph {
 
 		matrix_t < T, M, N > operator/(const T & x) const {
 			return *this / matrix_t < T, M, N > (x);
-		}
-
-		struct comparator_t {
+		} struct comparator_t {
 			bool operator() (const matrix_t < T, M, N > &a,
 					 const matrix_t < T, M, N > &b) {
 				return std::lexicographical_compare(a.begin(),
 								    a.end(),
 								    b.begin(),
 								    b.end());
-			}
-		};
+		}};
 
 		// getters
 		T operator[] (int i)const {
 			return super_t::operator[] (i);
-		}
-		T get(int row, int column) const {
+		} T get(int row, int column) const {
 			if (row >= M || column >= N) {
 				throw std::runtime_error
 				    ("Error: Matrix index out of range.");
@@ -164,11 +154,9 @@ namespace srph {
 
 		typename std::array < T, M * N >::const_iterator begin() const {
 			return super_t::begin();
-		}
-		typename std::array < T, M * N >::const_iterator end() const {
+		} typename std::array < T, M * N >::const_iterator end() const {
 			return super_t::end();
-		}
-	};
+	}};
 
 	template < class T, int N > using vec_t = matrix_t < T, N, 1 >;
 
@@ -194,8 +182,7 @@ namespace srph {
 			return std::transform_reduce(x.begin(), x.end(),
 						     y.begin(),
 						     decltype(S() * T())(0));
-		}
-		template < class T, int M,
+		} template < class T, int M,
 		    int N > T length(const matrix_t < T, M, N > &x) {
 			return std::sqrt(dot(x, x));
 		}
@@ -207,8 +194,8 @@ namespace srph {
 			matrix_t < S, M, N > a;
 			std::transform(m.begin(), m.end(), a.begin(),
 				       [](const T & x) {
-				       return static_cast < S > (x);
-				       });
+				       return static_cast < S > (x);}
+			);
 			return a;
 		}
 	}

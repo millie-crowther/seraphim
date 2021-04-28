@@ -123,7 +123,7 @@ void _srph_array_pop_back(_srph_base_array * a)
 void _srph_array_sort(_srph_base_array * a,
 		      int (*comparator)(const void *, const void *))
 {
-	if (a->size <= 1) {
+	if(a->size <= 1) {
 		return;
 	}
 

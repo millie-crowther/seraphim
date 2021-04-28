@@ -123,8 +123,7 @@ namespace srph {
 
 			map(offset, source.size(),[&](auto mem_map) {
 			    std::memcpy(mem_map, source.data(),
-					sizeof(T) * source.size());
-			    }
+					sizeof(T) * source.size());}
 			);
 
 			if constexpr
@@ -189,19 +188,17 @@ namespace srph {
 
 		uint64_t get_size() const {
 			return size / sizeof(T);
-		}
-		static uint32_t find_memory_type(device_t * device,
-						 uint32_t type_filter,
-						 VkMemoryPropertyFlags prop) {
+		} static uint32_t find_memory_type(device_t * device,
+						   uint32_t type_filter,
+						   VkMemoryPropertyFlags prop) {
 			VkPhysicalDeviceMemoryProperties mem_prop;
 			vkGetPhysicalDeviceMemoryProperties
 			    (device->physical_device, &mem_prop);
 
 			for (uint32_t i = 0; i < mem_prop.memoryTypeCount; i++) {
 				if ((type_filter & (1 << i))
-				    && (mem_prop.
-					memoryTypes[i].propertyFlags & prop) ==
-				    prop) {
+				    && (mem_prop.memoryTypes[i].
+					propertyFlags & prop) == prop) {
 					return i;
 				}
 			}

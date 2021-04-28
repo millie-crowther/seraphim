@@ -53,8 +53,7 @@ bool
 						 const substance_t::data_t & b)
 const {
 	return a.far < b.far && a.id != static_cast < uint32_t > (~0);
-}
-substance_t::data_t::data_t()
+} substance_t::data_t::data_t()
 {
 	id = ~0;
 }

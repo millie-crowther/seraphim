@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <core/constant.h>
 
 #include "core/random.h"
 
@@ -302,10 +303,8 @@ mat3 *srph_matter_inertia_tensor(matter_t * matter)
 								    (&r);
 							}
 
-							matter->
-							    inertia_tensor.v[j *
-									     3 +
-									     i]
+							matter->inertia_tensor.
+							    v[j * 3 + i]
 							    += iij *
 							    mat.density;
 						}

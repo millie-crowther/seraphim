@@ -14,6 +14,8 @@ typedef double (*sdf_func_t)(void *data, const vec3 * x);
 typedef struct sdf_t {
 	uint32_t id;
 
+	bool is_convex;
+
 	bool is_bound_valid;
 	bound3_t bound;
 

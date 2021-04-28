@@ -120,24 +120,24 @@ renderer_t::renderer_t(device_t * device,
 
 		write_desc_sets.push_back(patch_buffer->get_write_descriptor_set
 					  (descriptor_set));
-		write_desc_sets.
-		    push_back(substance_buffer->get_write_descriptor_set
-			      (descriptor_set));
-		write_desc_sets.
-		    push_back(call_buffer->get_write_descriptor_set
-			      (descriptor_set));
-		write_desc_sets.
-		    push_back(light_buffer->get_write_descriptor_set
-			      (descriptor_set));
-		write_desc_sets.
-		    push_back(pointer_buffer->get_write_descriptor_set
-			      (descriptor_set));
-		write_desc_sets.
-		    push_back(frustum_buffer->get_write_descriptor_set
-			      (descriptor_set));
-		write_desc_sets.
-		    push_back(lighting_buffer->get_write_descriptor_set
-			      (descriptor_set));
+		write_desc_sets.push_back(substance_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
+		write_desc_sets.push_back(call_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
+		write_desc_sets.push_back(light_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
+		write_desc_sets.push_back(pointer_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
+		write_desc_sets.push_back(frustum_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
+		write_desc_sets.push_back(lighting_buffer->
+					  get_write_descriptor_set
+					  (descriptor_set));
 	}
 
 	vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
@@ -501,55 +501,48 @@ void renderer_t::create_command_buffers()
 	command_buffers.clear();
 
 	for (uint32_t i = 0; i < swapchain->get_size(); i++) {
-		command_buffers.
-		    push_back(graphics_command_pool->reusable_buffer([&]
-								     (auto
-								      command_buffer)
-								     {
-								     VkRenderPassBeginInfo
-								     render_pass_info
-								     = { };
-								     render_pass_info.
-								     sType =
-								     VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-								     render_pass_info.renderPass
-								     =
-								     render_pass;
-								     render_pass_info.framebuffer
-								     =
-								     framebuffers
-								     [i];
-								     render_pass_info.renderArea.
-								     offset =
-								     { 0, 0 };
-								     render_pass_info.renderArea.
-								     extent =
-								     swapchain->get_extents
-								     ();
-								     vkCmdBeginRenderPass
-								     (command_buffer,
-								      &render_pass_info,
-								      VK_SUBPASS_CONTENTS_INLINE);
-								     vkCmdBindPipeline
-								     (command_buffer,
-								      VK_PIPELINE_BIND_POINT_GRAPHICS,
-								      graphics_pipeline);
-								     vkCmdBindDescriptorSets
-								     (command_buffer,
-								      VK_PIPELINE_BIND_POINT_GRAPHICS,
-								      pipeline_layout,
-								      0, 1,
-								      &desc_sets
-								      [i], 0,
-								      nullptr);
-								     vkCmdDraw
-								     (command_buffer,
-								      3, 1, 0,
-								      0);
-								     vkCmdEndRenderPass
-								     (command_buffer);
-								     }
-			      ));
+		command_buffers.push_back(graphics_command_pool->
+					  reusable_buffer([&]
+							  (auto command_buffer) {
+							  VkRenderPassBeginInfo
+							  render_pass_info
+							  = { };
+							  render_pass_info.sType
+							  =
+							  VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+							  render_pass_info.
+							  renderPass =
+							  render_pass;
+							  render_pass_info.
+							  framebuffer =
+							  framebuffers[i];
+							  render_pass_info.
+							  renderArea.offset =
+							  { 0, 0 };
+							  render_pass_info.
+							  renderArea.extent =
+							  swapchain->
+							  get_extents();
+							  vkCmdBeginRenderPass
+							  (command_buffer,
+							   &render_pass_info,
+							   VK_SUBPASS_CONTENTS_INLINE);
+							  vkCmdBindPipeline
+							  (command_buffer,
+							   VK_PIPELINE_BIND_POINT_GRAPHICS,
+							   graphics_pipeline);
+							  vkCmdBindDescriptorSets
+							  (command_buffer,
+							   VK_PIPELINE_BIND_POINT_GRAPHICS,
+							   pipeline_layout, 0,
+							   1, &desc_sets[i], 0,
+							   nullptr);
+							  vkCmdDraw
+							  (command_buffer, 3, 1,
+							   0, 0);
+							  vkCmdEndRenderPass
+							  (command_buffer);}
+					  ));
 	}
 }
 
@@ -691,8 +684,8 @@ void renderer_t::render()
 	for (size_t i = 0; i < *num_substances; i++) {
 		substance_t *s = &substances[i];
 		substance_data.push_back(s->get_data
-					 (&main_camera.lock()->
-					  transform.position));
+					 (&main_camera.lock()->transform.
+					  position));
 	}
 	substance_data.resize(size);
 
@@ -751,8 +744,7 @@ void renderer_t::render()
 							    work_group_count[1],
 							    1);
 					      call_buffer->record_read
-					      (command_buffer);
-					      }
+					      (command_buffer);}
 	)->submit(image_available_semas[current_frame],
 		  compute_done_semas[current_frame],
 		  in_flight_fences[current_frame],
@@ -810,8 +802,7 @@ void renderer_t::handle_requests(uint32_t frame)
 			 std::memcpy(calls.data(), memory_map,
 				     calls.size() * sizeof(call_t));
 			 std::memcpy(memory_map, empty_calls.data(),
-				     calls.size() * sizeof(call_t));
-			 }
+				     calls.size() * sizeof(call_t));}
 	);
 
  for (auto & call:calls) {

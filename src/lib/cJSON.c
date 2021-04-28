@@ -741,8 +741,8 @@ static cJSON_bool parse_string(cJSON * const item,
 		    (size_t)(input_end - buffer_at_offset(input_buffer)) -
 		    skipped_bytes;
 		output =
-		    (unsigned char *)input_buffer->
-		    hooks.allocate(allocation_length + sizeof(""));
+		    (unsigned char *)input_buffer->hooks.
+		    allocate(allocation_length + sizeof(""));
 		if (output == NULL) {
 			goto fail;	/* allocation failure */
 		}
@@ -2655,8 +2655,8 @@ static void minify_string(char **input, char **output)
 	*input += static_strlen("\"");
 	*output += static_strlen("\"");
 
-	for (; (*input)[0] != '\0'; (void)++(*input), ++(*output)) {
-		 (*output)[0] = (*input)[0];
+	for (; (*input)[0] != '\0'; (void)++(*input), ++ (*output)) {
+		(*output)[0] =(*input)[0];
 
 		if ((*input)[0] == '\"') {
 			(*output)[0] = '\"';

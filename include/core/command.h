@@ -85,16 +85,14 @@ namespace srph {
 								      queue,
 								      VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
 								      f);
-		}
-		template < class F > std::shared_ptr < command_buffer_t >
+		} template < class F > std::shared_ptr < command_buffer_t >
 		    reusable_buffer(const F & f) const {
 			return std::make_shared < command_buffer_t > (device,
 								      command_pool,
 								      queue,
 								      VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
 								      f);
-		}
-	};
+	}};
 }
 
 #endif

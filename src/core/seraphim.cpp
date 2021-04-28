@@ -43,7 +43,6 @@ srph::seraphim_t::seraphim_t(const char *title)
 	      work_group_count[1] * work_group_size[1]
 	     ));
 
-
 	window_set_title(window.get(), title);
 
 	uint32_t extension_count = 0;
@@ -82,15 +81,14 @@ srph::seraphim_t::seraphim_t(const char *title)
 #if SERAPHIM_DEBUG
 	VkPhysicalDeviceProperties properties = { };
 	vkGetPhysicalDeviceProperties(device->physical_device, &properties);
-	std::
-	    cout << "Chosen physical device: " << properties.deviceName << std::
-	    endl;
-	std::cout << "\tMaximum storage buffer range: " << properties.
-	    limits.maxStorageBufferRange << std::endl;
-	std::cout << "\tMaximum shared memory  size: " << properties.
-	    limits.maxComputeSharedMemorySize << std::endl;
-	std::cout << "\tMaximum 2d image size: " << properties.
-	    limits.maxImageDimension2D << std::endl;
+	std::cout << "Chosen physical device: " << properties.
+	    deviceName << std::endl;
+	std::cout << "\tMaximum storage buffer range: " << properties.limits.
+	    maxStorageBufferRange << std::endl;
+	std::cout << "\tMaximum shared memory  size: " << properties.limits.
+	    maxComputeSharedMemorySize << std::endl;
+	std::cout << "\tMaximum 2d image size: " << properties.limits.
+	    maxImageDimension2D << std::endl;
 
 	uint32_t max_image_size = properties.limits.maxImageDimension3D;
 	std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
@@ -253,8 +251,8 @@ void srph::seraphim_t::create_instance()
 
 	std::cout << "Enabled validation layers: " << std::endl;
 	for (uint32_t i = 0; i < create_info.enabledLayerCount; i++) {
-		std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::
-		    endl;
+		std::cout << "\t" << create_info.
+		    ppEnabledLayerNames[i] << std::endl;
 	}
 
 	auto result = vkCreateInstance(&create_info, nullptr, &instance);
@@ -311,10 +309,9 @@ bool srph::seraphim_t::check_validation_layers()
 					      available_layers.end(),
 					      [layer] (auto & properties) {
 					      return layer ==
-					      std::string(properties.layerName);
-					      }
-			   );
-			   }
+					      std::string(properties.
+							  layerName);}
+			   );}
 	);
 }
 #endif

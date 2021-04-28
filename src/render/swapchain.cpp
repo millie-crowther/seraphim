@@ -122,13 +122,13 @@ VkExtent2D swapchain_t::select_swap_extent(u32vec2_t size, VkSurfaceKHR surface)
 
 		extents.width = std::max(capabilities.minImageExtent.width,
 					 std::min(size[0],
-						  capabilities.
-						  maxImageExtent.width)
+						  capabilities.maxImageExtent.
+						  width)
 		    );
 		extents.height = std::max(capabilities.minImageExtent.height,
 					  std::min(size[1],
-						   capabilities.
-						   maxImageExtent.height)
+						   capabilities.maxImageExtent.
+						   height)
 		    );
 
 		return extents;

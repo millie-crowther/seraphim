@@ -336,9 +336,34 @@ static bool is_colliding_in_bound(matter_t ** ms, bound3_t * bound)
 
 		srph_bound3_radius(&sub_bounds[sub_bound_index], &radius);
 		double radius_length = vec3_length(&radius);
-
 		if (phis[0] >= radius_length || phis[1] >= radius_length) {
 			return false;
+		}
+
+		for (int matter_index = 0; matter_index < 2; matter_index++) {
+			matter_t *matter = ms[matter_index];
+			if (matter->sdf->is_convex) {
+				bool is_intersecting = false;
+				vec3 vertex;
+				for (int vertex_index = 0; vertex_index < 8;
+				     vertex_index++) {
+					srph_bound3_vertex(bound, vertex_index,
+							   &vertex);
+					srph_matter_to_local_position(matter,
+								      &vertex,
+								      &vertex);
+					double phi =
+					    sdf_distance(matter->sdf, &vertex);
+					if (phi < epsilon) {
+						is_intersecting = true;
+						break;
+					}
+				}
+
+				if (!is_intersecting) {
+					return false;
+				}
+			}
 		}
 	}
 

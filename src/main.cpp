@@ -8,21 +8,18 @@
 
 int main()
 {
-    const char * game_filepath = "/home/millie/seraphim_game/";
-    const char * json_filename = "game.json";
-    char filepath[100] = {0};
-    sprintf(filepath, "%s%s", game_filepath, json_filename);
+	const char *game_filepath = "/home/millie/seraphim_game/";
+	const char *json_filename = "game.json";
+	char filepath[100] = { 0 };
+	sprintf(filepath, "%s%s", game_filepath, json_filename);
 
-    cJSON *game_json = file_load_json(filepath);
-    cJSON *title_json = cJSON_GetObjectItem(game_json, "title");
-    char title_string[100] = "Seraphim";
-    if (
-        title_json != NULL &&
-        title_json->type == cJSON_String
-    ) {
-        strcpy(title_string, title_json->valuestring);
-    }
-    cJSON_Delete(game_json);
+	cJSON *game_json = file_load_json(filepath);
+	cJSON *title_json = cJSON_GetObjectItem(game_json, "title");
+	char title_string[100] = "Seraphim";
+	if (title_json != NULL && title_json->type == cJSON_String) {
+		strcpy(title_string, title_json->valuestring);
+	}
+	cJSON_Delete(game_json);
 
 	srph::seraphim_t engine(title_string);
 
@@ -34,19 +31,25 @@ int main()
 
 	form_t form;
 
-	vec3 floor_size = { {100.0, 100.0, 100.0} };
+	vec3 floor_size = { {100.0, 100.0, 100.0}
+	};
 	sdf_t *floor_sdf = sdf_cuboid_initialise(&engine, &floor_size);
-	material.colour = { {0.1, 0.8, 0.8} };
-	vec3 position = { {0.0, -100.0, 0.0} };
+	material.colour = { {0.1, 0.8, 0.8}
+	};
+	vec3 position = { {0.0, -100.0, 0.0}
+	};
 	matter_t floor_matter;
 	srph_matter_init(&floor_matter, floor_sdf, &material, &position, true,
 			 true);
 	srph_create_substance(&engine, &form, &floor_matter);
 
-	vec3 cube_size = { {0.5, 0.5, 0.5} };
+	vec3 cube_size = { {0.5, 0.5, 0.5}
+	};
 	sdf_t *cube_sdf = sdf_cuboid_initialise(&engine, &cube_size);
-	material.colour = { {0.8, 0.8, 0.1} };
-	position = { {0.0, 3.0, 0.0} };
+	material.colour = { {0.8, 0.8, 0.1}
+	};
+	position = { {0.0, 3.0, 0.0}
+	};
 	matter_t cube_matter;
 	srph_matter_init(&cube_matter, cube_sdf, &material, &position, true,
 			 false);
