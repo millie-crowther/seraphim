@@ -487,6 +487,22 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
 }
 
 bool is_shadow_visible(substance_t s, vec2 view_frustum, vec3 light_position){
+    /*
+
+                  __--G--__  r
+            x_--``    |    ``--_               S = shadowing_substance
+             \        |        /              L = light_position
+              \       |       /               G = geometry_centre
+               \      |      /                r = geometry_radius
+                \     |     /
+       _____     \    |    /
+      /     \     \   |   /                   o = vector pointing out of screen towards you
+     |   S   |     \  |  /
+      \_____/       \ | /
+                     \|/
+                      L
+    */
+
     vec3 eye_position = pc.eye_transform[3].xyz;
     vec3 eye_direction = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
     vec3 view_centre = eye_direction * (view_frustum.x + view_frustum.y) / 2;
@@ -496,8 +512,8 @@ bool is_shadow_visible(substance_t s, vec2 view_frustum, vec3 light_position){
     vec3 substance_origin = s.transform[3].xyz;
     float substance_radius = length(s.radius);
 
-    vec3 d = normalize(light_position - view_centre);
-    float alpha = dot(d, substance_origin - view_centre) / length(light_position - view_centre);
+    vec3 difference = normalize(light_position - view_centre);
+    float alpha = dot(difference, substance_origin - view_centre) / length(light_position - view_centre);
     alpha = clamp(alpha, 0, 1);
 
     vec3 c = mix(view_centre, light_position, alpha);
