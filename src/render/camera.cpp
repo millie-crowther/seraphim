@@ -5,21 +5,18 @@
 
 using namespace srph;
 
-camera_t::camera_t()
-{
+camera_t::camera_t() {
 	transform.position = { {0.0, 0.5, -5.0}
 	};
 	transform.rotation = quat_identity;
 }
 
 void camera_t::update(double delta, const keyboard_t & keyboard,
-		      const mouse_t & mouse)
-{
+	const mouse_t & mouse) {
 	double scale = 2000.0;
 
 	quat q;
-	quat_from_axis_angle(&q,
-			     &vec3_up, delta * mouse.get_velocity()[0] / scale);
+	quat_from_axis_angle(&q, &vec3_up, delta * mouse.get_velocity()[0] / scale);
 	srph_transform_rotate(&transform, &q);
 
 	vec3 right;
@@ -27,8 +24,7 @@ void camera_t::update(double delta, const keyboard_t & keyboard,
 	srph_transform_right(&transform, &right);
 	right.y = 0;
 	vec3_normalize(&right, &right);
-	quat_from_axis_angle(&q1,
-			     &right, delta * mouse.get_velocity()[1] / scale);
+	quat_from_axis_angle(&q1, &right, delta * mouse.get_velocity()[1] / scale);
 	srph_transform_rotate(&transform, &q1);
 
 	vec3 forward;
@@ -66,13 +62,12 @@ void camera_t::update(double delta, const keyboard_t & keyboard,
 
 }
 
-void srph_camera_transformation_matrix(srph::camera_t * c, float *xs)
-{
+void srph_camera_transformation_matrix(srph::camera_t * c, float *xs) {
 	assert(c != NULL && xs != NULL);
 	mat4 dxs;
 	srph_transform_matrix(&c->transform, &dxs);
 
 	for (int i = 0; i < 16; i++) {
-		xs[i] = (float)dxs.v[i];
+		xs[i] = (float) dxs.v[i];
 	}
 }

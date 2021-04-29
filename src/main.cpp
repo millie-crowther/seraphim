@@ -6,8 +6,7 @@
 
 #include <stdio.h>
 
-int main()
-{
+int main() {
 	const char *game_filepath = "/home/millie/seraphim_game/";
 	const char *json_filename = "game.json";
 	char filepath[100] = { 0 };
@@ -39,8 +38,7 @@ int main()
 	vec3 position = { {0.0, -100.0, 0.0}
 	};
 	matter_t floor_matter;
-	srph_matter_init(&floor_matter, floor_sdf, &material, &position, true,
-			 true);
+	srph_matter_init(&floor_matter, floor_sdf, &material, &position, true, true);
 	srph_create_substance(&engine, &form, &floor_matter);
 
 	vec3 cube_size = { {0.5, 0.5, 0.5}
@@ -51,8 +49,7 @@ int main()
 	position = { {0.0, 3.0, 0.0}
 	};
 	matter_t cube_matter;
-	srph_matter_init(&cube_matter, cube_sdf, &material, &position, true,
-			 false);
+	srph_matter_init(&cube_matter, cube_sdf, &material, &position, true, false);
 	srph_create_substance(&engine, &form, &cube_matter);
 
 //    sdf_t * sphere_sdf = sdf_sphere_create(0.5);

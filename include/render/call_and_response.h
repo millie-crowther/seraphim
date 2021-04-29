@@ -5,7 +5,7 @@
 
 namespace srph {
 	class call_t {
- private:
+	  private:
 		f32vec3_t position;
 		float radius;
 
@@ -14,13 +14,12 @@ namespace srph {
 		uint32_t substanceID;
 		uint32_t status;
 
- public:
+	  public:
 		struct comparator_t {
-			bool operator() (const call_t & a,
-					 const call_t & b)const;
+			bool operator          () (const call_t & a, const call_t & b) const;
 		};
 
-		 call_t();
+		  call_t();
 
 		uint32_t get_substance_ID() const;
 		f32vec3_t get_position() const;
@@ -32,7 +31,7 @@ namespace srph {
 	};
 
 	class response_t {
- public:
+	  public:
 		struct patch_t {
 			uint32_t contents;
 			uint32_t hash;
@@ -40,17 +39,17 @@ namespace srph {
 			uint32_t normal;
 		};
 
-		 response_t();
-		 response_t(const call_t & call, substance_t * substance);
+		  response_t();
+		  response_t(const call_t & call, substance_t * substance);
 
 		const std::array < uint32_t, 8 > &get_normals() const;
 		const std::array < uint32_t, 8 > &get_colours() const;
 		patch_t get_patch() const;
 
- private:
-		 patch_t patch;
-		 std::array < uint32_t, 8 > normals;
-		 std::array < uint32_t, 8 > colours;
+	  private:
+		  patch_t patch;
+		  std::array < uint32_t, 8 > normals;
+		  std::array < uint32_t, 8 > colours;
 
 		uint32_t squash(const vec4_t & x) const;
 

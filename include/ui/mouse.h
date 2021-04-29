@@ -13,12 +13,12 @@ namespace srph {
 	struct window_t;
 
 	class mouse_t {
- private:
+	  private:
 		vec2_t v;
 		vec2_t c;
 
- public:
-		 mouse_t(window_t & window);
+	  public:
+		  mouse_t(window_t & window);
 
 		vec2_t get_velocity() const;
 

@@ -10,9 +10,9 @@
 
 #define SOLVER_ITERATIONS 1
 
-void srph_physics_init(srph_physics * p, substance_t * substances,
-		       size_t *num_substances)
-{
+void
+srph_physics_init(srph_physics * p, substance_t * substances,
+	size_t *num_substances) {
 	p->quit = false;
 
 	p->gravity = { {0.0, -9.8, 0.0} };
@@ -22,13 +22,11 @@ void srph_physics_init(srph_physics * p, substance_t * substances,
 	p->num_substances = num_substances;
 }
 
-void srph_physics_start(srph_physics * p)
-{
+void srph_physics_start(srph_physics * p) {
 	p->thread = std::thread(&srph_physics::run, p);
 }
 
-void srph_physics_destroy(srph_physics * p)
-{
+void srph_physics_destroy(srph_physics * p) {
 	p->quit = true;
 
 	if (p->thread.joinable()) {
@@ -38,8 +36,7 @@ void srph_physics_destroy(srph_physics * p)
 	srph_array_clear(&p->collisions);
 }
 
-void srph_physics_tick(srph_physics * p, double dt)
-{
+void srph_physics_tick(srph_physics * p, double dt) {
 	// update substances and integrate forces
 	for (uint32_t i = 0; i < *p->num_substances; i++) {
 		matter_t *m = &p->substances[i].matter;
@@ -57,9 +54,8 @@ void srph_physics_tick(srph_physics * p, double dt)
 
 	// resolve collisions
 	for (int solver_iteration = 0; solver_iteration < SOLVER_ITERATIONS;
-	     solver_iteration++) {
-		for (size_t collision = 0; collision < p->collisions.size;
-		     collision++) {
+		solver_iteration++) {
+		for (size_t collision = 0; collision < p->collisions.size; collision++) {
 			collision_resolve(&p->collisions.data[collision], dt);
 		}
 	}
@@ -95,8 +91,7 @@ void srph_physics_tick(srph_physics * p, double dt)
 
 using namespace srph;
 
-void srph_physics::run()
-{
+void srph_physics::run() {
 	auto t = std::chrono::steady_clock::now();
 	printf("physics thread starting\n");
 
@@ -151,14 +146,12 @@ void srph_physics::run()
         }
 
         */
-		t += std::chrono::microseconds(static_cast < int64_t >
-					       (delta * 1000000.0));
+		t += std::chrono::microseconds(static_cast < int64_t > (delta * 1000000.0));
 		std::this_thread::sleep_until(t);
 	}
 }
 
-int srph_physics::get_frame_count()
-{
+int srph_physics::get_frame_count() {
 	int f = frames;
 	frames = 0;
 	return f;

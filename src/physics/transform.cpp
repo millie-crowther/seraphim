@@ -22,9 +22,7 @@
 //    return rotation.inverse() * (x - position);
 //}
 //
-void srph_transform_to_local_position(transform_t * tf, vec3 * tx,
-				      const vec3 * x)
-{
+void srph_transform_to_local_position(transform_t * tf, vec3 * tx, const vec3 * x) {
 	vec3_subtract(tx, x, &tf->position);
 
 	quat qi;
@@ -32,9 +30,9 @@ void srph_transform_to_local_position(transform_t * tf, vec3 * tx,
 	vec3_multiply_quat(tx, tx, &qi);
 }
 
-void srph_transform_to_global_position(const transform_t * tf, vec3 * tx,
-				       const vec3 * x)
-{
+void
+srph_transform_to_global_position(const transform_t * tf, vec3 * tx,
+	const vec3 * x) {
 	vec3_multiply_quat(tx, x, &tf->rotation);
 	assert(isfinite(tx->x) && isfinite(tx->y) && isfinite(tx->z));
 	vec3_add(tx, tx, &tf->position);
@@ -54,39 +52,33 @@ void srph_transform_to_global_position(const transform_t * tf, vec3 * tx,
 //    return rotation.inverse() * vec3_t(x1.x, x1.y, x1.z);
 //}
 
-void srph_transform_to_global_direction(const transform_t * tf, vec3 * tx,
-					const vec3 * x)
-{
+void
+srph_transform_to_global_direction(const transform_t * tf, vec3 * tx,
+	const vec3 * x) {
 	vec3_multiply_quat(tx, x, &tf->rotation);
 }
 
-void srph_transform_forward(const transform_t * tf, vec3 * x)
-{
+void srph_transform_forward(const transform_t * tf, vec3 * x) {
 	srph_transform_to_global_direction(tf, x, &vec3_forward);
 }
 
-void srph_transform_up(const transform_t * tf, vec3 * x)
-{
+void srph_transform_up(const transform_t * tf, vec3 * x) {
 	srph_transform_to_global_direction(tf, x, &vec3_up);
 }
 
-void srph_transform_right(const transform_t * tf, vec3 * x)
-{
+void srph_transform_right(const transform_t * tf, vec3 * x) {
 	srph_transform_to_global_direction(tf, x, &vec3_right);
 }
 
-void srph_transform_translate(transform_t * tf, const vec3 * x)
-{
+void srph_transform_translate(transform_t * tf, const vec3 * x) {
 	vec3_add(&tf->position, &tf->position, x);
 }
 
-void srph_transform_rotate(transform_t * tf, const quat * q)
-{
+void srph_transform_rotate(transform_t * tf, const quat * q) {
 	quat_multiply(&tf->rotation, q, &tf->rotation);
 }
 
-void srph_transform_matrix(transform_t * tf, mat4 * xs)
-{
+void srph_transform_matrix(transform_t * tf, mat4 * xs) {
 	mat4_rotation_quat(xs, &tf->rotation);
 	mat4_translation(xs, xs, &tf->position);
 }

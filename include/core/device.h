@@ -15,14 +15,14 @@ typedef struct device_t {
 	uint32_t compute_family;
 
 	VkPhysicalDevice select_physical_device(VkInstance instance,
-						VkSurfaceKHR surface) const;
+		VkSurfaceKHR surface) const;
 	bool is_suitable_device(VkPhysicalDevice physical_device,
-				VkSurfaceKHR surface) const;
+		VkSurfaceKHR surface) const;
 	void select_queue_families(VkSurfaceKHR surface);
 
-	 device_t(VkInstance instance, VkSurfaceKHR surface,
-		  std::vector < const char *>enabled_validation_layers);
-	~device_t();
+	  device_t(VkInstance instance, VkSurfaceKHR surface,
+		std::vector < const char *>enabled_validation_layers);
+	 ~device_t();
 } device_t;
 
 #endif

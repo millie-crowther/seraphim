@@ -8,10 +8,10 @@
 namespace srph {
 	typedef struct camera_t {
 		transform_t transform;
-		 camera_t();
+		  camera_t();
 
 		void update(double delta, const keyboard_t & keyboard,
-			    const mouse_t & mouse);
+			const mouse_t & mouse);
 	} camera_t;
 } void srph_camera_transformation_matrix(srph::camera_t * camera, float *xs);
 

@@ -22,7 +22,7 @@
 
 namespace srph {
 	class renderer_t {
- private:
+	  private:
 		// types
 		struct push_constant_t {
 			u32vec2_t window_size;
@@ -49,8 +49,8 @@ namespace srph {
 		static constexpr uint32_t patch_sample_size = 2;
 		static constexpr uint32_t max_cache_size = 1000;
 
-		 std::set < uint32_t > indices;
-		 std::set < uint32_t > hashes;
+		  std::set < uint32_t > indices;
+		  std::set < uint32_t > hashes;
 
 		// fields
 		u32vec2_t work_group_count;
@@ -58,27 +58,26 @@ namespace srph {
 		uint32_t patch_image_size;
 		push_constant_t push_constants;
 		device_t *device;
-		 std::vector < VkFramebuffer > framebuffers;
+		  std::vector < VkFramebuffer > framebuffers;
 		VkSurfaceKHR surface;
 		VkRenderPass render_pass;
 
 		VkPipeline graphics_pipeline;
 		VkPipelineLayout pipeline_layout;
-		 std::vector < std::shared_ptr <
-		    command_buffer_t >> command_buffers;
+		  std::vector < std::shared_ptr < command_buffer_t >> command_buffers;
 
 		VkPipeline compute_pipeline;
 		VkPipelineLayout compute_pipeline_layout;
 
 		int frames;
 		int current_frame;
-		 std::vector < VkSemaphore > image_available_semas;
-		 std::vector < VkSemaphore > compute_done_semas;
-		 std::vector < VkSemaphore > render_finished_semas;
-		 std::vector < VkFence > in_flight_fences;
+		  std::vector < VkSemaphore > image_available_semas;
+		  std::vector < VkSemaphore > compute_done_semas;
+		  std::vector < VkSemaphore > render_finished_semas;
+		  std::vector < VkFence > in_flight_fences;
 
 		VkDescriptorSetLayout descriptor_layout;
-		 std::vector < VkDescriptorSet > desc_sets;
+		  std::vector < VkDescriptorSet > desc_sets;
 		VkDescriptorPool desc_pool;
 
 		VkQueue present_queue;
@@ -89,37 +88,33 @@ namespace srph {
 		substance_t *substances;
 		size_t *num_substances;
 
-		 std::unique_ptr < swapchain_t > swapchain;
-		 std::weak_ptr < camera_t > main_camera;
+		  std::unique_ptr < swapchain_t > swapchain;
+		  std::weak_ptr < camera_t > main_camera;
 
 		// textures
-		 std::unique_ptr < texture_t > render_texture;
-		 std::unique_ptr < texture_t > colour_texture;
-		 std::unique_ptr < texture_t > normal_texture;
+		  std::unique_ptr < texture_t > render_texture;
+		  std::unique_ptr < texture_t > colour_texture;
+		  std::unique_ptr < texture_t > normal_texture;
 
 		// command pool
-		 std::unique_ptr < command_pool_t > compute_command_pool;
-		 std::unique_ptr < command_pool_t > graphics_command_pool;
+		  std::unique_ptr < command_pool_t > compute_command_pool;
+		  std::unique_ptr < command_pool_t > graphics_command_pool;
 
 		// buffers
-		 std::unique_ptr < device_buffer_t <
-		    response_t::patch_t >> patch_buffer;
-		 std::unique_ptr < device_buffer_t <
-		    substance_t::data_t >> substance_buffer;
-		 std::unique_ptr < device_buffer_t < call_t >> call_buffer;
-		 std::unique_ptr < device_buffer_t < light_t >> light_buffer;
-		 std::unique_ptr < device_buffer_t < uint32_t >> pointer_buffer;
-		 std::unique_ptr < device_buffer_t <
-		    f32vec2_t >> frustum_buffer;
-		 std::unique_ptr < device_buffer_t <
-		    f32vec4_t >> lighting_buffer;
+		  std::unique_ptr < device_buffer_t < response_t::patch_t >> patch_buffer;
+		  std::unique_ptr < device_buffer_t <
+			substance_t::data_t >> substance_buffer;
+		  std::unique_ptr < device_buffer_t < call_t >> call_buffer;
+		  std::unique_ptr < device_buffer_t < light_t >> light_buffer;
+		  std::unique_ptr < device_buffer_t < uint32_t >> pointer_buffer;
+		  std::unique_ptr < device_buffer_t < f32vec2_t >> frustum_buffer;
+		  std::unique_ptr < device_buffer_t < f32vec4_t >> lighting_buffer;
 
-		 std::map < call_t, response_t,
-		    call_t::comparator_t > response_cache;
-		 std::list < std::map < call_t, response_t,
-		    call_t::comparator_t >::iterator > prev_calls;
+		  std::map < call_t, response_t, call_t::comparator_t > response_cache;
+		  std::list < std::map < call_t, response_t,
+			call_t::comparator_t >::iterator > prev_calls;
 
-		 std::chrono::high_resolution_clock::time_point start;
+		  std::chrono::high_resolution_clock::time_point start;
 
 		// initialisation functions
 		VkShaderModule create_shader_module(std::string code);
@@ -139,18 +134,17 @@ namespace srph {
 		void cleanup_swapchain();
 		void handle_requests(uint32_t frame);
 		void present(uint32_t image_index) const;
-		response_t get_response(const call_t & call,
-					substance_t * substance);
+		response_t get_response(const call_t & call, substance_t * substance);
 
- public:
+	  public:
 		// constructors and destructors
-		 renderer_t(device_t * device,
-			    substance_t * substances, size_t *num_substances,
-			    VkSurfaceKHR surface, window_t * window,
-			    std::shared_ptr < camera_t > test_camera,
-			    u32vec2_t work_group_count,
-			    u32vec2_t work_group_size, uint32_t max_image_size);
-		~renderer_t();
+		  renderer_t(device_t * device,
+			substance_t * substances, size_t *num_substances,
+			VkSurfaceKHR surface, window_t * window,
+			std::shared_ptr < camera_t > test_camera,
+			u32vec2_t work_group_count,
+			u32vec2_t work_group_size, uint32_t max_image_size);
+		 ~renderer_t();
 
 		// public functions
 		void render();

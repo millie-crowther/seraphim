@@ -7,10 +7,8 @@
 using namespace srph;
 
 texture_t::texture_t(uint32_t binding, device_t * device,
-		     u32vec3_t size, VkImageUsageFlags usage,
-		     VkFormatFeatureFlagBits format_feature,
-		     VkDescriptorType descriptor_type)
-{
+	u32vec3_t size, VkImageUsageFlags usage,
+	VkFormatFeatureFlagBits format_feature, VkDescriptorType descriptor_type) {
 	this->binding = binding;
 	this->device = device;
 	this->descriptor_type = descriptor_type;
@@ -34,11 +32,11 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
 	check_format_supported(device->physical_device, format,
-			       image_create_info.tiling, format_feature);
+		image_create_info.tiling, format_feature);
 
 	// allocate memory 
 	if (vkCreateImage(device->device, &image_create_info, nullptr, &image)
-	    != VK_SUCCESS) {
+		!= VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create image.");
 	}
 	VkMemoryRequirements mem_req;
@@ -48,15 +46,12 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	mem_alloc_info.allocationSize = mem_req.size;
 	mem_alloc_info.memoryTypeIndex =
-	    host_buffer_t < float >::find_memory_type(device,
-						      mem_req.memoryTypeBits,
-						      VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		host_buffer_t < float >::find_memory_type(device,
+		mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	if (vkAllocateMemory(device->device, &mem_alloc_info, nullptr, &memory)
-	    != VK_SUCCESS) {
-		throw
-		    std::runtime_error
-		    ("Error: Failed to allocate image memory.");
+		!= VK_SUCCESS) {
+		throw std::runtime_error("Error: Failed to allocate image memory.");
 	}
 
 	if (vkBindImageMemory(device->device, image, memory, 0) != VK_SUCCESS) {
@@ -84,10 +79,8 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	sampler_info.maxLod = 0.0f;
 
 	if (vkCreateSampler(device->device, &sampler_info, nullptr, &sampler) !=
-	    VK_SUCCESS) {
-		throw
-		    std::runtime_error
-		    ("Error: Failed to create texture sampler.");
+		VK_SUCCESS) {
+		throw std::runtime_error("Error: Failed to create texture sampler.");
 	}
 
 	image_info = { };
@@ -96,14 +89,12 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	image_info.sampler = sampler;
 
 	staging_buffer =
-	    std::make_unique < host_buffer_t < std::array < uint32_t, 8 >>> (~0,
-									     device,
-									     staging_buffer_size);
+		std::make_unique < host_buffer_t < std::array < uint32_t, 8 >>> (~0,
+		device, staging_buffer_size);
 }
 
-VkImageView texture_t::create_image_view(VkDevice device, VkImage image,
-					 VkFormat format)
-{
+VkImageView
+	texture_t::create_image_view(VkDevice device, VkImage image, VkFormat format) {
 	VkImageViewCreateInfo view_info = { };
 	view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	view_info.image = image;
@@ -116,15 +107,13 @@ VkImageView texture_t::create_image_view(VkDevice device, VkImage image,
 	view_info.subresourceRange.layerCount = 1;
 
 	VkImageView image_view;
-	if (vkCreateImageView(device, &view_info, nullptr, &image_view) !=
-	    VK_SUCCESS) {
+	if (vkCreateImageView(device, &view_info, nullptr, &image_view) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create image view.");
 	}
 	return image_view;
 }
 
-texture_t::~texture_t()
-{
+texture_t::~texture_t() {
 	vkDestroyImageView(device->device, image_view, nullptr);
 	vkDestroyImage(device->device, image, nullptr);
 	vkFreeMemory(device->device, memory, nullptr);
@@ -132,22 +121,17 @@ texture_t::~texture_t()
 }
 
 void texture_t::check_format_supported(VkPhysicalDevice physical_device,
-				       VkFormat candidate, VkImageTiling tiling,
-				       VkFormatFeatureFlags features)
-{
+	VkFormat candidate, VkImageTiling tiling, VkFormatFeatureFlags features) {
 	VkFormatProperties properties;
-	vkGetPhysicalDeviceFormatProperties(physical_device, candidate,
-					    &properties);
+	vkGetPhysicalDeviceFormatProperties(physical_device, candidate, &properties);
 
-	if ((tiling == VK_IMAGE_TILING_OPTIMAL
-	     || tiling == VK_IMAGE_TILING_LINEAR)
-	    && (properties.optimalTilingFeatures & features) != features) {
+	if ((tiling == VK_IMAGE_TILING_OPTIMAL || tiling == VK_IMAGE_TILING_LINEAR)
+		&& (properties.optimalTilingFeatures & features) != features) {
 		throw std::runtime_error("Error: Unsupported image format.");
 	}
 }
 
-VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) const
-{
+VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
 	VkWriteDescriptorSet descriptor_write = { };
 	descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptor_write.dstBinding = binding;
@@ -160,8 +144,7 @@ VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) c
 	return descriptor_write;
 }
 
-void texture_t::write(u32vec3_t p, const std::array < uint32_t, 8 > &x)
-{
+void texture_t::write(u32vec3_t p, const std::array < uint32_t, 8 > &x) {
 	uint32_t offset = (index++ % staging_buffer->get_size());
 	staging_buffer->write_element(x, offset);
 
@@ -173,31 +156,28 @@ void texture_t::write(u32vec3_t p, const std::array < uint32_t, 8 > &x)
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
-	region.imageOffset =
-	    { static_cast < int >(p[0]), static_cast < int >(p[1]),
-		static_cast < int >(p[2])
+	region.imageOffset = { static_cast < int >(p[0]
+			), static_cast < int >(p[1]
+			),
+		static_cast < int >(p[2]
+			)
 	};
 	region.imageExtent = { 2, 2, 2 };
 
 	updates.push_back(region);
 }
 
-VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const
-{
+VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const {
 	VkDescriptorSetLayoutBinding layout_binding = { };
 	layout_binding.binding = binding;
-	layout_binding.descriptorType =
-	    VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	layout_binding.descriptorCount = 1;
 	layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 	return layout_binding;
 }
 
-void texture_t::record_write(VkCommandBuffer command_buffer)
-{
+void texture_t::record_write(VkCommandBuffer command_buffer) {
 	vkCmdCopyBufferToImage(command_buffer, staging_buffer->buffer, image,
-			       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			       updates.size(), updates.data()
-	    );
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, updates.size(), updates.data());
 	updates.clear();
 }

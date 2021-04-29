@@ -14,12 +14,12 @@ namespace srph {
 		// private fields
 		u32vec2_t size;
 		GLFWwindow *window;
-		 std::unique_ptr < keyboard_t > keyboard;
-		 std::unique_ptr < mouse_t > mouse;
+		  std::unique_ptr < keyboard_t > keyboard;
+		  std::unique_ptr < mouse_t > mouse;
 
 		// constructors and destructors
-		 window_t(u32vec2_t size);
-		~window_t();
+		  window_t(u32vec2_t size);
+		 ~window_t();
 
 		void show();
 
@@ -28,8 +28,8 @@ namespace srph {
 		u32vec2_t get_size() const;
 		bool should_close() const;
 
-		 keyboard_t & get_keyboard() const;
-		 mouse_t & get_mouse() const;
+		  keyboard_t & get_keyboard() const;
+		  mouse_t & get_mouse() const;
 	};
 } void window_set_title(srph::window_t * window, const char *title);
 

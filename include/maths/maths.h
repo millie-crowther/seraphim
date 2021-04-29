@@ -209,16 +209,16 @@ static const vec3 vec3_forward = { {0.0, 0.0, 1.0} };
 static const quat quat_identity = { {0.0, 0.0, 0.0, 1.0} };
 
 static const mat3 mat3_identity = { {
-				     1.0, 0.0, 0.0,
-				     0.0, 1.0, 0.0,
-				     0.0, 0.0, 1.0}
+			1.0, 0.0, 0.0,
+			0.0, 1.0, 0.0,
+	0.0, 0.0, 1.0}
 };
 
 static const mat4 mat4_identity = { {
-				     1.0, 0.0, 0.0, 0.0,
-				     0.0, 1.0, 0.0, 0.0,
-				     0.0, 0.0, 1.0, 0.0,
-				     0.0, 0.0, 0.0, 1.0}
+			1.0, 0.0, 0.0, 0.0,
+			0.0, 1.0, 0.0, 0.0,
+			0.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 1.0}
 };
 
 mint_t clampi(mint_t value, mint_t min, mint_t max);
@@ -327,7 +327,7 @@ vec2 *vec2_rotate(vec2 * result, vec2 * v0, mfloat_t f);
 vec2 *vec2_lerp(vec2 * result, vec2 * v0, vec2 * v1, mfloat_t f);
 vec2 *vec2_bezier3(vec2 * result, vec2 * v0, vec2 * v1, vec2 * v2, mfloat_t f);
 vec2 *vec2_bezier4(vec2 * result, vec2 * v0, vec2 * v1, vec2 * v2, vec2 * v3,
-		   mfloat_t f);
+	mfloat_t f);
 mfloat_t vec2_angle(vec2 * v0);
 mfloat_t vec2_length(vec2 * v0);
 mfloat_t vec2_length_squared(vec2 * v0);
@@ -368,7 +368,7 @@ vec3 *vec3_rotate(vec3 * result, vec3 * v0, vec3 * ra, mfloat_t f);
 vec3 *vec3_lerp(vec3 * result, vec3 * v0, vec3 * v1, mfloat_t f);
 vec3 *vec3_bezier3(vec3 * result, vec3 * v0, vec3 * v1, vec3 * v2, mfloat_t f);
 vec3 *vec3_bezier4(vec3 * result, vec3 * v0, vec3 * v1, vec3 * v2, vec3 * v3,
-		   mfloat_t f);
+	mfloat_t f);
 mfloat_t vec3_length(const vec3 * v0);
 mfloat_t vec3_length_squared(const vec3 * v0);
 mfloat_t vec3_distance(const vec3 * v0, const vec3 * v1);
@@ -424,7 +424,7 @@ mfloat_t quat_length(quat * q0);
 mfloat_t quat_length_squared(quat * q0);
 mfloat_t quat_angle(quat * q0, quat * q1);
 mat2 *mat2_new(mat2 * result, mfloat_t m11, mfloat_t m12, mfloat_t m21,
-	       mfloat_t m22);
+	mfloat_t m22);
 mfloat_t mat2_determinant(mat2 * m0);
 mat2 *mat2_assign(mat2 * result, mat2 * m0);
 void mat2_negative(mat2 * result, mat2 * m0);
@@ -439,8 +439,8 @@ mat2 *mat2_scale(mat2 * result, mat2 * m0, vec2 * v0);
 mat2 *mat2_rotation_z(mat2 * result, mfloat_t f);
 mat2 *mat2_lerp(mat2 * result, mat2 * m0, mat2 * m1, mfloat_t f);
 mat3 *mat3_new(mat3 * result, mfloat_t m11, mfloat_t m12, mfloat_t m13,
-	       mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m31,
-	       mfloat_t m32, mfloat_t m33);
+	mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m31,
+	mfloat_t m32, mfloat_t m33);
 mfloat_t mat3_determinant(mat3 * m0);
 mat3 *mat3_assign(mat3 * result, mat3 * m0);
 void mat3_negative(mat3 * result, mat3 * m0);
@@ -458,10 +458,9 @@ mat3 *mat3_rotation_axis(mat3 * result, vec3 * v0, mfloat_t f);
 mat3 *mat3_rotation_quat(mat3 * result, const quat * q0);
 mat3 *mat3_lerp(mat3 * result, mat3 * m0, mat3 * m1, mfloat_t f);
 mat4 *mat4_new(mat4 * result, mfloat_t m11, mfloat_t m12, mfloat_t m13,
-	       mfloat_t m14, mfloat_t m21, mfloat_t m22, mfloat_t m23,
-	       mfloat_t m24, mfloat_t m31, mfloat_t m32, mfloat_t m33,
-	       mfloat_t m34, mfloat_t m41, mfloat_t m42, mfloat_t m43,
-	       mfloat_t m44);
+	mfloat_t m14, mfloat_t m21, mfloat_t m22, mfloat_t m23,
+	mfloat_t m24, mfloat_t m31, mfloat_t m32, mfloat_t m33,
+	mfloat_t m34, mfloat_t m41, mfloat_t m42, mfloat_t m43, mfloat_t m44);
 mfloat_t mat4_determinant(mat4 * m0);
 mat4 *mat4_assign(mat4 * result, mat4 * m0);
 void mat4_negative(mat4 * result, mat4 * m0);
@@ -481,14 +480,14 @@ void mat4_multiply_f(mat4 * result, const mat4 * m0, mfloat_t f);
 mat4 *mat4_inverse(mat4 * result, mat4 * m0);
 mat4 *mat4_lerp(mat4 * result, mat4 * m0, mat4 * m1, mfloat_t f);
 mat4 *mat4_look_at(mat4 * result, vec3 * position, vec3 * target, vec3 * up);
-mat4 *mat4_ortho(mat4 * result, mfloat_t l, mfloat_t r, mfloat_t b, mfloat_t t,
-		 mfloat_t n, mfloat_t f);
+mat4 *mat4_ortho(mat4 * result, mfloat_t l, mfloat_t r, mfloat_t b,
+	mfloat_t t, mfloat_t n, mfloat_t f);
 mat4 *mat4_perspective(mat4 * result, mfloat_t fov_y, mfloat_t aspect,
-		       mfloat_t n, mfloat_t f);
-mat4 *mat4_perspective_fov(mat4 * result, mfloat_t fov, mfloat_t w, mfloat_t h,
-			   mfloat_t n, mfloat_t f);
-mat4 *mat4_perspective_infinite(mat4 * result, mfloat_t fov_y, mfloat_t aspect,
-				mfloat_t n);
+	mfloat_t n, mfloat_t f);
+mat4 *mat4_perspective_fov(mat4 * result, mfloat_t fov, mfloat_t w,
+	mfloat_t h, mfloat_t n, mfloat_t f);
+mat4 *mat4_perspective_infinite(mat4 * result, mfloat_t fov_y,
+	mfloat_t aspect, mfloat_t n);
 
 mfloat_t quadratic_ease_out(mfloat_t f);
 mfloat_t quadratic_ease_in(mfloat_t f);
@@ -521,4 +520,4 @@ mfloat_t bounce_ease_out(mfloat_t f);
 mfloat_t bounce_ease_in(mfloat_t f);
 mfloat_t bounce_ease_in_out(mfloat_t f);
 
-#endif				//SERAPHIM_MATHS_H
+#endif //SERAPHIM_MATHS_H

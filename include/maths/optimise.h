@@ -11,6 +11,6 @@ typedef struct srph_opt_sample {
 } srph_opt_sample;
 
 void srph_opt_nelder_mead(srph_opt_sample * s, srph_opt_func f, void *data,
-			  const vec3 * xs, double *threshold);
+	const vec3 * xs, double *threshold);
 
 #endif

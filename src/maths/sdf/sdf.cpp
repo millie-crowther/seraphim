@@ -9,8 +9,7 @@
 
 #define SUPPORT_ALPHA 0.5
 
-void sdf_create(sdf_t * sdf, sdf_func_t phi, void *data, uint32_t id)
-{
+void sdf_create(sdf_t * sdf, sdf_func_t phi, void *data, uint32_t id) {
 	sdf->distance_function = phi;
 	sdf->data = data;
 	sdf->id = id;
@@ -22,13 +21,11 @@ void sdf_create(sdf_t * sdf, sdf_func_t phi, void *data, uint32_t id)
 	sdf->is_convex = false;
 }
 
-double sdf_distance(sdf_t * sdf, const vec3 * x)
-{
+double sdf_distance(sdf_t * sdf, const vec3 * x) {
 	return sdf->distance_function(sdf->data, x);
 }
 
-vec3 srph_sdf_normal(sdf_t * sdf, const vec3 * x)
-{
+vec3 srph_sdf_normal(sdf_t * sdf, const vec3 * x) {
 	vec3 n;
 	for (int i = 0; i < 3; i++) {
 		vec3 x1 = *x;
@@ -45,14 +42,12 @@ vec3 srph_sdf_normal(sdf_t * sdf, const vec3 * x)
 	return n;
 }
 
-bool srph_sdf_contains(sdf_t * sdf, const vec3 * x)
-{
+bool srph_sdf_contains(sdf_t * sdf, const vec3 * x) {
 	return srph_bound3_contains(&sdf->bound, x)
-	    && sdf_distance(sdf, x) <= 0.0;
+		&& sdf_distance(sdf, x) <= 0.0;
 }
 
-double srph_sdf_project(sdf_t * sdf, const vec3 * d)
-{
+double srph_sdf_project(sdf_t * sdf, const vec3 * d) {
 	vec3 x;
 	vec3_normalize(&x, d);
 	vec3_multiply_f(&x, &x, rho);
@@ -69,8 +64,7 @@ double srph_sdf_project(sdf_t * sdf, const vec3 * d)
 	}
 }
 
-double srph_sdf_volume(sdf_t * sdf)
-{
+double srph_sdf_volume(sdf_t * sdf) {
 	if (sdf->volume < 0.0) {
 		int hits = 0;
 
@@ -80,12 +74,9 @@ double srph_sdf_volume(sdf_t * sdf)
 
 		while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
 			vec3 x;
-			x.x =
-			    srph_random_f64_range(&rng, b->lower.x, b->upper.x);
-			x.y =
-			    srph_random_f64_range(&rng, b->lower.y, b->upper.y);
-			x.z =
-			    srph_random_f64_range(&rng, b->lower.z, b->upper.z);
+			x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+			x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+			x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
 			if (srph_sdf_contains(sdf, &x)) {
 				hits++;
@@ -93,15 +84,14 @@ double srph_sdf_volume(sdf_t * sdf)
 		}
 
 		sdf->volume =
-		    srph_bound3_volume(b) * (double)hits /
-		    (double)SERAPHIM_SDF_VOLUME_SAMPLES;
+			srph_bound3_volume(b) * (double) hits /
+			(double) SERAPHIM_SDF_VOLUME_SAMPLES;
 	}
 
 	return sdf->volume;
 }
 
-bound3_t *srph_sdf_bound(sdf_t * sdf)
-{
+bound3_t *srph_sdf_bound(sdf_t * sdf) {
 	if (sdf == NULL) {
 		return NULL;
 	}
@@ -124,14 +114,12 @@ bound3_t *srph_sdf_bound(sdf_t * sdf)
 	return &sdf->bound;
 }
 
-void sdf_destroy(sdf_t * sdf)
-{
+void sdf_destroy(sdf_t * sdf) {
 	free(sdf->data);
 	sdf->data = NULL;
 }
 
-double srph_sdf_discontinuity(sdf_t * sdf, const vec3 * x)
-{
+double srph_sdf_discontinuity(sdf_t * sdf, const vec3 * x) {
 	vec3 ns[3];
 
 	for (int axis = 0; axis < 3; axis++) {

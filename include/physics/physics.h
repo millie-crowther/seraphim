@@ -12,9 +12,9 @@ typedef struct srph_physics {
 	vec3 gravity;
 
 	bool quit;
-	 std::thread thread;
+	  std::thread thread;
 
-	 std::mutex substances_mutex;
+	  std::mutex substances_mutex;
 
 	substance_t *substances;
 	size_t *num_substances;
@@ -27,7 +27,7 @@ typedef struct srph_physics {
 } srph_physics;
 
 void srph_physics_init(srph_physics * p, substance_t * substances,
-		       size_t *num_substances);
+	size_t *num_substances);
 void srph_physics_start(srph_physics * p);
 void srph_physics_destroy(srph_physics * p);
 void srph_physics_tick(srph_physics * p, double dt);

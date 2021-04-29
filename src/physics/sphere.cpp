@@ -1,22 +1,18 @@
 #include "physics/sphere.h"
 
-bool sphere_intersect(const sphere_t * a, const sphere_t * b)
-{
+bool sphere_intersect(const sphere_t * a, const sphere_t * b) {
 	return a->r + b->r >= vec3_distance(&a->c, &b->c);
 }
 
-bool sphere_contains(const sphere_t * a, const sphere_t * b)
-{
+bool sphere_contains(const sphere_t * a, const sphere_t * b) {
 	return a->r >= vec3_distance(&a->c, &b->c) + b->r;
 }
 
-bool sphere_contains_point(const sphere_t * s, const vec3 * x)
-{
+bool sphere_contains_point(const sphere_t * s, const vec3 * x) {
 	return vec3_distance(&s->c, x) <= s->r;
 }
 
-void sphere_capture(sphere_t * a, const sphere_t * b)
-{
+void sphere_capture(sphere_t * a, const sphere_t * b) {
 	if (sphere_contains(a, b)) {
 		return;
 	}

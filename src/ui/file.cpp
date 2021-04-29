@@ -7,8 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *file_load_text(const char *filename, size_t *size)
-{
+char *file_load_text(const char *filename, size_t *size) {
 	FILE *file = fopen(filename, "r");
 
 	if (file == NULL) {
@@ -19,7 +18,7 @@ char *file_load_text(const char *filename, size_t *size)
 	size_t _size = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	char *string = (char *)malloc(_size + 1);
+	char *string = (char *) malloc(_size + 1);
 	fread(string, 1, _size, file);
 	string[_size] = '\0';
 
@@ -31,8 +30,7 @@ char *file_load_text(const char *filename, size_t *size)
 	return string;
 }
 
-cJSON *file_load_json(const char *filename)
-{
+cJSON *file_load_json(const char *filename) {
 	char *string = file_load_text(filename, NULL);
 	cJSON *parsed_json = cJSON_Parse(string);
 	free(string);

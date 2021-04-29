@@ -14,16 +14,15 @@
 #define RHO   0.5
 #define SIGMA 0.5
 
-static int comparator(const void *_a, const void *_b)
-{
+static int comparator(const void *_a, const void *_b) {
 	double a = ((srph_opt_sample *) _a)->fx;
 	double b = ((srph_opt_sample *) _b)->fx;
 	return (a > b) - (a < b);
 }
 
-void srph_opt_nelder_mead(srph_opt_sample * s, srph_opt_func f, void *data,
-			  const vec3 * _xs, double *t)
-{
+void
+srph_opt_nelder_mead(srph_opt_sample * s, srph_opt_func f, void *data,
+	const vec3 * _xs, double *t) {
 	double threshold = t == NULL ? -DBL_MAX : *t;
 
 	srph_opt_sample xs[N + 1];
