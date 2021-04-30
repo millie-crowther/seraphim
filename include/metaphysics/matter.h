@@ -16,7 +16,7 @@ typedef struct matter_t {
 	material_t material;
 	sdf_t *sdf;
 
-	  srph_array(srph_deform *) deformations;
+	  srph_array(deform_t *) deformations;
 
 	bool is_uniform;
 	bool is_at_rest;
@@ -49,8 +49,8 @@ void matter_to_local_position(matter_t * m, vec3 * tx, const vec3 * x);
 void matter_to_global_direction(const matter_t * m,
 	const vec3 * position, vec3 * td, const vec3 * d);
 
-srph_deform *matter_add_deformation(matter_t * self, const vec3 * x,
-	srph_deform_type type);
+deform_t *matter_add_deformation(matter_t * self, const vec3 * x,
+                                 deform_type_t type);
 
 void matter_transformation_matrix(matter_t * m, float *xs);
 

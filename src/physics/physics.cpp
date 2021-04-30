@@ -90,8 +90,6 @@ void srph_physics_tick(srph_physics * p, double dt) {
 	}
 }
 
-using namespace srph;
-
 void srph_physics::run() {
 	auto t = std::chrono::steady_clock::now();
 	printf("physics thread starting\n");

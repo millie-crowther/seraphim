@@ -3,20 +3,20 @@
 
 #include "maths/maths.h"
 
-typedef enum srph_deform_type {
-	srph_deform_type_control,
-	srph_deform_type_collision,
-	srph_deform_type_generic
-} srph_deform_type;
+typedef enum deform_type_t {
+	deform_type_control,
+	deform_type_collision,
+	deform_type_generic
+} deform_type;
 
-typedef struct srph_deform {
+typedef struct deform_t {
 	vec3 x0;
 	vec3 x;
 	vec3 v;
 	vec3 p;
 	double m;
-	srph_deform_type type;
-} srph_deform;
+	deform_type_t type;
+} deform_t;
 
 #define SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY 0.1
 

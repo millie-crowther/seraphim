@@ -68,27 +68,27 @@ void matter_calculate_sphere_bound(matter_t * self, double dt) {
 	self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
 
-srph_deform *matter_add_deformation(matter_t * self, const vec3 * x,
-	srph_deform_type type) {
+deform_t *matter_add_deformation(matter_t * self, const vec3 * x,
+                                 deform_type_t type) {
 	// transform position into local space
 	vec3 x0;
 	matter_to_local_position(self, &x0, x);
 
 	// check if new deformation is inside surface and not too close to any other deformations
-	if (type == srph_deform_type_collision) {
+	if (type == deform_type_collision) {
 		if (!srph_sdf_contains(self->sdf, &x0)) {
 			return NULL;
 		}
 
 		for (size_t i = 0; i < self->deformations.size; i++) {
-			srph_deform *deform = self->deformations.data[i];
+			deform_t *deform = self->deformations.data[i];
 			if (vec3_distance(&x0, &deform->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY) {
 				return NULL;
 			}
 		}
 	}
 	// create new deformation
-	srph_deform *deform = (srph_deform *) malloc(sizeof(srph_deform));
+	deform_t *deform = (deform_t *) malloc(sizeof(deform_t));
 	*deform = {
 		.x0 = x0,
 		.x = *x,

@@ -125,13 +125,13 @@ static double intersection_func(void *data, const vec3 * x) {
 //    return distance_function / vrn;
 //}
 
-static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb,
-	double dt) {
+static void contact_correct(substance_t * sa, substance_t * sb, deform_t * xb,
+                            double dt) {
 	matter_t *a = &sa->matter;
 	matter_t *b = &sb->matter;
 
 	// check that deformation is a collision deformation
-	if (xb->type != srph_deform_type_collision) {
+	if (xb->type != deform_type_collision) {
 		return;
 	}
 	// check that relative velocity at this point is incoming
@@ -253,9 +253,9 @@ static void collision_generate_manifold(collision_t * c, double dt) {
 
 	if (s.fx <= 0) {
 		matter_add_deformation(&c->substances[0]->matter, &s.x,
-			srph_deform_type_collision);
+                               deform_type_collision);
 		matter_add_deformation(&c->substances[1]->matter, &s.x,
-			srph_deform_type_collision);
+                               deform_type_collision);
 
 		srph_array_push_back(&c->manifold);
 		c->manifold.data[0] = s.x;
@@ -274,7 +274,7 @@ static void collision_resolve_interpenetration_constraint(collision_t * c) {
 			substance_mass(sa) / (substance_mass(sa) + substance_mass(sb));
 
 		for (size_t j = 0; j < b->deformations.size; j++) {
-			srph_deform *d = b->deformations.data[j];
+			deform_t *d = b->deformations.data[j];
 			vec3 xa, x;
 			matter_to_global_position(b, &x, &d->x0);
 			matter_to_local_position(a, &xa, &x);
