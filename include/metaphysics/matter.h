@@ -22,14 +22,7 @@ typedef struct matter_t {
 	bool is_at_rest;
 	bool is_rigid;
 	bool is_static;
-
-	bool is_inertia_tensor_valid;
-	bool is_com_valid;
 	bool has_collided;
-	mat3 inertia_tensor;
-	vec3 com;
-
-	mat3 inverse_inertia_tensor;
 
 	sphere_t bounding_sphere;
 
@@ -50,7 +43,7 @@ void matter_to_global_direction(const matter_t * m,
 	const vec3 * position, vec3 * td, const vec3 * d);
 
 deform_t *matter_add_deformation(matter_t * self, const vec3 * x,
-                                 deform_type_t type);
+	deform_type_t type);
 
 void matter_transformation_matrix(matter_t * m, float *xs);
 

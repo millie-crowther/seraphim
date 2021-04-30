@@ -34,6 +34,13 @@ typedef struct substance_t {
 	data_t get_data(const vec3 * eye_position);
 
 	uint32_t id;
+
+	bool is_inertia_tensor_valid;
+	bool is_com_valid;
+	mat3 inertia_tensor;
+	vec3 com;
+
+	mat3 inverse_inertia_tensor;
 	form_t form;
 	matter_t matter;
 } substance_t;

@@ -126,7 +126,7 @@ static double intersection_func(void *data, const vec3 * x) {
 //}
 
 static void contact_correct(substance_t * sa, substance_t * sb, deform_t * xb,
-                            double dt) {
+	double dt) {
 	matter_t *a = &sa->matter;
 	matter_t *b = &sb->matter;
 
@@ -253,9 +253,9 @@ static void collision_generate_manifold(collision_t * c, double dt) {
 
 	if (s.fx <= 0) {
 		matter_add_deformation(&c->substances[0]->matter, &s.x,
-                               deform_type_collision);
+			deform_type_collision);
 		matter_add_deformation(&c->substances[1]->matter, &s.x,
-                               deform_type_collision);
+			deform_type_collision);
 
 		srph_array_push_back(&c->manifold);
 		c->manifold.data[0] = s.x;

@@ -68,8 +68,7 @@ void matter_calculate_sphere_bound(matter_t * self, double dt) {
 	self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
 
-deform_t *matter_add_deformation(matter_t * self, const vec3 * x,
-                                 deform_type_t type) {
+deform_t *matter_add_deformation(matter_t * self, const vec3 * x, deform_type_t type) {
 	// transform position into local space
 	vec3 x0;
 	matter_to_local_position(self, &x0, x);

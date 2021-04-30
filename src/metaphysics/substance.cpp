@@ -9,6 +9,8 @@ substance_t::substance_t(form_t * form, matter_t * matter, uint32_t id) {
 	this->form = *form;
 	this->matter = *matter;
 	this->id = id;
+	this->is_inertia_tensor_valid = false;
+	this->is_com_valid = false;
 }
 
 data_t substance_t::get_data(const vec3 * eye_position) {
@@ -151,12 +153,12 @@ void substance_inverse_inertia_tensor(substance_t * self, mat3 * ri) {
 }
 
 mat3 *substance_inertia_tensor(substance_t * self) {
-	if (!self->matter.is_inertia_tensor_valid) {
+	if (!self->is_inertia_tensor_valid) {
 		if (self->matter.is_uniform && self->matter.sdf->is_inertia_tensor_valid) {
-			self->matter.inertia_tensor = self->matter.sdf->inertia_tensor;
+			self->inertia_tensor = self->matter.sdf->inertia_tensor;
 		} else {
 			for (int i = 0; i < 9; i++) {
-				self->matter.inertia_tensor.v[i] = 0.0;
+				self->inertia_tensor.v[i] = 0.0;
 			}
 
 			bound3_t *b = srph_sdf_bound(self->matter.sdf);
@@ -189,7 +191,7 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 								iij += vec3_length_squared(&r);
 							}
 
-							self->matter.inertia_tensor.v[j * 3 + i]
+							self->inertia_tensor.v[j * 3 + i]
 								+= iij * mat.density;
 						}
 					}
@@ -199,22 +201,22 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 				}
 			}
 
-			mat3_multiply_f(&self->matter.inertia_tensor,
-				&self->matter.inertia_tensor, 1.0 / total);
+			mat3_multiply_f(&self->inertia_tensor,
+				&self->inertia_tensor, 1.0 / total);
 
 			if (self->matter.is_uniform
 				&& !self->matter.sdf->is_inertia_tensor_valid) {
-				self->matter.sdf->inertia_tensor = self->matter.inertia_tensor;
+				self->matter.sdf->inertia_tensor = self->inertia_tensor;
 				self->matter.sdf->is_inertia_tensor_valid = true;
 			}
 		}
 
-		mat3_multiply_f(&self->matter.inertia_tensor,
-			&self->matter.inertia_tensor, substance_mass(self));
-		self->matter.is_inertia_tensor_valid = true;
+		mat3_multiply_f(&self->inertia_tensor,
+			&self->inertia_tensor, substance_mass(self));
+		self->is_inertia_tensor_valid = true;
 	}
 
-	return &self->matter.inertia_tensor;
+	return &self->inertia_tensor;
 }
 
 vec3 *substance_com(substance_t * self) {
@@ -222,7 +224,7 @@ vec3 *substance_com(substance_t * self) {
 		return &self->matter.sdf->com;
 	}
 
-	if (!self->matter.is_com_valid) {
+	if (!self->is_com_valid) {
 		vec3 com = vec3_zero;
 
 		bound3_t *b = srph_sdf_bound(self->matter.sdf);
@@ -252,8 +254,8 @@ vec3 *substance_com(substance_t * self) {
 		}
 
 		vec3_divide_f(&com, &com, total);
-		self->matter.com = com;
-		self->matter.is_com_valid = true;
+		self->com = com;
+		self->is_com_valid = true;
 
 		if (self->matter.is_uniform && !self->matter.sdf->is_com_valid) {
 			self->matter.sdf->com = com;
@@ -261,7 +263,7 @@ vec3 *substance_com(substance_t * self) {
 		}
 	}
 
-	return &self->matter.com;
+	return &self->com;
 }
 
 double substance_mass(substance_t * self) {
