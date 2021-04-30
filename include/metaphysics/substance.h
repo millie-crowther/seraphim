@@ -44,4 +44,7 @@ void substance_apply_impulse(substance_t * a, substance_t * b, const vec3 * x,
 	const vec3 * j);
 double substance_inverse_mass(substance_t * self);
 void substance_inverse_inertia_tensor(substance_t *self, mat3 * ri);
+// angular mass
+mat3 *substance_inertia_tensor(substance_t *blingblong);
+
 #endif

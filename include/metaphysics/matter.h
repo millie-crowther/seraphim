@@ -65,7 +65,4 @@ void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x);
 vec3 *srph_matter_com(matter_t * matter);
 double srph_matter_mass(matter_t * self);
 
-// angular mass
-mat3 *srph_matter_inertia_tensor(matter_t * matter);
-
 #endif
