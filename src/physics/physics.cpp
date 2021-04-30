@@ -39,13 +39,13 @@ void srph_physics_destroy(srph_physics * p) {
 void srph_physics_tick(srph_physics * p, double dt) {
 	// update substances and integrate forces
 	for (uint32_t i = 0; i < *p->num_substances; i++) {
-		matter_t *m = &p->substances[i].matter;
-		m->has_collided = false;
+		substance_t *substance = &p->substances[i];
+        substance->matter.has_collided = false;
 
-		srph_matter_calculate_sphere_bound(m, dt);
+		srph_matter_calculate_sphere_bound(&substance->matter, dt);
 
-		if (!m->is_at_rest && !m->is_static) {
-			srph_matter_integrate_forces(m, dt, &p->gravity);
+		if (!substance->matter.is_at_rest && !substance->matter.is_static) {
+            matter_integrate_forces(&substance->matter, dt, &p->gravity, substance_mass(substance));
 		}
 	}
 

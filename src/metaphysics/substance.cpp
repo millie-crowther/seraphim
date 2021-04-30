@@ -130,7 +130,7 @@ double substance_inverse_mass(substance_t * self) {
 	if (self->matter.is_static) {
 		return 0;
 	} else {
-		return 1.0 / srph_matter_mass(&self->matter);
+		return 1.0 / substance_mass(self);
 	}
 }
 
@@ -210,7 +210,7 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 		}
 
 		mat3_multiply_f(&self->matter.inertia_tensor,
-			&self->matter.inertia_tensor, srph_matter_mass(&self->matter));
+                        &self->matter.inertia_tensor, substance_mass(self));
 		self->matter.is_inertia_tensor_valid = true;
 	}
 
@@ -262,4 +262,9 @@ vec3 *substance_com(substance_t * self) {
 	}
 
 	return &self->matter.com;
+}
+
+
+double substance_mass(substance_t *self) {
+    return srph_matter_average_density(&self->matter) * srph_sdf_volume(self->matter.sdf);
 }

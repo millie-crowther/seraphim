@@ -61,9 +61,6 @@ double srph_matter_average_density(matter_t * self) {
 	return 0.0;
 }
 
-double srph_matter_mass(matter_t * self) {
-	return srph_matter_average_density(self) * srph_sdf_volume(self->sdf);
-}
 
 void srph_matter_calculate_sphere_bound(matter_t * self, double dt) {
 	vec3 midpoint, radius;
@@ -142,22 +139,20 @@ srph_matter_to_global_direction(const matter_t * m,
 	srph_transform_to_global_direction(&m->transform, td, d);
 }
 
-void srph_matter_integrate_forces(matter_t * self, double t, const vec3 * gravity) {
+void matter_integrate_forces(matter_t *self, double t, const vec3 *gravity, double mass) {
 	assert(!self->is_static && !self->is_at_rest);
-
-	double m = srph_matter_mass(self);
 
 	// integrate force
 	vec3 d;
-	vec3_multiply_f(&d, &self->f, t / m);
+	vec3_multiply_f(&d, &self->f, t / mass);
 	vec3_add(&self->v, &self->v, &d);
 
 	// integrate torque
-	vec3_multiply_f(&d, &self->t, t / m);
+	vec3_multiply_f(&d, &self->t, t / mass);
 	vec3_add(&self->omega, &self->omega, &d);
 
 	// reset forces
-	vec3_multiply_f(&self->f, gravity, m);
+	vec3_multiply_f(&self->f, gravity, mass);
 	self->t = vec3_zero;
 }
 

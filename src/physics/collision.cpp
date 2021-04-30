@@ -197,7 +197,7 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 
 	vec3_normalize(&t, &t);
 
-	double mvrt = (srph_matter_mass(a) + srph_matter_mass(b)) * vec3_dot(&vr, &t);
+	double mvrt = (substance_mass(sa) + substance_mass(sb)) * vec3_dot(&vr, &t);
 
 	double js = fmax(mata.static_friction, matb.static_friction) * jr;
 	double jd = fmax(mata.dynamic_friction, matb.dynamic_friction) * jr;
@@ -271,7 +271,7 @@ static void collision_resolve_interpenetration_constraint(collision_t * c) {
 		matter_t *b = &sb->matter;
 
 		double ratio =
-			srph_matter_mass(a) / (srph_matter_mass(a) + srph_matter_mass(b));
+                substance_mass(sa) / (substance_mass(sa) + substance_mass(sb));
 
 		for (size_t j = 0; j < b->deformations.size; j++) {
 			srph_deform *d = b->deformations.data[j];

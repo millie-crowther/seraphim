@@ -57,10 +57,10 @@ void srph_matter_transformation_matrix(matter_t * m, float *xs);
 
 bool matter_is_at_rest(matter_t * m);
 
-void srph_matter_integrate_forces(matter_t * self, double t, const vec3 * gravity);
+void matter_integrate_forces(matter_t *self, double t, const vec3 *gravity, double mass);
 
 void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x);
 
-double srph_matter_mass(matter_t * self);
+double srph_matter_average_density(matter_t * self);
 
 #endif
