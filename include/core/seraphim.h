@@ -16,56 +16,56 @@
 #define SERAPHIM_MAX_SUBSTANCES 100
 #define SERAPHIM_MAX_SDFS 100
 
-namespace srph {
-	struct seraphim_t {
-		// debug fields
+struct seraphim_t {
+    // debug fields
 #if SERAPHIM_DEBUG
-		VkDebugReportCallbackEXT callback;
+    VkDebugReportCallbackEXT callback;
 
-		bool check_validation_layers();
+    bool check_validation_layers();
 
-		bool setup_debug_callback();
+    bool setup_debug_callback();
 
 #endif
-		// initialisation functions
-		void create_instance();
+    // initialisation functions
+    void create_instance();
 
-		  std::vector < const char *>get_required_extensions();
+      std::vector < const char *>get_required_extensions();
 
-		  std::unique_ptr < device_t > device;
-		  std::unique_ptr < renderer_t > renderer;
-		  std::unique_ptr < window_t > window;
-		srph_physics physics;
+      std::unique_ptr < device_t > device;
+      std::unique_ptr < srph::renderer_t > renderer;
+      std::unique_ptr < srph::window_t > window;
+    srph_physics physics;
 
-		VkInstance instance;
-		VkSurfaceKHR surface;
+    VkInstance instance;
+    VkSurfaceKHR surface;
 
-		u32vec2_t work_group_count;
-		u32vec2_t work_group_size;
+    srph::u32vec2_t work_group_count;
+    srph::u32vec2_t work_group_size;
 
-		  std::shared_ptr < camera_t > test_camera;
+      std::shared_ptr < srph::camera_t > test_camera;
 
-		size_t num_substances;
-		substance_t substances[SERAPHIM_MAX_SUBSTANCES];
+    size_t num_substances;
+    substance_t substances[SERAPHIM_MAX_SUBSTANCES];
 
-		size_t num_sdfs;
-		sdf_t sdfs[SERAPHIM_MAX_SDFS];
+    size_t num_sdfs;
+    sdf_t sdfs[SERAPHIM_MAX_SDFS];
 
-		bool fps_monitor_quit;
+    bool fps_monitor_quit;
 
-		void monitor_fps();
+    void monitor_fps();
 
-		  std::thread fps_monitor_thread;
-		  std::condition_variable fps_cv;
+      std::thread fps_monitor_thread;
+      std::condition_variable fps_cv;
 
-		  seraphim_t(const char *title);
+      seraphim_t(const char *title);
 
-		void run();
-	};
-} sdf_t *seraphim_create_sdf(srph::seraphim_t * seraphim, sdf_func_t f, void *data);
-substance_t *srph_create_substance(srph::seraphim_t * srph, form_t * form,
+    void run();
+};
+
+sdf_t *seraphim_create_sdf(seraphim_t * seraphim, sdf_func_t f, void *data);
+substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
 	matter_t * matter);
 
-void srph_cleanup(srph::seraphim_t * engine);
+void srph_cleanup(seraphim_t * engine);
 
 #endif

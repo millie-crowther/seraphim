@@ -2,7 +2,6 @@
 
 #include <math.h>
 #include <stdlib.h>
-#include <core/seraphim.h>
 
 double sphere_phi(void *data, const vec3 * x) {
 	double r = *((double *) data);
@@ -17,13 +16,13 @@ double torus_phi(void *data, const vec3 * x) {
 	return hypot(xy.x, xy.y) - rs[1];
 }
 
-sdf_t *sdf_sphere_create(srph::seraphim_t * seraphim, double r) {
+sdf_t *sdf_sphere_create(seraphim_t * seraphim, double r) {
 	double *r2 = (double *) malloc(sizeof(double));
 	*r2 = r;
 	return seraphim_create_sdf(seraphim, sphere_phi, r2);
 }
 
-sdf_t *sdf_torus_create(srph::seraphim_t * seraphim, double r1, double r2) {
+sdf_t *sdf_torus_create(seraphim_t * seraphim, double r1, double r2) {
 	double *rs = (double *) malloc(2 * sizeof(double));
 	rs[0] = r1;
 	rs[1] = r2;

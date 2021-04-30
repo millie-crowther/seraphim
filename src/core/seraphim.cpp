@@ -19,7 +19,84 @@ const std::vector < const char *>validation_layers = {
 #endif
 };
 
-srph::seraphim_t::seraphim_t(const char *title) {
+void srph_cleanup(seraphim_t * engine) {
+	engine->fps_monitor_quit = true;
+
+	srph_physics_destroy(&engine->physics);
+
+	vkDeviceWaitIdle(engine->device->device);
+
+	engine->fps_cv.notify_all();
+	if (engine->fps_monitor_thread.joinable()) {
+		engine->fps_monitor_thread.join();
+	}
+	// delete renderer early to release resources at appropriate time
+	engine->renderer.reset();
+
+	// destroy device
+	engine->device.reset();
+
+	// destroy debug callback
+#if SERAPHIM_DEBUG
+	auto func = (PFN_vkDestroyDebugReportCallbackEXT)
+		vkGetInstanceProcAddr(engine->instance,
+		"vkDestroyDebugReportCallbackEXT");
+
+	if (func != nullptr) {
+		func(engine->instance, engine->callback, nullptr);
+	}
+#endif
+
+	vkDestroySurfaceKHR(engine->instance, engine->surface, nullptr);
+
+	// destroy instance
+	vkDestroyInstance(engine->instance, nullptr);
+
+	engine->window.reset();
+
+	glfwTerminate();
+
+	printf("Seraphim engine exiting gracefully.\n");
+}
+
+#if SERAPHIM_DEBUG
+static
+	VKAPI_ATTR
+	VkBool32
+	VKAPI_CALL
+debug_callback(VkDebugReportFlagsEXT
+	flags,
+	VkDebugReportObjectTypeEXT
+	obj_type, uint64_t obj,
+	size_t location,
+	int32_t code, const char *layer_prefix, const char *msg, void *user_data) {
+	std::cout << "Validation layer debug message: " << msg << std::endl;
+	return VK_FALSE;
+}
+
+#endif
+
+substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
+	matter_t * matter) {
+	assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
+
+	substance_t *new_substance = &srph->substances[srph->num_substances];
+	*new_substance = substance_t(form, matter, srph->num_substances);
+	srph->num_substances++;
+	return new_substance;
+}
+
+sdf_t *seraphim_create_sdf(seraphim_t * seraphim, sdf_func_t f, void *data) {
+	assert(seraphim->num_sdfs < SERAPHIM_MAX_SDFS - 1);
+
+	sdf_t *new_sdf = &seraphim->sdfs[seraphim->num_sdfs];
+	sdf_create(new_sdf, f, data, seraphim->num_sdfs);
+	seraphim->num_sdfs++;
+
+	return new_sdf;
+}
+
+seraphim_t::seraphim_t(const char *title) {
 #if SERAPHIM_DEBUG
 	std::cout << "Running in debug mode." << std::endl;
 #else
@@ -94,46 +171,6 @@ srph::seraphim_t::seraphim_t(const char *title) {
 	srph_physics_init(&physics, substances, &num_substances);
 }
 
-void srph_cleanup(srph::seraphim_t * engine) {
-	engine->fps_monitor_quit = true;
-
-	srph_physics_destroy(&engine->physics);
-
-	vkDeviceWaitIdle(engine->device->device);
-
-	engine->fps_cv.notify_all();
-	if (engine->fps_monitor_thread.joinable()) {
-		engine->fps_monitor_thread.join();
-	}
-	// delete renderer early to release resources at appropriate time
-	engine->renderer.reset();
-
-	// destroy device
-	engine->device.reset();
-
-	// destroy debug callback
-#if SERAPHIM_DEBUG
-	auto func = (PFN_vkDestroyDebugReportCallbackEXT)
-		vkGetInstanceProcAddr(engine->instance,
-		"vkDestroyDebugReportCallbackEXT");
-
-	if (func != nullptr) {
-		func(engine->instance, engine->callback, nullptr);
-	}
-#endif
-
-	vkDestroySurfaceKHR(engine->instance, engine->surface, nullptr);
-
-	// destroy instance
-	vkDestroyInstance(engine->instance, nullptr);
-
-	engine->window.reset();
-
-	glfwTerminate();
-
-	printf("Seraphim engine exiting gracefully.\n");
-}
-
 void seraphim_t::monitor_fps() {
 	int interval = 1;			// seconds
 	fps_monitor_quit = false;
@@ -154,7 +191,7 @@ void seraphim_t::monitor_fps() {
 	}
 }
 
-std::vector < const char *>srph::seraphim_t::get_required_extensions() {
+std::vector < const char *> seraphim_t::get_required_extensions() {
 	uint32_t extension_count = 0;
 	const char **glfw_extensions =
 		glfwGetRequiredInstanceExtensions(&extension_count);
@@ -169,7 +206,7 @@ std::vector < const char *>srph::seraphim_t::get_required_extensions() {
 	return required_extensions;
 }
 
-void srph::seraphim_t::create_instance() {
+void seraphim_t::create_instance() {
 #if SERAPHIM_DEBUG
 	if (!check_validation_layers()) {
 		throw std::runtime_error("Requested validation layers not available.");
@@ -182,8 +219,8 @@ void srph::seraphim_t::create_instance() {
 		"vkEnumerateInstanceVersion");
 
 	uint32_t version;
-	int major, minor, patch;
-	if (vk_version_func != nullptr && vk_version_func(&version) == VK_SUCCESS) {
+	unsigned major, minor, patch;
+	if (vk_version_func != NULL && vk_version_func(&version) == VK_SUCCESS) {
 		major = version >> 22;
 		minor = (version - (major << 22)) >> 12;
 		patch = version - (major << 22) - (minor << 12);
@@ -198,7 +235,7 @@ void srph::seraphim_t::create_instance() {
 
 	VkApplicationInfo app_info = { };
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	app_info.pNext = nullptr;
+	app_info.pNext = NULL;
 	app_info.pApplicationName = "Seraphim";
 	app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	app_info.pEngineName = "Seraphim";
@@ -235,22 +272,7 @@ void srph::seraphim_t::create_instance() {
 	}
 }
 
-#if SERAPHIM_DEBUG
-static
-	VKAPI_ATTR
-	VkBool32
-	VKAPI_CALL
-debug_callback(VkDebugReportFlagsEXT
-	flags,
-	VkDebugReportObjectTypeEXT
-	obj_type, uint64_t obj,
-	size_t location,
-	int32_t code, const char *layer_prefix, const char *msg, void *user_data) {
-	std::cout << "Validation layer debug message: " << msg << std::endl;
-	return VK_FALSE;
-}
-
-bool srph::seraphim_t::setup_debug_callback() {
+bool seraphim_t::setup_debug_callback() {
 	VkDebugReportCallbackCreateInfoEXT create_info = { };
 	create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
 	create_info.flags =
@@ -261,11 +283,11 @@ bool srph::seraphim_t::setup_debug_callback() {
 	auto func = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(instance,
 		"vkCreateDebugReportCallbackEXT");
 
-	return func != nullptr
-		&& func(instance, &create_info, nullptr, &callback) == VK_SUCCESS;
+	return func != NULL
+		&& func(instance, &create_info, NULL, &callback) == VK_SUCCESS;
 }
 
-bool srph::seraphim_t::check_validation_layers() {
+bool seraphim_t::check_validation_layers() {
 	uint32_t layer_count;
 	vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -282,9 +304,8 @@ bool srph::seraphim_t::check_validation_layers() {
 		}
 	);
 }
-#endif
 
-void srph::seraphim_t::run() {
+void seraphim_t::run() {
 	srph_physics_start(&physics);
 
 	fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
@@ -319,24 +340,4 @@ void srph::seraphim_t::run() {
 
 		current_frame++;
 	}
-}
-
-substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
-	matter_t * matter) {
-	assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
-
-	substance_t *new_substance = &srph->substances[srph->num_substances];
-	*new_substance = substance_t(form, matter, srph->num_substances);
-	srph->num_substances++;
-	return new_substance;
-}
-
-sdf_t *seraphim_create_sdf(srph::seraphim_t * seraphim, sdf_func_t f, void *data) {
-	assert(seraphim->num_sdfs < SERAPHIM_MAX_SDFS - 1);
-
-	sdf_t *new_sdf = &seraphim->sdfs[seraphim->num_sdfs];
-	sdf_create(new_sdf, f, data, seraphim->num_sdfs);
-	seraphim->num_sdfs++;
-
-	return new_sdf;
 }

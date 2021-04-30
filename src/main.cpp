@@ -20,7 +20,7 @@ int main() {
 	}
 	cJSON_Delete(game_json);
 
-	srph::seraphim_t engine(title_string);
+	seraphim_t engine(title_string);
 
 	material_t material;
 	material.static_friction = 0.2;
