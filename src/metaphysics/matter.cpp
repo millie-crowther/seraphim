@@ -22,8 +22,8 @@ matter_create(matter_t * m, sdf_t * sdf,
 	m->transform.rotation = quat_identity;
 	m->v = vec3_zero;
 	m->omega = vec3_zero;
-	m->f = vec3_zero;
-	m->t = vec3_zero;
+	m->force = vec3_zero;
+	m->torque = vec3_zero;
 
 	if (m->transform.position.y > -90) {
 		m->omega = { {0.1, 0.1, 0.1}
@@ -142,16 +142,16 @@ void matter_integrate_forces(matter_t * self, double t, const vec3 * gravity,
 
 	// integrate force
 	vec3 d;
-	vec3_multiply_f(&d, &self->f, t / mass);
+	vec3_multiply_f(&d, &self->force, t / mass);
 	vec3_add(&self->v, &self->v, &d);
 
 	// integrate torque
-	vec3_multiply_f(&d, &self->t, t / mass);
+	vec3_multiply_f(&d, &self->torque, t / mass);
 	vec3_add(&self->omega, &self->omega, &d);
 
 	// reset forces
-	vec3_multiply_f(&self->f, gravity, mass);
-	self->t = vec3_zero;
+	vec3_multiply_f(&self->force, gravity, mass);
+	self->torque = vec3_zero;
 }
 
 void matter_material(matter_t * self, material_t * mat, const vec3 * x) {

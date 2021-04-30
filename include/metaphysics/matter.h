@@ -26,8 +26,8 @@ typedef struct matter_t {
 
 	sphere_t bounding_sphere;
 
-	vec3 f;
-	vec3 t;
+	vec3 force;
+	vec3 torque;
 } matter_t;
 
 void matter_create(matter_t * m, sdf_t * sdf, const material_t * mat,
@@ -38,7 +38,6 @@ void matter_calculate_sphere_bound(matter_t * self, double dt);
 
 void matter_to_global_position(const matter_t * m, vec3 * tx, const vec3 * x);
 void matter_to_local_position(matter_t * m, vec3 * tx, const vec3 * x);
-
 void matter_to_global_direction(const matter_t * m,
 	const vec3 * position, vec3 * td, const vec3 * d);
 
