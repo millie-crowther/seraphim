@@ -4,7 +4,7 @@
 #include "metaphysics/substance.h"
 
 typedef struct collision_t {
-	matter_t *ms[2];
+	substance_t *substances[2];
 	bound3_t bound;
 	  srph_array(vec3) manifold;
 } collision_t;
