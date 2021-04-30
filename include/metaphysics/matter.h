@@ -59,7 +59,6 @@ bool matter_is_at_rest(matter_t * m);
 
 void srph_matter_integrate_forces(matter_t * self, double t, const vec3 * gravity);
 
-
 void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x);
 
 // mass
@@ -68,6 +67,5 @@ double srph_matter_mass(matter_t * self);
 
 // angular mass
 mat3 *srph_matter_inertia_tensor(matter_t * matter);
-void srph_matter_inverse_inertia_tensor(matter_t * self, mat3 * ri);
 
 #endif

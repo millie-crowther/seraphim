@@ -457,8 +457,8 @@ void renderer_t::create_command_buffers() {
 					render_pass_info.sType =
 					VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 					render_pass_info.renderPass = render_pass;
-					render_pass_info.framebuffer =
-					framebuffers[i]; render_pass_info.renderArea.offset = { 0,
+					render_pass_info.framebuffer = framebuffers[i];
+					render_pass_info.renderArea.offset = { 0,
 						0
 					};
 					render_pass_info.renderArea.extent =
@@ -476,10 +476,8 @@ void renderer_t::create_command_buffers() {
 						VK_PIPELINE_BIND_POINT_GRAPHICS,
 						pipeline_layout, 0, 1,
 						&desc_sets[i], 0,
-						nullptr);
-					vkCmdDraw(command_buffer,
-						3, 1, 0, 0); vkCmdEndRenderPass(command_buffer);
-				}
+						nullptr); vkCmdDraw(command_buffer, 3, 1, 0, 0);
+				vkCmdEndRenderPass(command_buffer);}
 			));
 	}
 }
@@ -615,8 +613,7 @@ void renderer_t::render() {
 	}
 	substance_data.resize(size);
 
-	std::sort(substance_data.begin(), substance_data.end(),
-		data_t::comparator_t());
+	std::sort(substance_data.begin(), substance_data.end(), data_t::comparator_t());
 
 	substance_buffer->write(substance_data, 0);
 
@@ -665,9 +662,8 @@ void renderer_t::render() {
 				&desc_sets[image_index], 0,
 				nullptr);
 			vkCmdDispatch(command_buffer,
-				work_group_count[0],
-				work_group_count[1], 1); call_buffer->record_read(command_buffer);
-		}
+				work_group_count[0], work_group_count[1], 1);
+		call_buffer->record_read(command_buffer);}
 	)->submit(image_available_semas[current_frame],
 		compute_done_semas[current_frame],
 		in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -716,10 +712,9 @@ void renderer_t::handle_requests(uint32_t frame) {
 
 	call_buffer->map(0, calls.size(),[&](void *memory_map) {
 			std::memcpy(calls.data(), memory_map,
-				calls.size() * sizeof(call_t));
+			calls.size() * sizeof(call_t));
 			std::memcpy(memory_map, empty_calls.data(),
-				calls.size() * sizeof(call_t));
-		}
+				calls.size() * sizeof(call_t));}
 	);
 
   for (auto & call:calls) {
@@ -756,8 +751,7 @@ void renderer_t::create_buffers() {
 	call_buffer =
 		std::make_unique < device_buffer_t < call_t >> (2, device, number_of_calls);
 	light_buffer = std::make_unique < device_buffer_t < light_t >> (3, device, s);
-	substance_buffer =
-		std::make_unique < device_buffer_t < data_t >> (4, device, s);
+	substance_buffer = std::make_unique < device_buffer_t < data_t >> (4, device, s);
 	pointer_buffer =
 		std::make_unique < device_buffer_t < uint32_t >> (5, device, c * s);
 	frustum_buffer =

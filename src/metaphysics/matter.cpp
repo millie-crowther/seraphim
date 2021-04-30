@@ -65,22 +65,6 @@ double srph_matter_mass(matter_t * self) {
 	return srph_matter_average_density(self) * srph_sdf_volume(self->sdf);
 }
 
-void srph_matter_inverse_inertia_tensor(matter_t * self, mat3 * ri) {
-	if (self->is_static) {
-		return;
-	}
-
-	mat3 *i = srph_matter_inertia_tensor(self);
-
-	mat3 r, rt;
-	mat3_rotation_quat(&r, &self->transform.rotation);
-	mat3_transpose(&rt, &r);
-
-	mat3_multiply(ri, i, &rt);
-	mat3_multiply(ri, &r, ri);
-	mat3_inverse(ri, ri);
-}
-
 void srph_matter_calculate_sphere_bound(matter_t * self, double dt) {
 	vec3 midpoint, radius;
 	srph_bound3_midpoint(&self->sdf->bound, &midpoint);
@@ -177,15 +161,10 @@ void srph_matter_integrate_forces(matter_t * self, double t, const vec3 * gravit
 	self->t = vec3_zero;
 }
 
-
-
 void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x) {
 	// TODO: sample at point
 	*mat = self->material;
 }
-
-
-
 
 mat3 *srph_matter_inertia_tensor(matter_t * matter) {
 	if (!matter->is_inertia_tensor_valid) {

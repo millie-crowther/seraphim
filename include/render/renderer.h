@@ -102,8 +102,7 @@ namespace srph {
 
 		// buffers
 		  std::unique_ptr < device_buffer_t < response_t::patch_t >> patch_buffer;
-		  std::unique_ptr < device_buffer_t <
-			data_t >> substance_buffer;
+		  std::unique_ptr < device_buffer_t < data_t >> substance_buffer;
 		  std::unique_ptr < device_buffer_t < call_t >> call_buffer;
 		  std::unique_ptr < device_buffer_t < light_t >> light_buffer;
 		  std::unique_ptr < device_buffer_t < uint32_t >> pointer_buffer;

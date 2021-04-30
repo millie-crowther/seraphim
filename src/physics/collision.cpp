@@ -46,11 +46,11 @@ collision_broad_phase(substance_t * substance_pointers,
 	srph_array_sort(&substances, x_comparator);
 
 	for (size_t i = 0; i < num_substances; i++) {
-        substance_t *a = substances.data[i];
+		substance_t *a = substances.data[i];
 		sphere_t *sa = &a->matter.bounding_sphere;
 
 		for (size_t j = i + 1; j < num_substances; j++) {
-            substance_t *b = substances.data[j];
+			substance_t *b = substances.data[j];
 			sphere_t *sb = &b->matter.bounding_sphere;
 
 			if (sa->c.x + sa->r < sb->c.x - sb->r) {
@@ -70,8 +70,8 @@ collision_broad_phase(substance_t * substance_pointers,
 }
 
 static double intersection_func(void *data, const vec3 * x) {
-    substance_t *a = ((substance_t **) data)[0];
-    substance_t *b = ((substance_t **) data)[1];
+	substance_t *a = ((substance_t **) data)[0];
+	substance_t *b = ((substance_t **) data)[1];
 
 	vec3 xa, xb;
 	srph_matter_to_local_position(&a->matter, &xa, x);
@@ -125,9 +125,10 @@ static double intersection_func(void *data, const vec3 * x) {
 //    return distance_function / vrn;
 //}
 
-static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb, double dt) {
-    matter_t * a = &sa->matter;
-    matter_t * b = &sb->matter;
+static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb,
+	double dt) {
+	matter_t *a = &sa->matter;
+	matter_t *b = &sb->matter;
 
 	// check that deformation is a collision deformation
 	if (xb->type != srph_deform_type_collision) {
@@ -140,8 +141,8 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	srph_matter_to_local_position(a, &xa, &x);
 
 	vec3 va, vb, vr;
-    substance_velocity_at(sa, &x, &va);
-    substance_velocity_at(sb, &x, &vb);
+	substance_velocity_at(sa, &x, &va);
+	substance_velocity_at(sb, &x, &vb);
 	vec3_subtract(&vr, &vb, &va);
 
 	vec3 n;
@@ -172,10 +173,10 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	double CoR = fmax(mata.restitution, matb.restitution);
 
 	double inverse_mass =
-            substance_inverse_mass(sa) +
-            substance_inverse_mass(sb) +
-            substance_inverse_angular_mass(sa, &x, &n) +
-            substance_inverse_angular_mass(sb, &x, &n);
+		substance_inverse_mass(sa) +
+		substance_inverse_mass(sb) +
+		substance_inverse_angular_mass(sa, &x, &n) +
+		substance_inverse_angular_mass(sb, &x, &n);
 
 	if (inverse_mass == 0.0) {
 		return;
@@ -184,7 +185,7 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	double jr = -(1.0 + CoR) * vrn / inverse_mass;
 	vec3 j;
 	vec3_multiply_f(&j, &n, -jr);
-    substance_apply_impulse(sa, sb, &x, &j);
+	substance_apply_impulse(sa, sb, &x, &j);
 
 	// apply friction force
 	vec3 t;
@@ -205,13 +206,13 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 
 	vec3 fr;
 	vec3_multiply_f(&fr, &t, ka);
-    substance_apply_impulse(sa, sb, &x, &fr);
+	substance_apply_impulse(sa, sb, &x, &fr);
 }
 
 static void collision_resolve_velocity_constraint(collision_t * self, double dt) {
 	for (int i = 0; i < 2; i++) {
 		substance_t *a = self->substances[i];
-        substance_t *b = self->substances[1 - i];
+		substance_t *b = self->substances[1 - i];
 
 		for (size_t j = 0; j < b->matter.deformations.size; j++) {
 			contact_correct(a, b, b->matter.deformations.data[j], dt);
@@ -251,8 +252,10 @@ static void collision_generate_manifold(collision_t * c, double dt) {
 	srph_opt_nelder_mead(&s, intersection_func, c->substances, xs, &threshold);
 
 	if (s.fx <= 0) {
-		srph_matter_add_deformation(&c->substances[0]->matter, &s.x, srph_deform_type_collision);
-		srph_matter_add_deformation(&c->substances[1]->matter, &s.x, srph_deform_type_collision);
+		srph_matter_add_deformation(&c->substances[0]->matter, &s.x,
+			srph_deform_type_collision);
+		srph_matter_add_deformation(&c->substances[1]->matter, &s.x,
+			srph_deform_type_collision);
 
 		srph_array_push_back(&c->manifold);
 		c->manifold.data[0] = s.x;
@@ -262,10 +265,10 @@ static void collision_generate_manifold(collision_t * c, double dt) {
 static void collision_resolve_interpenetration_constraint(collision_t * c) {
 	for (int i = 0; i < 2; i++) {
 		substance_t *sa = c->substances[i];
-        substance_t *sb = c->substances[1 - i];
+		substance_t *sb = c->substances[1 - i];
 
-        matter_t * a = &sa->matter;
-        matter_t * b = &sb->matter;
+		matter_t *a = &sa->matter;
+		matter_t *b = &sb->matter;
 
 		double ratio =
 			srph_matter_mass(a) / (srph_matter_mass(a) + srph_matter_mass(b));
@@ -307,9 +310,8 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 		for (int i = 0; i < 2; i++) {
 			vec3 local_position;
 			srph_matter_to_local_position(&substances[i]->matter,
-                                          &local_position, &global_position);
-			phis[i] =
-				sdf_distance(substances[i]->matter.sdf, &local_position);
+				&local_position, &global_position);
+			phis[i] = sdf_distance(substances[i]->matter.sdf, &local_position);
 		}
 
 		sub_bound_distances[sub_bound_index] = phis[0] + phis[1];
@@ -331,7 +333,8 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 				vec3 vertex;
 				for (int vertex_index = 0; vertex_index < 8; vertex_index++) {
 					srph_bound3_vertex(bound, vertex_index, &vertex);
-					srph_matter_to_local_position(&substance->matter, &vertex, &vertex);
+					srph_matter_to_local_position(&substance->matter, &vertex,
+						&vertex);
 					double phi = sdf_distance(substance->matter.sdf, &vertex);
 					if (phi < epsilon) {
 						is_intersecting = true;
@@ -358,9 +361,10 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 static bool collision_narrow_phase(collision_t * c) {
 	bound3_t bounds[2];
 	for (int matter_index = 0; matter_index < 2; matter_index++) {
-		sphere_t *bounding_sphere = &c->substances[matter_index]->matter.bounding_sphere;
-		vec3_subtract_f(&bounds[matter_index].lower,
-			&bounding_sphere->c, bounding_sphere->r);
+		sphere_t *bounding_sphere =
+			&c->substances[matter_index]->matter.bounding_sphere;
+		vec3_subtract_f(&bounds[matter_index].lower, &bounding_sphere->c,
+			bounding_sphere->r);
 		vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c,
 			bounding_sphere->r);
 	}
