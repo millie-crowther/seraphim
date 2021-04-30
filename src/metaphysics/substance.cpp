@@ -16,7 +16,7 @@ data_t substance_t::get_data(const vec3 * eye_position) {
 	srph_bound3_radius(srph_sdf_bound(matter.sdf), &r);
 
 	vec3 eye;
-	srph_matter_to_local_position(&matter, &eye, eye_position);
+	matter_to_local_position(&matter, &eye, eye_position);
 
 	vec3_abs(&eye, &eye);
 
@@ -36,7 +36,7 @@ data_t substance_t::get_data(const vec3 * eye_position) {
 
 	data_t data(near, far, f32vec3_t(r.x, r.y, r.z), id);
 
-	srph_matter_transformation_matrix(&matter, data.transform);
+	matter_transformation_matrix(&matter, data.transform);
 	data.sdf_id = matter.sdf->id;
 
 	return data;
@@ -64,7 +64,7 @@ data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id) {
 
 static void offset_from_centre_of_mass(substance_t * self, vec3 * r, const vec3 * x) {
 	vec3 com;
-	srph_matter_to_global_position(&self->matter, &com, substance_com(self));
+	matter_to_global_position(&self->matter, &com, substance_com(self));
 	vec3_subtract(r, x, &com);
 }
 
@@ -165,7 +165,7 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 			int hits = 0;
 			double total = 0.0;
 			material_t mat;
-			srph_matter_material(&self->matter, &mat, NULL);
+			matter_material(&self->matter, &mat, NULL);
 
 			while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
 				vec3 x;
@@ -174,7 +174,7 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 				x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
 				if (!self->matter.is_uniform) {
-					srph_matter_material(&self->matter, &mat, NULL);
+					matter_material(&self->matter, &mat, NULL);
 				}
 
 				if (srph_sdf_contains(self->matter.sdf, &x)) {
@@ -210,7 +210,7 @@ mat3 *substance_inertia_tensor(substance_t * self) {
 		}
 
 		mat3_multiply_f(&self->matter.inertia_tensor,
-                        &self->matter.inertia_tensor, substance_mass(self));
+			&self->matter.inertia_tensor, substance_mass(self));
 		self->matter.is_inertia_tensor_valid = true;
 	}
 
@@ -231,7 +231,7 @@ vec3 *substance_com(substance_t * self) {
 		int hits = 0;
 		double total = 0.0;
 		material_t mat;
-		srph_matter_material(&self->matter, &mat, NULL);
+		matter_material(&self->matter, &mat, NULL);
 
 		while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
 			vec3 x;
@@ -240,7 +240,7 @@ vec3 *substance_com(substance_t * self) {
 			x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
 			if (!self->matter.is_uniform) {
-				srph_matter_material(&self->matter, &mat, NULL);
+				matter_material(&self->matter, &mat, NULL);
 			}
 			vec3_multiply_f(&x, &x, mat.density);
 
@@ -264,7 +264,6 @@ vec3 *substance_com(substance_t * self) {
 	return &self->matter.com;
 }
 
-
-double substance_mass(substance_t *self) {
-    return srph_matter_average_density(&self->matter) * srph_sdf_volume(self->matter.sdf);
+double substance_mass(substance_t * self) {
+	return matter_average_density(&self->matter) * srph_sdf_volume(self->matter.sdf);
 }

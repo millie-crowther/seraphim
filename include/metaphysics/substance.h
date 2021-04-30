@@ -48,7 +48,7 @@ mat3 *substance_inertia_tensor(substance_t * self);
 void substance_inverse_inertia_tensor(substance_t * self, mat3 * ri);
 
 // mass
-double substance_mass(substance_t *self);
+double substance_mass(substance_t * self);
 double substance_inverse_mass(substance_t * self);
 vec3 *substance_com(substance_t * self);
 

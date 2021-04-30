@@ -90,7 +90,7 @@ response_t::response_t(const call_t & call, substance_t * substance) {
 		normals[o] = squash(vec4_t(n, 0.0));
 
 		material_t mat;
-		srph_matter_material(&substance->matter, &mat, nullptr);
+		matter_material(&substance->matter, &mat, nullptr);
 		vec3 c = mat.colour;
 		colours[o] = squash(vec4_t(c.x, c.y, c.z, 0.0));
 	}

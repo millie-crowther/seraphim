@@ -9,17 +9,16 @@
 #define ANGULAR_VELOCITY_REST_THRESHOLD 0.2
 
 void
-srph_matter_init(matter_t * m, sdf_t * sdf,
-	const material_t * material,
-	const vec3 * initial_position, bool is_uniform, bool is_static) {
+matter_create(matter_t * m, sdf_t * sdf,
+	const material_t * mat, const vec3 * x, bool is_uniform, bool is_static) {
 	m->sdf = sdf;
-	m->material = *material;
+	m->material = *mat;
 	m->is_uniform = is_uniform;
 	m->is_static = is_static;
 	m->is_rigid = true;
 	m->is_at_rest = false;
 	m->has_collided = false;
-	m->transform.position = initial_position == NULL ? vec3_zero : *initial_position;
+	m->transform.position = x == NULL ? vec3_zero : *x;
 	m->transform.rotation = quat_identity;
 	m->v = vec3_zero;
 	m->omega = vec3_zero;
@@ -34,7 +33,7 @@ srph_matter_init(matter_t * m, sdf_t * sdf,
 	srph_array_init(&m->deformations);
 }
 
-void srph_matter_destroy(matter_t * m) {
+void matter_destroy(matter_t * m) {
 	while (!srph_array_is_empty(&m->deformations)) {
 		free(*m->deformations.last);
 		srph_array_pop_back(&m->deformations);
@@ -51,7 +50,7 @@ bool matter_is_at_rest(matter_t * m) {
 		v <= LINEAR_VELOCITY_REST_THRESHOLD && w <= ANGULAR_VELOCITY_REST_THRESHOLD;
 }
 
-double srph_matter_average_density(matter_t * self) {
+double matter_average_density(matter_t * self) {
 	if (self->is_uniform) {
 		return self->material.density;
 	}
@@ -61,20 +60,19 @@ double srph_matter_average_density(matter_t * self) {
 	return 0.0;
 }
 
-
-void srph_matter_calculate_sphere_bound(matter_t * self, double dt) {
+void matter_calculate_sphere_bound(matter_t * self, double dt) {
 	vec3 midpoint, radius;
 	srph_bound3_midpoint(&self->sdf->bound, &midpoint);
 	srph_bound3_radius(&self->sdf->bound, &radius);
-	srph_matter_to_global_position(self, &self->bounding_sphere.c, &midpoint);
+	matter_to_global_position(self, &self->bounding_sphere.c, &midpoint);
 	self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
 }
 
-srph_deform *srph_matter_add_deformation(matter_t * self, const vec3 * x,
+srph_deform *matter_add_deformation(matter_t * self, const vec3 * x,
 	srph_deform_type type) {
 	// transform position into local space
 	vec3 x0;
-	srph_matter_to_local_position(self, &x0, x);
+	matter_to_local_position(self, &x0, x);
 
 	// check if new deformation is inside surface and not too close to any other deformations
 	if (type == srph_deform_type_collision) {
@@ -116,11 +114,11 @@ srph_deform *srph_matter_add_deformation(matter_t * self, const vec3 * x,
 	return deform;
 }
 
-void srph_matter_to_local_position(matter_t * m, vec3 * tx, const vec3 * x) {
+void matter_to_local_position(matter_t * m, vec3 * tx, const vec3 * x) {
 	srph_transform_to_local_position(&m->transform, tx, x);
 }
 
-void srph_matter_transformation_matrix(matter_t * m, float *xs) {
+void matter_transformation_matrix(matter_t * m, float *xs) {
 	mat4 dxs;
 	srph_transform_matrix(&m->transform, &dxs);
 
@@ -129,17 +127,18 @@ void srph_matter_transformation_matrix(matter_t * m, float *xs) {
 	}
 }
 
-void srph_matter_to_global_position(const matter_t * m, vec3 * tx, const vec3 * x) {
+void matter_to_global_position(const matter_t * m, vec3 * tx, const vec3 * x) {
 	srph_transform_to_global_position(&m->transform, tx, x);
 }
 
 void
-srph_matter_to_global_direction(const matter_t * m,
+matter_to_global_direction(const matter_t * m,
 	const vec3 * position, vec3 * td, const vec3 * d) {
 	srph_transform_to_global_direction(&m->transform, td, d);
 }
 
-void matter_integrate_forces(matter_t *self, double t, const vec3 *gravity, double mass) {
+void matter_integrate_forces(matter_t * self, double t, const vec3 * gravity,
+	double mass) {
 	assert(!self->is_static && !self->is_at_rest);
 
 	// integrate force
@@ -156,7 +155,7 @@ void matter_integrate_forces(matter_t *self, double t, const vec3 *gravity, doub
 	self->t = vec3_zero;
 }
 
-void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x) {
+void matter_material(matter_t * self, material_t * mat, const vec3 * x) {
 	// TODO: sample at point
 	*mat = self->material;
 }

@@ -74,8 +74,8 @@ static double intersection_func(void *data, const vec3 * x) {
 	substance_t *b = ((substance_t **) data)[1];
 
 	vec3 xa, xb;
-	srph_matter_to_local_position(&a->matter, &xa, x);
-	srph_matter_to_local_position(&b->matter, &xb, x);
+	matter_to_local_position(&a->matter, &xa, x);
+	matter_to_local_position(&b->matter, &xb, x);
 
 	double phi_a = sdf_distance(a->matter.sdf, &xa);
 	double phi_b = sdf_distance(b->matter.sdf, &xb);
@@ -136,9 +136,9 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	}
 	// check that relative velocity at this point is incoming
 	vec3 x, xa;
-	srph_matter_to_global_position(b, &x, &xb->x0);
+	matter_to_global_position(b, &x, &xb->x0);
 
-	srph_matter_to_local_position(a, &xa, &x);
+	matter_to_local_position(a, &xa, &x);
 
 	vec3 va, vb, vr;
 	substance_velocity_at(sa, &x, &va);
@@ -149,11 +149,11 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	if (srph_sdf_discontinuity(a->sdf, &xa) <
 		srph_sdf_discontinuity(b->sdf, &xb->x0)) {
 		n = srph_sdf_normal(a->sdf, &xa);
-		srph_matter_to_global_direction(a, NULL, &n, &n);
+		matter_to_global_direction(a, NULL, &n, &n);
 	} else {
 		n = srph_sdf_normal(b->sdf, &xb->x0);
 		vec3_negative(&n, &n);
-		srph_matter_to_global_direction(b, NULL, &n, &n);
+		matter_to_global_direction(b, NULL, &n, &n);
 	}
 
 	double vrn = vec3_dot(&vr, &n);
@@ -167,8 +167,8 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	}
 	// calculate collision impulse magnitude
 	material_t mata, matb;
-	srph_matter_material(a, &mata, nullptr);
-	srph_matter_material(b, &matb, nullptr);
+	matter_material(a, &mata, nullptr);
+	matter_material(b, &matb, nullptr);
 
 	double CoR = fmax(mata.restitution, matb.restitution);
 
@@ -252,9 +252,9 @@ static void collision_generate_manifold(collision_t * c, double dt) {
 	srph_opt_nelder_mead(&s, intersection_func, c->substances, xs, &threshold);
 
 	if (s.fx <= 0) {
-		srph_matter_add_deformation(&c->substances[0]->matter, &s.x,
+		matter_add_deformation(&c->substances[0]->matter, &s.x,
 			srph_deform_type_collision);
-		srph_matter_add_deformation(&c->substances[1]->matter, &s.x,
+		matter_add_deformation(&c->substances[1]->matter, &s.x,
 			srph_deform_type_collision);
 
 		srph_array_push_back(&c->manifold);
@@ -271,19 +271,19 @@ static void collision_resolve_interpenetration_constraint(collision_t * c) {
 		matter_t *b = &sb->matter;
 
 		double ratio =
-                substance_mass(sa) / (substance_mass(sa) + substance_mass(sb));
+			substance_mass(sa) / (substance_mass(sa) + substance_mass(sb));
 
 		for (size_t j = 0; j < b->deformations.size; j++) {
 			srph_deform *d = b->deformations.data[j];
 			vec3 xa, x;
-			srph_matter_to_global_position(b, &x, &d->x0);
-			srph_matter_to_local_position(a, &xa, &x);
+			matter_to_global_position(b, &x, &d->x0);
+			matter_to_local_position(a, &xa, &x);
 
 			double phi = sdf_distance(a->sdf, &xa) + sdf_distance(b->sdf,
 				&d->x0);
 			if (phi <= 0) {
 				vec3 n = srph_sdf_normal(a->sdf, &xa);
-				srph_matter_to_global_direction(a, NULL, &n, &n);
+				matter_to_global_direction(a, NULL, &n, &n);
 				vec3_multiply_f(&n, &n, -phi * ratio);
 				srph_transform_translate(&b->transform, &n);
 			}
@@ -309,7 +309,7 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 
 		for (int i = 0; i < 2; i++) {
 			vec3 local_position;
-			srph_matter_to_local_position(&substances[i]->matter,
+			matter_to_local_position(&substances[i]->matter,
 				&local_position, &global_position);
 			phis[i] = sdf_distance(substances[i]->matter.sdf, &local_position);
 		}
@@ -333,8 +333,7 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 				vec3 vertex;
 				for (int vertex_index = 0; vertex_index < 8; vertex_index++) {
 					srph_bound3_vertex(bound, vertex_index, &vertex);
-					srph_matter_to_local_position(&substance->matter, &vertex,
-						&vertex);
+					matter_to_local_position(&substance->matter, &vertex, &vertex);
 					double phi = sdf_distance(substance->matter.sdf, &vertex);
 					if (phi < epsilon) {
 						is_intersecting = true;
