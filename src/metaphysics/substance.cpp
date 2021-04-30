@@ -3,8 +3,6 @@
 #include <iostream>
 #include <core/random.h>
 
-using namespace srph;
-
 substance_t::substance_t(form_t * form, matter_t * matter, uint32_t id) {
 	this->form = *form;
 	this->matter = *matter;
@@ -36,7 +34,9 @@ data_t substance_t::get_data(const vec3 * eye_position) {
 
 	float far = (float) vec3_length(&x);
 
-	data_t data(near, far, f32vec3_t(r.x, r.y, r.z), id);
+	float f32r[3] = { (float) r.x, (float) r.y, (float) r.z};
+
+	data_t data(near, far, f32r, id);
 
 	matter_transformation_matrix(&matter, data.transform);
 	data.sdf_id = matter.sdf->id;
@@ -57,11 +57,14 @@ data_t::data_t() {
 	id = ~0;
 }
 
-data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id) {
+data_t::data_t(float near, float far, const float * r, uint32_t id) {
 	this->near = near;
 	this->far = far;
-	this->r = r;
 	this->id = id;
+
+	for (int i = 0; i < 3; i++){
+	    this->r[i] = r[i];
+	}
 }
 
 static void offset_from_centre_of_mass(substance_t * self, vec3 * r, const vec3 * x) {
