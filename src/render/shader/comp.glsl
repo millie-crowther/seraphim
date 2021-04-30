@@ -8,8 +8,8 @@ struct ray_t {
 struct substance_t {
     float near;
     float far;
-    float _1;
-    float _2;
+    float sdf_id;
+    float material_id;
 
     vec3 radius;
     uint id;

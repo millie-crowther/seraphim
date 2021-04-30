@@ -607,7 +607,7 @@ void renderer_t::render() {
 	uint32_t size = work_group_size[0] * work_group_size[1];
 
 	// write substances
-	std::vector < substance_t::data_t > substance_data;
+	std::vector < data_t > substance_data;
 	for (size_t i = 0; i < *num_substances; i++) {
 		substance_t *s = &substances[i];
 		substance_data.push_back(s->get_data
@@ -616,7 +616,7 @@ void renderer_t::render() {
 	substance_data.resize(size);
 
 	std::sort(substance_data.begin(), substance_data.end(),
-		substance_t::data_t::comparator_t());
+		data_t::comparator_t());
 
 	substance_buffer->write(substance_data, 0);
 
@@ -757,7 +757,7 @@ void renderer_t::create_buffers() {
 		std::make_unique < device_buffer_t < call_t >> (2, device, number_of_calls);
 	light_buffer = std::make_unique < device_buffer_t < light_t >> (3, device, s);
 	substance_buffer =
-		std::make_unique < device_buffer_t < substance_t::data_t >> (4, device, s);
+		std::make_unique < device_buffer_t < data_t >> (4, device, s);
 	pointer_buffer =
 		std::make_unique < device_buffer_t < uint32_t >> (5, device, c * s);
 	frustum_buffer =
