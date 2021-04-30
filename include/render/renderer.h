@@ -86,7 +86,7 @@ namespace srph {
 		char *vertex_shader_code;
 
 		substance_t *substances;
-		size_t *num_substances;
+		uint32_t *num_substances;
 
 		  std::unique_ptr < swapchain_t > swapchain;
 		  std::weak_ptr < camera_t > main_camera;
@@ -138,11 +138,11 @@ namespace srph {
 	  public:
 		// constructors and destructors
 		  renderer_t(device_t * device,
-			substance_t * substances, size_t *num_substances,
-			VkSurfaceKHR surface, window_t * window,
-			std::shared_ptr < camera_t > test_camera,
-			u32vec2_t work_group_count,
-			u32vec2_t work_group_size, uint32_t max_image_size);
+                     substance_t * substances, uint32_t *num_substances,
+                     VkSurfaceKHR surface, window_t * window,
+                     std::shared_ptr < camera_t > test_camera,
+                     u32vec2_t work_group_count,
+                     u32vec2_t work_group_size, uint32_t max_image_size);
 		 ~renderer_t();
 
 		// public functions

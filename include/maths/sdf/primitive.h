@@ -2,9 +2,8 @@
 #define SERAPHIM_PRIMITIVE_H
 
 #include "sdf.h"
-#include "core/seraphim.h"
 
-sdf_t *sdf_sphere_create(seraphim_t * seraphim, double r);
-sdf_t *sdf_torus_create(seraphim_t * seraphim, double r1, double r2);
+void sdf_sphere_create(uint32_t *id, sdf_t *sdf, double *r);
+void sdf_torus_create(uint32_t *id, sdf_t *sdf, vec2 *rs);
 
 #endif

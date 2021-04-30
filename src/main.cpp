@@ -32,24 +32,26 @@ int main() {
 
 	vec3 floor_size = { {100.0, 100.0, 100.0}
 	};
-	sdf_t *floor_sdf = sdf_cuboid_initialise(&engine, &floor_size);
+	sdf_t floor_sdf;
+	sdf_cuboid_create(&engine.num_sdfs, &floor_sdf, &floor_size);
 	material.colour = { {0.1, 0.8, 0.8}
 	};
 	vec3 position = { {0.0, -100.0, 0.0}
 	};
 	matter_t floor_matter;
-	matter_create(&floor_matter, floor_sdf, &material, &position, true, true);
+	matter_create(&floor_matter, &floor_sdf, &material, &position, true, true);
 	srph_create_substance(&engine, &form, &floor_matter);
 
 	vec3 cube_size = { {0.5, 0.5, 0.5}
 	};
-	sdf_t *cube_sdf = sdf_cuboid_initialise(&engine, &cube_size);
+	sdf_t cube_sdf;
+	sdf_cuboid_create(&engine.num_sdfs, &cube_sdf, &cube_size);
 	material.colour = { {0.8, 0.8, 0.1}
 	};
 	position = { {0.0, 3.0, 0.0}
 	};
 	matter_t cube_matter;
-	matter_create(&cube_matter, cube_sdf, &material, &position, true, false);
+	matter_create(&cube_matter, &cube_sdf, &material, &position, true, false);
 	srph_create_substance(&engine, &form, &cube_matter);
 
 //    sdf_t * sphere_sdf = sdf_sphere_create(0.5);
@@ -72,9 +74,6 @@ int main() {
 
 	matter_destroy(&floor_matter);
 	matter_destroy(&cube_matter);
-
-	sdf_destroy(floor_sdf);
-	sdf_destroy(cube_sdf);
 
 	return 0;
 }

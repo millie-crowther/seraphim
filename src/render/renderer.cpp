@@ -10,10 +10,10 @@
 using namespace srph;
 
 renderer_t::renderer_t(device_t * device,
-	substance_t * substances, size_t *num_substances,
-	VkSurfaceKHR surface, window_t * window,
-	std::shared_ptr < camera_t > test_camera,
-	u32vec2_t work_group_count, u32vec2_t work_group_size, uint32_t max_image_size) {
+                       substance_t * substances, uint32_t *num_substances,
+                       VkSurfaceKHR surface, window_t * window,
+                       std::shared_ptr < camera_t > test_camera,
+                       u32vec2_t work_group_count, u32vec2_t work_group_size, uint32_t max_image_size) {
 	this->device = device;
 	this->surface = surface;
 	this->work_group_count = work_group_count;

@@ -44,10 +44,10 @@ struct seraphim_t {
 
       std::shared_ptr < srph::camera_t > test_camera;
 
-    size_t num_substances;
+    uint32_t num_substances;
     substance_t substances[SERAPHIM_MAX_SUBSTANCES];
 
-    size_t num_sdfs;
+    uint32_t num_sdfs;
     sdf_t sdfs[SERAPHIM_MAX_SDFS];
 
     bool fps_monitor_quit;
@@ -62,7 +62,6 @@ struct seraphim_t {
     void run();
 };
 
-sdf_t *seraphim_create_sdf(seraphim_t * seraphim, sdf_func_t f, void *data);
 substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
 	matter_t * matter);
 

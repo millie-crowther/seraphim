@@ -1,10 +1,9 @@
 #ifndef SERAPHIM_PLATONIC_H
 #define SERAPHIM_PLATONIC_H
 
-#include <core/seraphim.h>
-#include "sdf.h"
+#include "maths/sdf/sdf.h"
 
-sdf_t *sdf_cuboid_initialise(seraphim_t * seraphim, const vec3 * r);
-sdf_t *sdf_octahedron_initialise(seraphim_t * seraphim, double e);
+void sdf_cuboid_create(uint32_t *id, sdf_t *sdf, vec3 *r);
+void sdf_octahedron_create(uint32_t *id, sdf_t *sdf, double *e);
 
 #endif

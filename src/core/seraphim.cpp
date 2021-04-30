@@ -86,16 +86,6 @@ substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
 	return new_substance;
 }
 
-sdf_t *seraphim_create_sdf(seraphim_t * seraphim, sdf_func_t f, void *data) {
-	assert(seraphim->num_sdfs < SERAPHIM_MAX_SDFS - 1);
-
-	sdf_t *new_sdf = &seraphim->sdfs[seraphim->num_sdfs];
-	sdf_create(new_sdf, f, data, seraphim->num_sdfs);
-	seraphim->num_sdfs++;
-
-	return new_sdf;
-}
-
 seraphim_t::seraphim_t(const char *title) {
 #if SERAPHIM_DEBUG
 	std::cout << "Running in debug mode." << std::endl;

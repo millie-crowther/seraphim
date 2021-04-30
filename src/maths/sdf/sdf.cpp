@@ -1,6 +1,7 @@
 #include "maths/sdf/sdf.h"
 
 #include <stdlib.h>
+#include <core/seraphim.h>
 
 #include "core/random.h"
 #include "physics/sphere.h"
@@ -9,10 +10,11 @@
 
 #define SUPPORT_ALPHA 0.5
 
-void sdf_create(sdf_t * sdf, sdf_func_t phi, void *data, uint32_t id) {
+void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data) {
 	sdf->distance_function = phi;
 	sdf->data = data;
-	sdf->id = id;
+	sdf->id = *id;
+	(*id)++;
 
 	sdf->is_bound_valid = false;
 	sdf->is_com_valid = false;
@@ -112,11 +114,6 @@ bound3_t *srph_sdf_bound(sdf_t * sdf) {
 	}
 
 	return &sdf->bound;
-}
-
-void sdf_destroy(sdf_t * sdf) {
-	free(sdf->data);
-	sdf->data = NULL;
 }
 
 double srph_sdf_discontinuity(sdf_t * sdf, const vec3 * x) {
