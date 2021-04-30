@@ -20,13 +20,13 @@ matter_create(matter_t * m, sdf_t * sdf,
 	m->has_collided = false;
 	m->transform.position = x == NULL ? vec3_zero : *x;
 	m->transform.rotation = quat_identity;
-	m->v = vec3_zero;
-	m->omega = vec3_zero;
+	m->velocity = vec3_zero;
+	m->angular_velocity = vec3_zero;
 	m->force = vec3_zero;
 	m->torque = vec3_zero;
 
 	if (m->transform.position.y > -90) {
-		m->omega = { {0.1, 0.1, 0.1}
+		m->angular_velocity = { {0.1, 0.1, 0.1}
 		};
 	}
 
@@ -42,8 +42,8 @@ void matter_destroy(matter_t * m) {
 }
 
 bool matter_is_at_rest(matter_t * m) {
-	double v = vec3_length(&m->v);
-	double w = vec3_length(&m->omega);
+	double v = vec3_length(&m->velocity);
+	double w = vec3_length(&m->angular_velocity);
 
 	return
 		m->has_collided &&
@@ -60,32 +60,19 @@ double matter_average_density(matter_t * self) {
 	return 0.0;
 }
 
-void matter_calculate_sphere_bound(matter_t * self, double dt) {
-	vec3 midpoint, radius;
-	srph_bound3_midpoint(&self->sdf->bound, &midpoint);
-	srph_bound3_radius(&self->sdf->bound, &radius);
-	matter_to_global_position(self, &self->bounding_sphere.c, &midpoint);
-	self->bounding_sphere.r = vec3_length(&radius) + vec3_length(&self->v) * dt;
-}
-
 deform_t *matter_add_deformation(matter_t * self, const vec3 * x, deform_type_t type) {
 	// transform position into local space
 	vec3 x0;
 	matter_to_local_position(self, &x0, x);
 
-	// check if new deformation is inside surface and not too close to any other deformations
-	if (type == deform_type_collision) {
-		if (!srph_sdf_contains(self->sdf, &x0)) {
+	// check if new deformation is too close to any other deformations
+	for (size_t i = 0; i < self->deformations.size; i++) {
+		deform_t *deform = self->deformations.data[i];
+		if (vec3_distance(&x0, &deform->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY) {
 			return NULL;
 		}
-
-		for (size_t i = 0; i < self->deformations.size; i++) {
-			deform_t *deform = self->deformations.data[i];
-			if (vec3_distance(&x0, &deform->x0) < SERAPHIM_DEFORM_MAX_SAMPLE_DENSITY) {
-				return NULL;
-			}
-		}
 	}
+
 	// create new deformation
 	deform_t *deform = (deform_t *) malloc(sizeof(deform_t));
 	*deform = {
@@ -143,11 +130,11 @@ void matter_integrate_forces(matter_t * self, double t, const vec3 * gravity,
 	// integrate force
 	vec3 d;
 	vec3_multiply_f(&d, &self->force, t / mass);
-	vec3_add(&self->v, &self->v, &d);
+	vec3_add(&self->velocity, &self->velocity, &d);
 
 	// integrate torque
 	vec3_multiply_f(&d, &self->torque, t / mass);
-	vec3_add(&self->omega, &self->omega, &d);
+	vec3_add(&self->angular_velocity, &self->angular_velocity, &d);
 
 	// reset forces
 	vec3_multiply_f(&self->force, gravity, mass);

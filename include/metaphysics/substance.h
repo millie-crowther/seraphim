@@ -35,12 +35,15 @@ typedef struct substance_t {
 
 	uint32_t id;
 
-	bool is_inertia_tensor_valid;
 	bool is_com_valid;
 	mat3 inertia_tensor;
 	vec3 com;
 
+	bool is_inertia_tensor_valid;
 	mat3 inverse_inertia_tensor;
+
+	sphere_t bounding_sphere;
+
 	form_t form;
 	matter_t matter;
 } substance_t;
@@ -59,5 +62,7 @@ void substance_inverse_inertia_tensor(substance_t * self, mat3 * ri);
 double substance_mass(substance_t * self);
 double substance_inverse_mass(substance_t * self);
 vec3 *substance_com(substance_t * self);
+
+void substance_calculate_sphere_bound(substance_t * self, double dt);
 
 #endif

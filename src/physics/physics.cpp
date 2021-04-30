@@ -42,7 +42,7 @@ void srph_physics_tick(srph_physics * p, double dt) {
 		substance_t *substance = &p->substances[i];
 		substance->matter.has_collided = false;
 
-		matter_calculate_sphere_bound(&substance->matter, dt);
+		substance_calculate_sphere_bound(substance, dt);
 
 		if (!substance->matter.is_at_rest && !substance->matter.is_static) {
 			matter_integrate_forces(&substance->matter, dt, &p->gravity,
@@ -70,12 +70,12 @@ void srph_physics_tick(srph_physics * p, double dt) {
 		}
 		// integrate linear velocity
 		vec3 dv;
-		vec3_multiply_f(&dv, &m->v, dt);
+		vec3_multiply_f(&dv, &m->velocity, dt);
 		srph_transform_translate(&m->transform, &dv);
 
 		// integrate angular velocity
 		vec3 dw;
-		vec3_multiply_f(&dw, &m->omega, dt);
+		vec3_multiply_f(&dw, &m->angular_velocity, dt);
 		quat q;
 		quat_from_euler_angles(&q, &dw);
 		srph_transform_rotate(&m->transform, &q);

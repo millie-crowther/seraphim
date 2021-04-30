@@ -76,8 +76,8 @@ static void offset_from_centre_of_mass(substance_t * self, vec3 * r, const vec3 
 void substance_velocity_at(substance_t * self, const vec3 * x, vec3 * v) {
 	vec3 r;
 	offset_from_centre_of_mass(self, &r, x);
-	vec3_cross(v, &self->matter.omega, &r);
-	vec3_add(v, v, &self->matter.v);
+	vec3_cross(v, &self->matter.angular_velocity, &r);
+	vec3_add(v, v, &self->matter.velocity);
 }
 
 double substance_inverse_angular_mass(substance_t * self, vec3 * x, vec3 * n) {
@@ -108,7 +108,7 @@ void apply_impulse(substance_t * self, const vec3 * x, const vec3 * j) {
 
 	vec3 dv;
 	vec3_multiply_f(&dv, &n, j_length * substance_inverse_mass(self));
-	vec3_add(&self->matter.v, &self->matter.v, &dv);
+	vec3_add(&self->matter.velocity, &self->matter.velocity, &dv);
 
 	vec3 r, rn, dw;
 	offset_from_centre_of_mass(self, &r, x);
@@ -119,7 +119,7 @@ void apply_impulse(substance_t * self, const vec3 * x, const vec3 * j) {
 	substance_inverse_inertia_tensor(self, &i);
 	vec3_multiply_mat3(&irn, &rn, &i);
 	vec3_multiply_f(&dw, &irn, j_length);
-	vec3_add(&self->matter.omega, &self->matter.omega, &dw);
+	vec3_add(&self->matter.angular_velocity, &self->matter.angular_velocity, &dw);
 }
 
 void substance_apply_impulse(substance_t * a, substance_t * b, const vec3 * x,
@@ -271,4 +271,13 @@ vec3 *substance_com(substance_t * self) {
 
 double substance_mass(substance_t * self) {
 	return matter_average_density(&self->matter) * srph_sdf_volume(self->matter.sdf);
+}
+
+void substance_calculate_sphere_bound(substance_t * self, double dt) {
+	vec3 midpoint, radius;
+	srph_bound3_midpoint(&self->matter.sdf->bound, &midpoint);
+	srph_bound3_radius(&self->matter.sdf->bound, &radius);
+	matter_to_global_position(&self->matter, &self->bounding_sphere.c, &midpoint);
+	self->bounding_sphere.r =
+		vec3_length(&radius) + vec3_length(&self->matter.velocity) * dt;
 }

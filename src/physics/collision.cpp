@@ -9,8 +9,8 @@
 #include "core/constant.h"
 
 static int axis_comparator(const substance_t * a, const substance_t * b, int axis) {
-	const sphere_t *sa = &a->matter.bounding_sphere;
-	const sphere_t *sb = &b->matter.bounding_sphere;
+	const sphere_t *sa = &a->bounding_sphere;
+	const sphere_t *sb = &b->bounding_sphere;
 
 	double lower_a = sa->c.v[axis] - sa->r;
 	double lower_b = sb->c.v[axis] - sb->r;
@@ -47,11 +47,11 @@ collision_broad_phase(substance_t * substance_pointers,
 
 	for (size_t i = 0; i < num_substances; i++) {
 		substance_t *a = substances.data[i];
-		sphere_t *sa = &a->matter.bounding_sphere;
+		sphere_t *sa = &a->bounding_sphere;
 
 		for (size_t j = i + 1; j < num_substances; j++) {
 			substance_t *b = substances.data[j];
-			sphere_t *sb = &b->matter.bounding_sphere;
+			sphere_t *sb = &b->bounding_sphere;
 
 			if (sa->c.x + sa->r < sb->c.x - sb->r) {
 				break;
@@ -223,8 +223,8 @@ static void collision_resolve_velocity_constraint(collision_t * self, double dt)
 static void collision_generate_manifold(collision_t * c, double dt) {
 	srph_array_init(&c->manifold);
 
-	sphere_t *sa = &c->substances[0]->matter.bounding_sphere;
-	sphere_t *sb = &c->substances[1]->matter.bounding_sphere;
+	sphere_t *sa = &c->substances[0]->bounding_sphere;
+	sphere_t *sb = &c->substances[1]->bounding_sphere;
 
 	double r_elem = fmin(sa->r, sb->r) / 2;
 	vec3 r = { {r_elem, r_elem, r_elem} };
@@ -360,8 +360,7 @@ static bool is_colliding_in_bound(substance_t ** substances, bound3_t * bound) {
 static bool collision_narrow_phase(collision_t * c) {
 	bound3_t bounds[2];
 	for (int matter_index = 0; matter_index < 2; matter_index++) {
-		sphere_t *bounding_sphere =
-			&c->substances[matter_index]->matter.bounding_sphere;
+		sphere_t *bounding_sphere = &c->substances[matter_index]->bounding_sphere;
 		vec3_subtract_f(&bounds[matter_index].lower, &bounding_sphere->c,
 			bounding_sphere->r);
 		vec3_add_f(&bounds[matter_index].upper, &bounding_sphere->c,

@@ -10,8 +10,8 @@
 
 typedef struct matter_t {
 	transform_t transform;
-	vec3 v;
-	vec3 omega;
+	vec3 velocity;
+	vec3 angular_velocity;
 
 	material_t material;
 	sdf_t *sdf;
@@ -24,8 +24,6 @@ typedef struct matter_t {
 	bool is_static;
 	bool has_collided;
 
-	sphere_t bounding_sphere;
-
 	vec3 force;
 	vec3 torque;
 } matter_t;
@@ -33,8 +31,6 @@ typedef struct matter_t {
 void matter_create(matter_t * m, sdf_t * sdf, const material_t * mat,
 	const vec3 * x, bool is_uniform, bool is_static);
 void matter_destroy(matter_t * m);
-
-void matter_calculate_sphere_bound(matter_t * self, double dt);
 
 void matter_to_global_position(const matter_t * m, vec3 * tx, const vec3 * x);
 void matter_to_local_position(matter_t * m, vec3 * tx, const vec3 * x);
