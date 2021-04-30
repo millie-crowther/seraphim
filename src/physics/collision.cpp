@@ -140,8 +140,8 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	srph_matter_to_local_position(a, &xa, &x);
 
 	vec3 va, vb, vr;
-	srph_matter_velocity(a, &x, &va);
-	srph_matter_velocity(b, &x, &vb);
+    substance_velocity_at(sa, &x, &va);
+    substance_velocity_at(sb, &x, &vb);
 	vec3_subtract(&vr, &vb, &va);
 
 	vec3 n;
@@ -172,10 +172,10 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	double CoR = fmax(mata.restitution, matb.restitution);
 
 	double inverse_mass =
-		srph_matter_inverse_mass(a) +
-		srph_matter_inverse_mass(b) +
-		srph_matter_inverse_angular_mass(a, &x, &n) +
-		srph_matter_inverse_angular_mass(b, &x, &n);
+            srph_matter_inverse_mass(a) +
+            srph_matter_inverse_mass(b) +
+                    substance_inverse_angular_mass(sa, &x, &n) +
+            substance_inverse_angular_mass(sb, &x, &n);
 
 	if (inverse_mass == 0.0) {
 		return;
@@ -184,7 +184,7 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	double jr = -(1.0 + CoR) * vrn / inverse_mass;
 	vec3 j;
 	vec3_multiply_f(&j, &n, -jr);
-	matter_apply_impulse(a, b, &x, &j);
+    substance_apply_impulse(sa, sb, &x, &j);
 
 	// apply friction force
 	vec3 t;
@@ -205,7 +205,7 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 
 	vec3 fr;
 	vec3_multiply_f(&fr, &t, ka);
-	matter_apply_impulse(a, b, &x, &fr);
+    substance_apply_impulse(sa, sb, &x, &fr);
 }
 
 static void collision_resolve_velocity_constraint(collision_t * self, double dt) {

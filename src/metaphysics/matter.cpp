@@ -177,42 +177,14 @@ void srph_matter_integrate_forces(matter_t * self, double t, const vec3 * gravit
 	self->t = vec3_zero;
 }
 
-static void offset_from_centre_of_mass(matter_t * self, vec3 * r, const vec3 * x) {
-	vec3 com;
-	srph_matter_to_global_position(self, &com, srph_matter_com(self));
-	vec3_subtract(r, x, &com);
-}
 
-void srph_matter_velocity(matter_t * self, const vec3 * x, vec3 * v) {
-	if (self->is_rigid) {
-		vec3 r;
-		offset_from_centre_of_mass(self, &r, x);
-		vec3_cross(v, &self->omega, &r);
-		vec3_add(v, v, &self->v);
-	} else {
-		assert(false);
-	}
-}
 
 void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x) {
 	// TODO: sample at point
 	*mat = self->material;
 }
 
-double srph_matter_inverse_angular_mass(matter_t * self, vec3 * x, vec3 * n) {
-	if (self->is_static) {
-		return 0;
-	}
 
-	vec3 r, rn, irn;
-	offset_from_centre_of_mass(self, &r, x);
-	vec3_cross(&rn, &r, n);
-	mat3 i;
-	srph_matter_inverse_inertia_tensor(self, &i);
-	vec3_multiply_mat3(&irn, &rn, &i);
-
-	return vec3_dot(&rn, &irn);
-}
 
 double srph_matter_inverse_mass(matter_t * self) {
 	if (self->is_static) {
@@ -333,39 +305,4 @@ vec3 *srph_matter_com(matter_t * matter) {
 	}
 
 	return &matter->com;
-}
-
-void apply_impulse(matter_t * self, const vec3 * x, const vec3 * j) {
-	vec3 n;
-	vec3_normalize(&n, j);
-	double j_length = vec3_length(j);
-
-	if (self->is_static || j_length == 0) {
-		return;
-	}
-
-	self->is_at_rest = false;
-
-	vec3 dv;
-	vec3_multiply_f(&dv, &n, j_length * srph_matter_inverse_mass(self));
-	vec3_add(&self->v, &self->v, &dv);
-
-	vec3 r, rn, dw;
-	offset_from_centre_of_mass(self, &r, x);
-	vec3_cross(&rn, &r, &n);
-
-	mat3 i;
-	vec3 irn;
-	srph_matter_inverse_inertia_tensor(self, &i);
-	vec3_multiply_mat3(&irn, &rn, &i);
-	vec3_multiply_f(&dw, &irn, j_length);
-	vec3_add(&self->omega, &self->omega, &dw);
-}
-
-void matter_apply_impulse(matter_t * a, matter_t * b, const vec3 * x, const vec3 * j) {
-	vec3 j_negative;
-	vec3_negative(&j_negative, j);
-
-	apply_impulse(a, x, j);
-	apply_impulse(b, x, &j_negative);
 }

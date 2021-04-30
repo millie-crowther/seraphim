@@ -38,4 +38,8 @@ typedef struct substance_t {
 	matter_t matter;
 } substance_t;
 
+double substance_inverse_angular_mass(substance_t * self, vec3 * x, vec3 * n);
+void substance_velocity_at(substance_t *self, const vec3 * x, vec3 * v);
+void substance_apply_impulse(substance_t *a, substance_t *b, const vec3 * x,
+                             const vec3 * j);
 #endif
