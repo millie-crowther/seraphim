@@ -172,9 +172,9 @@ static void contact_correct(substance_t * sa, substance_t * sb, srph_deform * xb
 	double CoR = fmax(mata.restitution, matb.restitution);
 
 	double inverse_mass =
-            srph_matter_inverse_mass(a) +
-            srph_matter_inverse_mass(b) +
-                    substance_inverse_angular_mass(sa, &x, &n) +
+            substance_inverse_mass(sa) +
+            substance_inverse_mass(sb) +
+            substance_inverse_angular_mass(sa, &x, &n) +
             substance_inverse_angular_mass(sb, &x, &n);
 
 	if (inverse_mass == 0.0) {

@@ -186,13 +186,6 @@ void srph_matter_material(matter_t * self, material_t * mat, const vec3 * x) {
 
 
 
-double srph_matter_inverse_mass(matter_t * self) {
-	if (self->is_static) {
-		return 0;
-	} else {
-		return 1.0 / srph_matter_mass(self);
-	}
-}
 
 mat3 *srph_matter_inertia_tensor(matter_t * matter) {
 	if (!matter->is_inertia_tensor_valid) {

@@ -101,7 +101,7 @@ void apply_impulse(substance_t * self, const vec3 * x, const vec3 * j) {
     self->matter.is_at_rest = false;
 
     vec3 dv;
-    vec3_multiply_f(&dv, &n, j_length * srph_matter_inverse_mass(&self->matter));
+    vec3_multiply_f(&dv, &n, j_length * substance_inverse_mass(self));
     vec3_add(&self->matter.v, &self->matter.v, &dv);
 
     vec3 r, rn, dw;
@@ -122,4 +122,12 @@ void substance_apply_impulse(substance_t *a, substance_t *b, const vec3 * x, con
 
     apply_impulse(a, x, j);
     apply_impulse(b, x, &j_negative);
+}
+
+double substance_inverse_mass(substance_t *self) {
+    if (self->matter.is_static) {
+        return 0;
+    } else {
+        return 1.0 / srph_matter_mass(&self->matter);
+    }
 }
