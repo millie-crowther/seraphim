@@ -13,9 +13,8 @@ typedef struct transform_t {
 } transform_t;
 
 void srph_transform_to_local_position(transform_t * tf, vec3 * tx, const vec3 * x);
-void srph_transform_to_global_position(const transform_t * tf, vec3 * tx,
-	const vec3 * x);
-void srph_transform_to_global_direction(const transform_t * tf, vec3 * tx,
+void transform_to_global_position(const transform_t * tf, vec3 * tx, const vec3 * x);
+void transform_to_global_direction(const transform_t * tf, vec3 * tx,
 	const vec3 * x);
 
 void srph_transform_forward(const transform_t * tf, vec3 * x);

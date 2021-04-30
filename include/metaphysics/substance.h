@@ -20,7 +20,7 @@ struct data_t {
 	float transform[16];
 
 	  data_t();
-	  data_t(float near, float far, const float * r, uint32_t id);
+	  data_t(float near, float far, const float *r, uint32_t id);
 
 	struct comparator_t {
 		bool operator          () (const data_t & a, const data_t & b) const;

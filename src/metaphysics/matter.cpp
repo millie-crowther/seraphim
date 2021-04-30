@@ -127,13 +127,13 @@ void matter_transformation_matrix(matter_t * m, float *xs) {
 }
 
 void matter_to_global_position(const matter_t * m, vec3 * tx, const vec3 * x) {
-	srph_transform_to_global_position(&m->transform, tx, x);
+	transform_to_global_position(&m->transform, tx, x);
 }
 
 void
 matter_to_global_direction(const matter_t * m,
 	const vec3 * position, vec3 * td, const vec3 * d) {
-	srph_transform_to_global_direction(&m->transform, td, d);
+	transform_to_global_direction(&m->transform, td, d);
 }
 
 void matter_integrate_forces(matter_t * self, double t, const vec3 * gravity,

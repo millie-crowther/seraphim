@@ -34,7 +34,7 @@ data_t substance_t::get_data(const vec3 * eye_position) {
 
 	float far = (float) vec3_length(&x);
 
-	float f32r[3] = { (float) r.x, (float) r.y, (float) r.z};
+	float f32r[3] = { (float) r.x, (float) r.y, (float) r.z };
 
 	data_t data(near, far, f32r, id);
 
@@ -57,13 +57,13 @@ data_t::data_t() {
 	id = ~0;
 }
 
-data_t::data_t(float near, float far, const float * r, uint32_t id) {
+data_t::data_t(float near, float far, const float *r, uint32_t id) {
 	this->near = near;
 	this->far = far;
 	this->id = id;
 
-	for (int i = 0; i < 3; i++){
-	    this->r[i] = r[i];
+	for (int i = 0; i < 3; i++) {
+		this->r[i] = r[i];
 	}
 }
 
