@@ -64,8 +64,7 @@ data_t::data_t(float near, float far, const f32vec3_t & r, uint32_t id) {
 
 static void offset_from_centre_of_mass(substance_t * self, vec3 * r, const vec3 * x) {
 	vec3 com;
-	srph_matter_to_global_position(&self->matter, &com,
-		srph_matter_com(&self->matter));
+	srph_matter_to_global_position(&self->matter, &com, substance_com(self));
 	vec3_subtract(r, x, &com);
 }
 
@@ -85,7 +84,7 @@ double substance_inverse_angular_mass(substance_t * self, vec3 * x, vec3 * n) {
 	offset_from_centre_of_mass(self, &r, x);
 	vec3_cross(&rn, &r, n);
 	mat3 i;
-    substance_inverse_inertia_tensor(self, &i);
+	substance_inverse_inertia_tensor(self, &i);
 	vec3_multiply_mat3(&irn, &rn, &i);
 
 	return vec3_dot(&rn, &irn);
@@ -112,7 +111,7 @@ void apply_impulse(substance_t * self, const vec3 * x, const vec3 * j) {
 
 	mat3 i;
 	vec3 irn;
-    substance_inverse_inertia_tensor(self, &i);
+	substance_inverse_inertia_tensor(self, &i);
 	vec3_multiply_mat3(&irn, &rn, &i);
 	vec3_multiply_f(&dw, &irn, j_length);
 	vec3_add(&self->matter.omega, &self->matter.omega, &dw);
@@ -135,86 +134,132 @@ double substance_inverse_mass(substance_t * self) {
 	}
 }
 
+void substance_inverse_inertia_tensor(substance_t * self, mat3 * ri) {
+	if (self->matter.is_static) {
+		return;
+	}
 
-void substance_inverse_inertia_tensor(substance_t *self, mat3 * ri) {
-    if (self->matter.is_static) {
-        return;
-    }
+	mat3 *i = substance_inertia_tensor(self);
 
-    mat3 *i = substance_inertia_tensor(self);
+	mat3 r, rt;
+	mat3_rotation_quat(&r, &self->matter.transform.rotation);
+	mat3_transpose(&rt, &r);
 
-    mat3 r, rt;
-    mat3_rotation_quat(&r, &self->matter.transform.rotation);
-    mat3_transpose(&rt, &r);
-
-    mat3_multiply(ri, i, &rt);
-    mat3_multiply(ri, &r, ri);
-    mat3_inverse(ri, ri);
+	mat3_multiply(ri, i, &rt);
+	mat3_multiply(ri, &r, ri);
+	mat3_inverse(ri, ri);
 }
 
+mat3 *substance_inertia_tensor(substance_t * self) {
+	if (!self->matter.is_inertia_tensor_valid) {
+		if (self->matter.is_uniform && self->matter.sdf->is_inertia_tensor_valid) {
+			self->matter.inertia_tensor = self->matter.sdf->inertia_tensor;
+		} else {
+			for (int i = 0; i < 9; i++) {
+				self->matter.inertia_tensor.v[i] = 0.0;
+			}
 
-mat3 *substance_inertia_tensor(substance_t *blingblong) {
-    if (!blingblong->matter.is_inertia_tensor_valid) {
-        if (blingblong->matter.is_uniform && blingblong->matter.sdf->is_inertia_tensor_valid) {
-            blingblong->matter.inertia_tensor = blingblong->matter.sdf->inertia_tensor;
-        } else {
-            for (int i = 0; i < 9; i++) {
-                blingblong->matter.inertia_tensor.v[i] = 0.0;
-            }
+			bound3_t *b = srph_sdf_bound(self->matter.sdf);
+			random_t rng;
+			srph_random_default_seed(&rng);
+			int hits = 0;
+			double total = 0.0;
+			material_t mat;
+			srph_matter_material(&self->matter, &mat, NULL);
 
-            bound3_t *b = srph_sdf_bound(blingblong->matter.sdf);
-            random_t rng;
-            srph_random_default_seed(&rng);
-            int hits = 0;
-            double total = 0.0;
-            material_t mat;
-            srph_matter_material(&blingblong->matter, &mat, NULL);
+			while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
+				vec3 x;
+				x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+				x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+				x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
-            while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
-                vec3 x;
-                x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
-                x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
-                x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
+				if (!self->matter.is_uniform) {
+					srph_matter_material(&self->matter, &mat, NULL);
+				}
 
-                if (!blingblong->matter.is_uniform) {
-                    srph_matter_material(&blingblong->matter, &mat, NULL);
-                }
+				if (srph_sdf_contains(self->matter.sdf, &x)) {
+					for (int i = 0; i < 3; i++) {
+						for (int j = 0; j < 3; j++) {
+							vec3 r;
+							vec3_subtract(&r, &x, substance_com(self));
 
-                if (srph_sdf_contains(blingblong->matter.sdf, &x)) {
-                    for (int i = 0; i < 3; i++) {
-                        for (int j = 0; j < 3; j++) {
-                            vec3 r;
-                            vec3_subtract(&r, &x, srph_matter_com(&blingblong->matter));
+							double iij = -r.v[i] * r.v[j];
 
-                            double iij = -r.v[i] * r.v[j];
+							if (i == j) {
+								iij += vec3_length_squared(&r);
+							}
 
-                            if (i == j) {
-                                iij += vec3_length_squared(&r);
-                            }
+							self->matter.inertia_tensor.v[j * 3 + i]
+								+= iij * mat.density;
+						}
+					}
 
-                            blingblong->matter.inertia_tensor.v[j * 3 + i]
-                                    += iij * mat.density;
-                        }
-                    }
+					hits++;
+					total += mat.density;
+				}
+			}
 
-                    hits++;
-                    total += mat.density;
-                }
-            }
+			mat3_multiply_f(&self->matter.inertia_tensor,
+				&self->matter.inertia_tensor, 1.0 / total);
 
-            mat3_multiply_f(&blingblong->matter.inertia_tensor,
-                            &blingblong->matter.inertia_tensor, 1.0 / total);
+			if (self->matter.is_uniform
+				&& !self->matter.sdf->is_inertia_tensor_valid) {
+				self->matter.sdf->inertia_tensor = self->matter.inertia_tensor;
+				self->matter.sdf->is_inertia_tensor_valid = true;
+			}
+		}
 
-            if (blingblong->matter.is_uniform && !blingblong->matter.sdf->is_inertia_tensor_valid) {
-                blingblong->matter.sdf->inertia_tensor = blingblong->matter.inertia_tensor;
-                blingblong->matter.sdf->is_inertia_tensor_valid = true;
-            }
-        }
+		mat3_multiply_f(&self->matter.inertia_tensor,
+			&self->matter.inertia_tensor, srph_matter_mass(&self->matter));
+		self->matter.is_inertia_tensor_valid = true;
+	}
 
-        mat3_multiply_f(&blingblong->matter.inertia_tensor,
-                        &blingblong->matter.inertia_tensor, srph_matter_mass(&blingblong->matter));
-        blingblong->matter.is_inertia_tensor_valid = true;
-    }
+	return &self->matter.inertia_tensor;
+}
 
-    return &blingblong->matter.inertia_tensor;
+vec3 *substance_com(substance_t * self) {
+	if (self->matter.is_uniform && self->matter.sdf->is_com_valid) {
+		return &self->matter.sdf->com;
+	}
+
+	if (!self->matter.is_com_valid) {
+		vec3 com = vec3_zero;
+
+		bound3_t *b = srph_sdf_bound(self->matter.sdf);
+		random_t rng;
+		srph_random_default_seed(&rng);
+		int hits = 0;
+		double total = 0.0;
+		material_t mat;
+		srph_matter_material(&self->matter, &mat, NULL);
+
+		while (hits < SERAPHIM_SDF_VOLUME_SAMPLES) {
+			vec3 x;
+			x.x = srph_random_f64_range(&rng, b->lower.x, b->upper.x);
+			x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
+			x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
+
+			if (!self->matter.is_uniform) {
+				srph_matter_material(&self->matter, &mat, NULL);
+			}
+			vec3_multiply_f(&x, &x, mat.density);
+
+			if (srph_sdf_contains(self->matter.sdf, &x)) {
+				vec3_add(&com, &com, &x);
+				hits++;
+				total += mat.density;
+			}
+		}
+
+		vec3_divide_f(&com, &com, total);
+		self->matter.com = com;
+		self->matter.is_com_valid = true;
+
+		if (self->matter.is_uniform && !self->matter.sdf->is_com_valid) {
+			self->matter.sdf->com = com;
+			self->matter.sdf->is_com_valid = true;
+		}
+	}
+
+	return &self->matter.com;
 }

@@ -107,7 +107,8 @@ namespace srph {
 			}
 
 			map(offset, source.size(),[&](auto mem_map) {
-				std::memcpy(mem_map, source.data(), sizeof(T) * source.size());}
+					std::memcpy(mem_map, source.data(), sizeof(T) * source.size());
+				}
 			);
 
 			if constexpr

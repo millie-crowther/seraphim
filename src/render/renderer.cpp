@@ -474,10 +474,10 @@ void renderer_t::create_command_buffers() {
 					vkCmdBindDescriptorSets
 					(command_buffer,
 						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						pipeline_layout, 0, 1,
-						&desc_sets[i], 0,
-						nullptr); vkCmdDraw(command_buffer, 3, 1, 0, 0);
-				vkCmdEndRenderPass(command_buffer);}
+						pipeline_layout, 0, 1, &desc_sets[i], 0, nullptr);
+					vkCmdDraw(command_buffer, 3, 1, 0, 0);
+					vkCmdEndRenderPass(command_buffer);
+				}
 			));
 	}
 }
@@ -663,7 +663,8 @@ void renderer_t::render() {
 				nullptr);
 			vkCmdDispatch(command_buffer,
 				work_group_count[0], work_group_count[1], 1);
-		call_buffer->record_read(command_buffer);}
+			call_buffer->record_read(command_buffer);
+		}
 	)->submit(image_available_semas[current_frame],
 		compute_done_semas[current_frame],
 		in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
@@ -712,9 +713,10 @@ void renderer_t::handle_requests(uint32_t frame) {
 
 	call_buffer->map(0, calls.size(),[&](void *memory_map) {
 			std::memcpy(calls.data(), memory_map,
-			calls.size() * sizeof(call_t));
+				calls.size() * sizeof(call_t));
 			std::memcpy(memory_map, empty_calls.data(),
-				calls.size() * sizeof(call_t));}
+				calls.size() * sizeof(call_t));
+		}
 	);
 
   for (auto & call:calls) {
