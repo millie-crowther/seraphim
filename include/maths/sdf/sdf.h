@@ -30,7 +30,7 @@ typedef struct sdf_t {
 	sdf_func_t distance_function;
 } sdf_t;
 
-void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data);
+void sdf_create(uint32_t * id, sdf_t * sdf, sdf_func_t phi, void *data);
 
 double sdf_distance(sdf_t * sdf, const vec3 * x);
 vec3 srph_sdf_normal(sdf_t * sdf, const vec3 * x);

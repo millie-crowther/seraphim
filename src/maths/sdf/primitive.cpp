@@ -16,10 +16,10 @@ double torus_phi(void *data, const vec3 * x) {
 	return hypot(xy.x, xy.y) - rs[1];
 }
 
-void sdf_sphere_create(uint32_t *id, sdf_t *sdf, double *r) {
-    sdf_create(id, sdf, sphere_phi, r);
+void sdf_sphere_create(uint32_t * id, sdf_t * sdf, double *r) {
+	sdf_create(id, sdf, sphere_phi, r);
 }
 
-void sdf_torus_create(uint32_t *id, sdf_t *sdf, vec2 *rs) {
-    sdf_create(id, sdf, torus_phi, rs);
+void sdf_torus_create(uint32_t * id, sdf_t * sdf, vec2 * rs) {
+	sdf_create(id, sdf, torus_phi, rs);
 }

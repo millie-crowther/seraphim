@@ -141,12 +141,12 @@ seraphim_t::seraphim_t(const char *title) {
 	VkPhysicalDeviceProperties properties = { };
 	vkGetPhysicalDeviceProperties(device->physical_device, &properties);
 	std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
-	std::cout << "\tMaximum storage buffer range: " << properties.
-		limits.maxStorageBufferRange << std::endl;
-	std::cout << "\tMaximum shared memory  size: " << properties.
-		limits.maxComputeSharedMemorySize << std::endl;
-	std::cout << "\tMaximum 2d image size: " << properties.
-		limits.maxImageDimension2D << std::endl;
+	std::cout << "\tMaximum storage buffer range: " << properties.limits.
+		maxStorageBufferRange << std::endl;
+	std::cout << "\tMaximum shared memory  size: " << properties.limits.
+		maxComputeSharedMemorySize << std::endl;
+	std::cout << "\tMaximum 2d image size: " << properties.limits.
+		maxImageDimension2D << std::endl;
 
 	uint32_t max_image_size = properties.limits.maxImageDimension3D;
 	std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
@@ -182,7 +182,7 @@ void seraphim_t::monitor_fps() {
 	}
 }
 
-std::vector < const char *> seraphim_t::get_required_extensions() {
+std::vector < const char *>seraphim_t::get_required_extensions() {
 	uint32_t extension_count = 0;
 	const char **glfw_extensions =
 		glfwGetRequiredInstanceExtensions(&extension_count);
@@ -289,10 +289,8 @@ bool seraphim_t::check_validation_layers() {
 		[available_layers] (auto & layer) {
 			return std::any_of(available_layers.begin(),
 				available_layers.end(),[layer] (auto & properties) {
-					return layer == std::string(properties.layerName);
-				}
-			);
-		}
+				return layer == std::string(properties.layerName);}
+		);}
 	);
 }
 

@@ -205,8 +205,7 @@ namespace srph {
 			matrix_t < S, M, N > cast(const matrix_t < T, M, N > &m) {
 			matrix_t < S, M, N > a;
 			std::transform(m.begin(), m.end(), a.begin(),[](const T & x) {
-					return static_cast < S > (x);
-				}
+				return static_cast < S > (x);}
 			);
 			return a;
 		}

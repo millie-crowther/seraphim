@@ -22,13 +22,12 @@ int main() {
 
 	seraphim_t engine(title_string);
 
-
 	form_t form;
 
-    material_t floor_material;
-    vec3 floor_colour = { {0.1, 0.8, 0.8}
-    };
-    material_create(&floor_material, &engine.num_materials, &floor_colour);
+	material_t floor_material;
+	vec3 floor_colour = { {0.1, 0.8, 0.8}
+	};
+	material_create(&floor_material, &engine.num_materials, &floor_colour);
 	vec3 floor_size = { {100.0, 100.0, 100.0}
 	};
 	sdf_t floor_sdf;
@@ -43,8 +42,8 @@ int main() {
 	};
 
 	material_t cube_material;
-    vec3 cube_colour = { {0.8, 0.8, 0.1}
-    };
+	vec3 cube_colour = { {0.8, 0.8, 0.1}
+	};
 	material_create(&cube_material, &engine.num_materials, &cube_colour);
 	sdf_t cube_sdf;
 	sdf_cuboid_create(&engine.num_sdfs, &cube_sdf, &cube_size);

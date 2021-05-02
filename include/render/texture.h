@@ -26,7 +26,7 @@ namespace srph {
 		VkExtent3D extents;
 		device_t *device;
 
-		  std::unique_ptr < buffer_t > staging_buffer;
+		  buffer_t staging_buffer;
 		  std::vector < VkBufferImageCopy > updates;
 		uint32_t index;
 

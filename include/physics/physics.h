@@ -27,7 +27,7 @@ typedef struct srph_physics {
 } srph_physics;
 
 void srph_physics_init(srph_physics * p, substance_t * substances,
-                       uint32_t *num_substances);
+	uint32_t * num_substances);
 void srph_physics_start(srph_physics * p);
 void srph_physics_destroy(srph_physics * p);
 void srph_physics_tick(srph_physics * p, double dt);

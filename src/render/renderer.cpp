@@ -110,19 +110,19 @@ renderer_t::renderer_t(device_t *device,
         write_desc_sets.push_back(colour_texture->get_descriptor_write
                 (descriptor_set));
 
-        write_desc_sets.push_back(patch_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(patch_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(substance_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(substance_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(call_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(call_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(light_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(light_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(pointer_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(pointer_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(frustum_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(frustum_buffer.get_write_descriptor_set
                 (descriptor_set));
-        write_desc_sets.push_back(lighting_buffer->get_write_descriptor_set
+        write_desc_sets.push_back(lighting_buffer.get_write_descriptor_set
                 (descriptor_set));
     }
 
@@ -163,6 +163,14 @@ renderer_t::~renderer_t() {
         vkDestroySemaphore(device->device, render_finished_semas[i], NULL);
         vkDestroyFence(device->device, in_flight_fences[i], NULL);
     }
+
+    buffer_destroy(&patch_buffer);
+    buffer_destroy(&substance_buffer);
+    buffer_destroy(&call_buffer);
+    buffer_destroy(&light_buffer);
+    buffer_destroy(&pointer_buffer);
+    buffer_destroy(&frustum_buffer);
+    buffer_destroy(&lighting_buffer);
 }
 
 void renderer_t::create_compute_pipeline() {
@@ -531,13 +539,13 @@ void renderer_t::create_descriptor_set_layout() {
             normal_texture->get_descriptor_layout_binding(),
             colour_texture->get_descriptor_layout_binding(),
 
-            patch_buffer->get_descriptor_set_layout_binding(),
-            substance_buffer->get_descriptor_set_layout_binding(),
-            light_buffer->get_descriptor_set_layout_binding(),
-            call_buffer->get_descriptor_set_layout_binding(),
-            pointer_buffer->get_descriptor_set_layout_binding(),
-            frustum_buffer->get_descriptor_set_layout_binding(),
-            lighting_buffer->get_descriptor_set_layout_binding()
+            patch_buffer.get_descriptor_set_layout_binding(),
+            substance_buffer.get_descriptor_set_layout_binding(),
+            light_buffer.get_descriptor_set_layout_binding(),
+            call_buffer.get_descriptor_set_layout_binding(),
+            pointer_buffer.get_descriptor_set_layout_binding(),
+            frustum_buffer.get_descriptor_set_layout_binding(),
+            lighting_buffer.get_descriptor_set_layout_binding()
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -576,8 +584,7 @@ void renderer_t::create_sync() {
                 vkCreateSemaphore(device->device, &create_info, NULL,
                                   &compute_done_semas[i]);
         result |=
-                vkCreateFence(device->device, &fence_info, NULL,
-                              &in_flight_fences[i]);
+                vkCreateFence(device->device, &fence_info, NULL, &in_flight_fences[i]);
     }
 
     if (result != VK_SUCCESS) {
@@ -616,12 +623,12 @@ void renderer_t::render() {
 
     std::sort(substance_data.begin(), substance_data.end(), data_t::comparator_t());
 
-    substance_buffer->write(substance_data.data(), substance_data.size(), 0);
+    substance_buffer.write(substance_data.data(), substance_data.size(), 0);
 
     // write lights
     std::vector<light_t> lights(size);
     lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
-    light_buffer->write(lights.data(), lights.size(), 0);
+    light_buffer.write(lights.data(), lights.size(), 0);
 
     if (auto camera = main_camera.lock()) {
         srph_camera_transformation_matrix(camera.get(),
@@ -636,11 +643,11 @@ void renderer_t::render() {
     handle_requests(current_frame);
 
     compute_command_pool->one_time_buffer([&](auto command_buffer) {
-                                              substance_buffer->record_write
+                                              substance_buffer.record_write
                                                       (command_buffer);
-                                              patch_buffer->record_write
+                                              patch_buffer.record_write
                                                       (command_buffer);
-                                              light_buffer->record_write
+                                              light_buffer.record_write
                                                       (command_buffer);
                                               normal_texture->record_write
                                                       (command_buffer);
@@ -664,7 +671,7 @@ void renderer_t::render() {
                                                        NULL);
                                               vkCmdDispatch(command_buffer,
                                                             work_group_count[0], work_group_count[1], 1);
-                                              call_buffer->record_read(command_buffer);
+                                              call_buffer.record_read(command_buffer);
                                           }
     )->submit(image_available_semas[current_frame],
               compute_done_semas[current_frame],
@@ -712,12 +719,10 @@ void renderer_t::handle_requests(uint32_t frame) {
     std::vector<call_t> calls(number_of_calls);
     std::vector<call_t> empty_calls(number_of_calls);
 
-    void *memory_map = call_buffer->map(0, calls.size());
-    memcpy(calls.data(), memory_map,
-           calls.size() * sizeof(call_t));
-    memcpy(memory_map, empty_calls.data(),
-           calls.size() * sizeof(call_t));
-    call_buffer->unmap();
+    void *memory_map = call_buffer.map(0, calls.size());
+    memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
+    memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
+    call_buffer.unmap();
 
     for (auto &call:calls) {
         if (call.is_valid()) {
@@ -727,7 +732,7 @@ void renderer_t::handle_requests(uint32_t frame) {
             }
             auto response = get_response(call, &substances[substance_index]);
             auto patch = response.get_patch();
-            patch_buffer->write(&patch, 1, call.get_index());
+            patch_buffer.write(&patch, 1, call.get_index());
 
             u32vec3_t p = u32vec3_t(call.get_index() % patch_image_size,
                                     (call.get_index() %
@@ -748,19 +753,13 @@ void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
     uint32_t s = work_group_size[0] * work_group_size[1];
 
-    patch_buffer =
-            std::make_unique<buffer_t>(1,
-                                       device, geometry_pool_size, true, sizeof(response_t::patch_t));
-    call_buffer =
-            std::make_unique<buffer_t>(2, device, number_of_calls, true, sizeof(call_t));
-    light_buffer = std::make_unique<buffer_t>(3, device, s, true, sizeof(light_t));
-    substance_buffer = std::make_unique<buffer_t>(4, device, s, true, sizeof(data_t));
-    pointer_buffer =
-            std::make_unique<buffer_t>(5, device, c * s, true, sizeof(uint32_t));
-    frustum_buffer =
-            std::make_unique<buffer_t>(6, device, c, true, sizeof(float) * 2);
-    lighting_buffer =
-            std::make_unique<buffer_t>(7, device, c, true, sizeof(float) * 4);
+    buffer_create(&patch_buffer, 1, device, geometry_pool_size, true, sizeof(response_t::patch_t));
+    buffer_create(&call_buffer, 2, device, number_of_calls, true, sizeof(call_t));
+    buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
+    buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
+    buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
+    buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
+    buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
 }
 
 response_t renderer_t::get_response(const call_t &call, substance_t *substance) {

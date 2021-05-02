@@ -12,7 +12,7 @@
 
 void
 srph_physics_init(srph_physics * p, substance_t * substances,
-                  uint32_t *num_substances) {
+	uint32_t * num_substances) {
 	p->quit = false;
 
 	p->gravity = { {0.0, -9.8, 0.0} };

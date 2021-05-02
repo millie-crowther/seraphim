@@ -53,11 +53,11 @@ static double octahedron_phi(void *data, const vec3 * x) {
 	return vec3_length(&r);
 }
 
-void sdf_cuboid_create(uint32_t *id, sdf_t *sdf, vec3 *r) {
+void sdf_cuboid_create(uint32_t * id, sdf_t * sdf, vec3 * r) {
 	vec3 *r_ptr = (vec3 *) malloc(sizeof(vec3));
 	*r_ptr = *r;
 
-    sdf_create(id, sdf, cuboid_phi, r);
+	sdf_create(id, sdf, cuboid_phi, r);
 
 	vec3 inertia;
 	vec3_multiply_f(&inertia, r, 2.0);
@@ -75,6 +75,6 @@ void sdf_cuboid_create(uint32_t *id, sdf_t *sdf, vec3 *r) {
 	sdf->is_com_valid = true;
 }
 
-void sdf_octahedron_create(uint32_t *id, sdf_t *sdf, double *e) {
-    sdf_create(id, sdf, octahedron_phi, e);
+void sdf_octahedron_create(uint32_t * id, sdf_t * sdf, double *e) {
+	sdf_create(id, sdf, octahedron_phi, e);
 }

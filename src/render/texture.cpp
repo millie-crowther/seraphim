@@ -46,8 +46,8 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	mem_alloc_info.allocationSize = mem_req.size;
 	mem_alloc_info.memoryTypeIndex =
-            device_memory_type(device,
-                               mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		device_memory_type(device,
+		mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	if (vkAllocateMemory(device->device, &mem_alloc_info, nullptr, &memory)
 		!= VK_SUCCESS) {
@@ -88,9 +88,7 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	image_info.imageView = image_view;
 	image_info.sampler = sampler;
 
-	staging_buffer =
-		std::make_unique < buffer_t > (~0,
-		device, staging_buffer_size, false, sizeof(uint32_t) * 8);
+	buffer_create(&staging_buffer, ~0, device, staging_buffer_size, false, sizeof(uint32_t) * 8);
 }
 
 VkImageView
@@ -118,6 +116,8 @@ texture_t::~texture_t() {
 	vkDestroyImage(device->device, image, nullptr);
 	vkFreeMemory(device->device, memory, nullptr);
 	vkDestroySampler(device->device, sampler, nullptr);
+
+	buffer_destroy(&staging_buffer);
 }
 
 void texture_t::check_format_supported(VkPhysicalDevice physical_device,
@@ -145,8 +145,8 @@ VkWriteDescriptorSet texture_t::get_descriptor_write(VkDescriptorSet desc_set) c
 }
 
 void texture_t::write(u32vec3_t p, const std::array < uint32_t, 8 > &x) {
-	uint32_t offset = (index++ % staging_buffer->get_size());
-	staging_buffer->write(&x, 1, offset);
+	uint32_t offset = (index++ % staging_buffer.get_size());
+	staging_buffer.write(&x, 1, offset);
 
 	VkBufferImageCopy region;
 	region.bufferOffset = offset * sizeof(uint32_t) * 8;
@@ -177,7 +177,7 @@ VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const {
 }
 
 void texture_t::record_write(VkCommandBuffer command_buffer) {
-	vkCmdCopyBufferToImage(command_buffer, staging_buffer->buffer, image,
+	vkCmdCopyBufferToImage(command_buffer, staging_buffer.buffer, image,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, updates.size(), updates.data());
 	updates.clear();
 }
