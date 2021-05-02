@@ -37,6 +37,11 @@ struct request_t {
     uint hash;
     uint substanceID;
     uint status;
+
+    uint sdf_id;
+    uint material_id;
+    uint _1;
+    uint _2;
 };
 
 struct light_t {
@@ -167,7 +172,7 @@ patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersecti
         pointers.data[index + work_group_offset()] = global_index; 
         patch_ = patches.data[global_index];
         if (patch_.hash != hash){
-            request = request_t(cell_position, size / 2, global_index, hash, subID, 1);
+            request = request_t(cell_position, size / 2, global_index, hash, subID, 1, 0, 0, 0, 0);
         }
     }
 

@@ -14,6 +14,11 @@ namespace srph {
 		uint32_t substanceID;
 		uint32_t status;
 
+		uint32_t sdf_id;
+		uint32_t material_id;
+		uint32_t _1;
+		uint32_t _2;
+
 	  public:
 		struct comparator_t {
 			bool operator          () (const call_t & a, const call_t & b) const;
