@@ -7,63 +7,64 @@
 #include <cstring>
 #include <memory>
 
-template < class T > struct buffer_t {
+template<class T>
+struct buffer_t {
     bool is_device_local;
     device_t *device;
     VkBuffer buffer;
     VkDeviceMemory memory;
     uint64_t size;
     uint32_t binding;
+    size_t element_size;
     VkDescriptorBufferInfo desc_buffer_info;
 
-    buffer_t < T > * staging_buffer;
-      std::vector < VkBufferCopy > updates;
+    buffer_t<T> *staging_buffer;
+    std::vector<VkBufferCopy> updates;
 
     // constructors and destructors
-      buffer_t(uint32_t binding, device_t * device, uint64_t size, bool is_device_local) {
-          this->is_device_local = is_device_local;
+    buffer_t(uint32_t binding, device_t *device, uint64_t size, bool is_device_local) {
+        this->is_device_local = is_device_local;
         this->device = device;
-        this->size = sizeof(T) * size;
+        element_size = sizeof (T);
+        this->size = element_size * size;
         this->binding = binding;
 
-        VkBufferCreateInfo buffer_info = { };
-          buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-          buffer_info.size = this->size;
-          buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBufferCreateInfo buffer_info = {};
+        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.size = this->size;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VkMemoryPropertyFlagBits memory_property;
 
-        if (is_device_local)
-        {
+        if (is_device_local) {
             buffer_info.usage =
-                VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             memory_property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        } else
-        {
+        } else {
             buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
             memory_property =
-                static_cast < VkMemoryPropertyFlagBits >
-                (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                    static_cast < VkMemoryPropertyFlagBits >
+                    (VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         }
 
         if (vkCreateBuffer
-            (device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
+                    (device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: Failed to create buffer.");
         }
 
         VkMemoryRequirements mem_req;
         vkGetBufferMemoryRequirements(device->device, buffer, &mem_req);
 
-        VkMemoryAllocateInfo alloc_info = { };
+        VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = mem_req.size;
         alloc_info.memoryTypeIndex =
-device_memory_type(device, mem_req.memoryTypeBits, memory_property);
+                device_memory_type(device, mem_req.memoryTypeBits, memory_property);
 
         if (vkAllocateMemory
-            (device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
+                    (device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
             throw std::runtime_error("Error: Failed to allocate buffer memory.");
         }
 
@@ -71,14 +72,14 @@ device_memory_type(device, mem_req.memoryTypeBits, memory_property);
             throw std::runtime_error("Error: Failed to bind buffer memory.");
         }
 
-        desc_buffer_info = { };
+        desc_buffer_info = {};
         desc_buffer_info.buffer = buffer;
         desc_buffer_info.offset = 0;
         desc_buffer_info.range = this->size;
 
         if (is_device_local) {
-staging_buffer = new buffer_t<T>(~0, device, size, false);
-} else {
+            staging_buffer = new buffer_t<T>(~0, device, size, false);
+        } else {
             staging_buffer = NULL;
         }
     }
@@ -87,64 +88,62 @@ staging_buffer = new buffer_t<T>(~0, device, size, false);
         vkDestroyBuffer(device->device, buffer, nullptr);
         vkFreeMemory(device->device, memory, nullptr);
 
-        if (staging_buffer != NULL){
+        if (staging_buffer != NULL) {
             delete staging_buffer;
         }
     }
 
-    template < class F > void map(uint64_t offset, uint64_t size, const F & f) {
+    template<class F>
+    void map(uint64_t offset, uint64_t size, const F &f) {
         if (is_device_local) {
             staging_buffer->map(offset, size, f);
         } else {
             void *memory_map;
             vkMapMemory(device->device, memory,
-                sizeof(T) * offset, sizeof(T) * size, 0, &memory_map);
+                        element_size * offset, element_size * size, 0, &memory_map);
             f(memory_map);
             vkUnmapMemory(device->device, memory);
         }
     }
 
-    template < class Ts > void write(const Ts & source, uint64_t offset) {
-        if (sizeof(T) * (offset + source.size()) > size + 1) {
+    void write(const T * source, size_t number, uint64_t offset) {
+        if (element_size * (offset + number) > size + 1) {
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
-        map(offset, source.size(),[&](auto mem_map) {
-                memcpy(mem_map, source.data(), sizeof(T) * source.size());
+        map(offset, number, [&](auto mem_map) {
+                memcpy(mem_map, source, element_size * number);
             }
         );
 
         if (is_device_local) {
-            VkBufferCopy buffer_copy = { };
-            buffer_copy.srcOffset = sizeof(T) * offset;
-            buffer_copy.dstOffset = sizeof(T) * offset;
-            buffer_copy.size = sizeof(T) * source.size();
+            VkBufferCopy buffer_copy = {};
+            buffer_copy.srcOffset = element_size * offset;
+            buffer_copy.dstOffset = element_size * offset;
+            buffer_copy.size = element_size * number;
             updates.push_back(buffer_copy);
-            }
-    }
-
-    void write_element(const T & element, uint64_t offset) {
-        write(std::vector < T > ( {
-                element}), offset);
+        }
     }
 
     void record_write(VkCommandBuffer command_buffer) {
         vkCmdCopyBuffer(command_buffer, staging_buffer->buffer,
-            buffer, updates.size(), updates.data());
+                        buffer, updates.size(), updates.data());
         updates.clear();
     }
 
     void record_read(VkCommandBuffer command_buffer) const {
         VkBufferCopy region;
-          region.srcOffset = 0;
-          region.dstOffset = 0;
-          region.size = size;
-          vkCmdCopyBuffer(command_buffer, buffer,
-            staging_buffer->buffer, 1, &region);
-          vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
-    } VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet
-        descriptor_set) const {
-        VkWriteDescriptorSet write_desc_set = { };
+        region.srcOffset = 0;
+        region.dstOffset = 0;
+        region.size = size;
+        vkCmdCopyBuffer(command_buffer, buffer,
+                        staging_buffer->buffer, 1, &region);
+        vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
+    }
+
+    VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet
+                                                  descriptor_set) const {
+        VkWriteDescriptorSet write_desc_set = {};
         write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write_desc_set.pNext = nullptr;
         write_desc_set.dstArrayElement = 0;
@@ -159,7 +158,7 @@ staging_buffer = new buffer_t<T>(~0, device, size, false);
     }
 
     VkDescriptorSetLayoutBinding get_descriptor_set_layout_binding() const {
-        VkDescriptorSetLayoutBinding layout_binding = { };
+        VkDescriptorSetLayoutBinding layout_binding = {};
         layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         layout_binding.descriptorCount = 1;
         layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -169,7 +168,7 @@ staging_buffer = new buffer_t<T>(~0, device, size, false);
     }
 
     uint64_t get_size() const {
-        return size / sizeof(T);
+        return size / element_size;
     }
 
 };

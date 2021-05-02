@@ -616,12 +616,12 @@ void renderer_t::render() {
 
 	std::sort(substance_data.begin(), substance_data.end(), data_t::comparator_t());
 
-	substance_buffer->write(substance_data, 0);
+	substance_buffer->write(substance_data.data(), substance_data.size(), 0);
 
 	// write lights
 	std::vector < light_t > lights(size);
 	lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
-	light_buffer->write(lights, 0);
+	light_buffer->write(lights.data(), lights.size(), 0);
 
 	if (auto camera = main_camera.lock()) {
 		srph_camera_transformation_matrix(camera.get(),
@@ -727,7 +727,8 @@ void renderer_t::handle_requests(uint32_t frame) {
 				continue;
 			}
 			auto response = get_response(call, &substances[substance_index]);
-			patch_buffer->write_element(response.get_patch(), call.get_index());
+			auto patch = response.get_patch();
+			patch_buffer->write(&patch, 1, call.get_index());
 
 			u32vec3_t p = u32vec3_t(call.get_index() % patch_image_size,
 				(call.get_index() %
