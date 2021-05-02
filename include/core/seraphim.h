@@ -48,7 +48,7 @@ struct seraphim_t {
     substance_t substances[SERAPHIM_MAX_SUBSTANCES];
 
     uint32_t num_sdfs;
-    sdf_t sdfs[SERAPHIM_MAX_SDFS];
+    uint32_t num_materials;
 
     bool fps_monitor_quit;
 

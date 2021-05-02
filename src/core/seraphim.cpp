@@ -95,6 +95,7 @@ seraphim_t::seraphim_t(const char *title) {
 
 	num_substances = 0;
 	num_sdfs = 0;
+	num_materials = 0;
 	work_group_count = u32vec2_t(48u, 20u);
 	work_group_size = u32vec2_t(32u);
 

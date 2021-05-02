@@ -48,6 +48,7 @@ set(SOURCES
         src/metaphysics/substance.cpp
         src/metaphysics/form.cpp
         src/metaphysics/matter.cpp
+        src/metaphysics/material.cpp
 
         src/physics/bound.cpp
         src/maths/optimise.cpp
