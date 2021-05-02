@@ -7,7 +7,6 @@
 #include <cstring>
 #include <memory>
 
-template<class T>
 struct buffer_t {
     bool is_device_local;
     device_t *device;
@@ -18,14 +17,14 @@ struct buffer_t {
     size_t element_size;
     VkDescriptorBufferInfo desc_buffer_info;
 
-    buffer_t<T> *staging_buffer;
+    buffer_t *staging_buffer;
     std::vector<VkBufferCopy> updates;
 
     // constructors and destructors
-    buffer_t(uint32_t binding, device_t *device, uint64_t size, bool is_device_local) {
+    buffer_t(uint32_t binding, device_t *device, uint64_t size, bool is_device_local, size_t element_size) {
         this->is_device_local = is_device_local;
         this->device = device;
-        element_size = sizeof (T);
+        this->element_size = element_size;
         this->size = element_size * size;
         this->binding = binding;
 
@@ -78,7 +77,7 @@ struct buffer_t {
         desc_buffer_info.range = this->size;
 
         if (is_device_local) {
-            staging_buffer = new buffer_t<T>(~0, device, size, false);
+            staging_buffer = new buffer_t(~0, device, size, false, element_size);
         } else {
             staging_buffer = NULL;
         }
@@ -112,7 +111,7 @@ struct buffer_t {
         }
     }
 
-    void write(const T * source, size_t number, uint64_t offset) {
+    void write(const void * source, size_t number, uint64_t offset) {
         if (element_size * (offset + number) > size + 1) {
             throw std::runtime_error("Error: Invalid buffer write.");
         }

@@ -89,8 +89,8 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	image_info.sampler = sampler;
 
 	staging_buffer =
-		std::make_unique < buffer_t < std::array < uint32_t, 8 >>> (~0,
-		device, staging_buffer_size, false);
+		std::make_unique < buffer_t > (~0,
+		device, staging_buffer_size, false, sizeof(uint32_t) * 8);
 }
 
 VkImageView

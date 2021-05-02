@@ -31,6 +31,8 @@ set(SOURCES
         src/core/random.cpp
         src/core/seraphim.cpp
         src/core/array.cpp
+        src/core/buffer.cpp
+
         src/lib/cJSON.c
 
         src/physics/collision.cpp
