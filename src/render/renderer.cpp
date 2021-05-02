@@ -127,41 +127,41 @@ renderer_t::renderer_t(device_t * device,
 	}
 
 	vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
-		write_desc_sets.data(), 0, nullptr);
+		write_desc_sets.data(), 0, NULL);
 
 	create_command_buffers();
 }
 
 void renderer_t::cleanup_swapchain() {
   for (auto framebuffer:framebuffers) {
-		vkDestroyFramebuffer(device->device, framebuffer, nullptr);
+		vkDestroyFramebuffer(device->device, framebuffer, NULL);
 	}
 
 	command_buffers.clear();
 
-	vkDestroyPipeline(device->device, graphics_pipeline, nullptr);
-	vkDestroyPipelineLayout(device->device, pipeline_layout, nullptr);
-	vkDestroyRenderPass(device->device, render_pass, nullptr);
+	vkDestroyPipeline(device->device, graphics_pipeline, NULL);
+	vkDestroyPipelineLayout(device->device, pipeline_layout, NULL);
+	vkDestroyRenderPass(device->device, render_pass, NULL);
 
-	swapchain.reset(nullptr);
+	swapchain.reset(NULL);
 }
 
 renderer_t::~renderer_t() {
 	free(fragment_shader_code);
 	free(vertex_shader_code);
 
-	vkDestroyDescriptorSetLayout(device->device, descriptor_layout, nullptr);
+	vkDestroyDescriptorSetLayout(device->device, descriptor_layout, NULL);
 
 	cleanup_swapchain();
 
-	vkDestroyPipeline(device->device, compute_pipeline, nullptr);
-	vkDestroyPipelineLayout(device->device, compute_pipeline_layout, nullptr);
+	vkDestroyPipeline(device->device, compute_pipeline, NULL);
+	vkDestroyPipelineLayout(device->device, compute_pipeline_layout, NULL);
 
 	for (int i = 0; i < frames_in_flight; i++) {
-		vkDestroySemaphore(device->device, image_available_semas[i], nullptr);
-		vkDestroySemaphore(device->device, compute_done_semas[i], nullptr);
-		vkDestroySemaphore(device->device, render_finished_semas[i], nullptr);
-		vkDestroyFence(device->device, in_flight_fences[i], nullptr);
+		vkDestroySemaphore(device->device, image_available_semas[i], NULL);
+		vkDestroySemaphore(device->device, compute_done_semas[i], NULL);
+		vkDestroySemaphore(device->device, render_finished_semas[i], NULL);
+		vkDestroyFence(device->device, in_flight_fences[i], NULL);
 	}
 }
 
@@ -180,7 +180,7 @@ void renderer_t::create_compute_pipeline() {
 	pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
 	if (vkCreatePipelineLayout
-		(device->device, &pipeline_layout_info, nullptr,
+		(device->device, &pipeline_layout_info, NULL,
 			&compute_pipeline_layout) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create compute pipeline layout.");
 	}
@@ -200,12 +200,12 @@ void renderer_t::create_compute_pipeline() {
 	pipeline_create_info.layout = compute_pipeline_layout;
 
 	if (vkCreateComputePipelines
-		(device->device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr,
+		(device->device, VK_NULL_HANDLE, 1, &pipeline_create_info, NULL,
 			&compute_pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create compute pipeline.");
 	}
 
-	vkDestroyShaderModule(device->device, module, nullptr);
+	vkDestroyShaderModule(device->device, module, NULL);
 }
 
 void renderer_t::recreate_swapchain() {
@@ -239,7 +239,7 @@ void renderer_t::create_render_pass() {
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colour_attachment_ref;
-	subpass.pDepthStencilAttachment = nullptr;
+	subpass.pDepthStencilAttachment = NULL;
 
 	VkSubpassDependency dependency = { };
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -262,7 +262,7 @@ void renderer_t::create_render_pass() {
 	render_pass_info.pDependencies = &dependency;
 
 	if (vkCreateRenderPass
-		(device->device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+		(device->device, &render_pass_info, NULL, &render_pass) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create render pass.");
 	}
 }
@@ -340,7 +340,7 @@ void renderer_t::create_graphics_pipeline() {
 	multisample_info.sampleShadingEnable = VK_FALSE;
 	multisample_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 	multisample_info.minSampleShading = 1.0f;
-	multisample_info.pSampleMask = nullptr;
+	multisample_info.pSampleMask = NULL;
 	multisample_info.alphaToCoverageEnable = VK_FALSE;
 	multisample_info.alphaToOneEnable = VK_FALSE;
 
@@ -383,7 +383,7 @@ void renderer_t::create_graphics_pipeline() {
 	pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
 	if (vkCreatePipelineLayout
-		(device->device, &pipeline_layout_info, nullptr,
+		(device->device, &pipeline_layout_info, NULL,
 			&pipeline_layout) != VK_SUCCESS) {
 		throw std::runtime_error
 			("Error: Failed to create graphics pipeline layout.");
@@ -407,7 +407,7 @@ void renderer_t::create_graphics_pipeline() {
 	pipeline_info.pMultisampleState = &multisample_info;
 	pipeline_info.pDepthStencilState = &depth_stencil;
 	pipeline_info.pColorBlendState = &colour_blend_const;
-	pipeline_info.pDynamicState = nullptr;
+	pipeline_info.pDynamicState = NULL;
 	pipeline_info.layout = pipeline_layout;
 	pipeline_info.renderPass = render_pass;
 	pipeline_info.subpass = 0;
@@ -415,12 +415,12 @@ void renderer_t::create_graphics_pipeline() {
 	pipeline_info.basePipelineIndex = -1;
 
 	if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1,
-			&pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+			&pipeline_info, NULL, &graphics_pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create graphics pipeline.");
 	}
 
-	vkDestroyShaderModule(device->device, vert_shader_module, nullptr);
-	vkDestroyShaderModule(device->device, frag_shader_module, nullptr);
+	vkDestroyShaderModule(device->device, vert_shader_module, NULL);
+	vkDestroyShaderModule(device->device, frag_shader_module, NULL);
 }
 
 void renderer_t::create_framebuffers() {
@@ -440,7 +440,7 @@ void renderer_t::create_framebuffers() {
 		framebuffer_info.layers = 1;
 
 		if (vkCreateFramebuffer
-			(device->device, &framebuffer_info, nullptr,
+			(device->device, &framebuffer_info, NULL,
 				&framebuffers[i]) != VK_SUCCESS) {
 			throw std::runtime_error("Error: Failed to create framebuffer.");
 		}
@@ -475,7 +475,7 @@ void renderer_t::create_command_buffers() {
 					vkCmdBindDescriptorSets
 					(command_buffer,
 						VK_PIPELINE_BIND_POINT_GRAPHICS,
-						pipeline_layout, 0, 1, &desc_sets[i], 0, nullptr);
+						pipeline_layout, 0, 1, &desc_sets[i], 0, NULL);
 					vkCmdDraw(command_buffer, 3, 1, 0, 0);
 					vkCmdEndRenderPass(command_buffer);
 				}
@@ -498,7 +498,7 @@ void renderer_t::create_descriptor_pool() {
 	pool_info.maxSets = swapchain->get_size();
 
 	if (vkCreateDescriptorPool
-		(device->device, &pool_info, nullptr, &desc_pool) != VK_SUCCESS) {
+		(device->device, &pool_info, NULL, &desc_pool) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create descriptor pool.");
 	}
 
@@ -546,7 +546,7 @@ void renderer_t::create_descriptor_set_layout() {
 	layout_info.pBindings = layouts.data();
 
 	if (vkCreateDescriptorSetLayout
-		(device->device, &layout_info, nullptr, &descriptor_layout) != VK_SUCCESS) {
+		(device->device, &layout_info, NULL, &descriptor_layout) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create descriptor set layout.");
 	}
 }
@@ -567,16 +567,16 @@ void renderer_t::create_sync() {
 	uint32_t result = VK_SUCCESS;
 	for (int i = 0; i < frames_in_flight; i++) {
 		result |=
-			vkCreateSemaphore(device->device, &create_info, nullptr,
+			vkCreateSemaphore(device->device, &create_info, NULL,
 			&image_available_semas[i]);
 		result |=
-			vkCreateSemaphore(device->device, &create_info, nullptr,
+			vkCreateSemaphore(device->device, &create_info, NULL,
 			&render_finished_semas[i]);
 		result |=
-			vkCreateSemaphore(device->device, &create_info, nullptr,
+			vkCreateSemaphore(device->device, &create_info, NULL,
 			&compute_done_semas[i]);
 		result |=
-			vkCreateFence(device->device, &fence_info, nullptr,
+			vkCreateFence(device->device, &fence_info, NULL,
 			&in_flight_fences[i]);
 	}
 
@@ -595,7 +595,7 @@ void renderer_t::present(uint32_t image_index) const {
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = &swapchain_handle;
 	present_info.pImageIndices = &image_index;
-	present_info.pResults = nullptr;
+	present_info.pResults = NULL;
 
 	vkQueuePresentKHR(present_queue, &present_info);
 }
@@ -661,7 +661,7 @@ void renderer_t::render() {
 				VK_PIPELINE_BIND_POINT_COMPUTE,
 				compute_pipeline_layout, 0, 1,
 				&desc_sets[image_index], 0,
-				nullptr);
+				NULL);
 			vkCmdDispatch(command_buffer,
 				work_group_count[0], work_group_count[1], 1);
 			call_buffer->record_read(command_buffer);
@@ -696,7 +696,7 @@ VkShaderModule renderer_t::create_shader_module(std::string code) {
 
 	VkShaderModule shader_module;
 	if (vkCreateShaderModule
-		(device->device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+		(device->device, &create_info, NULL, &shader_module) != VK_SUCCESS) {
 		throw std::runtime_error("Error: Failed to create shader module.");
 	}
 	return shader_module;

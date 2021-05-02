@@ -21,7 +21,6 @@
 #include "metaphysics/substance.h"
 #include "render/call_and_response.h"
 
-// types
 struct push_constant_t {
     srph::u32vec2_t window_size;
     float render_distance;
@@ -125,7 +124,7 @@ struct renderer_t {
     void create_descriptor_set_layout();
     void create_descriptor_pool();
     void create_sync();
-    void create_compute_command_buffers();
+
     void create_buffers();
 
     // helper functions

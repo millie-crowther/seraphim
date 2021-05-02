@@ -25,14 +25,15 @@ struct seraphim_t {
     bool setup_debug_callback();
 
 #endif
+
     // initialisation functions
     void create_instance();
 
-      std::vector < const char *>get_required_extensions();
+    std::vector<const char *> get_required_extensions();
 
-      std::unique_ptr < device_t > device;
-      std::unique_ptr < renderer_t > renderer;
-      std::unique_ptr < srph::window_t > window;
+    std::unique_ptr<device_t> device;
+    std::unique_ptr<renderer_t> renderer;
+    std::unique_ptr<srph::window_t> window;
     srph_physics physics;
 
     VkInstance instance;
@@ -41,7 +42,7 @@ struct seraphim_t {
     srph::u32vec2_t work_group_count;
     srph::u32vec2_t work_group_size;
 
-      std::shared_ptr < srph::camera_t > test_camera;
+    std::shared_ptr<srph::camera_t> test_camera;
 
     uint32_t num_substances;
     substance_t substances[SERAPHIM_MAX_SUBSTANCES];
@@ -53,17 +54,17 @@ struct seraphim_t {
 
     void monitor_fps();
 
-      std::thread fps_monitor_thread;
-      std::condition_variable fps_cv;
+    std::thread fps_monitor_thread;
+    std::condition_variable fps_cv;
 
-      seraphim_t(const char *title);
+    seraphim_t(const char *title);
 
     void run();
 };
 
-substance_t *srph_create_substance(seraphim_t * srph, form_t * form,
-	matter_t * matter);
+substance_t *srph_create_substance(seraphim_t *srph, form_t *form,
+                                   matter_t *matter);
 
-void srph_cleanup(seraphim_t * engine);
+void srph_cleanup(seraphim_t *engine);
 
 #endif
