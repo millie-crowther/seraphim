@@ -25,6 +25,7 @@ struct intersection_t {
     substance_t substance;
     float cell_radius;
     uint geometry_index;
+    uint texture_index;
     vec3 alpha;
     vec3 patch_centre;
 };
@@ -106,7 +107,7 @@ layout( push_constant ) uniform push_constants {
     float phi_initial;        
     float focal_depth;
     uint number_of_calls;
-    uint _1;
+    uint texture_pool_size;
 
     mat4 eye_transform;
 
@@ -197,6 +198,7 @@ patch_t get_patch(
 
     intersection.cell_radius = size / 2;
     intersection.geometry_index = geometry_index;
+    intersection.texture_index = hash % pc.texture_pool_size;
     intersection.alpha = x_scaled - x_grid;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 

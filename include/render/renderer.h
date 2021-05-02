@@ -32,20 +32,21 @@ namespace srph {
 			float phi_initial;
 			float focal_depth;
 			uint32_t number_of_calls;
-			uint32_t _1;
+			uint32_t texture_pool_size;
 
 			float eye_transform[16];
 
 			uint32_t texture_size;
 			uint32_t texture_depth;
-			uint32_t patch_pool_size;
+			uint32_t geometry_pool_size;
 			float epsilon;
 		};
 
 		// constants
 		static constexpr uint8_t frames_in_flight = 2;
 		static constexpr uint32_t number_of_calls = 2048;
-		static constexpr uint32_t number_of_patches = 1000000;
+		static constexpr uint32_t geometry_pool_size = 1000000;
+		static constexpr uint32_t texture_pool_size = 1000000;
 		static constexpr uint32_t patch_sample_size = 2;
 		static constexpr uint32_t max_cache_size = 1000;
 

@@ -36,8 +36,9 @@ renderer_t::renderer_t(device_t * device,
 	push_constants.number_of_calls = number_of_calls;
 	push_constants.texture_size = patch_image_size;
 	push_constants.texture_depth =
-		number_of_patches / patch_image_size / patch_image_size + 1;
-	push_constants.patch_pool_size = number_of_patches;
+            geometry_pool_size / patch_image_size / patch_image_size + 1;
+	push_constants.geometry_pool_size = geometry_pool_size;
+	push_constants.texture_pool_size = texture_pool_size;
 	push_constants.epsilon = epsilon;
 
 	set_main_camera(test_camera);
@@ -749,7 +750,7 @@ void renderer_t::create_buffers() {
 
 	patch_buffer =
 		std::make_unique < device_buffer_t < response_t::patch_t >> (1,
-		device, number_of_patches);
+                                                                     device, geometry_pool_size);
 	call_buffer =
 		std::make_unique < device_buffer_t < call_t >> (2, device, number_of_calls);
 	light_buffer = std::make_unique < device_buffer_t < light_t >> (3, device, s);
