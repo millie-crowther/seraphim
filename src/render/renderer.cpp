@@ -560,11 +560,6 @@ void renderer_t::create_descriptor_set_layout() {
 }
 
 void renderer_t::create_sync() {
-    image_available_semas.resize(frames_in_flight);
-    compute_done_semas.resize(frames_in_flight);
-    render_finished_semas.resize(frames_in_flight);
-    in_flight_fences.resize(frames_in_flight);
-
     VkSemaphoreCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
