@@ -11,7 +11,6 @@
 #include "physics/physics.h"
 #include "render/renderer.h"
 #include "ui/window.h"
-#include "device.h"
 
 #define SERAPHIM_MAX_SUBSTANCES 100
 #define SERAPHIM_MAX_SDFS 100
@@ -32,7 +31,7 @@ struct seraphim_t {
       std::vector < const char *>get_required_extensions();
 
       std::unique_ptr < device_t > device;
-      std::unique_ptr < srph::renderer_t > renderer;
+      std::unique_ptr < renderer_t > renderer;
       std::unique_ptr < srph::window_t > window;
     srph_physics physics;
 

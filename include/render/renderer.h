@@ -2,6 +2,7 @@
 #define RENDERER_H
 
 #define GLFW_INCLUDE_VULKAN
+
 #include <GLFW/glfw3.h>
 #include <memory>
 
@@ -20,137 +21,135 @@
 #include "metaphysics/substance.h"
 #include "render/call_and_response.h"
 
-namespace srph {
-	class renderer_t {
-	  private:
-		// types
-		struct push_constant_t {
-			u32vec2_t window_size;
-			float render_distance;
-			uint32_t current_frame;
 
-			float phi_initial;
-			float focal_depth;
-			uint32_t number_of_calls;
-			uint32_t texture_pool_size;
+struct renderer_t {
+    // types
+    struct push_constant_t {
+        srph::u32vec2_t window_size;
+        float render_distance;
+        uint32_t current_frame;
 
-			float eye_transform[16];
+        float phi_initial;
+        float focal_depth;
+        uint32_t number_of_calls;
+        uint32_t texture_pool_size;
 
-			uint32_t texture_size;
-			uint32_t texture_depth;
-			uint32_t geometry_pool_size;
-			float epsilon;
-		};
+        float eye_transform[16];
 
-		// constants
-		static constexpr uint8_t frames_in_flight = 2;
-		static constexpr uint32_t number_of_calls = 2048;
-		static constexpr uint32_t geometry_pool_size = 1000000;
-		static constexpr uint32_t texture_pool_size = 1000000;
-		static constexpr uint32_t patch_sample_size = 2;
-		static constexpr uint32_t max_cache_size = 1000;
+        uint32_t texture_size;
+        uint32_t texture_depth;
+        uint32_t geometry_pool_size;
+        float epsilon;
+    };
 
-		  std::set < uint32_t > indices;
-		  std::set < uint32_t > hashes;
+    // constants
+    static constexpr uint8_t frames_in_flight = 2;
+    static constexpr uint32_t number_of_calls = 2048;
+    static constexpr uint32_t geometry_pool_size = 1000000;
+    static constexpr uint32_t texture_pool_size = 1000000;
+    static constexpr uint32_t patch_sample_size = 2;
+    static constexpr uint32_t max_cache_size = 1000;
 
-		// fields
-		u32vec2_t work_group_count;
-		u32vec2_t work_group_size;
-		uint32_t patch_image_size;
-		push_constant_t push_constants;
-		device_t *device;
-		  std::vector < VkFramebuffer > framebuffers;
-		VkSurfaceKHR surface;
-		VkRenderPass render_pass;
+      std::set < uint32_t > indices;
+      std::set < uint32_t > hashes;
 
-		VkPipeline graphics_pipeline;
-		VkPipelineLayout pipeline_layout;
-		  std::vector < std::shared_ptr < command_buffer_t >> command_buffers;
+    // fields
+    srph::u32vec2_t work_group_count;
+    srph::u32vec2_t work_group_size;
+    uint32_t patch_image_size;
+    push_constant_t push_constants;
+    device_t *device;
+      std::vector < VkFramebuffer > framebuffers;
+    VkSurfaceKHR surface;
+    VkRenderPass render_pass;
 
-		VkPipeline compute_pipeline;
-		VkPipelineLayout compute_pipeline_layout;
+    VkPipeline graphics_pipeline;
+    VkPipelineLayout pipeline_layout;
+      std::vector < std::shared_ptr < srph::command_buffer_t >> command_buffers;
 
-		int frames;
-		int current_frame;
-		  std::vector < VkSemaphore > image_available_semas;
-		  std::vector < VkSemaphore > compute_done_semas;
-		  std::vector < VkSemaphore > render_finished_semas;
-		  std::vector < VkFence > in_flight_fences;
+    VkPipeline compute_pipeline;
+    VkPipelineLayout compute_pipeline_layout;
 
-		VkDescriptorSetLayout descriptor_layout;
-		  std::vector < VkDescriptorSet > desc_sets;
-		VkDescriptorPool desc_pool;
+    int frames;
+    int current_frame;
+      std::vector < VkSemaphore > image_available_semas;
+      std::vector < VkSemaphore > compute_done_semas;
+      std::vector < VkSemaphore > render_finished_semas;
+      std::vector < VkFence > in_flight_fences;
 
-		VkQueue present_queue;
+    VkDescriptorSetLayout descriptor_layout;
+      std::vector < VkDescriptorSet > desc_sets;
+    VkDescriptorPool desc_pool;
 
-		char *fragment_shader_code;
-		char *vertex_shader_code;
+    VkQueue present_queue;
 
-		substance_t *substances;
-		uint32_t *num_substances;
+    char *fragment_shader_code;
+    char *vertex_shader_code;
 
-		  std::unique_ptr < swapchain_t > swapchain;
-		  std::weak_ptr < camera_t > main_camera;
+    substance_t *substances;
+    uint32_t *num_substances;
 
-		// textures
-		  std::unique_ptr < texture_t > render_texture;
-		  std::unique_ptr < texture_t > colour_texture;
-		  std::unique_ptr < texture_t > normal_texture;
+      std::unique_ptr < srph::swapchain_t > swapchain;
+      std::weak_ptr < srph::camera_t > main_camera;
 
-		// command pool
-		  std::unique_ptr < command_pool_t > compute_command_pool;
-		  std::unique_ptr < command_pool_t > graphics_command_pool;
+    // textures
+      std::unique_ptr < srph::texture_t > render_texture;
+      std::unique_ptr < srph::texture_t > colour_texture;
+      std::unique_ptr < srph::texture_t > normal_texture;
 
-		// buffers
-		  std::unique_ptr < buffer_t < response_t::patch_t >> patch_buffer;
-		  std::unique_ptr < buffer_t < data_t >> substance_buffer;
-		  std::unique_ptr < buffer_t < call_t >> call_buffer;
-		  std::unique_ptr < buffer_t < light_t >> light_buffer;
-		  std::unique_ptr < buffer_t < uint32_t >> pointer_buffer;
-		  std::unique_ptr < buffer_t < f32vec2_t >> frustum_buffer;
-		  std::unique_ptr < buffer_t < f32vec4_t >> lighting_buffer;
+    // command pool
+      std::unique_ptr < srph::command_pool_t > compute_command_pool;
+      std::unique_ptr < srph::command_pool_t > graphics_command_pool;
 
-		  std::map < call_t, response_t, call_t::comparator_t > response_cache;
-		  std::list < std::map < call_t, response_t,
-			call_t::comparator_t >::iterator > prev_calls;
+    // buffers
+      std::unique_ptr < buffer_t < srph::response_t::patch_t >> patch_buffer;
+      std::unique_ptr < buffer_t < data_t >> substance_buffer;
+      std::unique_ptr < buffer_t < srph::call_t >> call_buffer;
+      std::unique_ptr < buffer_t < srph::light_t >> light_buffer;
+      std::unique_ptr < buffer_t < uint32_t >> pointer_buffer;
+      std::unique_ptr < buffer_t < srph::f32vec2_t >> frustum_buffer;
+      std::unique_ptr < buffer_t < srph::f32vec4_t >> lighting_buffer;
 
-		  std::chrono::high_resolution_clock::time_point start;
+      std::map < srph::call_t, srph::response_t, srph::call_t::comparator_t > response_cache;
+      std::__cxx11::list < std::map < srph::call_t, srph::response_t,
+        srph::call_t::comparator_t >::iterator > prev_calls;
 
-		// initialisation functions
-		VkShaderModule create_shader_module(std::string code);
-		void create_render_pass();
-		void create_graphics_pipeline();
-		void create_compute_pipeline();
-		void create_framebuffers();
-		void create_command_buffers();
-		void create_descriptor_set_layout();
-		void create_descriptor_pool();
-		void create_sync();
-		void create_compute_command_buffers();
-		void create_buffers();
+      std::chrono::high_resolution_clock::time_point start;
 
-		// helper functions
-		void recreate_swapchain();
-		void cleanup_swapchain();
-		void handle_requests(uint32_t frame);
-		void present(uint32_t image_index) const;
-		response_t get_response(const call_t & call, substance_t * substance);
+    // initialisation functions
+    VkShaderModule create_shader_module(std::string code);
+    void create_render_pass();
+    void create_graphics_pipeline();
+    void create_compute_pipeline();
+    void create_framebuffers();
+    void create_command_buffers();
+    void create_descriptor_set_layout();
+    void create_descriptor_pool();
+    void create_sync();
+    void create_compute_command_buffers();
+    void create_buffers();
 
-	  public:
-		// constructors and destructors
-		  renderer_t(device_t * device,
-                     substance_t * substances, uint32_t *num_substances,
-                     VkSurfaceKHR surface, window_t * window,
-                     std::shared_ptr < camera_t > test_camera,
-                     u32vec2_t work_group_count,
-                     u32vec2_t work_group_size, uint32_t max_image_size);
-		 ~renderer_t();
+    // helper functions
+    void recreate_swapchain();
+    void cleanup_swapchain();
+    void handle_requests(uint32_t frame);
+    void present(uint32_t image_index) const;
+    srph::response_t get_response(const srph::call_t & call, substance_t * substance);
 
-		// public functions
-		void render();
-		void set_main_camera(std::weak_ptr < camera_t > camera);
+    // constructors and destructors
+      renderer_t(device_t * device,
+                 substance_t * substances, uint32_t *num_substances,
+                 VkSurfaceKHR surface, srph::window_t * window,
+                 std::shared_ptr < srph::camera_t > test_camera,
+                 srph::u32vec2_t work_group_count,
+                 srph::u32vec2_t work_group_size, uint32_t max_image_size);
+     ~renderer_t();
 
-		int get_frame_count();
-	};
-}
+    // public functions
+    void render();
+    void set_main_camera(std::weak_ptr < srph::camera_t > camera);
+
+    int get_frame_count();
+};
+
 #endif

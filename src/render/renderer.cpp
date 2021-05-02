@@ -713,9 +713,9 @@ void renderer_t::handle_requests(uint32_t frame) {
 	std::vector < call_t > empty_calls(number_of_calls);
 
 	call_buffer->map(0, calls.size(),[&](void *memory_map) {
-			std::memcpy(calls.data(), memory_map,
+			memcpy(calls.data(), memory_map,
 				calls.size() * sizeof(call_t));
-			std::memcpy(memory_map, empty_calls.data(),
+			memcpy(memory_map, empty_calls.data(),
 				calls.size() * sizeof(call_t));
 		}
 	);
