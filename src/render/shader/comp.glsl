@@ -435,8 +435,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     
     // find texture coordinate
     uint k = intersection.global_index;
-    vec3 t = intersection.alpha * intersection.cell_radius * 2 + intersection.cell_radius;
-    t /= intersection.cell_radius * 4;
+    vec3 t = intersection.alpha * 0.5 + 0.25;
 
     t += vec3(
         k % pc.texture_size,
