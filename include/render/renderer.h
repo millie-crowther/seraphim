@@ -21,27 +21,26 @@
 #include "metaphysics/substance.h"
 #include "render/call_and_response.h"
 
+// types
+struct push_constant_t {
+    srph::u32vec2_t window_size;
+    float render_distance;
+    uint32_t current_frame;
+
+    float phi_initial;
+    float focal_depth;
+    uint32_t number_of_calls;
+    uint32_t texture_pool_size;
+
+    float eye_transform[16];
+
+    uint32_t texture_size;
+    uint32_t texture_depth;
+    uint32_t geometry_pool_size;
+    float epsilon;
+};
 
 struct renderer_t {
-    // types
-    struct push_constant_t {
-        srph::u32vec2_t window_size;
-        float render_distance;
-        uint32_t current_frame;
-
-        float phi_initial;
-        float focal_depth;
-        uint32_t number_of_calls;
-        uint32_t texture_pool_size;
-
-        float eye_transform[16];
-
-        uint32_t texture_size;
-        uint32_t texture_depth;
-        uint32_t geometry_pool_size;
-        float epsilon;
-    };
-
     // constants
     static constexpr uint8_t frames_in_flight = 2;
     static constexpr uint32_t number_of_calls = 2048;
