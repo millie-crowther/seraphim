@@ -24,7 +24,7 @@ struct intersection_t {
     float distance;
     substance_t substance;
     float cell_radius;
-    uint global_index;
+    uint geometry_index;
     vec3 alpha;
     vec3 patch_centre;
 };
@@ -112,7 +112,7 @@ layout( push_constant ) uniform push_constants {
 
     uint texture_size;
     uint texture_depth;
-    uint global_patch_pool_size;
+    uint geometry_pool_size;
     float epsilon;
 } pc;
 
@@ -181,22 +181,22 @@ patch_t get_patch(
 
     // calculate some useful variables for doing lookups
     uint index = hash % work_group_size;
-    uint global_index = hash % pc.global_patch_pool_size;
+    uint geometry_index = hash % pc.geometry_pool_size;
 
     vec3 cell_position = x_grid * size;
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
     if (patch_.hash != hash) {
-        pointers.data[index + work_group_offset()] = global_index; 
-        patch_ = patches.data[global_index];
+        pointers.data[index + work_group_offset()] = geometry_index;
+        patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(cell_position, size / 2, global_index, hash, substance, geometry_status);
+            request = build_request(cell_position, size / 2, geometry_index, hash, substance, geometry_status);
         }
     }
 
     intersection.cell_radius = size / 2;
-    intersection.global_index = global_index;
+    intersection.geometry_index = geometry_index;
     intersection.alpha = x_scaled - x_grid;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 
@@ -434,7 +434,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-    uint k = intersection.global_index;
+    uint k = intersection.geometry_index;
     vec3 t = intersection.alpha * 0.5 + 0.25;
 
     t += vec3(
