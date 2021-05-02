@@ -67,6 +67,10 @@ const int max_steps = 128;
 const int max_hash_retries = 10;
 const float geometry_epsilon = 1.0 / 300.0;
 
+const uint null_status = 0;
+const uint geometry_status = 1;
+const uint texture_status = 2;
+
 const ivec3 p1 = ivec3(
     904601,
     12582917,
@@ -129,6 +133,17 @@ shared uint lights_size;
 shared vec4 workspace[work_group_size];
 shared bool test;
 
+request_t build_request(
+    vec3 position,
+    float radius,
+    uint index,
+    uint hash,
+    substance_t substance,
+    uint status
+){
+    return request_t(position, radius, index, hash, substance.id, status, 0, 0, 0, 0);
+}
+
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -151,13 +166,17 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
-patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersection, inout request_t request, out uint hash){
+patch_t get_patch(
+    vec3 x, int order, substance_t substance,
+    inout intersection_t intersection, inout request_t request,
+    out uint hash
+){
     float size = geometry_epsilon * order * 2;
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
 
     ivec3 x_hash = x_grid * p1 + p2;
-    ivec2 os_hash = ivec2(subID, order) * p3.xy + p3.yz;
+    ivec2 os_hash = ivec2(substance.id, order) * p3.xy + p3.yz;
     hash = x_hash.x ^ x_hash.y ^ x_hash.z ^ os_hash.x ^ os_hash.y;
 
     // calculate some useful variables for doing lookups
@@ -172,7 +191,7 @@ patch_t get_patch(vec3 x, int order, uint subID, inout intersection_t intersecti
         pointers.data[index + work_group_offset()] = global_index; 
         patch_ = patches.data[global_index];
         if (patch_.hash != hash){
-            request = request_t(cell_position, size / 2, global_index, hash, subID, 1, 0, 0, 0, 0);
+            request = build_request(cell_position, size / 2, global_index, hash, substance, geometry_status);
         }
     }
 
@@ -207,7 +226,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     
     if (inside_aabb){
         for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
-            patch_ = get_patch(r.x, order + tries, sub.id, intersection, request, hash);
+            patch_ = get_patch(r.x, order + tries, sub, intersection, request, hash);
         }
     }
     
@@ -374,7 +393,7 @@ vec4 reduce_min(uint i, vec4 value){
 
 void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
-    request.status = 0;
+    request.status = null_status;
 
     vec3 rx = pc.eye_transform[3].xyz;
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
@@ -447,7 +466,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
-    if (request.status != 0){
+    if (request.status != null_status){
         requests.data[request.hash % pc.number_of_calls] = request;
     }
 }
