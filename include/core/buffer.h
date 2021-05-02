@@ -93,15 +93,21 @@ struct buffer_t {
         }
     }
 
-    template<class F>
-    void map(uint64_t offset, uint64_t size, const F &f) {
+    void * map(uint64_t offset, uint64_t size){
         if (is_device_local) {
-            staging_buffer->map(offset, size, f);
+            return staging_buffer->map(offset, size);
         } else {
             void *memory_map;
             vkMapMemory(device->device, memory,
                         element_size * offset, element_size * size, 0, &memory_map);
-            f(memory_map);
+            return memory_map;
+        }
+    }
+
+    void unmap(){
+        if (is_device_local) {
+            staging_buffer->unmap();
+        } else {
             vkUnmapMemory(device->device, memory);
         }
     }
@@ -111,10 +117,9 @@ struct buffer_t {
             throw std::runtime_error("Error: Invalid buffer write.");
         }
 
-        map(offset, number, [&](auto mem_map) {
-                memcpy(mem_map, source, element_size * number);
-            }
-        );
+        void * mem_map = map(offset, number);
+        memcpy(mem_map, source, element_size * number);
+        unmap();
 
         if (is_device_local) {
             VkBufferCopy buffer_copy = {};
