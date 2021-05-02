@@ -25,4 +25,6 @@ typedef struct device_t {
 	 ~device_t();
 } device_t;
 
+uint32_t device_memory_type(device_t * device, uint32_t type_filter, VkMemoryPropertyFlags prop);
+
 #endif

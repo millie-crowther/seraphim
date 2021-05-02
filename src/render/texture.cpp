@@ -46,8 +46,8 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	mem_alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	mem_alloc_info.allocationSize = mem_req.size;
 	mem_alloc_info.memoryTypeIndex =
-		host_buffer_t < float >::find_memory_type(device,
-		mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            device_memory_type(device,
+                               mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	if (vkAllocateMemory(device->device, &mem_alloc_info, nullptr, &memory)
 		!= VK_SUCCESS) {
@@ -89,8 +89,8 @@ texture_t::texture_t(uint32_t binding, device_t * device,
 	image_info.sampler = sampler;
 
 	staging_buffer =
-		std::make_unique < host_buffer_t < std::array < uint32_t, 8 >>> (~0,
-		device, staging_buffer_size);
+		std::make_unique < buffer_t < std::array < uint32_t, 8 >>> (~0,
+		device, staging_buffer_size, false);
 }
 
 VkImageView

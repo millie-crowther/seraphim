@@ -102,13 +102,13 @@ namespace srph {
 		  std::unique_ptr < command_pool_t > graphics_command_pool;
 
 		// buffers
-		  std::unique_ptr < device_buffer_t < response_t::patch_t >> patch_buffer;
-		  std::unique_ptr < device_buffer_t < data_t >> substance_buffer;
-		  std::unique_ptr < device_buffer_t < call_t >> call_buffer;
-		  std::unique_ptr < device_buffer_t < light_t >> light_buffer;
-		  std::unique_ptr < device_buffer_t < uint32_t >> pointer_buffer;
-		  std::unique_ptr < device_buffer_t < f32vec2_t >> frustum_buffer;
-		  std::unique_ptr < device_buffer_t < f32vec4_t >> lighting_buffer;
+		  std::unique_ptr < buffer_t < response_t::patch_t >> patch_buffer;
+		  std::unique_ptr < buffer_t < data_t >> substance_buffer;
+		  std::unique_ptr < buffer_t < call_t >> call_buffer;
+		  std::unique_ptr < buffer_t < light_t >> light_buffer;
+		  std::unique_ptr < buffer_t < uint32_t >> pointer_buffer;
+		  std::unique_ptr < buffer_t < f32vec2_t >> frustum_buffer;
+		  std::unique_ptr < buffer_t < f32vec4_t >> lighting_buffer;
 
 		  std::map < call_t, response_t, call_t::comparator_t > response_cache;
 		  std::list < std::map < call_t, response_t,

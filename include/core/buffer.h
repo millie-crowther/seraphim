@@ -9,7 +9,8 @@
 #include <memory>
 
 namespace srph {
-	template < bool is_device_local, class T > struct buffer_t {
+	template < class T > struct buffer_t {
+	    bool is_device_local;
 		device_t *device;
 		VkBuffer buffer;
 		VkDeviceMemory memory;
@@ -17,11 +18,12 @@ namespace srph {
 		uint32_t binding;
 		VkDescriptorBufferInfo desc_buffer_info;
 
-		  std::unique_ptr < buffer_t < false, T >> staging_buffer;
+		buffer_t < T > * staging_buffer;
 		  std::vector < VkBufferCopy > updates;
 
 		// constructors and destructors
-		  buffer_t(uint32_t binding, device_t * device, uint64_t size) {
+		  buffer_t(uint32_t binding, device_t * device, uint64_t size, bool is_device_local) {
+		      this->is_device_local = is_device_local;
 			this->device = device;
 			this->size = sizeof(T) * size;
 			this->binding = binding;
@@ -33,7 +35,7 @@ namespace srph {
 
 			VkMemoryPropertyFlagBits memory_property;
 
-			if constexpr(is_device_local)
+			if (is_device_local)
 			{
 				buffer_info.usage =
 					VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
@@ -60,7 +62,7 @@ namespace srph {
 			alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 			alloc_info.allocationSize = mem_req.size;
 			alloc_info.memoryTypeIndex =
-				find_memory_type(device, mem_req.memoryTypeBits, memory_property);
+                    device_memory_type(device, mem_req.memoryTypeBits, memory_property);
 
 			if (vkAllocateMemory
 				(device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
@@ -76,21 +78,24 @@ namespace srph {
 			desc_buffer_info.offset = 0;
 			desc_buffer_info.range = this->size;
 
-			if constexpr
-				(is_device_local) {
-				staging_buffer =
-					std::make_unique < buffer_t < false, T >> (~0, device, size);
-				}
+			if (is_device_local) {
+                staging_buffer = new buffer_t<T>(~0, device, size, false);
+            } else {
+			    staging_buffer = NULL;
+			}
 		}
 
 		~buffer_t() {
 			vkDestroyBuffer(device->device, buffer, nullptr);
 			vkFreeMemory(device->device, memory, nullptr);
+
+			if (staging_buffer != NULL){
+			    delete staging_buffer;
+			}
 		}
 
 		template < class F > void map(uint64_t offset, uint64_t size, const F & f) {
-			if constexpr
-				(is_device_local) {
+			if (is_device_local) {
 				staging_buffer->map(offset, size, f);
 			} else {
 				void *memory_map;
@@ -111,8 +116,7 @@ namespace srph {
 				}
 			);
 
-			if constexpr
-				(is_device_local) {
+			if (is_device_local) {
 				VkBufferCopy buffer_copy = { };
 				buffer_copy.srcOffset = sizeof(T) * offset;
 				buffer_copy.dstOffset = sizeof(T) * offset;
@@ -169,25 +173,8 @@ namespace srph {
 		uint64_t get_size() const {
 			return size / sizeof(T);
 		}
-		static uint32_t find_memory_type(device_t * device,
-			uint32_t type_filter, VkMemoryPropertyFlags prop) {
-			VkPhysicalDeviceMemoryProperties mem_prop;
-			vkGetPhysicalDeviceMemoryProperties(device->physical_device, &mem_prop);
 
-			for (uint32_t i = 0; i < mem_prop.memoryTypeCount; i++) {
-				if ((type_filter & (1 << i))
-					&& (mem_prop.memoryTypes[i].propertyFlags & prop) == prop) {
-					return i;
-				}
-			}
-
-			throw std::runtime_error("failed to find suitable memory type!");
-		}
 	};
-
-	template < class T > using host_buffer_t = buffer_t < false, T >;
-
-	template < class T > using device_buffer_t = buffer_t < true, T >;
 }
 
 #endif

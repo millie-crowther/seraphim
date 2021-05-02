@@ -749,18 +749,18 @@ void renderer_t::create_buffers() {
 	uint32_t s = work_group_size[0] * work_group_size[1];
 
 	patch_buffer =
-		std::make_unique < device_buffer_t < response_t::patch_t >> (1,
-                                                                     device, geometry_pool_size);
+		std::make_unique < buffer_t < response_t::patch_t >> (1,
+                                                                     device, geometry_pool_size, true);
 	call_buffer =
-		std::make_unique < device_buffer_t < call_t >> (2, device, number_of_calls);
-	light_buffer = std::make_unique < device_buffer_t < light_t >> (3, device, s);
-	substance_buffer = std::make_unique < device_buffer_t < data_t >> (4, device, s);
+		std::make_unique < buffer_t < call_t >> (2, device, number_of_calls, true);
+	light_buffer = std::make_unique < buffer_t < light_t >> (3, device, s, true);
+	substance_buffer = std::make_unique < buffer_t < data_t >> (4, device, s, true);
 	pointer_buffer =
-		std::make_unique < device_buffer_t < uint32_t >> (5, device, c * s);
+		std::make_unique < buffer_t < uint32_t >> (5, device, c * s, true);
 	frustum_buffer =
-		std::make_unique < device_buffer_t < f32vec2_t >> (6, device, c);
+		std::make_unique < buffer_t < f32vec2_t >> (6, device, c, true);
 	lighting_buffer =
-		std::make_unique < device_buffer_t < f32vec4_t >> (7, device, c);
+		std::make_unique < buffer_t < f32vec4_t >> (7, device, c, true);
 }
 
 response_t renderer_t::get_response(const call_t & call, substance_t * substance) {
