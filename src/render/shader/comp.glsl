@@ -8,8 +8,8 @@ struct ray_t {
 struct substance_t {
     float near;
     float far;
-    float sdf_id;
-    float material_id;
+    uint sdf_id;
+    uint material_id;
 
     vec3 radius;
     uint id;
@@ -141,7 +141,7 @@ request_t build_request(
     substance_t substance,
     uint status
 ){
-    return request_t(position, radius, index, hash, substance.id, status, 0, 0, 0, 0);
+    return request_t(position, radius, index, hash, substance.id, status, substance.sdf_id, substance.material_id, 0, 0);
 }
 
 vec2 uv(vec2 xy){
