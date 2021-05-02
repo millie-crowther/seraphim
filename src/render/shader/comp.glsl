@@ -72,22 +72,25 @@ const uint null_status = 0;
 const uint geometry_status = 1;
 const uint texture_status = 2;
 
-const ivec3 p1 = ivec3(
+const ivec4 p1 = ivec4(
     904601,
     12582917,
-    6291469
+    6291469,
+    3145739
 );
 
-const ivec3 p2 = ivec3(
+const ivec4 p2 = ivec4(
     25165843,
-    50331653,
+    100663319,
+    1025929,
     904573
 );
 
-const ivec3 p3 = ivec3(
-    100663319,
+const ivec4 p3 = ivec4(
     904577,
-    3145739
+    1268291,
+    50331653,
+    1020631
 );
 
 const uvec4 vertex_masks[2] = {
@@ -176,9 +179,10 @@ patch_t get_patch(
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
 
-    ivec3 x_hash = x_grid * p1 + p2;
-    ivec2 os_hash = ivec2(substance.id, order) * p3.xy + p3.yz;
-    hash = x_hash.x ^ x_hash.y ^ x_hash.z ^ os_hash.x ^ os_hash.y;
+    ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
+    int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
+    ivec2 id_hash = ivec2(substance.id, substance.material_id) * p3.xy + p3.zw;
+    hash = base_hash ^ id_hash.x;
 
     // calculate some useful variables for doing lookups
     uint index = hash % work_group_size;
@@ -225,7 +229,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     
     uint hash = ~0;
     patch_t patch_ = patch_t(0, 0, 0, 0);
-    
+
     if (inside_aabb){
         for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
             patch_ = get_patch(r.x, order + tries, sub, intersection, request, hash);
@@ -333,25 +337,25 @@ uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
     workspace[i] = uvec4(hits);
     barrier();
 
-    if ((i &   1) != 0) workspace[i] += workspace[i &   ~1      ];    
+    if ((i &   1u) != 0) workspace[i] += workspace[i &   ~1u       ];
     barrier();
-    if ((i &   2) != 0) workspace[i] += workspace[i &   ~2 |   1];    
+    if ((i &   2u) != 0) workspace[i] += workspace[i &   ~2u |   1u];
     barrier();
-    if ((i &   4) != 0) workspace[i] += workspace[i &   ~4 |   3];    
+    if ((i &   4u) != 0) workspace[i] += workspace[i &   ~4u |   3u];
     barrier();
-    if ((i &   8) != 0) workspace[i] += workspace[i &   ~8 |   7];    
+    if ((i &   8u) != 0) workspace[i] += workspace[i &   ~8u |   7u];
     barrier();
-    if ((i &  16) != 0) workspace[i] += workspace[i &  ~16 |  15];    
+    if ((i &  16u) != 0) workspace[i] += workspace[i &  ~16u |  15u];
     barrier();
-    if ((i &  32) != 0) workspace[i] += workspace[i &  ~32 |  31];    
+    if ((i &  32u) != 0) workspace[i] += workspace[i &  ~32u |  31u];
     barrier();
-    if ((i &  64) != 0) workspace[i] += workspace[i &  ~64 |  63];    
+    if ((i &  64u) != 0) workspace[i] += workspace[i &  ~64u |  63u];
     barrier();
-    if ((i & 128) != 0) workspace[i] += workspace[i & ~128 | 127];    
+    if ((i & 128u) != 0) workspace[i] += workspace[i & ~128u | 127u];
     barrier();
-    if ((i & 256) != 0) workspace[i] += workspace[i & ~256 | 255];    
+    if ((i & 256u) != 0) workspace[i] += workspace[i & ~256u | 255u];
     barrier();
-    if ((i & 512) != 0) workspace[i] += workspace[           511];    
+    if ((i & 512u) != 0) workspace[i] += workspace[             511];
     barrier();
 
     totals = min(uvec4(workspace[1023]), gl_WorkGroupSize.xxxx);
