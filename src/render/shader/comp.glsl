@@ -173,10 +173,11 @@ uint work_group_offset(){
 }
 
 patch_t get_patch(
-    vec3 x, int order, substance_t substance,
+    vec3 x, int order,
     inout intersection_t intersection, inout request_t request,
     out uint hash
 ){
+    substance_t substance = intersection.substance;
     float size = geometry_epsilon * order * 2;
     vec3 x_scaled = x / size;
     ivec3 x_grid = ivec3(floor(x_scaled));
@@ -236,7 +237,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
     if (inside_aabb){
         for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
-            patch_ = get_patch(r.x, order + tries, sub, intersection, request, hash);
+            patch_ = get_patch(r.x, order + tries, intersection, request, hash);
         }
     }
 
@@ -477,15 +478,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_pair.geometry = request;
     request_pair.texture = request;
 
-//    barrier();
-//
+    barrier();
+
 //    if (texture_hash.data[texture_index] != intersection.texture_hash){
-//        request_pair.texture = request;
-////        request_pair.texture.hash = intersection.texture_hash;
-////        request_pair.texture = build_request(intersection, intersection.texture_hash);
+//        request_pair.texture = build_request(intersection, intersection.texture_hash);
 //    }
-//
-//    barrier();
+
+    barrier();
     if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){
         requests.data[request.hash % pc.number_of_calls] = request_pair;
     }
