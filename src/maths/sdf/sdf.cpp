@@ -27,7 +27,7 @@ double sdf_distance(sdf_t *sdf, const vec3 *x) {
     return sdf->distance_function(sdf->data, x);
 }
 
-vec3 srph_sdf_normal(sdf_t *sdf, const vec3 *x) {
+vec3 sdf_normal(sdf_t *sdf, const vec3 *x) {
     vec3 n;
     for (int i = 0; i < 3; i++) {
         vec3 x1 = *x;
@@ -65,7 +65,7 @@ double srph_sdf_project(sdf_t *sdf, const vec3 *d) {
     }
 }
 
-double srph_sdf_volume(sdf_t *sdf) {
+double sdf_volume(sdf_t *sdf) {
     if (sdf->volume < 0.0) {
         int hits = 0;
 
@@ -123,8 +123,8 @@ double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
         vec3 x2 = *x;
         x2.v[axis] += epsilon;
 
-        vec3 n1 = srph_sdf_normal(sdf, &x1);
-        vec3 n2 = srph_sdf_normal(sdf, &x2);
+        vec3 n1 = sdf_normal(sdf, &x1);
+        vec3 n2 = sdf_normal(sdf, &x2);
         vec3_subtract(&ns[axis], &n2, &n1);
 
         vec3_divide_f(&ns[axis], &ns[axis], epsilon * 2);

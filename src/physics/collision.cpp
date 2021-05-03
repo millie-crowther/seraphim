@@ -98,7 +98,7 @@ static double intersection_func(void *data, const vec3 *x) {
 //        return 0;
 //    }
 //
-//    vec3 n = srph_sdf_normal(a->sdf, &xa);
+//    vec3 n = sdf_normal(a->sdf, &xa);
 //
 //    srph::vec3_t n1(n.x, n.y, n.z);
 //    n1 = a->get_rotation() * n1;
@@ -146,10 +146,10 @@ static void contact_correct(substance_t *sa, substance_t *sb, deform_t *xb,
     vec3 n;
     if (srph_sdf_discontinuity(a->sdf, &xa) <
         srph_sdf_discontinuity(b->sdf, &xb->x0)) {
-        n = srph_sdf_normal(a->sdf, &xa);
+        n = sdf_normal(a->sdf, &xa);
         matter_to_global_direction(a, NULL, &n, &n);
     } else {
-        n = srph_sdf_normal(b->sdf, &xb->x0);
+        n = sdf_normal(b->sdf, &xb->x0);
         vec3_negative(&n, &n);
         matter_to_global_direction(b, NULL, &n, &n);
     }
@@ -277,7 +277,7 @@ static void collision_resolve_interpenetration_constraint(collision_t *c) {
 
             double phi = sdf_distance(a->sdf, &xa) + sdf_distance(b->sdf, &d->x0);
             if (phi <= 0) {
-                vec3 n = srph_sdf_normal(a->sdf, &xa);
+                vec3 n = sdf_normal(a->sdf, &xa);
                 matter_to_global_direction(a, NULL, &n, &n);
                 vec3_multiply_f(&n, &n, -phi * ratio);
                 srph_transform_translate(&b->transform, &n);

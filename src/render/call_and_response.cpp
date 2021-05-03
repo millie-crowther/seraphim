@@ -14,7 +14,7 @@ request_t::request_t() {
     status = null_status;
 }
 
-bool request_t::is_valid() const { return _1 != static_cast<uint32_t>(~0); }
+bool request_t::is_valid() const { return status != null_status; }
 
 response_t::response_t() {}
 
@@ -36,7 +36,7 @@ response_t::response_t(const request_t &call, substance_t *substance) {
             contains_mask |= 1 << o;
         }
 
-        vec3 n1 = srph_sdf_normal(sdf, &d1);
+        vec3 n1 = sdf_normal(sdf, &d1);
         vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;
 
         normals[o] = squash(vec4_t(n, 0.0));
@@ -51,7 +51,7 @@ response_t::response_t(const request_t &call, substance_t *substance) {
     vec3 c1 = {{c[0], c[1], c[2]}};
     float phi = static_cast<float>(sdf_distance(sdf, &c1));
 
-    vec3 n1 = srph_sdf_normal(sdf, &c1);
+    vec3 n1 = sdf_normal(sdf, &c1);
     vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;
     uint32_t np = squash(vec4_t(n, 0.0));
 

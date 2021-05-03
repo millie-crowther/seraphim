@@ -75,7 +75,7 @@ struct buffer_t {
         region.dstOffset = 0;
         region.size = size;
         vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->buffer, 1, &region);
-        vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
+        vkCmdFillBuffer(command_buffer, buffer, 0, size, 0);
     }
 
     VkWriteDescriptorSet

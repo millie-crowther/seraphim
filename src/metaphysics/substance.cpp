@@ -264,7 +264,7 @@ vec3 *substance_com(substance_t *self) {
 }
 
 double substance_mass(substance_t *self) {
-    return matter_average_density(&self->matter) * srph_sdf_volume(self->matter.sdf);
+    return matter_average_density(&self->matter) * sdf_volume(self->matter.sdf);
 }
 
 void substance_calculate_sphere_bound(substance_t *self, double dt) {

@@ -33,8 +33,8 @@ typedef struct sdf_t {
 void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data);
 
 double sdf_distance(sdf_t *sdf, const vec3 *x);
-vec3 srph_sdf_normal(sdf_t *sdf, const vec3 *x);
-double srph_sdf_volume(sdf_t *sdf);
+vec3 sdf_normal(sdf_t *sdf, const vec3 *x);
+double sdf_volume(sdf_t *sdf);
 double srph_sdf_project(sdf_t *sdf, const vec3 *d);
 bool srph_sdf_contains(sdf_t *sdf, const vec3 *x);
 bound3_t *srph_sdf_bound(sdf_t *sdf);
