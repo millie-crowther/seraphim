@@ -196,7 +196,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != geometry_hash){
-            request = build_request(cell_position, size / 2, geometry_hash, geometry_hash, substance, geometry_status);
+            request = build_request(cell_position, size / 2, geometry_hash, geometry_hash, substance, geometry_status | texture_status);
         }
     }
 

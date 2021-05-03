@@ -30,6 +30,9 @@ struct call_t {
 
 uint32_t call_geometry_index(const call_t *call);
 uint32_t call_texture_index(const call_t *call);
+bool call_is_geometry(const call_t *self);
+bool call_is_texture(const call_t *self);
+
 
 struct patch_t {
     uint32_t contents;

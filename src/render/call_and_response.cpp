@@ -8,9 +8,13 @@ vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
                       vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
                       vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
 
+static const uint32_t null_status = 0;
+static const uint32_t geometry_status = 1;
+static const uint32_t texture_status = 2;
+
 call_t::call_t() {
     geometry_hash = ~0;
-    status = 0;
+    status = null_status;
 }
 
 bool call_t::is_valid() const { return geometry_hash != static_cast<uint32_t>(~0); }
@@ -88,4 +92,12 @@ uint32_t call_geometry_index(const call_t *call) {
 
 uint32_t call_texture_index(const call_t *call) {
     return call->texture_hash % texture_pool_size;
+}
+
+bool call_is_geometry(const call_t *self) {
+    return (self->status & geometry_status) != 0;
+}
+
+bool call_is_texture(const call_t *self) {
+    return (self->status & texture_status) != 0;
 }
