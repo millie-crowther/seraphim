@@ -126,7 +126,7 @@ layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substanc
 layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
 layout (binding = 6) buffer frustum_buffer      { vec2        data[]; } frustum;
 layout (binding = 7) buffer lighting_buffer     { vec4        data[]; } lighting;
-layout (binding = 8) buffer texture_hash_buffer { uvec2       data[]; } texture_hash;
+layout (binding = 8) buffer texture_hash_buffer { uint        data[]; } texture_hash;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;

@@ -112,6 +112,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
             frustum_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             lighting_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            texture_hash_buffer.get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
@@ -515,7 +517,9 @@ void renderer_t::create_descriptor_set_layout() {
         call_buffer.get_descriptor_set_layout_binding(),
         pointer_buffer.get_descriptor_set_layout_binding(),
         frustum_buffer.get_descriptor_set_layout_binding(),
-        lighting_buffer.get_descriptor_set_layout_binding()};
+        lighting_buffer.get_descriptor_set_layout_binding(),
+        texture_hash_buffer.get_descriptor_set_layout_binding(),
+    };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -692,6 +696,8 @@ void renderer_t::handle_requests(uint32_t frame) {
                             texture_index / patch_image_size / patch_image_size) *
                     patch_sample_size;
 
+            texture_hash_buffer.write(&call.texture_hash, 1, texture_index);
+
             normal_texture->write(p, response.normals);
             colour_texture->write(p, response.colours);
         }
@@ -710,7 +716,7 @@ void renderer_t::create_buffers() {
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
     buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
-    buffer_create(&texture_hash_buffer, 8, device, c, true, sizeof(uint64_t));
+    buffer_create(&texture_hash_buffer, 8, device, texture_pool_size, true, sizeof(uint32_t));
 }
 
 response_t renderer_t::get_response(const call_t &call, substance_t *substance) {

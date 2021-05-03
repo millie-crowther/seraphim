@@ -42,6 +42,10 @@ struct buffer_t {
     }
 
     void write(const void *source, size_t number, uint64_t offset) {
+        if (number == 0){
+            return;
+        }
+
         if (element_size * (offset + number) > size + 1) {
             throw std::runtime_error("Error: Invalid buffer write.");
         }
