@@ -24,8 +24,8 @@ struct request_t {
     bool is_valid() const;
 };
 
-uint32_t call_geometry_index(const request_t *call);
-uint32_t call_texture_index(const request_t *call);
+uint32_t request_geometry_index(const request_t *call);
+uint32_t request_texture_index(const request_t *call);
 
 struct request_pair_t {
     request_t geometry;

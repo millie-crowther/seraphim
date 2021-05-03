@@ -145,11 +145,10 @@ shared bool test;
 request_t build_request(
     intersection_t intersection,
     uint texture_hash,
-    uint geometry_hash,
     substance_t substance,
     uint status
 ){
-    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, texture_hash, geometry_hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
+    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, texture_hash, 0, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
 }
 
 vec2 uv(vec2 xy){
@@ -203,7 +202,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(intersection, hash, hash, substance, geometry_status | texture_status);
+            request = build_request(intersection, hash, substance, geometry_status | texture_status);
         }
     }
 

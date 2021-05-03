@@ -8,11 +8,9 @@ vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
                       vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
 
 static const uint32_t null_status = 0;
-static const uint32_t geometry_status = 1;
-static const uint32_t texture_status = 2;
 
 request_t::request_t() {
-    _1 = ~0;
+    hash = ~0;
     status = null_status;
 }
 
@@ -58,7 +56,7 @@ response_t::response_t(const request_t &call, substance_t *substance) {
     uint32_t np = squash(vec4_t(n, 0.0));
 
     uint32_t x_elem = contains_mask << 16;
-    patch = {x_elem, call._1, phi, np};
+    patch = {x_elem, call.hash, phi, np};
 }
 
 uint32_t response_t::squash(const vec4_t &x) const {
@@ -69,11 +67,11 @@ uint32_t response_t::squash(const vec4_t &x) const {
     return *reinterpret_cast<uint32_t *>(bytes);
 }
 
-uint32_t call_geometry_index(const request_t *call) {
+uint32_t request_geometry_index(const request_t *call) {
     return call->hash % geometry_pool_size;
 }
 
-uint32_t call_texture_index(const request_t *call) {
+uint32_t request_texture_index(const request_t *call) {
     return call->hash % texture_pool_size;
 }
 
