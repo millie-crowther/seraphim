@@ -34,8 +34,8 @@ struct request_t {
     vec3 position;
     float radius;
 
-    uint texture_hash;
-    uint geometry_hash;
+    uint hash;
+    uint _1;
     uint substanceID;
     uint status;
 
@@ -177,7 +177,7 @@ uint work_group_offset(){
 patch_t get_patch(
     vec3 x, int order, substance_t substance,
     inout intersection_t intersection, inout request_t request,
-    out uint geometry_hash
+    out uint hash
 ){
     float size = geometry_epsilon * order * 2;
     vec3 x_scaled = x / size;
@@ -186,11 +186,11 @@ patch_t get_patch(
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
     ivec2 id_hashes = base_hash ^ ivec2(substance.id, substance.material_id);
-    geometry_hash = id_hashes.x;
+    hash = id_hashes.x;
 
     // calculate some useful variables for doing lookups
-    uint index = geometry_hash % work_group_size;
-    uint geometry_index = geometry_hash % pc.geometry_pool_size;
+    uint index = hash % work_group_size;
+    uint geometry_index = hash % pc.geometry_pool_size;
 
     vec3 cell_position = x_grid * size;
     uvec4 udata = floatBitsToUint(workspace[index]);
@@ -199,11 +199,11 @@ patch_t get_patch(
     intersection.cell_radius = size / 2;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 
-    if (patch_.hash != geometry_hash) {
+    if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
-        if (patch_.hash != geometry_hash){
-            request = build_request(intersection, geometry_hash, geometry_hash, substance, geometry_status | texture_status);
+        if (patch_.hash != hash){
+            request = build_request(intersection, hash, hash, substance, geometry_status | texture_status);
         }
     }
 
@@ -477,7 +477,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != null_status){
-        requests.data[request.geometry_hash % pc.number_of_calls] = request_pair_t(request, request);
+        requests.data[request.hash % pc.number_of_calls] = request_pair_t(request, request);
     }
 }
 
