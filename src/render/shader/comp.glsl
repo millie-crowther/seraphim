@@ -72,9 +72,8 @@ const int max_steps = 128;
 const int max_hash_retries = 10;
 const float geometry_epsilon = 1.0 / 300.0;
 
-const uint null_status = 0;
-const uint geometry_status = 1;
-const uint texture_status = 2;
+const uint null_request = 0;
+const uint active_request = 1;
 
 const ivec4 p1 = ivec4(
     904601,
@@ -148,7 +147,11 @@ request_t build_request(
     substance_t substance,
     uint status
 ){
-    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, hash, 0, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
+    return request_t(
+        intersection.patch_centre - intersection.cell_radius,
+        intersection.cell_radius, hash, 0, substance.id, status,
+        substance.sdf_id, substance.material_id, uvec2(0)
+    );
 }
 
 vec2 uv(vec2 xy){
@@ -202,7 +205,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(intersection, hash, substance, geometry_status | texture_status);
+            request = build_request(intersection, hash, substance, active_request);
         }
     }
 
@@ -403,7 +406,7 @@ vec4 reduce_min(uint i, vec4 value){
 
 void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_t request;
-    request.status = null_status;
+    request.status = null_request;
 
     vec3 rx = pc.eye_transform[3].xyz;
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
@@ -481,7 +484,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 //
 //    }
 
-    if (request_pair.geometry.status != null_status || request_pair.texture.status != null_status){
+    if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){
         requests.data[request.hash % pc.number_of_calls] = request_pair;
     }
 
