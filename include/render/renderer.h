@@ -46,9 +46,6 @@ static const uint32_t patch_sample_size = 2;
 static const uint32_t max_cache_size = 1000;
 
 struct renderer_t {
-    std::set<uint32_t> indices;
-    std::set<uint32_t> hashes;
-
     // fields
     srph::u32vec2_t work_group_count;
     srph::u32vec2_t work_group_size;

@@ -15,8 +15,6 @@ call_t::call_t() {
 
 bool call_t::is_valid() const { return geometry_hash != static_cast<uint32_t>(~0); }
 
-uint32_t call_t::get_index() const { return geometry_hash % geometry_pool_size; }
-
 bool call_t::comparator_t::operator()(const call_t &a, const call_t &b) const {
     if (a.substanceID != b.substanceID) {
         return a.substanceID < b.substanceID;
@@ -82,4 +80,12 @@ uint32_t response_t::squash(const vec4_t &x) const {
         bytes[i] = (uint8_t)(fmax(0.0, fmin(x[i] * 255.0, 255.0)));
     }
     return *reinterpret_cast<uint32_t *>(bytes);
+}
+
+uint32_t call_geometry_index(const call_t *call) {
+    return call->geometry_hash % geometry_pool_size;
+}
+
+uint32_t call_texture_index(const call_t *call) {
+    return call->texture_hash % texture_pool_size;
 }

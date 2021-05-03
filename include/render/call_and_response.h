@@ -10,14 +10,14 @@ struct call_t {
     srph::f32vec3_t position;
     float radius;
 
-    uint32_t _3;
+    uint32_t texture_hash;
     uint32_t geometry_hash;
     uint32_t substanceID;
     uint32_t status;
 
     uint32_t sdf_id;
     uint32_t material_id;
-    uint64_t texture_hash;
+    uint64_t __unused;
 
     struct comparator_t {
         bool operator()(const call_t &a, const call_t &b) const;
@@ -25,9 +25,11 @@ struct call_t {
 
     call_t();
 
-    uint32_t get_index() const;
     bool is_valid() const;
 };
+
+uint32_t call_geometry_index(const call_t *call);
+uint32_t call_texture_index(const call_t *call);
 
 struct patch_t {
     uint32_t contents;

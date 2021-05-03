@@ -34,14 +34,14 @@ struct request_t {
     vec3 position;
     float radius;
 
-    uint index;
-    uint hash;
+    uint texture_hash;
+    uint geometry_hash;
     uint substanceID;
     uint status;
 
     uint sdf_id;
     uint material_id;
-    uvec2 texture_hash;
+    uvec2 _unused;
 };
 
 struct light_t {
@@ -140,12 +140,12 @@ shared bool test;
 request_t build_request(
     vec3 position,
     float radius,
-    uint index,
-    uint hash,
+    uint texture_hash,
+    uint geometry_hash,
     substance_t substance,
     uint status
 ){
-    return request_t(position, radius, index, hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
+    return request_t(position, radius, texture_hash, geometry_hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
 }
 
 vec2 uv(vec2 xy){
@@ -173,7 +173,7 @@ uint work_group_offset(){
 patch_t get_patch(
     vec3 x, int order, substance_t substance,
     inout intersection_t intersection, inout request_t request,
-    out uint hash
+    out uint geometry_hash
 ){
     float size = geometry_epsilon * order * 2;
     vec3 x_scaled = x / size;
@@ -182,27 +182,27 @@ patch_t get_patch(
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
     ivec2 id_hash = ivec2(substance.id, substance.material_id) * p3.xy + p3.zw;
-    hash = base_hash ^ id_hash.x;
+    geometry_hash = base_hash ^ id_hash.x;
 
     // calculate some useful variables for doing lookups
-    uint index = hash % work_group_size;
-    uint geometry_index = hash % pc.geometry_pool_size;
+    uint index = geometry_hash % work_group_size;
+    uint geometry_index = geometry_hash % pc.geometry_pool_size;
 
     vec3 cell_position = x_grid * size;
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
-    if (patch_.hash != hash) {
+    if (patch_.hash != geometry_hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
-        if (patch_.hash != hash){
-            request = build_request(cell_position, size / 2, geometry_index, hash, substance, geometry_status);
+        if (patch_.hash != geometry_hash){
+            request = build_request(cell_position, size / 2, geometry_hash, geometry_hash, substance, geometry_status);
         }
     }
 
     intersection.cell_radius = size / 2;
     intersection.geometry_index = geometry_index;
-    intersection.texture_index = hash % pc.texture_pool_size;
+    intersection.texture_index = geometry_hash % pc.texture_pool_size;
     intersection.alpha = x_scaled - x_grid;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 
@@ -472,7 +472,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != null_status){
-        requests.data[request.hash % pc.number_of_calls] = request;
+        requests.data[request.geometry_hash % pc.number_of_calls] = request;
     }
 }
 

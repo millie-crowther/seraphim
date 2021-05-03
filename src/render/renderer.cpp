@@ -680,21 +680,20 @@ void renderer_t::handle_requests(uint32_t frame) {
             }
             auto response = get_response(call, &substances[substance_index]);
             auto patch = response.patch;
-            patch_buffer.write(&patch, 1, call.get_index());
+            uint32_t geometry_index = call_geometry_index(&call);
+//            uint32_t texture_index = call_texture_index(&call);
+            patch_buffer.write(&patch, 1, geometry_index);
 
             u32vec3_t p =
-                u32vec3_t(
-                    call.get_index() % patch_image_size,
-                    (call.get_index() % (patch_image_size * patch_image_size)) /
-                        patch_image_size,
-                    call.get_index() / patch_image_size / patch_image_size) *
-                patch_sample_size;
+                    u32vec3_t(
+                            geometry_index % patch_image_size,
+                    (geometry_index % (patch_image_size * patch_image_size)) /
+                    patch_image_size,
+                            geometry_index / patch_image_size / patch_image_size) *
+                    patch_sample_size;
 
             normal_texture->write(p, response.normals);
             colour_texture->write(p, response.colours);
-
-            indices.insert(call.get_index());
-            hashes.insert(call.geometry_hash);
         }
     }
 }
