@@ -141,10 +141,7 @@ shared uint lights_size;
 shared vec4 workspace[work_group_size];
 shared bool test;
 
-request_t build_request(
-    intersection_t intersection,
-    uint hash
-){
+request_t build_request(intersection_t intersection, uint hash){
     substance_t substance = intersection.substance;
     return request_t(
         intersection.patch_centre - intersection.cell_radius,
@@ -186,7 +183,7 @@ patch_t get_patch(
 
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
-    ivec2 id_hashes = base_hash ^ ivec2(substance.id, substance.material_id);
+    ivec2 id_hashes = base_hash ^ ivec2(substance.id, substance.id);
     hash = id_hashes.x;
 
     // calculate some useful variables for doing lookups
@@ -445,13 +442,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-    uint k = intersection.geometry_index;
+    uint texture_index = intersection.texture_hash % pc.texture_pool_size;
     vec3 t = intersection.alpha * 0.5 + 0.25;
 
     t += vec3(
-        k % pc.texture_size,
-        (k % (pc.texture_size * pc.texture_size)) / pc.texture_size,
-        k / pc.texture_size / pc.texture_size
+        texture_index % pc.texture_size,
+        (texture_index % (pc.texture_size * pc.texture_size)) / pc.texture_size,
+        texture_index / pc.texture_size / pc.texture_size
     );
     t /= vec3(pc.texture_size, pc.texture_size, pc.texture_depth);
     
@@ -480,14 +477,18 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     request_pair.geometry = request;
     request_pair.texture = request;
 
-//    if (texture_hash.data[intersection.texture_hash % pc.texture_pool_size] != intersection.texture_hash){
+//    barrier();
 //
+//    if (texture_hash.data[texture_index] != intersection.texture_hash){
+//        request_pair.texture = request;
+////        request_pair.texture.hash = intersection.texture_hash;
+////        request_pair.texture = build_request(intersection, intersection.texture_hash);
 //    }
-
+//
+//    barrier();
     if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){
         requests.data[request.hash % pc.number_of_calls] = request_pair;
     }
-
 }
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 

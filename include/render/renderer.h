@@ -48,7 +48,7 @@ struct renderer_t {
     // fields
     srph::u32vec2_t work_group_count;
     srph::u32vec2_t work_group_size;
-    uint32_t patch_image_size;
+    uint32_t texture_size;
     push_constant_t push_constants;
     device_t *device;
     std::vector<VkFramebuffer> framebuffers;

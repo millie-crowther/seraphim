@@ -21,7 +21,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
     this->substances = substances;
     this->num_substances = num_substances;
 
-    patch_image_size = max_image_size / patch_sample_size;
+    texture_size = max_image_size / patch_sample_size;
 
     start = std::chrono::high_resolution_clock::now();
 
@@ -29,17 +29,17 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
 
     current_frame = 0;
     push_constants.current_frame = 0;
-    push_constants.render_distance = rho;
+    push_constants.render_distance = (float) rho;
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
     push_constants.number_of_calls = number_of_calls;
-    push_constants.texture_size = patch_image_size;
+    push_constants.texture_size = texture_size;
     push_constants.texture_depth =
-        texture_pool_size / patch_image_size / patch_image_size + 1;
+            texture_pool_size / texture_size / texture_size + 1;
     push_constants.geometry_pool_size = geometry_pool_size;
     push_constants.texture_pool_size = texture_pool_size;
-    push_constants.epsilon = epsilon;
+    push_constants.epsilon = (float) epsilon;
 
     set_main_camera(test_camera);
 
@@ -54,8 +54,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
     create_render_pass();
 
     u32vec3_t size =
-        u32vec3_t(patch_image_size, patch_image_size, push_constants.texture_depth) *
-        patch_sample_size;
+            u32vec3_t(texture_size, texture_size, push_constants.texture_depth) *
+            patch_sample_size;
 
     normal_texture = std::make_unique<texture_t>(
         11, device, size, VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -687,7 +687,7 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
         }
         auto response = response_t(*request, &renderer->substances[substance_index]);
         uint32_t index = request_texture_index(request);
-        uint32_t patch_image_size = renderer->patch_image_size;
+        uint32_t patch_image_size = renderer->texture_size;
         u32vec3_t p = u32vec3_t(
             index % patch_image_size,
             (index % (patch_image_size * patch_image_size)) / patch_image_size,
