@@ -612,6 +612,7 @@ void renderer_t::render() {
             substance_buffer.record_write(command_buffer);
             patch_buffer.record_write(command_buffer);
             light_buffer.record_write(command_buffer);
+            texture_hash_buffer.record_write(command_buffer);
             normal_texture->record_write(command_buffer);
             colour_texture->record_write(command_buffer);
             vkCmdPushConstants(command_buffer, compute_pipeline_layout,
