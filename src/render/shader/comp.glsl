@@ -143,13 +143,12 @@ shared bool test;
 
 request_t build_request(
     intersection_t intersection,
-    uint hash,
-    substance_t substance,
-    uint status
+    uint hash
 ){
+    substance_t substance = intersection.substance;
     return request_t(
         intersection.patch_centre - intersection.cell_radius,
-        intersection.cell_radius, hash, 0, substance.id, status,
+        intersection.cell_radius, hash, 0, substance.id, active_request,
         substance.sdf_id, substance.material_id, uvec2(0)
     );
 }
@@ -205,7 +204,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(intersection, hash, substance, active_request);
+            request = build_request(intersection, hash);
         }
     }
 
@@ -236,14 +235,13 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     
     uint hash = ~0;
     patch_t patch_ = patch_t(0, 0, 0, 0);
+    intersection.substance = sub;
 
     if (inside_aabb){
         for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
             patch_ = get_patch(r.x, order + tries, sub, intersection, request, hash);
         }
     }
-    
-    intersection.substance = sub;
 
     vec3 n = vec3((patch_.normal >> uvec3(0, 8, 16)) & 0xFF) / 127.5 - 1;
     float e = dot(intersection.patch_centre - r.x, n) - patch_.phi;
@@ -478,7 +476,9 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
-    request_pair_t request_pair = request_pair_t(request, request);
+    request_pair_t request_pair;
+    request_pair.geometry = request;
+    request_pair.texture = request;
 
 //    if (texture_hash.data[intersection.texture_hash % pc.texture_pool_size] != intersection.texture_hash){
 //
