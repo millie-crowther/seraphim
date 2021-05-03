@@ -43,7 +43,6 @@ struct push_constant_t {
 static const uint8_t frames_in_flight = 2;
 static const uint32_t number_of_calls = 2048;
 static const uint32_t patch_sample_size = 2;
-static const uint32_t max_cache_size = 1000;
 
 struct renderer_t {
     // fields
@@ -136,11 +135,9 @@ struct renderer_t {
 
     void cleanup_swapchain();
 
-    void handle_requests(uint32_t frame);
+    void handle_requests();
 
     void present(uint32_t image_index) const;
-
-    response_t get_response(const call_t &call, substance_t *substance);
 
     // constructors and destructors
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances,

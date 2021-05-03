@@ -605,7 +605,7 @@ void renderer_t::render() {
         device->device, swapchain->get_handle(), ~static_cast<uint64_t>(0),
         image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
 
-    handle_requests(current_frame);
+    handle_requests();
 
     compute_command_pool
         ->one_time_buffer([&](auto command_buffer) {
@@ -666,7 +666,7 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
     main_camera = camera;
 }
 
-void renderer_t::handle_requests(uint32_t frame) {
+void renderer_t::handle_requests() {
     vkDeviceWaitIdle(device->device);
 
     std::vector<call_t> calls(number_of_calls);
@@ -683,7 +683,7 @@ void renderer_t::handle_requests(uint32_t frame) {
             if (substance_index >= *num_substances) {
                 continue;
             }
-            auto response = get_response(call, &substances[substance_index]);
+            auto response = response_t(call, &substances[substance_index]);
             auto patch = response.patch;
             if (call_is_geometry(&call)){
                 uint32_t geometry_index = call_geometry_index(&call);
@@ -722,22 +722,6 @@ void renderer_t::create_buffers() {
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
     buffer_create(&texture_hash_buffer, 8, device, texture_pool_size, true,
                   sizeof(uint32_t));
-}
-
-response_t renderer_t::get_response(const call_t &call, substance_t *substance) {
-    if (response_cache.size() > max_cache_size) {
-        response_cache.erase(*prev_calls.begin());
-        prev_calls.pop_front();
-    }
-
-    if (response_cache.count(call) == 0) {
-        auto result = response_cache.emplace(call, response_t(call, substance));
-        if (std::get<1>(result)) {
-            prev_calls.push_back(std::get<0>(result));
-        }
-    }
-
-    return response_cache[call];
 }
 
 int renderer_t::get_frame_count() {
