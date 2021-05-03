@@ -12,14 +12,14 @@
 #include <set>
 
 #include "core/buffer.h"
-#include "ui/window.h"
+#include "core/command.h"
+#include "metaphysics/substance.h"
+#include "render/call_and_response.h"
 #include "render/camera.h"
 #include "render/light.h"
 #include "render/swapchain.h"
 #include "render/texture.h"
-#include "core/command.h"
-#include "metaphysics/substance.h"
-#include "render/call_and_response.h"
+#include "ui/window.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -62,7 +62,7 @@ struct renderer_t {
 
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
-    std::vector<std::shared_ptr<srph::command_buffer_t >> command_buffers;
+    std::vector<std::shared_ptr<srph::command_buffer_t>> command_buffers;
 
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
@@ -107,10 +107,11 @@ struct renderer_t {
     buffer_t frustum_buffer;
     buffer_t lighting_buffer;
 
-    std::map<srph::call_t, srph::response_t,
-            srph::call_t::comparator_t> response_cache;
+    std::map<srph::call_t, srph::response_t, srph::call_t::comparator_t>
+        response_cache;
     std::__cxx11::list<std::map<srph::call_t, srph::response_t,
-            srph::call_t::comparator_t>::iterator> prev_calls;
+                                srph::call_t::comparator_t>::iterator>
+        prev_calls;
 
     std::chrono::high_resolution_clock::time_point start;
 
@@ -144,16 +145,14 @@ struct renderer_t {
 
     void present(uint32_t image_index) const;
 
-    srph::response_t get_response(const srph::call_t &call,
-                                  substance_t *substance);
+    srph::response_t get_response(const srph::call_t &call, substance_t *substance);
 
     // constructors and destructors
-    renderer_t(device_t *device,
-               substance_t *substances, uint32_t *num_substances,
+    renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances,
                VkSurfaceKHR surface, srph::window_t *window,
                std::shared_ptr<srph::camera_t> test_camera,
-               srph::u32vec2_t work_group_count,
-               srph::u32vec2_t work_group_size, uint32_t max_image_size);
+               srph::u32vec2_t work_group_count, srph::u32vec2_t work_group_size,
+               uint32_t max_image_size);
 
     ~renderer_t();
 

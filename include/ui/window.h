@@ -10,27 +10,28 @@
 #include "ui/mouse.h"
 
 namespace srph {
-	struct window_t {
-		// private fields
-		u32vec2_t size;
-		GLFWwindow *window;
-		  std::unique_ptr < keyboard_t > keyboard;
-		  std::unique_ptr < mouse_t > mouse;
+struct window_t {
+    // private fields
+    u32vec2_t size;
+    GLFWwindow *window;
+    std::unique_ptr<keyboard_t> keyboard;
+    std::unique_ptr<mouse_t> mouse;
 
-		// constructors and destructors
-		  window_t(u32vec2_t size);
-		 ~window_t();
+    // constructors and destructors
+    window_t(u32vec2_t size);
+    ~window_t();
 
-		void show();
+    void show();
 
-		// accessors
-		GLFWwindow *get_window() const;
-		u32vec2_t get_size() const;
-		bool should_close() const;
+    // accessors
+    GLFWwindow *get_window() const;
+    u32vec2_t get_size() const;
+    bool should_close() const;
 
-		  keyboard_t & get_keyboard() const;
-		  mouse_t & get_mouse() const;
-	};
-} void window_set_title(srph::window_t * window, const char *title);
+    keyboard_t &get_keyboard() const;
+    mouse_t &get_mouse() const;
+};
+} // namespace srph
+void window_set_title(srph::window_t *window, const char *title);
 
 #endif

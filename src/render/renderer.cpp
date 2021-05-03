@@ -1,7 +1,7 @@
 #include "render/renderer.h"
 
-#include "render/texture.h"
 #include "core/constant.h"
+#include "render/texture.h"
 
 #include <chrono>
 #include <stdexcept>
@@ -9,11 +9,11 @@
 
 using namespace srph;
 
-renderer_t::renderer_t(device_t *device,
-                       substance_t *substances, uint32_t *num_substances,
-                       VkSurfaceKHR surface, window_t *window,
-                       std::shared_ptr<camera_t> test_camera,
-                       u32vec2_t work_group_count, u32vec2_t work_group_size, uint32_t max_image_size) {
+renderer_t::renderer_t(device_t *device, substance_t *substances,
+                       uint32_t *num_substances, VkSurfaceKHR surface,
+                       window_t *window, std::shared_ptr<camera_t> test_camera,
+                       u32vec2_t work_group_count, u32vec2_t work_group_size,
+                       uint32_t max_image_size) {
     this->device = device;
     this->surface = surface;
     this->work_group_count = work_group_count;
@@ -36,7 +36,7 @@ renderer_t::renderer_t(device_t *device,
     push_constants.number_of_calls = number_of_calls;
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth =
-            geometry_pool_size / patch_image_size / patch_image_size + 1;
+        geometry_pool_size / patch_image_size / patch_image_size + 1;
     push_constants.geometry_pool_size = geometry_pool_size;
     push_constants.texture_pool_size = texture_pool_size;
     push_constants.epsilon = epsilon;
@@ -49,81 +49,69 @@ renderer_t::renderer_t(device_t *device,
     vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
 
     swapchain =
-            std::make_unique<swapchain_t>(device,
-                                          push_constants.window_size, surface);
+        std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
 
     create_render_pass();
 
-    u32vec3_t size = u32vec3_t(patch_image_size,
-                               patch_image_size,
-                               push_constants.texture_depth) * patch_sample_size;
+    u32vec3_t size =
+        u32vec3_t(patch_image_size, patch_image_size, push_constants.texture_depth) *
+        patch_sample_size;
 
-    normal_texture = std::make_unique<texture_t>(11, device, size,
-                                                 VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                 static_cast <
-                                                         VkFormatFeatureFlagBits
-                                                         >
-                                                 (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT
-                                                  |
-                                                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-                                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    normal_texture = std::make_unique<texture_t>(
+        11, device, size, VK_IMAGE_USAGE_SAMPLED_BIT,
+        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                             VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
-    colour_texture = std::make_unique<texture_t>(12, device, size,
-                                                 VK_IMAGE_USAGE_SAMPLED_BIT,
-                                                 static_cast <
-                                                         VkFormatFeatureFlagBits
-                                                         >
-                                                 (VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT
-                                                  |
-                                                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-                                                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    colour_texture = std::make_unique<texture_t>(
+        12, device, size, VK_IMAGE_USAGE_SAMPLED_BIT,
+        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                             VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
+        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
     create_descriptor_set_layout();
     create_graphics_pipeline();
     create_compute_pipeline();
 
     graphics_command_pool =
-            std::make_unique<command_pool_t>(device->device,
-                                             device->graphics_family);
+        std::make_unique<command_pool_t>(device->device, device->graphics_family);
     compute_command_pool =
-            std::make_unique<command_pool_t>(device->device, device->compute_family);
+        std::make_unique<command_pool_t>(device->device, device->compute_family);
 
     create_framebuffers();
     create_descriptor_pool();
     create_sync();
 
-    render_texture =
-            std::make_unique<texture_t>(10, device,
-                                        u32vec3_t(work_group_count[0] *
-                                                  work_group_size[0],
-                                                  work_group_count[1] *
-                                                  work_group_size[1], 1u),
-                                        VK_IMAGE_USAGE_STORAGE_BIT,
-                                        VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    render_texture = std::make_unique<texture_t>(
+        10, device,
+        u32vec3_t(work_group_count[0] * work_group_size[0],
+                  work_group_count[1] * work_group_size[1], 1u),
+        VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
+        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
     std::vector<VkWriteDescriptorSet> write_desc_sets;
-    for (auto descriptor_set:desc_sets) {
-        write_desc_sets.push_back(render_texture->get_descriptor_write
-                (descriptor_set));
-        write_desc_sets.push_back(normal_texture->get_descriptor_write
-                (descriptor_set));
-        write_desc_sets.push_back(colour_texture->get_descriptor_write
-                (descriptor_set));
+    for (auto descriptor_set : desc_sets) {
+        write_desc_sets.push_back(
+            render_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(
+            normal_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(
+            colour_texture->get_descriptor_write(descriptor_set));
 
-        write_desc_sets.push_back(patch_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(substance_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(call_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(light_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(pointer_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(frustum_buffer.get_write_descriptor_set
-                (descriptor_set));
-        write_desc_sets.push_back(lighting_buffer.get_write_descriptor_set
-                (descriptor_set));
+        write_desc_sets.push_back(
+            patch_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            substance_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            call_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            light_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            pointer_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            frustum_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+            lighting_buffer.get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
@@ -133,7 +121,7 @@ renderer_t::renderer_t(device_t *device,
 }
 
 void renderer_t::cleanup_swapchain() {
-    for (auto framebuffer:framebuffers) {
+    for (auto framebuffer : framebuffers) {
         vkDestroyFramebuffer(device->device, framebuffer, NULL);
     }
 
@@ -176,7 +164,7 @@ renderer_t::~renderer_t() {
 void renderer_t::create_compute_pipeline() {
     VkPushConstantRange push_const_range = {};
     push_const_range.stageFlags =
-            VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
     push_const_range.size = sizeof(push_constant_t);
     push_const_range.offset = 0;
 
@@ -187,29 +175,28 @@ void renderer_t::create_compute_pipeline() {
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
-    if (vkCreatePipelineLayout
-                (device->device, &pipeline_layout_info, NULL,
-                 &compute_pipeline_layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(device->device, &pipeline_layout_info, NULL,
+                               &compute_pipeline_layout) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
     char *compute_shader_code =
-            file_load_text("../src/render/shader/comp.glsl", NULL);
+        file_load_text("../src/render/shader/comp.glsl", NULL);
     VkShaderModule module = create_shader_module(compute_shader_code);
     free(compute_shader_code);
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipeline_create_info.stage.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     pipeline_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     pipeline_create_info.stage.module = module;
     pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
 
-    if (vkCreateComputePipelines
-                (device->device, VK_NULL_HANDLE, 1, &pipeline_create_info, NULL,
-                 &compute_pipeline) != VK_SUCCESS) {
+    if (vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1,
+                                 &pipeline_create_info, NULL,
+                                 &compute_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create compute pipeline.");
     }
 
@@ -221,8 +208,7 @@ void renderer_t::recreate_swapchain() {
 
     cleanup_swapchain();
     swapchain =
-            std::make_unique<swapchain_t>(device,
-                                          push_constants.window_size, surface);
+        std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
 
     create_render_pass();
     create_graphics_pipeline();
@@ -255,8 +241,8 @@ void renderer_t::create_render_pass() {
     dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-                               | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask =
+        VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
     std::vector<VkAttachmentDescription> attachments = {colour_attachment};
 
@@ -269,8 +255,8 @@ void renderer_t::create_render_pass() {
     render_pass_info.dependencyCount = 1;
     render_pass_info.pDependencies = &dependency;
 
-    if (vkCreateRenderPass
-                (device->device, &render_pass_info, NULL, &render_pass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device->device, &render_pass_info, NULL, &render_pass) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create render pass.");
     }
 }
@@ -291,20 +277,18 @@ void renderer_t::create_graphics_pipeline() {
     frag_create_info.module = frag_shader_module;
     frag_create_info.pName = "main";
 
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {
-            vert_create_info,
-            frag_create_info
-    };
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vert_create_info,
+                                                                  frag_create_info};
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = 0;
     vertex_input_info.vertexAttributeDescriptionCount = 0;
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
     input_assembly.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     input_assembly.primitiveRestartEnable = VK_FALSE;
 
@@ -313,8 +297,8 @@ void renderer_t::create_graphics_pipeline() {
     VkViewport viewport = {};
     viewport.x = 0;
     viewport.y = 0;
-    viewport.width = static_cast < float >(extents.width);
-    viewport.height = static_cast < float >(extents.height);
+    viewport.width = static_cast<float>(extents.width);
+    viewport.height = static_cast<float>(extents.height);
     viewport.minDepth = 0;
     viewport.maxDepth = 1;
 
@@ -344,7 +328,7 @@ void renderer_t::create_graphics_pipeline() {
 
     VkPipelineMultisampleStateCreateInfo multisample_info = {};
     multisample_info.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisample_info.sampleShadingEnable = VK_FALSE;
     multisample_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisample_info.minSampleShading = 1.0f;
@@ -353,9 +337,9 @@ void renderer_t::create_graphics_pipeline() {
     multisample_info.alphaToOneEnable = VK_FALSE;
 
     VkPipelineColorBlendAttachmentState colour_blending = {};
-    colour_blending.colorWriteMask = VK_COLOR_COMPONENT_R_BIT
-                                     | VK_COLOR_COMPONENT_G_BIT
-                                     | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colour_blending.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
     colour_blending.blendEnable = VK_FALSE;
     colour_blending.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
     colour_blending.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -366,7 +350,7 @@ void renderer_t::create_graphics_pipeline() {
 
     VkPipelineColorBlendStateCreateInfo colour_blend_info = {};
     colour_blend_info.sType =
-            VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colour_blend_info.logicOpEnable = VK_FALSE;
     colour_blend_info.logicOp = VK_LOGIC_OP_COPY;
     colour_blend_info.attachmentCount = 1;
@@ -379,7 +363,7 @@ void renderer_t::create_graphics_pipeline() {
 
     VkPushConstantRange push_const_range = {};
     push_const_range.stageFlags =
-            VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
     push_const_range.size = sizeof(push_constant_t);
     push_const_range.offset = 0;
 
@@ -390,11 +374,10 @@ void renderer_t::create_graphics_pipeline() {
     pipeline_layout_info.pushConstantRangeCount = 1;
     pipeline_layout_info.pPushConstantRanges = &push_const_range;
 
-    if (vkCreatePipelineLayout
-                (device->device, &pipeline_layout_info, NULL,
-                 &pipeline_layout) != VK_SUCCESS) {
-        throw std::runtime_error
-                ("Error: Failed to create graphics pipeline layout.");
+    if (vkCreatePipelineLayout(device->device, &pipeline_layout_info, NULL,
+                               &pipeline_layout) != VK_SUCCESS) {
+        throw std::runtime_error(
+            "Error: Failed to create graphics pipeline layout.");
     }
 
     VkPipelineDepthStencilStateCreateInfo depth_stencil = {};
@@ -422,8 +405,8 @@ void renderer_t::create_graphics_pipeline() {
     pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_info.basePipelineIndex = -1;
 
-    if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1,
-                                  &pipeline_info, NULL, &graphics_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipeline_info,
+                                  NULL, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
 
@@ -447,9 +430,8 @@ void renderer_t::create_framebuffers() {
         framebuffer_info.height = extents.height;
         framebuffer_info.layers = 1;
 
-        if (vkCreateFramebuffer
-                    (device->device, &framebuffer_info, NULL,
-                     &framebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(device->device, &framebuffer_info, NULL,
+                                &framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("Error: Failed to create framebuffer.");
         }
     }
@@ -459,45 +441,32 @@ void renderer_t::create_command_buffers() {
     command_buffers.clear();
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++) {
-        command_buffers.push_back(graphics_command_pool->reusable_buffer
-                ([&](auto command_buffer) {
-                     VkRenderPassBeginInfo render_pass_info =
-                             {};
-                     render_pass_info.sType =
-                             VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                     render_pass_info.renderPass = render_pass;
-                     render_pass_info.framebuffer = framebuffers[i];
-                     render_pass_info.renderArea.offset = {0,
-                                                           0
-                     };
-                     render_pass_info.renderArea.extent =
-                             swapchain->get_extents();
-                     vkCmdBeginRenderPass
-                             (command_buffer,
-                              &render_pass_info,
-                              VK_SUBPASS_CONTENTS_INLINE);
-                     vkCmdBindPipeline
-                             (command_buffer,
-                              VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              graphics_pipeline);
-                     vkCmdBindDescriptorSets
-                             (command_buffer,
-                              VK_PIPELINE_BIND_POINT_GRAPHICS,
-                              pipeline_layout, 0, 1, &desc_sets[i], 0, NULL);
-                     vkCmdDraw(command_buffer, 3, 1, 0, 0);
-                     vkCmdEndRenderPass(command_buffer);
-                 }
-                ));
+        command_buffers.push_back(
+            graphics_command_pool->reusable_buffer([&](auto command_buffer) {
+                VkRenderPassBeginInfo render_pass_info = {};
+                render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+                render_pass_info.renderPass = render_pass;
+                render_pass_info.framebuffer = framebuffers[i];
+                render_pass_info.renderArea.offset = {0, 0};
+                render_pass_info.renderArea.extent = swapchain->get_extents();
+                vkCmdBeginRenderPass(command_buffer, &render_pass_info,
+                                     VK_SUBPASS_CONTENTS_INLINE);
+                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  graphics_pipeline);
+                vkCmdBindDescriptorSets(
+                    command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+                    0, 1, &desc_sets[i], 0, NULL);
+                vkCmdDraw(command_buffer, 3, 1, 0, 0);
+                vkCmdEndRenderPass(command_buffer);
+            }));
     }
 }
 
 void renderer_t::create_descriptor_pool() {
     std::vector<VkDescriptorPoolSize> pool_sizes = {
-            {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size()},
-            {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,  swapchain->get_size()},
-            {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                                swapchain->get_size()}
-    };
+        {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, swapchain->get_size()},
+        {VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, swapchain->get_size()},
+        {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, swapchain->get_size()}};
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -505,8 +474,8 @@ void renderer_t::create_descriptor_pool() {
     pool_info.pPoolSizes = pool_sizes.data();
     pool_info.maxSets = swapchain->get_size();
 
-    if (vkCreateDescriptorPool
-                (device->device, &pool_info, NULL, &desc_pool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(device->device, &pool_info, NULL, &desc_pool) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create descriptor pool.");
     }
 
@@ -520,8 +489,8 @@ void renderer_t::create_descriptor_pool() {
     alloc_info.pSetLayouts = layouts.data();
 
     desc_sets.resize(swapchain->get_size());
-    if (vkAllocateDescriptorSets
-                (device->device, &alloc_info, desc_sets.data()) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(device->device, &alloc_info, desc_sets.data()) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to allocate descriptor sets.");
     }
 }
@@ -532,29 +501,28 @@ void renderer_t::create_descriptor_set_layout() {
     image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
     image_layout.descriptorCount = 1;
     image_layout.stageFlags =
-            VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
+        VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
-            image_layout,
-            normal_texture->get_descriptor_layout_binding(),
-            colour_texture->get_descriptor_layout_binding(),
+        image_layout,
+        normal_texture->get_descriptor_layout_binding(),
+        colour_texture->get_descriptor_layout_binding(),
 
-            patch_buffer.get_descriptor_set_layout_binding(),
-            substance_buffer.get_descriptor_set_layout_binding(),
-            light_buffer.get_descriptor_set_layout_binding(),
-            call_buffer.get_descriptor_set_layout_binding(),
-            pointer_buffer.get_descriptor_set_layout_binding(),
-            frustum_buffer.get_descriptor_set_layout_binding(),
-            lighting_buffer.get_descriptor_set_layout_binding()
-    };
+        patch_buffer.get_descriptor_set_layout_binding(),
+        substance_buffer.get_descriptor_set_layout_binding(),
+        light_buffer.get_descriptor_set_layout_binding(),
+        call_buffer.get_descriptor_set_layout_binding(),
+        pointer_buffer.get_descriptor_set_layout_binding(),
+        frustum_buffer.get_descriptor_set_layout_binding(),
+        lighting_buffer.get_descriptor_set_layout_binding()};
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layout_info.bindingCount = layouts.size();
     layout_info.pBindings = layouts.data();
 
-    if (vkCreateDescriptorSetLayout
-                (device->device, &layout_info, NULL, &descriptor_layout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(device->device, &layout_info, NULL,
+                                    &descriptor_layout) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create descriptor set layout.");
     }
 }
@@ -569,22 +537,19 @@ void renderer_t::create_sync() {
 
     uint32_t result = VK_SUCCESS;
     for (int i = 0; i < frames_in_flight; i++) {
+        result |= vkCreateSemaphore(device->device, &create_info, NULL,
+                                    &image_available_semas[i]);
+        result |= vkCreateSemaphore(device->device, &create_info, NULL,
+                                    &render_finished_semas[i]);
+        result |= vkCreateSemaphore(device->device, &create_info, NULL,
+                                    &compute_done_semas[i]);
         result |=
-                vkCreateSemaphore(device->device, &create_info, NULL,
-                                  &image_available_semas[i]);
-        result |=
-                vkCreateSemaphore(device->device, &create_info, NULL,
-                                  &render_finished_semas[i]);
-        result |=
-                vkCreateSemaphore(device->device, &create_info, NULL,
-                                  &compute_done_semas[i]);
-        result |=
-                vkCreateFence(device->device, &fence_info, NULL, &in_flight_fences[i]);
+            vkCreateFence(device->device, &fence_info, NULL, &in_flight_fences[i]);
     }
 
     if (result != VK_SUCCESS) {
-        throw std::runtime_error
-                ("Error: Failed to create synchronisation primitives.");
+        throw std::runtime_error(
+            "Error: Failed to create synchronisation primitives.");
     }
 }
 
@@ -611,8 +576,8 @@ void renderer_t::render() {
     std::vector<data_t> substance_data;
     for (size_t i = 0; i < *num_substances; i++) {
         substance_t *s = &substances[i];
-        substance_data.push_back(s->get_data
-                (&main_camera.lock()->transform.position));
+        substance_data.push_back(
+            s->get_data(&main_camera.lock()->transform.position));
     }
     substance_data.resize(size);
 
@@ -631,57 +596,44 @@ void renderer_t::render() {
     }
 
     uint32_t image_index;
-    vkAcquireNextImageKHR(device->device, swapchain->get_handle(),
-                          ~static_cast < uint64_t > (0),
-                          image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
+    vkAcquireNextImageKHR(
+        device->device, swapchain->get_handle(), ~static_cast<uint64_t>(0),
+        image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
 
     handle_requests(current_frame);
 
-    compute_command_pool->one_time_buffer([&](auto command_buffer) {
-                                              substance_buffer.record_write
-                                                      (command_buffer);
-                                              patch_buffer.record_write
-                                                      (command_buffer);
-                                              light_buffer.record_write
-                                                      (command_buffer);
-                                              normal_texture->record_write
-                                                      (command_buffer);
-                                              colour_texture->record_write
-                                                      (command_buffer);
-                                              vkCmdPushConstants(command_buffer,
-                                                                 compute_pipeline_layout,
-                                                                 VK_SHADER_STAGE_COMPUTE_BIT,
-                                                                 0,
-                                                                 sizeof
-                                                                         (push_constant_t),
-                                                                 &push_constants);
-                                              vkCmdBindPipeline(command_buffer,
-                                                                VK_PIPELINE_BIND_POINT_COMPUTE,
-                                                                compute_pipeline);
-                                              vkCmdBindDescriptorSets
-                                                      (command_buffer,
-                                                       VK_PIPELINE_BIND_POINT_COMPUTE,
-                                                       compute_pipeline_layout, 0, 1,
-                                                       &desc_sets[image_index], 0,
-                                                       NULL);
-                                              vkCmdDispatch(command_buffer,
-                                                            work_group_count[0], work_group_count[1], 1);
-                                              call_buffer.record_read(command_buffer);
-                                          }
-    )->submit(image_available_semas[current_frame],
-              compute_done_semas[current_frame],
-              in_flight_fences[current_frame], VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    compute_command_pool
+        ->one_time_buffer([&](auto command_buffer) {
+            substance_buffer.record_write(command_buffer);
+            patch_buffer.record_write(command_buffer);
+            light_buffer.record_write(command_buffer);
+            normal_texture->record_write(command_buffer);
+            colour_texture->record_write(command_buffer);
+            vkCmdPushConstants(command_buffer, compute_pipeline_layout,
+                               VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                               sizeof(push_constant_t), &push_constants);
+            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                              compute_pipeline);
+            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                    compute_pipeline_layout, 0, 1,
+                                    &desc_sets[image_index], 0, NULL);
+            vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1],
+                          1);
+            call_buffer.record_read(command_buffer);
+        })
+        ->submit(image_available_semas[current_frame],
+                 compute_done_semas[current_frame], in_flight_fences[current_frame],
+                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-    command_buffers[image_index]->submit(compute_done_semas[current_frame],
-                                         render_finished_semas
-                                         [current_frame],
-                                         in_flight_fences[current_frame],
-                                         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+    command_buffers[image_index]->submit(
+        compute_done_semas[current_frame], render_finished_semas[current_frame],
+        in_flight_fences[current_frame],
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     present(image_index);
 
-    vkWaitForFences(device->device, 1, &in_flight_fences[current_frame],
-                    VK_TRUE, ~((uint64_t) 0));
+    vkWaitForFences(device->device, 1, &in_flight_fences[current_frame], VK_TRUE,
+                    ~((uint64_t)0));
     vkResetFences(device->device, 1, &in_flight_fences[current_frame]);
 
     push_constants.current_frame++;
@@ -694,11 +646,11 @@ VkShaderModule renderer_t::create_shader_module(std::string code) {
     VkShaderModuleCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     create_info.codeSize = code.size();
-    create_info.pCode = reinterpret_cast < const uint32_t *>(c_string);
+    create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
 
     VkShaderModule shader_module;
-    if (vkCreateShaderModule
-                (device->device, &create_info, NULL, &shader_module) != VK_SUCCESS) {
+    if (vkCreateShaderModule(device->device, &create_info, NULL, &shader_module) !=
+        VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create shader module.");
     }
     return shader_module;
@@ -719,7 +671,7 @@ void renderer_t::handle_requests(uint32_t frame) {
     memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
     call_buffer.unmap();
 
-    for (auto &call:calls) {
+    for (auto &call : calls) {
         if (call.is_valid()) {
             size_t substance_index = call.get_substance_ID();
             if (substance_index >= *num_substances) {
@@ -729,11 +681,13 @@ void renderer_t::handle_requests(uint32_t frame) {
             auto patch = response.get_patch();
             patch_buffer.write(&patch, 1, call.get_index());
 
-            u32vec3_t p = u32vec3_t(call.get_index() % patch_image_size,
-                                    (call.get_index() %
-                                     (patch_image_size * patch_image_size)) / patch_image_size,
-                                    call.get_index() /
-                                    patch_image_size / patch_image_size) * patch_sample_size;
+            u32vec3_t p =
+                u32vec3_t(
+                    call.get_index() % patch_image_size,
+                    (call.get_index() % (patch_image_size * patch_image_size)) /
+                        patch_image_size,
+                    call.get_index() / patch_image_size / patch_image_size) *
+                patch_sample_size;
 
             normal_texture->write(p, response.get_normals());
             colour_texture->write(p, response.get_colours());
@@ -748,7 +702,8 @@ void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
     uint32_t s = work_group_size[0] * work_group_size[1];
 
-    buffer_create(&patch_buffer, 1, device, geometry_pool_size, true, sizeof(response_t::patch_t));
+    buffer_create(&patch_buffer, 1, device, geometry_pool_size, true,
+                  sizeof(response_t::patch_t));
     buffer_create(&call_buffer, 2, device, number_of_calls, true, sizeof(call_t));
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));

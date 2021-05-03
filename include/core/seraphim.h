@@ -62,8 +62,7 @@ struct seraphim_t {
     void run();
 };
 
-substance_t *srph_create_substance(seraphim_t *srph, form_t *form,
-                                   matter_t *matter);
+substance_t *srph_create_substance(seraphim_t *srph, form_t *form, matter_t *matter);
 
 void srph_cleanup(seraphim_t *engine);
 

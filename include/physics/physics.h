@@ -7,29 +7,29 @@
 #include <thread>
 
 typedef struct srph_physics {
-	int get_frame_count();
+    int get_frame_count();
 
-	vec3 gravity;
+    vec3 gravity;
 
-	bool quit;
-	  std::thread thread;
+    bool quit;
+    std::thread thread;
 
-	  std::mutex substances_mutex;
+    std::mutex substances_mutex;
 
-	substance_t *substances;
-	uint32_t *num_substances;
+    substance_t *substances;
+    uint32_t *num_substances;
 
-	srph_collision_array collisions;
+    srph_collision_array collisions;
 
-	int frames;
+    int frames;
 
-	void run();
+    void run();
 } srph_physics;
 
-void srph_physics_init(srph_physics * p, substance_t * substances,
-	uint32_t * num_substances);
-void srph_physics_start(srph_physics * p);
-void srph_physics_destroy(srph_physics * p);
-void srph_physics_tick(srph_physics * p, double dt);
+void srph_physics_init(srph_physics *p, substance_t *substances,
+                       uint32_t *num_substances);
+void srph_physics_start(srph_physics *p);
+void srph_physics_destroy(srph_physics *p);
+void srph_physics_tick(srph_physics *p, double dt);
 
 #endif

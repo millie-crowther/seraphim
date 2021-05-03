@@ -9,20 +9,20 @@
 #include <memory>
 
 namespace srph {
-	// forward declaration of window
-	struct window_t;
+// forward declaration of window
+struct window_t;
 
-	class mouse_t {
-	  private:
-		vec2_t v;
-		vec2_t c;
+class mouse_t {
+  private:
+    vec2_t v;
+    vec2_t c;
 
-	  public:
-		  mouse_t(window_t & window);
+  public:
+    mouse_t(window_t &window);
 
-		vec2_t get_velocity() const;
+    vec2_t get_velocity() const;
 
-		void update(double delta, const window_t & window);
-	};
-}
+    void update(double delta, const window_t &window);
+};
+} // namespace srph
 #endif

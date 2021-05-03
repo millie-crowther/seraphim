@@ -27,8 +27,8 @@ struct buffer_t {
             return staging_buffer->map(offset, map_size);
         } else {
             void *memory_map;
-            vkMapMemory(device->device, memory,
-                        element_size * offset, element_size * map_size, 0, &memory_map);
+            vkMapMemory(device->device, memory, element_size * offset,
+                        element_size * map_size, 0, &memory_map);
             return memory_map;
         }
     }
@@ -60,8 +60,8 @@ struct buffer_t {
     }
 
     void record_write(VkCommandBuffer command_buffer) {
-        vkCmdCopyBuffer(command_buffer, staging_buffer->buffer,
-                        buffer, updates.size(), updates.data());
+        vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer,
+                        updates.size(), updates.data());
         updates.clear();
     }
 
@@ -70,20 +70,20 @@ struct buffer_t {
         region.srcOffset = 0;
         region.dstOffset = 0;
         region.size = size;
-        vkCmdCopyBuffer(command_buffer, buffer,
-                        staging_buffer->buffer, 1, &region);
+        vkCmdCopyBuffer(command_buffer, buffer, staging_buffer->buffer, 1, &region);
         vkCmdFillBuffer(command_buffer, buffer, 0, size, ~0);
     }
 
-    VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
+    VkWriteDescriptorSet
+    get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
         VkWriteDescriptorSet write_desc_set = {};
         write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write_desc_set.pNext = nullptr;
+        write_desc_set.pNext = NULL;
         write_desc_set.dstArrayElement = 0;
         write_desc_set.descriptorCount = 1;
         write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        write_desc_set.pImageInfo = nullptr;
-        write_desc_set.pTexelBufferView = nullptr;
+        write_desc_set.pImageInfo = NULL;
+        write_desc_set.pTexelBufferView = NULL;
         write_desc_set.dstSet = descriptor_set;
         write_desc_set.dstBinding = binding;
         write_desc_set.pBufferInfo = &desc_buffer_info;
@@ -95,19 +95,16 @@ struct buffer_t {
         layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         layout_binding.descriptorCount = 1;
         layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-        layout_binding.pImmutableSamplers = nullptr;
+        layout_binding.pImmutableSamplers = NULL;
         layout_binding.binding = binding;
         return layout_binding;
     }
 
-    uint64_t get_size() const {
-        return size / element_size;
-    }
-
+    uint64_t get_size() const { return size / element_size; }
 };
 
-void buffer_create(buffer_t *self, uint32_t binding, device_t *device,
-                   uint64_t size, bool is_device_local, size_t element_size);
+void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t size,
+                   bool is_device_local, size_t element_size);
 
 void buffer_destroy(buffer_t *self);
 
