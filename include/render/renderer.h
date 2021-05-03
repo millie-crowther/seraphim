@@ -96,7 +96,7 @@ struct renderer_t {
     // buffers
     buffer_t patch_buffer;
     buffer_t substance_buffer;
-    buffer_t call_buffer;
+    buffer_t request_buffer;
     buffer_t light_buffer;
     buffer_t pointer_buffer;
     buffer_t frustum_buffer;

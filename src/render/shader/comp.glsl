@@ -44,6 +44,11 @@ struct request_t {
     uvec2 _unused;
 };
 
+struct request_pair_t {
+    request_t geometry;
+    request_t texture;
+};
+
 struct light_t {
     vec3 x;
     uint id;
@@ -119,14 +124,14 @@ layout( push_constant ) uniform push_constants {
     float epsilon;
 } pc;
 
-layout (binding = 1) buffer patch_buffer        { patch_t     data[]; } patches;
-layout (binding = 2) buffer request_buffer      { request_t   data[]; } requests;
-layout (binding = 3) buffer lights_buffer       { light_t     data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substance;
-layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
-layout (binding = 6) buffer frustum_buffer      { vec2        data[]; } frustum;
-layout (binding = 7) buffer lighting_buffer     { vec4        data[]; } lighting;
-layout (binding = 8) buffer texture_hash_buffer { uint        data[]; } texture_hash;
+layout (binding = 1) buffer patch_buffer        { patch_t        data[]; } patches;
+layout (binding = 2) buffer request_buffer      { request_pair_t data[]; } requests;
+layout (binding = 3) buffer lights_buffer       { light_t        data[]; } lights_global;
+layout (binding = 4) buffer substance_buffer    { substance_t    data[]; } substance;
+layout (binding = 5) buffer pointer_buffer      { uint           data[]; } pointers;
+layout (binding = 6) buffer frustum_buffer      { vec2           data[]; } frustum;
+layout (binding = 7) buffer lighting_buffer     { vec4           data[]; } lighting;
+layout (binding = 8) buffer texture_hash_buffer { uint           data[]; } texture_hash;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;
@@ -138,14 +143,13 @@ shared vec4 workspace[work_group_size];
 shared bool test;
 
 request_t build_request(
-    vec3 position,
-    float radius,
+    intersection_t intersection,
     uint texture_hash,
     uint geometry_hash,
     substance_t substance,
     uint status
 ){
-    return request_t(position, radius, texture_hash, geometry_hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
+    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, texture_hash, geometry_hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
 }
 
 vec2 uv(vec2 xy){
@@ -192,19 +196,20 @@ patch_t get_patch(
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
+    intersection.cell_radius = size / 2;
+    intersection.patch_centre = cell_position + intersection.cell_radius;
+
     if (patch_.hash != geometry_hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != geometry_hash){
-            request = build_request(cell_position, size / 2, geometry_hash, geometry_hash, substance, geometry_status | texture_status);
+            request = build_request(intersection, geometry_hash, geometry_hash, substance, geometry_status | texture_status);
         }
     }
 
-    intersection.cell_radius = size / 2;
     intersection.geometry_index = geometry_index;
     intersection.texture_index = id_hashes.y % pc.texture_pool_size;
     intersection.alpha = x_scaled - x_grid;
-    intersection.patch_centre = cell_position + intersection.cell_radius;
 
     return patch_;
 }
@@ -472,7 +477,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
     if (request.status != null_status){
-        requests.data[request.geometry_hash % pc.number_of_calls] = request;
+        requests.data[request.geometry_hash % pc.number_of_calls] = request_pair_t(request, request);
     }
 }
 

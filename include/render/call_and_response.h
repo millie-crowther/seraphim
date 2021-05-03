@@ -6,12 +6,12 @@
 static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
 
-struct call_t {
+struct request_t {
     srph::f32vec3_t position;
     float radius;
 
-    uint32_t texture_hash;
-    uint32_t geometry_hash;
+    uint32_t hash;
+    uint32_t _1;
     uint32_t substanceID;
     uint32_t status;
 
@@ -19,15 +19,18 @@ struct call_t {
     uint32_t material_id;
     uint64_t __unused;
 
-    call_t();
+    request_t();
 
     bool is_valid() const;
 };
 
-uint32_t call_geometry_index(const call_t *call);
-uint32_t call_texture_index(const call_t *call);
-bool call_is_geometry(const call_t *self);
-bool call_is_texture(const call_t *self);
+uint32_t call_geometry_index(const request_t *call);
+uint32_t call_texture_index(const request_t *call);
+
+struct request_pair_t {
+    request_t geometry;
+    request_t texture;
+};
 
 
 struct patch_t {
@@ -39,7 +42,7 @@ struct patch_t {
 
 struct response_t {
     response_t();
-    response_t(const call_t &call, substance_t *substance);
+    response_t(const request_t &call, substance_t *substance);
 
     patch_t patch;
     std::array<uint32_t, 8> normals;

@@ -1,5 +1,4 @@
 #include "render/call_and_response.h"
-#include "core/constant.h"
 
 using namespace srph;
 
@@ -12,16 +11,16 @@ static const uint32_t null_status = 0;
 static const uint32_t geometry_status = 1;
 static const uint32_t texture_status = 2;
 
-call_t::call_t() {
-    geometry_hash = ~0;
+request_t::request_t() {
+    _1 = ~0;
     status = null_status;
 }
 
-bool call_t::is_valid() const { return geometry_hash != static_cast<uint32_t>(~0); }
+bool request_t::is_valid() const { return _1 != static_cast<uint32_t>(~0); }
 
 response_t::response_t() {}
 
-response_t::response_t(const call_t &call, substance_t *substance) {
+response_t::response_t(const request_t &call, substance_t *substance) {
     sdf_t *sdf = substance->matter.sdf;
 
     bound3_t *bound = srph_sdf_bound(sdf);
@@ -59,7 +58,7 @@ response_t::response_t(const call_t &call, substance_t *substance) {
     uint32_t np = squash(vec4_t(n, 0.0));
 
     uint32_t x_elem = contains_mask << 16;
-    patch = {x_elem, call.geometry_hash, phi, np};
+    patch = {x_elem, call._1, phi, np};
 }
 
 uint32_t response_t::squash(const vec4_t &x) const {
@@ -70,18 +69,11 @@ uint32_t response_t::squash(const vec4_t &x) const {
     return *reinterpret_cast<uint32_t *>(bytes);
 }
 
-uint32_t call_geometry_index(const call_t *call) {
-    return call->geometry_hash % geometry_pool_size;
+uint32_t call_geometry_index(const request_t *call) {
+    return call->hash % geometry_pool_size;
 }
 
-uint32_t call_texture_index(const call_t *call) {
-    return call->texture_hash % texture_pool_size;
+uint32_t call_texture_index(const request_t *call) {
+    return call->hash % texture_pool_size;
 }
 
-bool call_is_geometry(const call_t *self) {
-    return (self->status & geometry_status) != 0;
-}
-
-bool call_is_texture(const call_t *self) {
-    return (self->status & texture_status) != 0;
-}

@@ -103,7 +103,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
         write_desc_sets.push_back(
             substance_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
-            call_buffer.get_write_descriptor_set(descriptor_set));
+                request_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             light_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
@@ -156,7 +156,7 @@ renderer_t::~renderer_t() {
 
     buffer_destroy(&patch_buffer);
     buffer_destroy(&substance_buffer);
-    buffer_destroy(&call_buffer);
+    buffer_destroy(&request_buffer);
     buffer_destroy(&light_buffer);
     buffer_destroy(&pointer_buffer);
     buffer_destroy(&frustum_buffer);
@@ -507,18 +507,18 @@ void renderer_t::create_descriptor_set_layout() {
         VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
-        image_layout,
-        normal_texture->get_descriptor_layout_binding(),
-        colour_texture->get_descriptor_layout_binding(),
+            image_layout,
+            normal_texture->get_descriptor_layout_binding(),
+            colour_texture->get_descriptor_layout_binding(),
 
-        patch_buffer.get_descriptor_set_layout_binding(),
-        substance_buffer.get_descriptor_set_layout_binding(),
-        light_buffer.get_descriptor_set_layout_binding(),
-        call_buffer.get_descriptor_set_layout_binding(),
-        pointer_buffer.get_descriptor_set_layout_binding(),
-        frustum_buffer.get_descriptor_set_layout_binding(),
-        lighting_buffer.get_descriptor_set_layout_binding(),
-        texture_hash_buffer.get_descriptor_set_layout_binding(),
+            patch_buffer.get_descriptor_set_layout_binding(),
+            substance_buffer.get_descriptor_set_layout_binding(),
+            light_buffer.get_descriptor_set_layout_binding(),
+            request_buffer.get_descriptor_set_layout_binding(),
+            pointer_buffer.get_descriptor_set_layout_binding(),
+            frustum_buffer.get_descriptor_set_layout_binding(),
+            lighting_buffer.get_descriptor_set_layout_binding(),
+            texture_hash_buffer.get_descriptor_set_layout_binding(),
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -625,7 +625,7 @@ void renderer_t::render() {
                                     &desc_sets[image_index], 0, NULL);
             vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1],
                           1);
-            call_buffer.record_read(command_buffer);
+            request_buffer.record_read(command_buffer);
         })
         ->submit(image_available_semas[current_frame],
                  compute_done_semas[current_frame], in_flight_fences[current_frame],
@@ -666,44 +666,55 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
     main_camera = camera;
 }
 
+static void handle_geometry_request(renderer_t * renderer, request_t * request){
+    if (request->is_valid()) {
+        size_t substance_index = request->substanceID;
+        if (substance_index >= *renderer->num_substances) {
+            return;
+        }
+        auto response = response_t(*request, &renderer->substances[substance_index]);
+        auto patch = response.patch;
+        uint32_t index = call_geometry_index(request);
+        renderer->patch_buffer.write(&patch, 1, index);
+    }
+}
+
+static void handle_texture_request(renderer_t * renderer, request_t * request){
+    if (request->is_valid()) {
+        size_t substance_index = request->substanceID;
+        if (substance_index >= *renderer->num_substances) {
+            return;
+        }
+        auto response = response_t(*request, &renderer->substances[substance_index]);
+        uint32_t index = call_texture_index(request);
+        uint32_t patch_image_size = renderer->patch_image_size;
+        u32vec3_t p = u32vec3_t(
+            index % patch_image_size,
+            (index % (patch_image_size * patch_image_size)) / patch_image_size,
+            index / patch_image_size / patch_image_size
+        ) * patch_sample_size;
+
+        renderer->texture_hash_buffer.write(&request->hash, 1, index);
+
+        renderer->normal_texture->write(p, response.normals);
+        renderer->colour_texture->write(p, response.colours);
+    }
+}
+
 void renderer_t::handle_requests() {
     vkDeviceWaitIdle(device->device);
 
-    std::vector<call_t> calls(number_of_calls);
-    std::vector<call_t> empty_calls(number_of_calls);
+    std::vector<request_pair_t> calls(number_of_calls);
+    std::vector<request_pair_t> empty_calls(number_of_calls);
 
-    void *memory_map = call_buffer.map(0, calls.size());
-    memcpy(calls.data(), memory_map, calls.size() * sizeof(call_t));
-    memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(call_t));
-    call_buffer.unmap();
+    void *memory_map = request_buffer.map(0, calls.size());
+    memcpy(calls.data(), memory_map, calls.size() * sizeof(request_pair_t));
+    memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(request_pair_t));
+    request_buffer.unmap();
 
     for (auto &call : calls) {
-        if (call.is_valid()) {
-            size_t substance_index = call.substanceID;
-            if (substance_index >= *num_substances) {
-                continue;
-            }
-            auto response = response_t(call, &substances[substance_index]);
-            auto patch = response.patch;
-            if (call_is_geometry(&call)){
-                uint32_t geometry_index = call_geometry_index(&call);
-                patch_buffer.write(&patch, 1, geometry_index);
-            }
-
-            if (call_is_texture(&call)){
-                uint32_t texture_index = call_texture_index(&call);
-                u32vec3_t p = u32vec3_t(
-                    texture_index % patch_image_size,
-                    (texture_index % (patch_image_size * patch_image_size)) / patch_image_size,
-                    texture_index / patch_image_size / patch_image_size
-                ) * patch_sample_size;
-
-                texture_hash_buffer.write(&call.texture_hash, 1, texture_index);
-
-                normal_texture->write(p, response.normals);
-                colour_texture->write(p, response.colours);
-            }
-        }
+        handle_geometry_request(this, &call.geometry);
+        handle_texture_request(this, &call.texture);
     }
 }
 
@@ -713,7 +724,7 @@ void renderer_t::create_buffers() {
 
     buffer_create(&patch_buffer, 1, device, geometry_pool_size, true,
                   sizeof(patch_t));
-    buffer_create(&call_buffer, 2, device, number_of_calls, true, sizeof(call_t));
+    buffer_create(&request_buffer, 2, device, number_of_calls, true, sizeof(request_pair_t));
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
