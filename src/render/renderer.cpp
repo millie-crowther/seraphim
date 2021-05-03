@@ -674,12 +674,12 @@ void renderer_t::handle_requests(uint32_t frame) {
 
     for (auto &call : calls) {
         if (call.is_valid()) {
-            size_t substance_index = call.get_substance_ID();
+            size_t substance_index = call.substanceID;
             if (substance_index >= *num_substances) {
                 continue;
             }
             auto response = get_response(call, &substances[substance_index]);
-            auto patch = response.get_patch();
+            auto patch = response.patch;
             patch_buffer.write(&patch, 1, call.get_index());
 
             u32vec3_t p =
@@ -690,11 +690,11 @@ void renderer_t::handle_requests(uint32_t frame) {
                     call.get_index() / patch_image_size / patch_image_size) *
                 patch_sample_size;
 
-            normal_texture->write(p, response.get_normals());
-            colour_texture->write(p, response.get_colours());
+            normal_texture->write(p, response.normals);
+            colour_texture->write(p, response.colours);
 
             indices.insert(call.get_index());
-            hashes.insert(call.get_hash());
+            hashes.insert(call.geometry_hash);
         }
     }
 }
@@ -704,7 +704,7 @@ void renderer_t::create_buffers() {
     uint32_t s = work_group_size[0] * work_group_size[1];
 
     buffer_create(&patch_buffer, 1, device, geometry_pool_size, true,
-                  sizeof(response_t::patch_t));
+                  sizeof(patch_t));
     buffer_create(&call_buffer, 2, device, number_of_calls, true, sizeof(call_t));
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));

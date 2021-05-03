@@ -41,8 +41,7 @@ struct request_t {
 
     uint sdf_id;
     uint material_id;
-    uint _1;
-    uint _2;
+    uvec2 texture_hash;
 };
 
 struct light_t {
@@ -146,7 +145,7 @@ request_t build_request(
     substance_t substance,
     uint status
 ){
-    return request_t(position, radius, index, hash, substance.id, status, substance.sdf_id, substance.material_id, 0, 0);
+    return request_t(position, radius, index, hash, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
 }
 
 vec2 uv(vec2 xy){

@@ -3,22 +3,19 @@
 
 using namespace srph;
 
+vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
+                      vec3_t(0.0, 2.0, 0.0), vec3_t(2.0, 2.0, 0.0),
+                      vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
+                      vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
+
 call_t::call_t() {
-    hash = ~0;
+    geometry_hash = ~0;
     status = 0;
 }
 
-bool call_t::is_valid() const { return hash != static_cast<uint32_t>(~0); }
+bool call_t::is_valid() const { return geometry_hash != static_cast<uint32_t>(~0); }
 
-f32vec3_t call_t::get_position() const { return position; }
-
-float call_t::get_radius() const { return radius; }
-
-uint32_t call_t::get_index() const { return hash % geometry_pool_size; }
-
-uint32_t call_t::get_hash() const { return hash; }
-
-uint32_t call_t::get_substance_ID() const { return substanceID; }
+uint32_t call_t::get_index() const { return geometry_hash % geometry_pool_size; }
 
 bool call_t::comparator_t::operator()(const call_t &a, const call_t &b) const {
     if (a.substanceID != b.substanceID) {
@@ -36,11 +33,6 @@ bool call_t::comparator_t::operator()(const call_t &a, const call_t &b) const {
     return false;
 }
 
-vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
-                      vec3_t(0.0, 2.0, 0.0), vec3_t(2.0, 2.0, 0.0),
-                      vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
-                      vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
-
 response_t::response_t() {}
 
 response_t::response_t(const call_t &call, substance_t *substance) {
@@ -49,12 +41,12 @@ response_t::response_t(const call_t &call, substance_t *substance) {
     bound3_t *bound = srph_sdf_bound(sdf);
     vec3 m;
     srph_bound3_midpoint(bound, &m);
-    vec3_t p = mat::cast<double>(call.get_position()) - vec3_t(m.x, m.y, m.z);
+    vec3_t p = mat::cast<double>(call.position) - vec3_t(m.x, m.y, m.z);
 
     uint32_t contains_mask = 0;
 
     for (int o = 0; o < 8; o++) {
-        vec3_t d = p + vertices[o] * call.get_radius();
+        vec3_t d = p + vertices[o] * call.radius;
         vec3 d1 = {{d[0], d[1], d[2]}};
 
         if (!srph_sdf_contains(sdf, &d1)) {
@@ -72,7 +64,7 @@ response_t::response_t(const call_t &call, substance_t *substance) {
         colours[o] = squash(vec4_t(c.x, c.y, c.z, 0.0));
     }
 
-    vec3_t c = p + call.get_radius();
+    vec3_t c = p + call.radius;
     vec3 c1 = {{c[0], c[1], c[2]}};
     float phi = static_cast<float>(sdf_distance(sdf, &c1));
 
@@ -81,14 +73,8 @@ response_t::response_t(const call_t &call, substance_t *substance) {
     uint32_t np = squash(vec4_t(n, 0.0));
 
     uint32_t x_elem = contains_mask << 16;
-    patch = {x_elem, call.get_hash(), phi, np};
+    patch = {x_elem, call.geometry_hash, phi, np};
 }
-
-const std::array<uint32_t, 8> &response_t::get_normals() const { return normals; }
-
-const std::array<uint32_t, 8> &response_t::get_colours() const { return colours; }
-
-response_t::patch_t response_t::get_patch() const { return patch; }
 
 uint32_t response_t::squash(const vec4_t &x) const {
     uint8_t bytes[4];
