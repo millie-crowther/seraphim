@@ -19,10 +19,6 @@ struct call_t {
     uint32_t material_id;
     uint64_t __unused;
 
-    struct comparator_t {
-        bool operator()(const call_t &a, const call_t &b) const;
-    };
-
     call_t();
 
     bool is_valid() const;

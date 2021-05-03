@@ -19,22 +19,6 @@ call_t::call_t() {
 
 bool call_t::is_valid() const { return geometry_hash != static_cast<uint32_t>(~0); }
 
-bool call_t::comparator_t::operator()(const call_t &a, const call_t &b) const {
-    if (a.substanceID != b.substanceID) {
-        return a.substanceID < b.substanceID;
-    }
-
-    if (std::abs(a.radius - b.radius) > epsilon) {
-        return a.radius < b.radius;
-    }
-
-    if (a.position != b.position) {
-        return f32vec3_t::comparator_t()(a.position, b.position);
-    }
-
-    return false;
-}
-
 response_t::response_t() {}
 
 response_t::response_t(const call_t &call, substance_t *substance) {

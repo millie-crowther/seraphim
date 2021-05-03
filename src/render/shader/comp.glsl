@@ -181,8 +181,8 @@ patch_t get_patch(
 
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
-    ivec2 id_hash = ivec2(substance.id, substance.material_id) * p3.xy + p3.zw;
-    geometry_hash = base_hash ^ id_hash.x;
+    ivec2 id_hashes = base_hash ^ ivec2(substance.id, substance.material_id);
+    geometry_hash = id_hashes.x;
 
     // calculate some useful variables for doing lookups
     uint index = geometry_hash % work_group_size;
@@ -202,7 +202,7 @@ patch_t get_patch(
 
     intersection.cell_radius = size / 2;
     intersection.geometry_index = geometry_index;
-    intersection.texture_index = geometry_hash % pc.texture_pool_size;
+    intersection.texture_index = id_hashes.y % pc.texture_pool_size;
     intersection.alpha = x_scaled - x_grid;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 

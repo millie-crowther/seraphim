@@ -692,12 +692,11 @@ void renderer_t::handle_requests() {
 
             if (call_is_texture(&call)){
                 uint32_t texture_index = call_texture_index(&call);
-                u32vec3_t p =
-                        u32vec3_t(texture_index % patch_image_size,
-                                  (texture_index % (patch_image_size * patch_image_size)) /
-                                  patch_image_size,
-                                  texture_index / patch_image_size / patch_image_size) *
-                        patch_sample_size;
+                u32vec3_t p = u32vec3_t(
+                    texture_index % patch_image_size,
+                    (texture_index % (patch_image_size * patch_image_size)) / patch_image_size,
+                    texture_index / patch_image_size / patch_image_size
+                ) * patch_sample_size;
 
                 texture_hash_buffer.write(&call.texture_hash, 1, texture_index);
 

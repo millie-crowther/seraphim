@@ -103,10 +103,6 @@ struct renderer_t {
     buffer_t lighting_buffer;
     buffer_t texture_hash_buffer;
 
-    std::map<call_t, response_t, call_t::comparator_t> response_cache;
-    std::__cxx11::list<std::map<call_t, response_t, call_t::comparator_t>::iterator>
-        prev_calls;
-
     std::chrono::high_resolution_clock::time_point start;
 
     // initialisation functions
