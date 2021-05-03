@@ -159,6 +159,7 @@ renderer_t::~renderer_t() {
     buffer_destroy(&pointer_buffer);
     buffer_destroy(&frustum_buffer);
     buffer_destroy(&lighting_buffer);
+    buffer_destroy(&texture_hash_buffer);
 }
 
 void renderer_t::create_compute_pipeline() {
@@ -710,6 +711,7 @@ void renderer_t::create_buffers() {
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
     buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
+    buffer_create(&texture_hash_buffer, 8, device, c, true, sizeof(uint64_t));
 }
 
 response_t renderer_t::get_response(const call_t &call, substance_t *substance) {

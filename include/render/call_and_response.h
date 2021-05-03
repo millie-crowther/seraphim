@@ -3,13 +3,16 @@
 
 #include "metaphysics/substance.h"
 
+static const uint32_t geometry_pool_size = 1000000;
+static const uint32_t texture_pool_size = 1000000;
+
 namespace srph {
 class call_t {
   private:
     f32vec3_t position;
     float radius;
 
-    uint32_t index;
+    uint32_t _3;
     uint32_t hash;
     uint32_t substanceID;
     uint32_t status;

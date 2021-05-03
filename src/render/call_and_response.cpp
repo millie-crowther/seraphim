@@ -4,17 +4,17 @@
 using namespace srph;
 
 call_t::call_t() {
-    index = ~0;
+    hash = ~0;
     status = 0;
 }
 
-bool call_t::is_valid() const { return index != static_cast<uint32_t>(~0); }
+bool call_t::is_valid() const { return hash != static_cast<uint32_t>(~0); }
 
 f32vec3_t call_t::get_position() const { return position; }
 
 float call_t::get_radius() const { return radius; }
 
-uint32_t call_t::get_index() const { return index; }
+uint32_t call_t::get_index() const { return hash % geometry_pool_size; }
 
 uint32_t call_t::get_hash() const { return hash; }
 

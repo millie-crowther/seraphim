@@ -120,13 +120,14 @@ layout( push_constant ) uniform push_constants {
     float epsilon;
 } pc;
 
-layout (binding = 1) buffer patch_buffer     { patch_t     data[]; } patches;
-layout (binding = 2) buffer request_buffer   { request_t   data[]; } requests;
-layout (binding = 3) buffer lights_buffer    { light_t     data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer { substance_t data[]; } substance;
-layout (binding = 5) buffer pointer_buffer   { uint        data[]; } pointers;
-layout (binding = 6) buffer frustum_buffer   { vec2        data[]; } frustum;
-layout (binding = 7) buffer lighting_buffer  { vec4        data[]; } lighting;
+layout (binding = 1) buffer patch_buffer        { patch_t     data[]; } patches;
+layout (binding = 2) buffer request_buffer      { request_t   data[]; } requests;
+layout (binding = 3) buffer lights_buffer       { light_t     data[]; } lights_global;
+layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substance;
+layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
+layout (binding = 6) buffer frustum_buffer      { vec2        data[]; } frustum;
+layout (binding = 7) buffer lighting_buffer     { vec4        data[]; } lighting;
+layout (binding = 8) buffer texture_hash_buffer { uvec2       data[]; } texture_hash;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;

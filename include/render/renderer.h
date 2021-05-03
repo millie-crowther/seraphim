@@ -41,8 +41,6 @@ struct push_constant_t {
 
 static const uint8_t frames_in_flight = 2;
 static const uint32_t number_of_calls = 2048;
-static const uint32_t geometry_pool_size = 1000000;
-static const uint32_t texture_pool_size = 1000000;
 static const uint32_t patch_sample_size = 2;
 static const uint32_t max_cache_size = 1000;
 
@@ -106,6 +104,7 @@ struct renderer_t {
     buffer_t pointer_buffer;
     buffer_t frustum_buffer;
     buffer_t lighting_buffer;
+    buffer_t texture_hash_buffer;
 
     std::map<srph::call_t, srph::response_t, srph::call_t::comparator_t>
         response_cache;
