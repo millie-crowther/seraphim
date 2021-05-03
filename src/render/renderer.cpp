@@ -36,7 +36,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
     push_constants.number_of_calls = number_of_calls;
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth =
-            texture_pool_size / patch_image_size / patch_image_size + 1;
+        texture_pool_size / patch_image_size / patch_image_size + 1;
     push_constants.geometry_pool_size = geometry_pool_size;
     push_constants.texture_pool_size = texture_pool_size;
     push_constants.epsilon = epsilon;
@@ -690,12 +690,11 @@ void renderer_t::handle_requests(uint32_t frame) {
             patch_buffer.write(&patch, 1, geometry_index);
 
             u32vec3_t p =
-                    u32vec3_t(
-                            texture_index % patch_image_size,
-                    (texture_index % (patch_image_size * patch_image_size)) /
-                    patch_image_size,
-                            texture_index / patch_image_size / patch_image_size) *
-                    patch_sample_size;
+                u32vec3_t(texture_index % patch_image_size,
+                          (texture_index % (patch_image_size * patch_image_size)) /
+                              patch_image_size,
+                          texture_index / patch_image_size / patch_image_size) *
+                patch_sample_size;
 
             texture_hash_buffer.write(&call.texture_hash, 1, texture_index);
 
@@ -717,7 +716,8 @@ void renderer_t::create_buffers() {
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
     buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
-    buffer_create(&texture_hash_buffer, 8, device, texture_pool_size, true, sizeof(uint32_t));
+    buffer_create(&texture_hash_buffer, 8, device, texture_pool_size, true,
+                  sizeof(uint32_t));
 }
 
 response_t renderer_t::get_response(const call_t &call, substance_t *substance) {

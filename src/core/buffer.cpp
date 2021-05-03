@@ -76,3 +76,7 @@ void buffer_destroy(buffer_t *self) {
         self->staging_buffer = NULL;
     }
 }
+
+size_t buffer_size(buffer_t *self) {
+    return self->size / self->element_size;
+}

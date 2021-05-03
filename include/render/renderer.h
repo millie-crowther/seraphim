@@ -11,6 +11,7 @@
 #include <map>
 #include <set>
 
+#include "call_and_response.h"
 #include "core/buffer.h"
 #include "core/command.h"
 #include "metaphysics/substance.h"
@@ -20,7 +21,6 @@
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "ui/window.h"
-#include "call_and_response.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -104,10 +104,8 @@ struct renderer_t {
     buffer_t lighting_buffer;
     buffer_t texture_hash_buffer;
 
-    std::map<call_t, response_t, call_t::comparator_t>
-        response_cache;
-    std::__cxx11::list<std::map<call_t, response_t,
-                                call_t::comparator_t>::iterator>
+    std::map<call_t, response_t, call_t::comparator_t> response_cache;
+    std::__cxx11::list<std::map<call_t, response_t, call_t::comparator_t>::iterator>
         prev_calls;
 
     std::chrono::high_resolution_clock::time_point start;

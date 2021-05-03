@@ -42,7 +42,7 @@ struct buffer_t {
     }
 
     void write(const void *source, size_t number, uint64_t offset) {
-        if (number == 0){
+        if (number == 0) {
             return;
         }
 
@@ -103,13 +103,13 @@ struct buffer_t {
         layout_binding.binding = binding;
         return layout_binding;
     }
-
-    uint64_t get_size() const { return size / element_size; }
 };
 
 void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t size,
                    bool is_device_local, size_t element_size);
 
 void buffer_destroy(buffer_t *self);
+
+size_t buffer_size(buffer_t *self);
 
 #endif
