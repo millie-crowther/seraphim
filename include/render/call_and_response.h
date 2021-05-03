@@ -41,7 +41,6 @@ struct patch_t {
 };
 
 struct response_t {
-    response_t();
     response_t(const request_t &call, substance_t *substance);
 
     patch_t patch;

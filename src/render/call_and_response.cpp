@@ -10,13 +10,10 @@ vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
 static const uint32_t null_status = 0;
 
 request_t::request_t() {
-    hash = ~0;
     status = null_status;
 }
 
 bool request_t::is_valid() const { return status != null_status; }
-
-response_t::response_t() {}
 
 response_t::response_t(const request_t &call, substance_t *substance) {
     sdf_t *sdf = substance->matter.sdf;
