@@ -36,7 +36,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances,
     push_constants.number_of_calls = number_of_calls;
     push_constants.texture_size = patch_image_size;
     push_constants.texture_depth =
-        geometry_pool_size / patch_image_size / patch_image_size + 1;
+            texture_pool_size / patch_image_size / patch_image_size + 1;
     push_constants.geometry_pool_size = geometry_pool_size;
     push_constants.texture_pool_size = texture_pool_size;
     push_constants.epsilon = epsilon;
@@ -681,15 +681,15 @@ void renderer_t::handle_requests(uint32_t frame) {
             auto response = get_response(call, &substances[substance_index]);
             auto patch = response.patch;
             uint32_t geometry_index = call_geometry_index(&call);
-//            uint32_t texture_index = call_texture_index(&call);
+            uint32_t texture_index = call_texture_index(&call);
             patch_buffer.write(&patch, 1, geometry_index);
 
             u32vec3_t p =
                     u32vec3_t(
-                            geometry_index % patch_image_size,
-                    (geometry_index % (patch_image_size * patch_image_size)) /
+                            texture_index % patch_image_size,
+                    (texture_index % (patch_image_size * patch_image_size)) /
                     patch_image_size,
-                            geometry_index / patch_image_size / patch_image_size) *
+                            texture_index / patch_image_size / patch_image_size) *
                     patch_sample_size;
 
             normal_texture->write(p, response.normals);
