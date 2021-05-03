@@ -25,7 +25,7 @@ struct intersection_t {
     substance_t substance;
     float cell_radius;
     uint geometry_index;
-    uint texture_index;
+    uint texture_hash;
     vec3 alpha;
     vec3 patch_centre;
 };
@@ -144,11 +144,11 @@ shared bool test;
 
 request_t build_request(
     intersection_t intersection,
-    uint texture_hash,
+    uint hash,
     substance_t substance,
     uint status
 ){
-    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, texture_hash, 0, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
+    return request_t(intersection.patch_centre - intersection.cell_radius, intersection.cell_radius, hash, 0, substance.id, status, substance.sdf_id, substance.material_id, uvec2(0));
 }
 
 vec2 uv(vec2 xy){
@@ -207,7 +207,7 @@ patch_t get_patch(
     }
 
     intersection.geometry_index = geometry_index;
-    intersection.texture_index = id_hashes.y % pc.texture_pool_size;
+    intersection.texture_hash = id_hashes.y;
     intersection.alpha = x_scaled - x_grid;
 
     return patch_;
@@ -475,9 +475,16 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
-    if (request.status != null_status){
-        requests.data[request.hash % pc.number_of_calls] = request_pair_t(request, request);
+    request_pair_t request_pair = request_pair_t(request, request);
+
+//    if (texture_hash.data[intersection.texture_hash % pc.texture_pool_size] != intersection.texture_hash){
+//
+//    }
+
+    if (request_pair.geometry.status != null_status || request_pair.texture.status != null_status){
+        requests.data[request.hash % pc.number_of_calls] = request_pair;
     }
+
 }
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){ 
