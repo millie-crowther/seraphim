@@ -178,6 +178,16 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
+uint get_hash(vec3 x, int order, int id){
+    float size;
+    vec3 x_scaled;
+    ivec3 x_grid;
+    grid_align(x, order, size, x_scaled, x_grid);
+    ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
+    int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
+    return base_hash ^ id;
+}
+
 patch_t get_patch(
     vec3 x, int order,
     inout intersection_t intersection, inout request_t request,
@@ -189,10 +199,7 @@ patch_t get_patch(
     ivec3 x_grid;
     grid_align(x, order, size, x_scaled, x_grid);
 
-    ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
-    int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
-    ivec2 id_hashes = base_hash ^ ivec2(substance.id, substance.id);
-    hash = id_hashes.x;
+    hash = get_hash(x, order, int(substance.id));
 
     // calculate some useful variables for doing lookups
     uint index = hash % work_group_size;
@@ -214,7 +221,7 @@ patch_t get_patch(
     }
 
     intersection.geometry_index = geometry_index;
-    intersection.texture_hash = id_hashes.y;
+    intersection.texture_hash = hash;
     intersection.alpha = x_scaled - x_grid;
 
     return patch_;
