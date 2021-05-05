@@ -141,21 +141,26 @@ shared uint lights_size;
 shared vec4 workspace[work_group_size];
 shared bool test;
 
-request_t build_request(intersection_t intersection, uint hash){
-    substance_t substance = intersection.substance;
-    return request_t(
-        intersection.patch_centre - intersection.cell_radius,
-        intersection.cell_radius, hash, 0, substance.id, active_request,
-        substance.sdf_id, substance.material_id, uvec2(0)
-    );
-}
-
 void grid_align(vec3 x, int order, out float size, out vec3 x_scaled, out ivec3 x_grid){
     size = geometry_epsilon * order * 2;
     x_scaled = x / size;
     x_grid = ivec3(floor(x_scaled));
 }
 
+request_t build_request(substance_t substance, vec3 x, int order, uint hash){
+    float size;
+    vec3 x_scaled;
+    ivec3 x_grid;
+    grid_align(x, order, size, x_scaled, x_grid);
+    vec3 cell_position = x_grid * size;
+    float cell_radius = size / 2;
+    vec3 patch_centre = cell_position + cell_radius;
+    return request_t(
+        patch_centre - cell_radius,
+        cell_radius, hash, 0, substance.id, active_request,
+        substance.sdf_id, substance.material_id, uvec2(0)
+    );
+}
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -216,7 +221,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(intersection, hash);
+            request = build_request(substance, x, order, hash);
         }
     }
 
