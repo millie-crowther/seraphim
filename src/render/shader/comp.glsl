@@ -457,7 +457,8 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-    uint texture_index = intersection.texture_hash % pc.texture_pool_size;
+    uint texture_hash_ = intersection.texture_hash;
+    uint texture_index = texture_hash_ % pc.texture_pool_size;
     vec3 t = intersection.alpha * 0.5 + 0.25;
 
     t += vec3(
