@@ -150,6 +150,12 @@ request_t build_request(intersection_t intersection, uint hash){
     );
 }
 
+void grid_align(vec3 x, int order, out float size, out vec3 x_scaled, out ivec3 x_grid){
+    size = geometry_epsilon * order * 2;
+    x_scaled = x / size;
+    x_grid = ivec3(floor(x_scaled));
+}
+
 vec2 uv(vec2 xy){
     vec2 uv = xy / (gl_NumWorkGroups.xy * gl_WorkGroupSize.xy);
     uv = uv * 2.0 - 1.0;
@@ -178,9 +184,10 @@ patch_t get_patch(
     out uint hash
 ){
     substance_t substance = intersection.substance;
-    float size = geometry_epsilon * order * 2;
-    vec3 x_scaled = x / size;
-    ivec3 x_grid = ivec3(floor(x_scaled));
+    float size;
+    vec3 x_scaled;
+    ivec3 x_grid;
+    grid_align(x, order, size, x_scaled, x_grid);
 
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
@@ -191,10 +198,10 @@ patch_t get_patch(
     uint index = hash % work_group_size;
     uint geometry_index = hash % pc.geometry_pool_size;
 
-    vec3 cell_position = x_grid * size;
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
+    vec3 cell_position = x_grid * size;
     intersection.cell_radius = size / 2;
     intersection.patch_centre = cell_position + intersection.cell_radius;
 
