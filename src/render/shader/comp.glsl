@@ -23,11 +23,8 @@ struct intersection_t {
     vec3 normal;
     float distance;
     substance_t substance;
-//    float cell_radius;
     uint geometry_index;
-//    uint texture_hash;
     vec3 alpha;
-    vec3 patch_centre;
 };
 
 struct request_t {
@@ -233,7 +230,6 @@ patch_t get_patch(
     float cell_radius;
     vec3 patch_centre;
     calculate_cell(x, order, cell_position, cell_radius, patch_centre);
-    intersection.patch_centre = patch_centre;
 
     if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
