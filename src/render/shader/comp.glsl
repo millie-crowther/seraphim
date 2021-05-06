@@ -225,12 +225,6 @@ patch_t get_patch(
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
-//    vec3 cell_position = x_grid * size;
-    vec3 cell_position;
-    float cell_radius;
-    vec3 patch_centre;
-    calculate_cell(x, order, cell_position, cell_radius, patch_centre);
-
     if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
