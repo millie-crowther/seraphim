@@ -687,11 +687,11 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
         }
         auto response = response_t(*request, &renderer->substances[substance_index]);
         uint32_t index = request_texture_index(request);
-        uint32_t patch_image_size = renderer->texture_size;
+        uint32_t texture_size = renderer->texture_size;
         u32vec3_t p = u32vec3_t(
-            index % patch_image_size,
-            (index % (patch_image_size * patch_image_size)) / patch_image_size,
-            index / patch_image_size / patch_image_size
+            index % texture_size,
+            (index % (texture_size * texture_size)) / texture_size,
+            index / texture_size / texture_size
         ) * patch_sample_size;
 
         renderer->texture_hash_buffer.write(&request->hash, 1, index);

@@ -23,7 +23,6 @@ struct intersection_t {
     vec3 normal;
     float distance;
     substance_t substance;
-    uint geometry_index;
 };
 
 struct request_t {
@@ -233,9 +232,6 @@ patch_t get_patch(
         }
     }
 
-    intersection.geometry_index = geometry_index;
-//    intersection.alpha = x_scaled - x_grid;
-
     return patch_;
 }
 
@@ -437,14 +433,14 @@ vec4 reduce_min(uint i, vec4 value){
 }
 
 void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
-    request_t request;
-    request.status = null_request;
+    request_t geometry_request;
+    geometry_request.status = null_request;
 
     vec3 rx = pc.eye_transform[3].xyz;
     vec3 d = get_ray_direction(gl_GlobalInvocationID.xy);
 
     ray_t r = ray_t(rx, d);
-    intersection_t intersection = raycast(r, request);
+    intersection_t intersection = raycast(r, geometry_request);
 
     barrier();
 
@@ -484,7 +480,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     vec3 x_scaled;
     ivec3 x_grid;
     vec3 x = intersection.x;
-    int order = expected_order(x) + 1;
+    int order = expected_order(x) + 2;
     grid_align(x, order, size, x_scaled, x_grid);
     uint texture_hash_ = get_hash(x, order, int(intersection.substance.id));
     uint texture_index =  texture_hash_ % pc.texture_pool_size;
@@ -505,7 +501,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     vec3 lighting = vec3(0.25, 0.25, 0.25);
 
     for (uint light_i = 0; light_i < lights_size; light_i++){
-        lighting += light(light_i, intersection, n, request);
+        lighting += light(light_i, intersection, n, geometry_request);
     }
 
     const vec3 sky = vec3(0.5, 0.7, 0.9);
@@ -518,19 +514,16 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 
-    request_pair_t request_pair;
-    request_pair.geometry = request;
-//    request_pair.texture = request;
-
     barrier();
 
     if (intersection.hit){// && texture_hash.data[texture_index] != texture_hash_){
-        request_pair.texture = build_request(intersection.substance, x, order, texture_hash_);
+        request_t texture_request = build_request(intersection.substance, x, order, texture_hash_);
+        requests.data[texture_hash_ % pc.number_of_calls].texture = texture_request;
     }
-//
+
     barrier();
-    if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){
-        requests.data[request.hash % pc.number_of_calls] = request_pair;
+    if (geometry_request.status != null_request){
+        requests.data[geometry_request.hash % pc.number_of_calls].geometry = geometry_request;
     }
 }
 
