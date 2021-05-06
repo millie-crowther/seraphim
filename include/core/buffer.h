@@ -64,6 +64,10 @@ struct buffer_t {
     }
 
     void record_write(VkCommandBuffer command_buffer) {
+        if (updates.empty()){
+            return;
+        }
+
         vkCmdCopyBuffer(command_buffer, staging_buffer->buffer, buffer,
                         updates.size(), updates.data());
         updates.clear();
