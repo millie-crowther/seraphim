@@ -480,7 +480,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     vec3 x_scaled;
     ivec3 x_grid;
     vec3 x = intersection.x;
-    int order = expected_order(x) + 2;
+    int order = expected_order(x) * 10;
     grid_align(x, order, size, x_scaled, x_grid);
     uint texture_hash_ = get_hash(x, order, int(intersection.substance.id));
     uint texture_index =  texture_hash_ % pc.texture_pool_size;
