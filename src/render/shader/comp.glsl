@@ -25,7 +25,7 @@ struct intersection_t {
     substance_t substance;
     float cell_radius;
     uint geometry_index;
-    uint texture_hash;
+//    uint texture_hash;
     vec3 alpha;
     vec3 patch_centre;
 };
@@ -196,15 +196,16 @@ uint get_hash(vec3 x, int order, int id){
 patch_t get_patch(
     vec3 x, int order,
     inout intersection_t intersection, inout request_t request,
-    out uint hash
+    out bool is_patch_found
 ){
+    is_patch_found = true;
     substance_t substance = intersection.substance;
     float size;
     vec3 x_scaled;
     ivec3 x_grid;
     grid_align(x, order, size, x_scaled, x_grid);
 
-    hash = get_hash(x, order, int(substance.id));
+    uint hash = get_hash(x, order, int(substance.id));
 
     // calculate some useful variables for doing lookups
     uint index = hash % work_group_size;
@@ -222,11 +223,12 @@ patch_t get_patch(
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
             request = build_request(substance, x, order, hash);
+            is_patch_found = false;
         }
     }
 
     intersection.geometry_index = geometry_index;
-    intersection.texture_hash = hash;
+//    intersection.texture_hash = hash;
     intersection.alpha = x_scaled - x_grid;
 
     return patch_;
@@ -254,9 +256,10 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     patch_t patch_ = patch_t(0, 0, 0, 0);
     intersection.substance = sub;
 
+    bool is_patch_found = false;
     if (inside_aabb){
-        for (int tries = 0; tries < max_hash_retries && hash != patch_.hash; tries++){
-            patch_ = get_patch(r.x, order + tries, intersection, request, hash);
+        for (int tries = 0; tries < max_hash_retries && !is_patch_found; tries++){
+            patch_ = get_patch(r.x, order + tries, intersection, request, is_patch_found);
         }
     }
 
@@ -265,7 +268,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     float phi_plane = min(0, e) / dot(r.d, n);
 
     float phi = mix(patch_.phi, phi_plane, phi_plane >= 0);
-    phi *= float(hash == patch_.hash);
+    phi *= float(is_patch_found);
 
     bool is_empty = patch_.phi > length(vec3(intersection.cell_radius));
     phi = mix(phi.x, patch_.phi, is_empty);
@@ -462,8 +465,8 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-    uint texture_hash_ = intersection.texture_hash;
-    uint texture_index = texture_hash_ % pc.texture_pool_size;
+//    uint texture_hash_ = intersection.texture_hash;
+    uint texture_index = intersection.geometry_index;// texture_hash_ % pc.texture_pool_size;
     vec3 t = intersection.alpha * 0.5 + 0.25;
 
     t += vec3(
