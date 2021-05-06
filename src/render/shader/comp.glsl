@@ -23,7 +23,7 @@ struct intersection_t {
     vec3 normal;
     float distance;
     substance_t substance;
-    float cell_radius;
+//    float cell_radius;
     uint geometry_index;
 //    uint texture_hash;
     vec3 alpha;
@@ -228,8 +228,7 @@ patch_t get_patch(
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
     vec3 cell_position = x_grid * size;
-    intersection.cell_radius = size / 2;
-    intersection.patch_centre = cell_position + intersection.cell_radius;
+    intersection.patch_centre = cell_position + size / 2;
 
     if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
@@ -270,13 +269,16 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.substance = sub;
 
     bool is_patch_found = false;
+    float cell_radius = 0;
+    vec3 patch_centre;
     if (inside_aabb){
         int tries = 0;
         for (; tries < max_hash_retries && !is_patch_found; tries++){
             patch_ = get_patch(r.x, order + tries, intersection, request, is_patch_found);
         }
 
-
+        vec3 cell_position;
+        calculate_cell(r.x, order + tries, cell_position, cell_radius, patch_centre);
     }
 
     vec3 n = vec3((patch_.normal >> uvec3(0, 8, 16)) & 0xFF) / 127.5 - 1;
@@ -286,7 +288,7 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     float phi = mix(patch_.phi, phi_plane, phi_plane >= 0);
     phi *= float(is_patch_found);
 
-    bool is_empty = patch_.phi > length(vec3(intersection.cell_radius));
+    bool is_empty = patch_.phi > length(vec3(cell_radius));
     phi = mix(phi.x, patch_.phi, is_empty);
 
     return mix(phi_aabb, phi, inside_aabb);
