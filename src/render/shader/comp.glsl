@@ -195,10 +195,10 @@ uint work_group_offset(){
 }
 
 uint get_hash(vec3 x, int order, int id){
-    float size;
-    vec3 x_scaled;
+    float _1;
+    vec3 _2;
     ivec3 x_grid;
-    grid_align(x, order, size, x_scaled, x_grid);
+    grid_align(x, order, _1, _2, x_grid);
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
     int base_hash = hash_vec.w ^ hash_vec.x ^ hash_vec.y ^ hash_vec.z;
     return base_hash ^ id;
