@@ -162,6 +162,7 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash){
     vec3 x_scaled;
     ivec3 x_grid;
     grid_align(x, order, size, x_scaled, x_grid);
+
     vec3 cell_position;
     float cell_radius;
     vec3 patch_centre;
@@ -227,8 +228,12 @@ patch_t get_patch(
     uvec4 udata = floatBitsToUint(workspace[index]);
     patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
-    vec3 cell_position = x_grid * size;
-    intersection.patch_centre = cell_position + size / 2;
+//    vec3 cell_position = x_grid * size;
+    vec3 cell_position;
+    float cell_radius;
+    vec3 patch_centre;
+    calculate_cell(x, order, cell_position, cell_radius, patch_centre);
+    intersection.patch_centre = patch_centre;
 
     if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
@@ -240,7 +245,6 @@ patch_t get_patch(
     }
 
     intersection.geometry_index = geometry_index;
-//    intersection.texture_hash = hash;
     intersection.alpha = x_scaled - x_grid;
 
     return patch_;
@@ -269,20 +273,23 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     intersection.substance = sub;
 
     bool is_patch_found = false;
-    float cell_radius = 0;
+    float cell_radius;
     vec3 patch_centre;
+    vec3 cell_position;
+    float size;
     if (inside_aabb){
         int tries = 0;
         for (; tries < max_hash_retries && !is_patch_found; tries++){
             patch_ = get_patch(r.x, order + tries, intersection, request, is_patch_found);
+            vec3 x_scaled;
+            ivec3 x_grid;
+            grid_align(r.x, order + tries, size, x_scaled, x_grid);
+            calculate_cell(r.x, order + tries, cell_position, cell_radius, patch_centre);
         }
-
-        vec3 cell_position;
-        calculate_cell(r.x, order + tries, cell_position, cell_radius, patch_centre);
     }
 
     vec3 n = vec3((patch_.normal >> uvec3(0, 8, 16)) & 0xFF) / 127.5 - 1;
-    float e = dot(intersection.patch_centre - r.x, n) - patch_.phi;
+    float e = dot(patch_centre - r.x, n) - patch_.phi;
     float phi_plane = min(0, e) / dot(r.d, n);
 
     float phi = mix(patch_.phi, phi_plane, phi_plane >= 0);
