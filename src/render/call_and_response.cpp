@@ -29,7 +29,7 @@ response_t::response_t(const request_t &call, substance_t *substance) {
         vec3_t d = p + vertices[o] * call.radius;
         vec3 d1 = {{d[0], d[1], d[2]}};
 
-        if (!srph_sdf_contains(sdf, &d1)) {
+        if (!sdf_contains(sdf, &d1)) {
             contains_mask |= 1 << o;
         }
 

@@ -24,7 +24,6 @@ struct intersection_t {
     float distance;
     substance_t substance;
     uint geometry_index;
-    vec3 alpha;
 };
 
 struct request_t {
@@ -481,8 +480,15 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     
     // find texture coordinate
 //    uint texture_hash_ = intersection.texture_hash;
-    uint texture_index = intersection.geometry_index;// texture_hash_ % pc.texture_pool_size;
-    vec3 t = intersection.alpha * 0.5 + 0.25;
+    float size;
+    vec3 x_scaled;
+    ivec3 x_grid;
+    vec3 x = intersection.x;
+    int order = expected_order(x);
+    grid_align(x, order, size, x_scaled, x_grid);
+    uint texture_hash_ = get_hash(x, order, int(intersection.substance.id));
+    uint texture_index =  texture_hash_ % pc.texture_pool_size;
+    vec3 t = (x_scaled - x_grid) * 0.5 + 0.25;
 
     t += vec3(
         texture_index % pc.texture_size,
@@ -514,13 +520,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     request_pair_t request_pair;
     request_pair.geometry = request;
-    request_pair.texture = request;
+//    request_pair.texture = request;
 
     barrier();
 
-//    if (texture_hash.data[texture_index] != intersection.texture_hash){
-//        request_pair.texture = build_request(intersection, intersection.texture_hash);
-//    }
+    if (intersection.hit && texture_hash.data[texture_index] != texture_hash_){
+        request_pair.texture = build_request(intersection.substance, x, order, texture_hash_);
+    }
 
     barrier();
     if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){

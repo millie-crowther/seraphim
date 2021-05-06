@@ -44,7 +44,7 @@ vec3 sdf_normal(sdf_t *sdf, const vec3 *x) {
     return n;
 }
 
-bool srph_sdf_contains(sdf_t *sdf, const vec3 *x) {
+bool sdf_contains(sdf_t *sdf, const vec3 *x) {
     return srph_bound3_contains(&sdf->bound, x) && sdf_distance(sdf, x) <= 0.0;
 }
 
@@ -79,7 +79,7 @@ double sdf_volume(sdf_t *sdf) {
             x.y = srph_random_f64_range(&rng, b->lower.y, b->upper.y);
             x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
-            if (srph_sdf_contains(sdf, &x)) {
+            if (sdf_contains(sdf, &x)) {
                 hits++;
             }
         }
@@ -137,7 +137,7 @@ double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
 void srph_sdf_add_sample(sdf_t * sdf, const vec3 * x){
     assert(sdf != NULL);
 
-    if (!srph_sdf_contains(sdf, x)){
+    if (!sdf_contains(sdf, x)){
         return;
     }
 

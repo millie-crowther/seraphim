@@ -177,7 +177,7 @@ mat3 *substance_inertia_tensor(substance_t *self) {
                     matter_material(&self->matter, &mat, NULL);
                 }
 
-                if (srph_sdf_contains(self->matter.sdf, &x)) {
+                if (sdf_contains(self->matter.sdf, &x)) {
                     for (int i = 0; i < 3; i++) {
                         for (int j = 0; j < 3; j++) {
                             vec3 r;
@@ -243,7 +243,7 @@ vec3 *substance_com(substance_t *self) {
             }
             vec3_multiply_f(&x, &x, mat.density);
 
-            if (srph_sdf_contains(self->matter.sdf, &x)) {
+            if (sdf_contains(self->matter.sdf, &x)) {
                 vec3_add(&com, &com, &x);
                 hits++;
                 total += mat.density;
