@@ -704,15 +704,15 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
 void renderer_t::handle_requests() {
     vkDeviceWaitIdle(device->device);
 
-    std::vector<request_pair_t> calls(number_of_calls);
-    std::vector<request_pair_t> empty_calls(number_of_calls);
+    std::vector<request_pair_t> requests(number_of_calls);
+    std::vector<request_pair_t> null_requests(number_of_calls);
 
-    void *memory_map = request_buffer.map(0, calls.size());
-    memcpy(calls.data(), memory_map, calls.size() * sizeof(request_pair_t));
-    memcpy(memory_map, empty_calls.data(), calls.size() * sizeof(request_pair_t));
+    void *memory_map = request_buffer.map(0, requests.size());
+    memcpy(requests.data(), memory_map, requests.size() * sizeof(request_pair_t));
+    memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_pair_t));
     request_buffer.unmap();
 
-    for (auto &call : calls) {
+    for (auto &call : requests) {
         handle_geometry_request(this, &call.geometry);
         handle_texture_request(this, &call.texture);
     }

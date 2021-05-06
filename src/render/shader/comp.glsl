@@ -234,7 +234,7 @@ patch_t get_patch(
     }
 
     intersection.geometry_index = geometry_index;
-    intersection.alpha = x_scaled - x_grid;
+//    intersection.alpha = x_scaled - x_grid;
 
     return patch_;
 }
@@ -484,7 +484,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     vec3 x_scaled;
     ivec3 x_grid;
     vec3 x = intersection.x;
-    int order = expected_order(x);
+    int order = expected_order(x) + 1;
     grid_align(x, order, size, x_scaled, x_grid);
     uint texture_hash_ = get_hash(x, order, int(intersection.substance.id));
     uint texture_index =  texture_hash_ % pc.texture_pool_size;
@@ -524,10 +524,10 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     barrier();
 
-    if (intersection.hit && texture_hash.data[texture_index] != texture_hash_){
+    if (intersection.hit){// && texture_hash.data[texture_index] != texture_hash_){
         request_pair.texture = build_request(intersection.substance, x, order, texture_hash_);
     }
-
+//
     barrier();
     if (request_pair.geometry.status != null_request || request_pair.texture.status != null_request){
         requests.data[request.hash % pc.number_of_calls] = request_pair;
