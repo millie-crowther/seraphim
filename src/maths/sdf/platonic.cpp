@@ -53,18 +53,6 @@ double sdf_octahedron(void *data, const vec3 *x) {
 void sdf_cuboid_create(uint32_t *id, sdf_t *sdf, vec3 *r) {
     sdf_create(id, sdf, cuboid_phi, r);
 
-    vec3 inertia;
-    vec3_multiply_f(&inertia, r, 2.0);
-    vec3_multiply(&inertia, &inertia, &inertia);
-    vec3_multiply_f(&inertia, &inertia, 1.0 / 6.0);
-
-    for (int i = 0; i < 9; i++) {
-        sdf->inertia_tensor.v[i] = 0.0;
-    }
-
-    mat3_scale(&sdf->inertia_tensor, &mat3_identity, &inertia);
-    sdf->is_inertia_tensor_valid = true;
-
     sdf->com = vec3_zero;
     sdf->is_com_valid = true;
 }
