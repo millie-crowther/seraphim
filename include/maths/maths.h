@@ -124,6 +124,10 @@ typedef union vec4 {
         mfloat_t z;
         mfloat_t w;
     };
+    struct {
+        vec3 xyz;
+        double _1;
+    };
     mfloat_t v[VEC4_SIZE];
 } vec4;
 

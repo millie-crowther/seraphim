@@ -672,8 +672,9 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
         if (substance_index >= *renderer->num_substances) {
             return;
         }
-        auto response = response_t(*request, &renderer->substances[substance_index]);
-        auto patch = response.patch;
+
+        patch_t patch{};
+        response_geometry_patch(request, &renderer->substances[substance_index], &patch);
         uint32_t index = request_geometry_index(request);
         renderer->patch_buffer.write(&patch, 1, index);
     }

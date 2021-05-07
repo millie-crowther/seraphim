@@ -72,3 +72,49 @@ uint32_t request_texture_index(const request_t *call) {
     return call->hash % texture_pool_size;
 }
 
+static uint32_t squash(vec3 * x_){
+    vec4 x;
+    x.xyz = *x_;
+    x.w = 0.0;
+
+    uint8_t bytes[4];
+    for (int i = 0; i < 4; i++) {
+        bytes[i] = (uint8_t)(fmax(0.0, fmin(x.v[i] * 255.0, 255.0)));
+    }
+    return *(uint32_t *) bytes;
+}
+
+void response_geometry_patch(const request_t *call, const substance_t *substance, patch_t *patch) {
+    sdf_t *sdf = substance->matter.sdf;
+
+    bound3_t *bound = srph_sdf_bound(sdf);
+    vec3 m;
+    srph_bound3_midpoint(bound, &m);
+    vec3_t p = mat::cast<double>(call->position) - vec3_t(m.x, m.y, m.z);
+
+    uint32_t contains_mask = 0;
+
+    for (int o = 0; o < 8; o++) {
+        vec3_t d = p + vertices[o] * call->radius;
+        vec3 d1 = {{d[0], d[1], d[2]}};
+
+        if (!sdf_contains(sdf, &d1)) {
+            contains_mask |= 1 << o;
+        }
+    }
+
+    vec3_t c = p + call->radius;
+    vec3 c1 = {{c[0], c[1], c[2]}};
+    float phi = (float) sdf_distance(sdf, &c1);
+
+    vec3 n1 = sdf_normal(sdf, &c1);
+    vec3_divide_f(&n1, &n1, 2);
+    vec3_add_f(&n1, &n1, 0.5);
+//    vec3_t n = vec3_t(n1.x, n1.y, n1.z) / 2 + 0.5;
+    uint32_t np = squash(&n1);
+
+    uint32_t x_elem = contains_mask << 16;
+    *patch = {x_elem, call->hash, phi, np};
+
+}
+
