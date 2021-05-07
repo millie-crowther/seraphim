@@ -64,7 +64,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
-const int max_hash_retries = 10;
+const int max_hash_retries = 1;
 const float geometry_epsilon = 1.0 / 300.0;
 
 const uint null_request = 0;
@@ -475,15 +475,15 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-//    uint texture_hash_ = intersection.texture_hash;
     float size;
     vec3 x_scaled;
     ivec3 x_grid;
-    vec3 x = intersection.x;
-    int order = expected_order(x) * 10;
+    mat4 inv = inverse(intersection.substance.transform);
+    vec3 x =  (inv * vec4(intersection.x, 1)).xyz;
+    int order = expected_order(x) * 2;
     grid_align(x, order, size, x_scaled, x_grid);
     uint texture_hash_ = get_hash(x, order, int(intersection.substance.id));
-    uint texture_index =  texture_hash_ % pc.texture_pool_size;
+    uint texture_index = texture_hash_ % pc.texture_pool_size;
     vec3 t = (x_scaled - x_grid) * 0.5 + 0.25;
 
     t += vec3(
