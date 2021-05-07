@@ -98,12 +98,12 @@ deform_t *matter_add_deformation(matter_t *self, const vec3 *x, deform_type_t ty
 }
 
 void matter_to_local_position(matter_t *m, vec3 *tx, const vec3 *x) {
-    srph_transform_to_local_position(&m->transform, tx, x);
+    transform_to_local_position(&m->transform, tx, x);
 }
 
 void matter_transformation_matrix(matter_t *m, float *xs) {
     mat4 dxs;
-    srph_transform_matrix(&m->transform, &dxs);
+    transform_matrix(&m->transform, &dxs);
 
     for (int i = 0; i < 16; i++) {
         xs[i] = (float)dxs.v[i];

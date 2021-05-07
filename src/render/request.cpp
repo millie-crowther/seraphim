@@ -36,7 +36,7 @@ static uint32_t squash(vec3 * x_){
 void response_geometry(const request_t *request, const substance_t *substance, patch_t *patch) {
     sdf_t *sdf = substance->matter.sdf;
 
-    bound3_t *bound = srph_sdf_bound(sdf);
+    bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     srph_bound3_midpoint(bound, &midpoint);
     vec3 position = {{request->position[0], request->position[1], request->position[2] }};
@@ -69,7 +69,7 @@ void response_geometry(const request_t *request, const substance_t *substance, p
 void response_texture(const request_t *request, substance_t *substance, uint32_t *normals, uint32_t *colours) {
     sdf_t *sdf = substance->matter.sdf;
 
-    bound3_t *bound = srph_sdf_bound(sdf);
+    bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     srph_bound3_midpoint(bound, &midpoint);
     vec3 position = {{request->position[0], request->position[1], request->position[2] }};

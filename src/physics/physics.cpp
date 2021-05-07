@@ -70,14 +70,14 @@ void srph_physics_tick(srph_physics *p, double dt) {
         // integrate linear velocity
         vec3 dv;
         vec3_multiply_f(&dv, &m->velocity, dt);
-        srph_transform_translate(&m->transform, &dv);
+        transform_translate(&m->transform, &dv);
 
         // integrate angular velocity
         vec3 dw;
         vec3_multiply_f(&dw, &m->angular_velocity, dt);
         quat q;
         quat_from_euler_angles(&q, &dw);
-        srph_transform_rotate(&m->transform, &q);
+        transform_rotate(&m->transform, &q);
     }
 
     // attempt to put substances to sleep

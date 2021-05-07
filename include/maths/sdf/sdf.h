@@ -37,7 +37,7 @@ vec3 sdf_normal(sdf_t *sdf, const vec3 *x);
 double sdf_volume(sdf_t *sdf);
 double srph_sdf_project(sdf_t *sdf, const vec3 *d);
 bool sdf_contains(sdf_t *sdf, const vec3 *x);
-bound3_t *srph_sdf_bound(sdf_t *sdf);
-double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x);
+bound3_t *sdf_bound(sdf_t *sdf);
+double sdf_discontinuity(sdf_t *sdf, const vec3 *x);
 
 #endif

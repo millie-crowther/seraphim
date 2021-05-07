@@ -87,8 +87,8 @@ static double intersection_func(void *data, const vec3 *x) {
 //    matter_t * b = collision->b;
 //
 //    vec3 xa, xb;
-//    srph_transform_to_local_position(&a->transform, &xa, x);
-//    srph_transform_to_local_position(&b->transform, &xb, x);
+//    transform_to_local_position(&a->transform, &xa, x);
+//    transform_to_local_position(&b->transform, &xb, x);
 //
 //    double phi_a = sdf_distance(a->sdf, &xa);
 //    double phi_b = sdf_distance(b->sdf, &xb);
@@ -144,8 +144,8 @@ static void contact_correct(substance_t *sa, substance_t *sb, deform_t *xb,
     vec3_subtract(&vr, &vb, &va);
 
     vec3 n;
-    if (srph_sdf_discontinuity(a->sdf, &xa) <
-        srph_sdf_discontinuity(b->sdf, &xb->x0)) {
+    if (sdf_discontinuity(a->sdf, &xa) <
+        sdf_discontinuity(b->sdf, &xb->x0)) {
         n = sdf_normal(a->sdf, &xa);
         matter_to_global_direction(a, NULL, &n, &n);
     } else {
@@ -280,7 +280,7 @@ static void collision_resolve_interpenetration_constraint(collision_t *c) {
                 vec3 n = sdf_normal(a->sdf, &xa);
                 matter_to_global_direction(a, NULL, &n, &n);
                 vec3_multiply_f(&n, &n, -phi * ratio);
-                srph_transform_translate(&b->transform, &n);
+                transform_translate(&b->transform, &n);
             }
         }
     }

@@ -67,7 +67,7 @@ double sdf_volume(sdf_t *sdf) {
     if (sdf->volume < 0.0) {
         int hits = 0;
 
-        bound3_t *b = srph_sdf_bound(sdf);
+        bound3_t *b = sdf_bound(sdf);
         random_t rng;
         srph_random_default_seed(&rng);
 
@@ -89,7 +89,7 @@ double sdf_volume(sdf_t *sdf) {
     return sdf->volume;
 }
 
-bound3_t *srph_sdf_bound(sdf_t *sdf) {
+bound3_t *sdf_bound(sdf_t *sdf) {
     if (sdf == NULL) {
         return NULL;
     }
@@ -112,7 +112,7 @@ bound3_t *srph_sdf_bound(sdf_t *sdf) {
     return &sdf->bound;
 }
 
-double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
+double sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
     vec3 ns[3];
 
     for (int axis = 0; axis < 3; axis++) {
@@ -130,21 +130,3 @@ double srph_sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
 
     return fabs(mat3_determinant((mat3 *)ns));
 }
-
-/*
-void srph_sdf_add_sample(sdf_t * sdf, const vec3 * x){
-    assert(sdf != NULL);
-
-    if (!sdf_contains(sdf, x)){
-        return;
-    }
-
-    for (uint32_t i = 0; i < sdf->vertices.size; i++){
-        const vec3 * y = (vec3 *) srph_array_at(&sdf->vertices, i);
-        if (srph_vec3_distance(x, y) < SAMPLE_DENSITY){
-            return;
-        }
-    }
-
-    *((vec3 *) srph_array_push_back(&sdf->vertices)) = *x;
-} */

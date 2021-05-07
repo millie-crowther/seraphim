@@ -13,7 +13,7 @@ substance_t::substance_t(form_t *form, matter_t *matter, uint32_t id) {
 
 data_t substance_t::get_data(const vec3 *eye_position) {
     vec3 r;
-    srph_bound3_radius(srph_sdf_bound(matter.sdf), &r);
+    srph_bound3_radius(sdf_bound(matter.sdf), &r);
 
     vec3 eye;
     matter_to_local_position(&matter, &eye, eye_position);
@@ -159,7 +159,7 @@ mat3 *substance_inertia_tensor(substance_t *self) {
                 self->inertia_tensor.v[i] = 0.0;
             }
 
-            bound3_t *b = srph_sdf_bound(self->matter.sdf);
+            bound3_t *b = sdf_bound(self->matter.sdf);
             random_t rng;
             srph_random_default_seed(&rng);
             int hits = 0;
@@ -224,7 +224,7 @@ vec3 *substance_com(substance_t *self) {
     if (!self->is_com_valid) {
         vec3 com = vec3_zero;
 
-        bound3_t *b = srph_sdf_bound(self->matter.sdf);
+        bound3_t *b = sdf_bound(self->matter.sdf);
         random_t rng;
         srph_random_default_seed(&rng);
         int hits = 0;
