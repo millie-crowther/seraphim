@@ -69,10 +69,6 @@ namespace srph {
             return r;
         }
 
-        matrix_t<T, M, N> operator-(const T &x) const {
-            return *this - matrix_t<T, M, N>(x);
-        }
-
         matrix_t<T, M, N> operator+(const T &x) const {
             return *this + matrix_t<T, M, N>(x);
         }
@@ -84,10 +80,6 @@ namespace srph {
                 ms[i] = (*this)[i] * x;
             }
             return ms;
-        }
-
-        matrix_t<T, M, N> operator/(const T &x) const {
-            return *this / matrix_t<T, M, N>(x);
         }
 
         T operator[](int i) const { return super_t::operator[](i); }
@@ -115,10 +107,7 @@ namespace srph {
     typedef vec_t<float, 3> f32vec3_t;
     typedef vec_t<float, 4> f32vec4_t;
 
-    typedef vec_t<double, 2> f64vec2_t;
-    typedef vec_t<double, 3> f64vec3_t;
-
-    typedef f64vec2_t vec2_t;
-    typedef f64vec3_t vec3_t;
+    typedef vec_t<double, 2> vec2_t;
+    typedef vec_t<double, 3> vec3_t;
 }
 #endif
