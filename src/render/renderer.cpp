@@ -667,7 +667,7 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
 }
 
 static void handle_geometry_request(renderer_t * renderer, request_t * request){
-    if (request->is_valid()) {
+    if (request_is_valid(request)) {
         size_t substance_index = request->substanceID;
         if (substance_index >= *renderer->num_substances) {
             return;
@@ -681,7 +681,7 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
 }
 
 static void handle_texture_request(renderer_t * renderer, request_t * request){
-    if (request->is_valid()) {
+    if (request_is_valid(request)) {
         size_t substance_index = request->substanceID;
         if (substance_index >= *renderer->num_substances) {
             return;

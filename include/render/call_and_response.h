@@ -20,34 +20,22 @@ struct request_t {
     uint64_t __unused;
 
     request_t();
-
-    bool is_valid() const;
 };
 
 uint32_t request_geometry_index(const request_t *call);
 uint32_t request_texture_index(const request_t *call);
+bool request_is_valid(const request_t *request);
 
 struct request_pair_t {
     request_t geometry;
     request_t texture;
 };
 
-
 struct patch_t {
     uint32_t contents;
     uint32_t hash;
     float phi;
     uint32_t normal;
-};
-
-struct response_t {
-    response_t(const request_t &call, substance_t *substance);
-
-    patch_t patch;
-    std::array<uint32_t, 8> normals;
-    std::array<uint32_t, 8> colours;
-
-    uint32_t squash(const srph::vec4_t &x) const;
 };
 
 void response_geometry(const request_t * request, const substance_t * substance, patch_t * patch);
