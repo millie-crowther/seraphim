@@ -1,5 +1,5 @@
-#ifndef CALL_AND_RESPONSE_H
-#define CALL_AND_RESPONSE_H
+#ifndef SERAPHIM_RENDER_REQUEST_H
+#define SERAPHIM_RENDER_REQUEST_H
 
 #include "metaphysics/substance.h"
 

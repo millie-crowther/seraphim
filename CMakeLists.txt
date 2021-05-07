@@ -40,7 +40,7 @@ set(SOURCES
         src/physics/sphere.cpp
         src/physics/transform.cpp
 
-        src/render/call_and_response.cpp
+        src/render/request.cpp
         src/render/camera.cpp
         src/render/light.cpp
         src/render/renderer.cpp
