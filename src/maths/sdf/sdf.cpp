@@ -19,6 +19,10 @@ void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data) {
     sdf->is_inertia_tensor_valid = false;
     sdf->volume = -1.0;
     sdf->is_convex = false;
+
+    // TODO: improve CoM calculation and remove this
+    sdf->com = vec3_zero;
+    sdf->is_com_valid = true;
 }
 
 double sdf_distance(sdf_t *sdf, const vec3 *x) {

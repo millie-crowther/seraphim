@@ -1,8 +1,6 @@
 #include "maths/sdf/platonic.h"
 
-#include <stdlib.h>
-
-static double cuboid_phi(void *data, const vec3 *x) {
+double sdf_cuboid(void *data, const vec3 *x) {
     vec3 *r = (vec3 *)data;
     vec3 x1 = *x;
 
@@ -48,11 +46,4 @@ double sdf_octahedron(void *data, const vec3 *x) {
 
     vec3 r = {{q.x, q.y - s + k, q.z - k}};
     return vec3_length(&r);
-}
-
-void sdf_cuboid_create(uint32_t *id, sdf_t *sdf, vec3 *r) {
-    sdf_create(id, sdf, cuboid_phi, r);
-
-    sdf->com = vec3_zero;
-    sdf->is_com_valid = true;
 }

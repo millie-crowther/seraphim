@@ -5,6 +5,7 @@
 #include "physics/collision.h"
 
 #include <thread>
+#include <mutex>
 
 typedef struct srph_physics {
     int get_frame_count();

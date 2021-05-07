@@ -174,7 +174,7 @@ mat3 *substance_inertia_tensor(substance_t *self) {
                 x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
                 if (!self->matter.is_uniform) {
-                    matter_material(&self->matter, &mat, NULL);
+                    matter_material(&self->matter, &mat, &x);
                 }
 
                 if (sdf_contains(self->matter.sdf, &x)) {
@@ -239,11 +239,11 @@ vec3 *substance_com(substance_t *self) {
             x.z = srph_random_f64_range(&rng, b->lower.z, b->upper.z);
 
             if (!self->matter.is_uniform) {
-                matter_material(&self->matter, &mat, NULL);
+                matter_material(&self->matter, &mat, &x);
             }
-            vec3_multiply_f(&x, &x, mat.density);
 
             if (sdf_contains(self->matter.sdf, &x)) {
+                vec3_multiply_f(&x, &x, mat.density);
                 vec3_add(&com, &com, &x);
                 hits++;
                 total += mat.density;
