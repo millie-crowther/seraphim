@@ -6,12 +6,9 @@
 #include "core/device.h"
 #include "maths/matrix.h"
 
-#include <memory>
 #include <vector>
 
-namespace srph {
-class texture_t {
-  private:
+struct texture_t {
     static constexpr uint32_t staging_buffer_size = 10000;
 
     VkImage image;
@@ -30,9 +27,8 @@ class texture_t {
     std::vector<VkBufferImageCopy> updates;
     uint32_t index;
 
-  public:
     // constructors and destructors
-    texture_t(uint32_t binding, device_t *device, u32vec3_t size,
+    texture_t(uint32_t binding, device_t *device, srph::u32vec3_t size,
               VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
               VkDescriptorType descriptor_type);
     ~texture_t();
@@ -40,7 +36,7 @@ class texture_t {
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     void record_write(VkCommandBuffer command_buffer);
-    void write(u32vec3_t p, uint32_t *x);
+    void write(srph::u32vec3_t p, uint32_t *x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
@@ -50,5 +46,5 @@ class texture_t {
     static VkImageView create_image_view(VkDevice device, VkImage image,
                                          VkFormat format);
 };
-} // namespace srph
+
 #endif

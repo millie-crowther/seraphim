@@ -21,6 +21,7 @@
 #include "render/swapchain.h"
 #include "render/texture.h"
 #include "ui/window.h"
+#include "texture.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -85,9 +86,9 @@ struct renderer_t {
     std::weak_ptr<srph::camera_t> main_camera;
 
     // textures
-    std::unique_ptr<srph::texture_t> render_texture;
-    std::unique_ptr<srph::texture_t> colour_texture;
-    std::unique_ptr<srph::texture_t> normal_texture;
+    std::unique_ptr<texture_t> render_texture;
+    std::unique_ptr<texture_t> colour_texture;
+    std::unique_ptr<texture_t> normal_texture;
 
     // command pool
     std::unique_ptr<srph::command_pool_t> compute_command_pool;
