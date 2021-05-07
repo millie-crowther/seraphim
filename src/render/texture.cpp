@@ -146,12 +146,12 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     return descriptor_write;
 }
 
-void texture_t::write(u32vec3_t p, const std::array<uint32_t, 8> &x) {
+void texture_t::write(u32vec3_t p, uint32_t *x) {
     uint32_t offset = (index++ % buffer_size(&staging_buffer));
-    staging_buffer.write(&x, 1, offset);
+    staging_buffer.write(x, 1, offset);
 
     VkBufferImageCopy region;
-    region.bufferOffset = offset * sizeof(uint32_t) * 8;
+    region.bufferOffset = offset * staging_buffer.element_size;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

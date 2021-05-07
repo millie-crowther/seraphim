@@ -50,6 +50,7 @@ struct response_t {
     uint32_t squash(const srph::vec4_t &x) const;
 };
 
-void response_geometry_patch(const request_t * request, const substance_t * substance, patch_t * patch);
+void response_geometry(const request_t * request, const substance_t * substance, patch_t * patch);
+void response_texture(const request_t * request, substance_t *substance, uint32_t * normals, uint32_t * colours);
 
 #endif

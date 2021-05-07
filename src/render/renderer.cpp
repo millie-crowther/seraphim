@@ -674,7 +674,7 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
         }
 
         patch_t patch{};
-        response_geometry_patch(request, &renderer->substances[substance_index], &patch);
+        response_geometry(request, &renderer->substances[substance_index], &patch);
         uint32_t index = request_geometry_index(request);
         renderer->patch_buffer.write(&patch, 1, index);
     }
@@ -686,7 +686,12 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
         if (substance_index >= *renderer->num_substances) {
             return;
         }
-        auto response = response_t(*request, &renderer->substances[substance_index]);
+
+        uint32_t normals[8];
+        uint32_t colours[8];
+        response_texture(request, &renderer->substances[substance_index], normals, colours);
+
+//        auto response = response_t(*request, &renderer->substances[substance_index]);
         uint32_t index = request_texture_index(request);
         uint32_t texture_size = renderer->texture_size;
         u32vec3_t p = u32vec3_t(
@@ -697,8 +702,8 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
 
         renderer->texture_hash_buffer.write(&request->hash, 1, index);
 
-        renderer->normal_texture->write(p, response.normals);
-        renderer->colour_texture->write(p, response.colours);
+        renderer->normal_texture->write(p, normals);
+        renderer->colour_texture->write(p, colours);
     }
 }
 

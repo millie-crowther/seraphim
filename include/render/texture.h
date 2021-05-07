@@ -40,7 +40,7 @@ class texture_t {
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     void record_write(VkCommandBuffer command_buffer);
-    void write(u32vec3_t p, const std::array<uint32_t, 8> &x);
+    void write(u32vec3_t p, uint32_t *x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
