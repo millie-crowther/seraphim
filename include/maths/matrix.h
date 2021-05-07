@@ -117,20 +117,8 @@ namespace srph {
 
     typedef vec_t<double, 2> f64vec2_t;
     typedef vec_t<double, 3> f64vec3_t;
-    typedef vec_t<double, 4> f64vec4_t;
 
     typedef f64vec2_t vec2_t;
     typedef f64vec3_t vec3_t;
-    typedef f64vec4_t vec4_t;
-
-    namespace mat {
-        template<class S, class T, int M, int N>
-        matrix_t<S, M, N> cast(const matrix_t<T, M, N> &m) {
-            matrix_t<S, M, N> a;
-            std::transform(m.begin(), m.end(), a.begin(),
-                           [](const T &x) { return static_cast<S>(x); });
-            return a;
-        }
-    } // namespace mat
 }
 #endif

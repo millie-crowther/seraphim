@@ -6,7 +6,7 @@ using namespace srph;
 
 mouse_t::mouse_t(window_t &window) {
     GLFWwindow *w = window.get_window();
-    c = mat::cast<double>(window.get_size()) / 2.0;
+    c = vec2_t(window.get_size()[0], window.get_size()[1]) / 2.0;
     glfwSetCursorPos(w, c[0], c[1]);
 
     if (glfwRawMouseMotionSupported()) {

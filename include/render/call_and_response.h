@@ -7,7 +7,7 @@ static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
 
 struct request_t {
-    srph::f32vec3_t position;
+    float position[3];
     float radius;
 
     uint32_t hash;

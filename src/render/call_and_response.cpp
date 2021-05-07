@@ -37,14 +37,15 @@ void response_geometry(const request_t *request, const substance_t *substance, p
     sdf_t *sdf = substance->matter.sdf;
 
     bound3_t *bound = srph_sdf_bound(sdf);
-    vec3 m;
-    srph_bound3_midpoint(bound, &m);
-    vec3_t p = mat::cast<double>(request->position) - vec3_t(m.x, m.y, m.z);
+    vec3 midpoint;
+    srph_bound3_midpoint(bound, &midpoint);
+    vec3 position = {{request->position[0], request->position[1], request->position[2] }};
+    vec3_subtract(&position, &position, &midpoint);
 
     uint32_t contains_mask = 0;
 
     for (int o = 0; o < 8; o++) {
-        vec3_t d = p + vertices[o] * request->radius;
+        vec3_t d = vec3_t(position.x, position.y, position.z) + vertices[o] * request->radius;
         vec3 d1 = {{d[0], d[1], d[2]}};
 
         if (!sdf_contains(sdf, &d1)) {
@@ -52,30 +53,30 @@ void response_geometry(const request_t *request, const substance_t *substance, p
         }
     }
 
-    vec3_t c = p + request->radius;
+    vec3_t c = vec3_t(position.x, position.y, position.z) + request->radius;
     vec3 c1 = {{c[0], c[1], c[2]}};
     float phi = (float) sdf_distance(sdf, &c1);
 
-    vec3 n1 = sdf_normal(sdf, &c1);
-    vec3_divide_f(&n1, &n1, 2);
-    vec3_add_f(&n1, &n1, 0.5);
-    uint32_t np = squash(&n1);
+    vec3 normal = sdf_normal(sdf, &c1);
+    vec3_divide_f(&normal, &normal, 2);
+    vec3_add_f(&normal, &normal, 0.5);
+    uint32_t np = squash(&normal);
 
     uint32_t x_elem = contains_mask << 16;
     *patch = {x_elem, request->hash, phi, np};
-
 }
 
-void response_texture(const request_t *call, substance_t *substance, uint32_t *normals, uint32_t *colours) {
+void response_texture(const request_t *request, substance_t *substance, uint32_t *normals, uint32_t *colours) {
     sdf_t *sdf = substance->matter.sdf;
 
     bound3_t *bound = srph_sdf_bound(sdf);
-    vec3 m;
-    srph_bound3_midpoint(bound, &m);
-    vec3_t p = mat::cast<double>(call->position) - vec3_t(m.x, m.y, m.z);
+    vec3 midpoint;
+    srph_bound3_midpoint(bound, &midpoint);
+    vec3 position = {{request->position[0], request->position[1], request->position[2] }};
+    vec3_subtract(&position, &position, &midpoint);
 
     for (int o = 0; o < 8; o++) {
-        vec3_t d = p + vertices[o] * call->radius;
+        vec3_t d = vec3_t(position.x, position.y, position.z) + vertices[o] * request->radius;
         vec3 d1 = {{d[0], d[1], d[2]}};
 
         vec3 normal = sdf_normal(sdf, &d1);
