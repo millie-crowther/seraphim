@@ -19,7 +19,7 @@ const std::vector<const char *> validation_layers = {
 #endif
 };
 
-void srph_cleanup(seraphim_t *engine) {
+void seraphim_destroy(seraphim_t *engine) {
     engine->fps_monitor_quit = true;
 
     srph_physics_destroy(&engine->physics);
@@ -69,14 +69,30 @@ debug_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
 
 #endif
 
-substance_t *srph_create_substance(seraphim_t *srph, form_t *form,
-                                   matter_t *matter) {
+substance_t *seraphim_create_substance(seraphim_t *srph, form_t *form,
+                                       matter_t *matter) {
     assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
 
     substance_t *new_substance = &srph->substances[srph->num_substances];
     *new_substance = substance_t(form, matter, srph->num_substances);
     srph->num_substances++;
     return new_substance;
+}
+
+sdf_t *seraphim_create_sdf(seraphim_t *srph, sdf_func_t phi, void *data) {
+    assert(srph->num_sdfs < SERAPHIM_MAX_SDFS - 1);
+
+    sdf_t *new_sdf = &srph->sdfs[srph->num_sdfs];
+    sdf_create(&srph->num_sdfs, new_sdf, phi, data);
+    return new_sdf;
+}
+
+material_t *seraphim_create_material(seraphim_t *srph, const vec3 * colour) {
+    assert(srph->num_materials < SERAPHIM_MAX_MATERIALS - 1);
+
+    material_t *new_material = &srph->materials[srph->num_materials];
+    material_create(new_material, &srph->num_materials, colour);
+    return new_material;
 }
 
 seraphim_t::seraphim_t(const char *title) {

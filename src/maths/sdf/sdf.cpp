@@ -8,8 +8,6 @@
 
 #include "core/constant.h"
 
-#define SUPPORT_ALPHA 0.5
-
 void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data) {
     sdf->distance_function = phi;
     sdf->data = data;
