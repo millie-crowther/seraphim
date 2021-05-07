@@ -64,7 +64,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 const float sqrt3 = 1.73205080757;
 const int max_steps = 128;
-const int max_hash_retries = 10;
+const int max_hash_retries = 5;
 const float geometry_epsilon = 1.0 / 300.0;
 
 const uint null_request = 0;
@@ -516,7 +516,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     barrier();
 
-    if (intersection.hit){// && texture_hash.data[texture_index] != texture_hash_){
+    if (intersection.hit && texture_hash.data[texture_index] != texture_hash_){
         request_t texture_request = build_request(intersection.substance, x, order, texture_hash_);
         requests.data[texture_hash_ % pc.number_of_calls].texture = texture_request;
     }
