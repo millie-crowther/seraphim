@@ -17,7 +17,7 @@ struct substance_t {
     mat4 transform;
 };
 
-struct intersection_t {
+struct _23423452345 {
     bool hit;
     vec3 x;
     vec3 normal;
@@ -140,9 +140,9 @@ void grid_align(vec3 x, int order, out float size, out vec3 x_scaled, out ivec3 
 
 void calculate_cell(vec3 x, int order, out float cell_radius, out vec3 patch_centre){
     float size;
-    vec3 x_scaled;
+    vec3 _;
     ivec3 x_grid;
-    grid_align(x, order, size, x_scaled, x_grid);
+    grid_align(x, order, size, _, x_grid);
     cell_radius = size / 2;
     patch_centre = x_grid * size + cell_radius;
 }
@@ -199,19 +199,14 @@ patch_t get_patch(
 ){
     is_patch_found = true;
     substance_t substance = intersection.substance;
-    float size;
-    vec3 x_scaled;
-    ivec3 x_grid;
-    grid_align(x, order, size, x_scaled, x_grid);
-
-    uint hash = get_hash(x, order, int(substance.id));
+    uint hash = get_hash(x, order, int(substance.sdf_id));
 
     // calculate some useful variables for doing lookups
     uint index = hash % work_group_size;
     uint geometry_index = hash % pc.geometry_pool_size;
 
     uvec4 udata = floatBitsToUint(workspace[index]);
-    patch_t patch_ =  patch_t(udata.x, udata.y, workspace[index].z, udata.w);
+    patch_t patch_ = patch_t(udata.x, udata.y, workspace[index].z, udata.w);
 
     if (patch_.hash != hash) {
         pointers.data[index + work_group_offset()] = geometry_index;
@@ -310,7 +305,7 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
 
         for (uint i = 0; !shadow_i.hit && i < substances_size; i++){
             p = min(p, phi(r, substances[i], shadow_i, request));
-            shadow_i.hit = shadow_i.hit || p < pc.epsilon;
+            shadow_i.hit = p < pc.epsilon;
         }
         r.x += r.d * p;
         shadow_i.distance += p;
@@ -319,7 +314,7 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
     float dist = length(geometry_i.x - l);
 
     bool is_clear = 
-        shadow_i.substance.id == geometry_i.substance.id || 
+        shadow_i.substance.id == geometry_i.substance.id ||
         shadow_i.substance.id == ~0 ||
         shadow_i.distance > dist;
 
@@ -460,13 +455,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     }
     
     // find texture coordinate
-    float size;
+    float _;
     vec3 x_scaled;
     ivec3 x_grid;
     mat4 inv = inverse(intersection.substance.transform);
     vec3 x =  (inv * vec4(intersection.x, 1)).xyz;
     int order = expected_order(x) * 2;
-    grid_align(x, order, size, x_scaled, x_grid);
+    grid_align(x, order, _, x_scaled, x_grid);
     uint texture_hash_ = get_hash(x, order, int(intersection.substance.material_id));
     uint texture_index = texture_hash_ % pc.texture_pool_size;
     vec3 t = (x_scaled - x_grid) * 0.5 + 0.25;
