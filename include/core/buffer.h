@@ -82,8 +82,7 @@ struct buffer_t {
         vkCmdFillBuffer(command_buffer, buffer, 0, size, 0);
     }
 
-    VkWriteDescriptorSet
-    get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
+    VkWriteDescriptorSet get_write_descriptor_set(VkDescriptorSet descriptor_set) const {
         VkWriteDescriptorSet write_desc_set = {};
         write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write_desc_set.pNext = NULL;

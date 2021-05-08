@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define srph_array(T)                                                               \
+#define array_t(T)                                                               \
     struct {                                                                        \
         size_t size;                                                                \
         size_t capacity;                                                            \
@@ -18,7 +18,7 @@
         uint32_t offset;                                                            \
         uint8_t *base_ptr;                                                          \
     }
-typedef srph_array(uint8_t) _srph_base_array;
+typedef array_t(uint8_t) _srph_base_array;
 
 #define SRPH_ARRAY_CAST(x) ((_srph_base_array *)x)
 

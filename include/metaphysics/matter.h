@@ -16,7 +16,7 @@ typedef struct matter_t {
     material_t * material;
     sdf_t *sdf;
 
-    srph_array(deform_t *) deformations;
+    array_t(deform_t *) deformations;
 
     bool is_uniform;
     bool is_at_rest;

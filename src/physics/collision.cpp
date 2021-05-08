@@ -33,7 +33,7 @@ static void collision_broad_phase(substance_t *substance_pointers,
                                   size_t num_substances, srph_collision_array *cs) {
     srph_array_clear(cs);
 
-    srph_array(substance_t *) substances{};
+    array_t(substance_t *) substances{};
     srph_array_init(&substances);
 
     for (size_t i = 0; i < num_substances; i++) {
