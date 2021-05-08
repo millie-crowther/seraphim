@@ -8,10 +8,10 @@
 #define LINEAR_VELOCITY_REST_THRESHOLD 0.075
 #define ANGULAR_VELOCITY_REST_THRESHOLD 0.2
 
-void matter_create(matter_t *m, sdf_t *sdf, const material_t *mat, const vec3 *x,
+void matter_create(matter_t *m, sdf_t *sdf, material_t *mat, const vec3 *x,
                    bool is_uniform, bool is_static) {
     m->sdf = sdf;
-    m->material = *mat;
+    m->material = mat;
     m->is_uniform = is_uniform;
     m->is_static = is_static;
     m->is_rigid = true;
@@ -49,7 +49,7 @@ bool matter_is_at_rest(matter_t *m) {
 
 double matter_average_density(matter_t *self) {
     if (self->is_uniform) {
-        return self->material.density;
+        return self->material->density;
     }
 
     assert(false);
@@ -139,5 +139,5 @@ void matter_integrate_forces(matter_t *self, double t, const vec3 *gravity,
 
 void matter_material(matter_t *self, material_t *mat, const vec3 *x) {
     // TODO: sample at point
-    *mat = self->material;
+    *mat = *self->material;
 }

@@ -40,7 +40,7 @@ data_t substance_t::get_data(const vec3 *eye_position) {
 
     matter_transformation_matrix(&matter, data.transform);
     data.sdf_id = matter.sdf->id;
-    data.material_id = matter.material.id;
+    data.material_id = matter.material->id;
 
     return data;
 }

@@ -13,7 +13,7 @@ typedef struct matter_t {
     vec3 velocity;
     vec3 angular_velocity;
 
-    material_t material;
+    material_t * material;
     sdf_t *sdf;
 
     srph_array(deform_t *) deformations;
@@ -28,7 +28,7 @@ typedef struct matter_t {
     vec3 torque;
 } matter_t;
 
-void matter_create(matter_t *m, sdf_t *sdf, const material_t *mat, const vec3 *x,
+void matter_create(matter_t *m, sdf_t *sdf, material_t *mat, const vec3 *x,
                    bool is_uniform, bool is_static);
 void matter_destroy(matter_t *m);
 
