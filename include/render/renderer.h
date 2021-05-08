@@ -129,8 +129,6 @@ struct renderer_t {
 
     void cleanup_swapchain();
 
-    void handle_requests();
-
     void present(uint32_t image_index) const;
 
     // constructors and destructors
