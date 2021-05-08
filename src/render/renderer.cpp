@@ -21,10 +21,6 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     this->work_group_size = work_group_size;
     this->substances = substances;
     this->num_substances = num_substances;
-    this->materials = materials;
-    this->num_materials = num_materials;
-    this->sdfs = sdfs;
-    this->num_sdfs = num_sdfs;
 
     texture_size = max_image_size / patch_sample_size;
 
@@ -58,13 +54,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     create_render_pass();
 
-    vec3u size = {{
-        texture_size * patch_sample_size,
-        texture_size * patch_sample_size,
-        push_constants.texture_depth * patch_sample_size
-    }};
-
-    request_handler_create(&request_handler, &size);
+    request_handler_create(&request_handler, texture_size, push_constants.texture_depth, patch_sample_size, sdfs,
+                           num_sdfs, materials, num_materials);
 
     create_descriptor_set_layout();
     create_graphics_pipeline();
@@ -601,7 +592,7 @@ void renderer_t::render() {
         device->device, swapchain->get_handle(), ~static_cast<uint64_t>(0),
         image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
 
-    handle_requests();
+    request_handler_handle_requests(&request_handler);
 
     compute_command_pool
         ->one_time_buffer([&](auto command_buffer) {
@@ -662,67 +653,6 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
     main_camera = camera;
 }
 
-static void handle_geometry_request(renderer_t * renderer, request_t * request){
-    uint32_t sdf_id = request->sdf_id;
-    if (sdf_id >= *renderer->num_sdfs) {
-        return;
-    }
-
-    patch_t patch{};
-    response_geometry(request, &patch, &renderer->sdfs[sdf_id]);
-    uint32_t index = request_geometry_index(request);
-    renderer->request_handler.patch_buffer.write(&patch, 1, index);
-}
-
-static void handle_texture_request(renderer_t * renderer, request_t * request){
-    uint32_t material_id = request->material_id;
-    uint32_t sdf_id = request->sdf_id;
-    if (material_id >= *renderer->num_materials|| sdf_id >= *renderer->num_sdfs) {
-        return;
-    }
-
-    uint32_t normals[8];
-    uint32_t colours[8];
-    response_texture(request, normals, colours, &renderer->materials[material_id],
-                     &renderer->sdfs[sdf_id]);
-
-    uint32_t index = request_texture_index(request);
-    uint32_t texture_size = renderer->texture_size;
-    u32vec3_t p = u32vec3_t(
-        index % texture_size,
-        (index % (texture_size * texture_size)) / texture_size,
-        index / texture_size / texture_size
-    ) * patch_sample_size;
-
-    renderer->request_handler.texture_hash_buffer.write(&request->hash, 1, index);
-
-    renderer->request_handler.normal_texture->write(p, normals);
-    renderer->request_handler.colour_texture->write(p, colours);
-}
-
-static void handle_request(renderer_t *renderer, request_t *request){
-    if (request_is_geometry(request)){
-        handle_geometry_request(renderer, request);
-    } else if (request_is_texture(request)){
-        handle_texture_request(renderer, request);
-    }
-}
-
-void renderer_t::handle_requests() {
-    vkDeviceWaitIdle(device->device);
-
-    std::vector<request_t> requests(number_of_calls);
-    std::vector<request_t> null_requests(number_of_calls);
-
-    void *memory_map = request_handler.request_buffer.map(0, requests.size());
-    memcpy(requests.data(), memory_map, requests.size() * sizeof(request_t));
-    memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_t));
-    request_handler.request_buffer.unmap();
-
-    for (auto &call : requests) {
-        handle_request(this, &call);
-    }
-}
 
 void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];

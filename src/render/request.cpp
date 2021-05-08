@@ -106,8 +106,23 @@ void request_handler_destroy(request_handler_t *request_handler) {
     buffer_destroy(&request_handler->texture_hash_buffer);
 }
 
-void request_handler_create(request_handler_t *request_handler, const vec3u *size) {
-    u32vec3_t size_(size->x, size->y, size->z);
+void request_handler_create(request_handler_t *request_handler, uint32_t texture_size, uint32_t texture_depth,
+                            uint32_t patch_sample_size, sdf_t *sdfs, uint32_t *num_sdfs, material_t *materials,
+                            uint32_t *num_materials) {
+    request_handler->sdfs =sdfs;
+    request_handler->num_sdfs = num_sdfs;
+    request_handler->materials = materials;
+    request_handler->num_materials = num_materials;
+    request_handler->patch_sample_size = patch_sample_size;
+    request_handler->texture_size = texture_size;
+
+    vec3u size = {{
+          texture_size * patch_sample_size,
+          texture_size * patch_sample_size,
+          texture_depth * patch_sample_size
+    }};
+
+    u32vec3_t size_(size.x, size.y, size.z);
 
     request_handler->normal_texture = std::make_unique<texture_t>(
             11, request_handler->device, size_, VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -124,6 +139,7 @@ void request_handler_create(request_handler_t *request_handler, const vec3u *siz
 
 void request_handler_create_buffers(request_handler_t *request_handler, uint32_t number_of_requests, device_t *device) {
     request_handler->device = device;
+    request_handler->number_of_requests = number_of_requests;
 
     buffer_create(&request_handler->patch_buffer, 1, request_handler->device, geometry_pool_size, true,
                   sizeof(patch_t));
@@ -132,3 +148,62 @@ void request_handler_create_buffers(request_handler_t *request_handler, uint32_t
                   sizeof(uint32_t));
 }
 
+
+static void handle_geometry_request(request_handler_t * request_handler, request_t * request){
+    uint32_t sdf_id = request->sdf_id;
+    if (sdf_id >= *request_handler->num_sdfs) {
+        return;
+    }
+
+    patch_t patch{};
+    response_geometry(request, &patch, &request_handler->sdfs[sdf_id]);
+    uint32_t index = request_geometry_index(request);
+    request_handler->patch_buffer.write(&patch, 1, index);
+}
+
+static void handle_texture_request(request_handler_t * request_handler, request_t * request){
+    uint32_t material_id = request->material_id;
+    uint32_t sdf_id = request->sdf_id;
+    if (material_id >= *request_handler->num_materials || sdf_id >= *request_handler->num_sdfs) {
+        return;
+    }
+
+    uint32_t normals[8];
+    uint32_t colours[8];
+    response_texture(request, normals, colours, &request_handler->materials[material_id],
+                     &request_handler->sdfs[sdf_id]);
+
+    uint32_t index = request_texture_index(request);
+    uint32_t texture_size = request_handler->texture_size;
+    u32vec3_t p = u32vec3_t(
+            index % texture_size,
+            (index % (texture_size * texture_size)) / texture_size,
+            index / texture_size / texture_size
+    ) * request_handler->patch_sample_size;
+
+    request_handler->texture_hash_buffer.write(&request->hash, 1, index);
+
+    request_handler->normal_texture->write(p, normals);
+    request_handler->colour_texture->write(p, colours);
+}
+
+void request_handler_handle_requests(request_handler_t * request_handler) {
+    vkDeviceWaitIdle(request_handler->device->device);
+
+    std::vector<request_t> requests(request_handler->number_of_requests);
+    std::vector<request_t> null_requests(request_handler->number_of_requests);
+
+    void *memory_map = request_handler->request_buffer.map(0, requests.size());
+    memcpy(requests.data(), memory_map, requests.size() * sizeof(request_t));
+    memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_t));
+    request_handler->request_buffer.unmap();
+
+    for (size_t i = 0; i < requests.size(); i++){
+        request_t * request = &requests[i];
+        if (request_is_geometry(request)){
+            handle_geometry_request(request_handler, request);
+        } else if (request_is_texture(request)){
+            handle_texture_request(request_handler, request);
+        }
+    }
+}

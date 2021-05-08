@@ -82,12 +82,6 @@ struct renderer_t {
     substance_t *substances;
     uint32_t *num_substances;
 
-    material_t *materials;
-    uint32_t *num_materials;
-
-    sdf_t *sdfs;
-    uint32_t *num_sdfs;
-
     std::unique_ptr<srph::swapchain_t> swapchain;
     std::weak_ptr<srph::camera_t> main_camera;
 
