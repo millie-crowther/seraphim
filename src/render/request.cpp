@@ -97,3 +97,38 @@ bool request_is_texture(const request_t *request) {
     return request->status == texture_request;
 }
 
+void request_handler_destroy(request_handler_t *request_handler) {
+    request_handler->normal_texture.reset();
+    request_handler->colour_texture.reset();
+
+    buffer_destroy(&request_handler->patch_buffer);
+    buffer_destroy(&request_handler->request_buffer);
+    buffer_destroy(&request_handler->texture_hash_buffer);
+}
+
+void request_handler_create(request_handler_t *request_handler, const vec3u *size) {
+    u32vec3_t size_(size->x, size->y, size->z);
+
+    request_handler->normal_texture = std::make_unique<texture_t>(
+            11, request_handler->device, size_, VK_IMAGE_USAGE_SAMPLED_BIT,
+            static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                                 VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+
+    request_handler->colour_texture = std::make_unique<texture_t>(
+            12, request_handler->device, size_, VK_IMAGE_USAGE_SAMPLED_BIT,
+            static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                                 VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
+            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+}
+
+void request_handler_create_buffers(request_handler_t *request_handler, uint32_t number_of_requests, device_t *device) {
+    request_handler->device = device;
+
+    buffer_create(&request_handler->patch_buffer, 1, request_handler->device, geometry_pool_size, true,
+                  sizeof(patch_t));
+    buffer_create(&request_handler->request_buffer, 2, request_handler->device, number_of_requests, true, sizeof(request_t));
+    buffer_create(&request_handler->texture_hash_buffer, 8, request_handler->device, texture_pool_size, true,
+                  sizeof(uint32_t));
+}
+

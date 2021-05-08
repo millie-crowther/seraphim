@@ -3,16 +3,12 @@
 
 #include "core/array.h"
 #include "metaphysics/substance.h"
+#include "texture.h"
 
 #include <threads.h>
 
 static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
-
-typedef struct request_handler_t {
-    thrd_t thread;
-//    array_t()
-} request_handler_t;
 
 
 struct request_t {
@@ -31,6 +27,26 @@ uint32_t request_geometry_index(const request_t *call);
 uint32_t request_texture_index(const request_t *call);
 bool request_is_geometry(const request_t *request);
 bool request_is_texture(const request_t *request);
+
+typedef struct request_handler_t {
+    device_t * device;
+
+    thrd_t thread;
+    array_t(request_t) request_array;
+    mtx_t mutex;
+    cnd_t is_thread_empty;
+
+    std::unique_ptr<texture_t> colour_texture;
+    std::unique_ptr<texture_t> normal_texture;
+    buffer_t patch_buffer;
+    buffer_t request_buffer;
+    buffer_t texture_hash_buffer;
+} request_handler_t;
+
+void request_handler_create(request_handler_t *request_handler, const vec3u *size);
+void request_handler_create_buffers(request_handler_t *request_handler, uint32_t number_of_requests, device_t *device);
+void request_handler_destroy(request_handler_t *request_handler);
+
 
 struct patch_t {
     uint32_t contents;

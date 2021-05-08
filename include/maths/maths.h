@@ -73,6 +73,15 @@ typedef double mfloat_t;
 #define MROUND round
 #define MFLOAT_C(c) c
 
+typedef union vec3u {
+    struct {
+        uint32_t x;
+        uint32_t y;
+        uint32_t z;
+    };
+    uint32_t v[VEC3_SIZE];
+} vec3u;
+
 typedef union vec2i {
     struct {
         mint_t x;

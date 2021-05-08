@@ -93,22 +93,19 @@ struct renderer_t {
 
     // textures
     std::unique_ptr<texture_t> render_texture;
-    std::unique_ptr<texture_t> colour_texture;
-    std::unique_ptr<texture_t> normal_texture;
 
     // command pool
     std::unique_ptr<srph::command_pool_t> compute_command_pool;
     std::unique_ptr<srph::command_pool_t> graphics_command_pool;
 
     // buffers
-    buffer_t patch_buffer;
     buffer_t substance_buffer;
-    buffer_t request_buffer;
     buffer_t light_buffer;
     buffer_t pointer_buffer;
     buffer_t frustum_buffer;
     buffer_t lighting_buffer;
-    buffer_t texture_hash_buffer;
+
+    request_handler_t request_handler;
 
     std::chrono::high_resolution_clock::time_point start;
 

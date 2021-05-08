@@ -58,21 +58,13 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     create_render_pass();
 
-    u32vec3_t size =
-            u32vec3_t(texture_size, texture_size, push_constants.texture_depth) *
-            patch_sample_size;
+    vec3u size = {{
+        texture_size * patch_sample_size,
+        texture_size * patch_sample_size,
+        push_constants.texture_depth * patch_sample_size
+    }};
 
-    normal_texture = std::make_unique<texture_t>(
-        11, device, size, VK_IMAGE_USAGE_SAMPLED_BIT,
-        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-                                             VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-    colour_texture = std::make_unique<texture_t>(
-        12, device, size, VK_IMAGE_USAGE_SAMPLED_BIT,
-        static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-                                             VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    request_handler_create(&request_handler, &size);
 
     create_descriptor_set_layout();
     create_graphics_pipeline();
@@ -99,16 +91,16 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
         write_desc_sets.push_back(
             render_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(
-            normal_texture->get_descriptor_write(descriptor_set));
+            request_handler.normal_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(
-            colour_texture->get_descriptor_write(descriptor_set));
+                request_handler.colour_texture->get_descriptor_write(descriptor_set));
 
         write_desc_sets.push_back(
-            patch_buffer.get_write_descriptor_set(descriptor_set));
+                request_handler.patch_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             substance_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
-                request_buffer.get_write_descriptor_set(descriptor_set));
+                request_handler.request_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             light_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
@@ -118,7 +110,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
         write_desc_sets.push_back(
             lighting_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
-            texture_hash_buffer.get_write_descriptor_set(descriptor_set));
+                request_handler.texture_hash_buffer.get_write_descriptor_set(descriptor_set));
     }
 
     vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
@@ -159,14 +151,13 @@ renderer_t::~renderer_t() {
         vkDestroyFence(device->device, in_flight_fences[i], NULL);
     }
 
-    buffer_destroy(&patch_buffer);
+    request_handler_destroy(&request_handler);
+
     buffer_destroy(&substance_buffer);
-    buffer_destroy(&request_buffer);
     buffer_destroy(&light_buffer);
     buffer_destroy(&pointer_buffer);
     buffer_destroy(&frustum_buffer);
     buffer_destroy(&lighting_buffer);
-    buffer_destroy(&texture_hash_buffer);
 }
 
 void renderer_t::create_compute_pipeline() {
@@ -513,17 +504,17 @@ void renderer_t::create_descriptor_set_layout() {
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
             image_layout,
-            normal_texture->get_descriptor_layout_binding(),
-            colour_texture->get_descriptor_layout_binding(),
+            request_handler.normal_texture->get_descriptor_layout_binding(),
+            request_handler.colour_texture->get_descriptor_layout_binding(),
 
-            patch_buffer.get_descriptor_set_layout_binding(),
+            request_handler.patch_buffer.get_descriptor_set_layout_binding(),
             substance_buffer.get_descriptor_set_layout_binding(),
             light_buffer.get_descriptor_set_layout_binding(),
-            request_buffer.get_descriptor_set_layout_binding(),
+            request_handler.request_buffer.get_descriptor_set_layout_binding(),
             pointer_buffer.get_descriptor_set_layout_binding(),
             frustum_buffer.get_descriptor_set_layout_binding(),
             lighting_buffer.get_descriptor_set_layout_binding(),
-            texture_hash_buffer.get_descriptor_set_layout_binding(),
+            request_handler.texture_hash_buffer.get_descriptor_set_layout_binding(),
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -615,11 +606,11 @@ void renderer_t::render() {
     compute_command_pool
         ->one_time_buffer([&](auto command_buffer) {
             substance_buffer.record_write(command_buffer);
-            patch_buffer.record_write(command_buffer);
+            request_handler.patch_buffer.record_write(command_buffer);
             light_buffer.record_write(command_buffer);
-            texture_hash_buffer.record_write(command_buffer);
-            normal_texture->record_write(command_buffer);
-            colour_texture->record_write(command_buffer);
+            request_handler.texture_hash_buffer.record_write(command_buffer);
+            request_handler.normal_texture->record_write(command_buffer);
+            request_handler.colour_texture->record_write(command_buffer);
             vkCmdPushConstants(command_buffer, compute_pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                sizeof(push_constant_t), &push_constants);
@@ -630,7 +621,7 @@ void renderer_t::render() {
                                     &desc_sets[image_index], 0, NULL);
             vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1],
                           1);
-            request_buffer.record_read(command_buffer);
+            request_handler.request_buffer.record_read(command_buffer);
         })
         ->submit(image_available_semas[current_frame],
                  compute_done_semas[current_frame], in_flight_fences[current_frame],
@@ -680,7 +671,7 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
     patch_t patch{};
     response_geometry(request, &patch, &renderer->sdfs[sdf_id]);
     uint32_t index = request_geometry_index(request);
-    renderer->patch_buffer.write(&patch, 1, index);
+    renderer->request_handler.patch_buffer.write(&patch, 1, index);
 }
 
 static void handle_texture_request(renderer_t * renderer, request_t * request){
@@ -703,10 +694,10 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
         index / texture_size / texture_size
     ) * patch_sample_size;
 
-    renderer->texture_hash_buffer.write(&request->hash, 1, index);
+    renderer->request_handler.texture_hash_buffer.write(&request->hash, 1, index);
 
-    renderer->normal_texture->write(p, normals);
-    renderer->colour_texture->write(p, colours);
+    renderer->request_handler.normal_texture->write(p, normals);
+    renderer->request_handler.colour_texture->write(p, colours);
 }
 
 static void handle_request(renderer_t *renderer, request_t *request){
@@ -723,10 +714,10 @@ void renderer_t::handle_requests() {
     std::vector<request_t> requests(number_of_calls);
     std::vector<request_t> null_requests(number_of_calls);
 
-    void *memory_map = request_buffer.map(0, requests.size());
+    void *memory_map = request_handler.request_buffer.map(0, requests.size());
     memcpy(requests.data(), memory_map, requests.size() * sizeof(request_t));
     memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_t));
-    request_buffer.unmap();
+    request_handler.request_buffer.unmap();
 
     for (auto &call : requests) {
         handle_request(this, &call);
@@ -737,16 +728,13 @@ void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
     uint32_t s = work_group_size[0] * work_group_size[1];
 
-    buffer_create(&patch_buffer, 1, device, geometry_pool_size, true,
-                  sizeof(patch_t));
-    buffer_create(&request_buffer, 2, device, number_of_calls, true, sizeof(request_t));
+    request_handler_create_buffers(&request_handler, number_of_calls, device);
+
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
     buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
-    buffer_create(&texture_hash_buffer, 8, device, texture_pool_size, true,
-                  sizeof(uint32_t));
 }
 
 int renderer_t::get_frame_count() {
