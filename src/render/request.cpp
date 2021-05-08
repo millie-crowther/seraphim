@@ -66,7 +66,8 @@ void response_geometry(const request_t *request, const substance_t *substance, p
     *patch = {x_elem, request->hash, phi, np};
 }
 
-void response_texture(const request_t *request, substance_t *substance, uint32_t *normals, uint32_t *colours) {
+void response_texture(const request_t *request, substance_t *substance, uint32_t *normals, uint32_t *colours,
+                      material_t *material) {
     sdf_t *sdf = substance->matter.sdf;
 
     bound3_t *bound = sdf_bound(sdf);
@@ -84,9 +85,8 @@ void response_texture(const request_t *request, substance_t *substance, uint32_t
         vec3_add_f(&normal, &normal, 0.5);
         normals[o] = squash(&normal);
 
-        material_t mat;
-        matter_material(&substance->matter, &mat, NULL);
-        vec3 c = mat.colour;
+        vec3 c;
+        material_colour(substance->matter.material, NULL, &c);
         colours[o] = squash(&c);
     }
 }

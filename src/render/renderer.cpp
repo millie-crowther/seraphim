@@ -20,6 +20,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     this->work_group_size = work_group_size;
     this->substances = substances;
     this->num_substances = num_substances;
+    this->materials = materials;
+    this->num_materials = num_materials;
 
     texture_size = max_image_size / patch_sample_size;
 
@@ -682,16 +684,17 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
 
 static void handle_texture_request(renderer_t * renderer, request_t * request){
     if (request_is_valid(request)) {
-        size_t substance_index = request->substanceID;
-        if (substance_index >= *renderer->num_substances) {
+        uint32_t substance_id = request->substanceID;
+        uint32_t material_id = request->material_id;
+        if (substance_id >= *renderer->num_substances ) {
             return;
         }
 
         uint32_t normals[8];
         uint32_t colours[8];
-        response_texture(request, &renderer->substances[substance_index], normals, colours);
+        response_texture(request, &renderer->substances[substance_id], normals, colours, &renderer->materials[material_id]);
 
-//        auto response = response_t(*request, &renderer->substances[substance_index]);
+//        auto response = response_t(*request, &renderer->substances[substance_id]);
         uint32_t index = request_texture_index(request);
         uint32_t texture_size = renderer->texture_size;
         u32vec3_t p = u32vec3_t(

@@ -14,3 +14,7 @@ void material_create(material_t *material, uint32_t *id, const vec3 *colour) {
     material->id = *id;
     (*id)++;
 }
+
+void material_colour(material_t *material, const vec3 *x, vec3 *colour) {
+    *colour = material->colour;
+}
