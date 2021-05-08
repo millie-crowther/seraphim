@@ -13,7 +13,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
                        srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera,
                        srph::u32vec2_t work_group_count,
                        srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
-                       uint32_t *num_materials) {
+                       uint32_t *num_materials,
+                       sdf_t *sdfs, uint32_t *num_sdfs) {
     this->device = device;
     this->surface = surface;
     this->work_group_count = work_group_count;
@@ -22,6 +23,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     this->num_substances = num_substances;
     this->materials = materials;
     this->num_materials = num_materials;
+    this->sdfs = sdfs;
+    this->num_sdfs = num_sdfs;
 
     texture_size = max_image_size / patch_sample_size;
 
@@ -673,13 +676,13 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
         return;
     }
 
-    size_t substance_index = request->substanceID;
-    if (substance_index >= *renderer->num_substances) {
+    uint32_t sdf_id = request->sdf_id;
+    if (sdf_id >= *renderer->num_sdfs) {
         return;
     }
 
     patch_t patch{};
-    response_geometry(request, &renderer->substances[substance_index], &patch);
+    response_geometry(request, &patch, &renderer->sdfs[sdf_id]);
     uint32_t index = request_geometry_index(request);
     renderer->patch_buffer.write(&patch, 1, index);
 }
@@ -689,15 +692,16 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
         return;
     }
 
-    uint32_t substance_id = request->substanceID;
     uint32_t material_id = request->material_id;
-    if (substance_id >= *renderer->num_substances ) {
+    uint32_t sdf_id = request->sdf_id;
+    if (material_id >= *renderer->num_materials|| sdf_id >= *renderer->num_sdfs) {
         return;
     }
 
     uint32_t normals[8];
     uint32_t colours[8];
-    response_texture(request, &renderer->substances[substance_id], normals, colours, &renderer->materials[material_id]);
+    response_texture(request, normals, colours, &renderer->materials[material_id],
+                     &renderer->sdfs[sdf_id]);
 
     uint32_t index = request_texture_index(request);
     uint32_t texture_size = renderer->texture_size;

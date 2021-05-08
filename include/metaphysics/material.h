@@ -12,7 +12,7 @@ typedef struct material_t {
     uint32_t id;
 } material_t;
 
-void material_create(material_t *material, uint32_t *id, const vec3 *colour);
+void material_create(material_t *material, uint32_t id, const vec3 *colour);
 void material_colour(material_t *material, const vec3 * x, vec3 * colour);
 
 #endif

@@ -85,6 +85,9 @@ struct renderer_t {
     material_t *materials;
     uint32_t *num_materials;
 
+    sdf_t *sdfs;
+    uint32_t *num_sdfs;
+
     std::unique_ptr<srph::swapchain_t> swapchain;
     std::weak_ptr<srph::camera_t> main_camera;
 
@@ -142,8 +145,8 @@ struct renderer_t {
     // constructors and destructors
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera, srph::u32vec2_t work_group_count,
-               srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
-               uint32_t *num_materials);
+               srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
+               sdf_t *sdfs, uint32_t *num_sdfs);
 
     ~renderer_t();
 

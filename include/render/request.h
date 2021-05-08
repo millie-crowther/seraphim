@@ -11,13 +11,9 @@ struct request_t {
     float radius;
 
     uint32_t hash;
-    uint32_t _1;
-    uint32_t substanceID;
-    uint32_t status;
-
     uint32_t sdf_id;
     uint32_t material_id;
-    uint32_t __unused[2];
+    uint32_t status;
 
     request_t();
 };
@@ -38,8 +34,7 @@ struct patch_t {
     uint32_t normal;
 };
 
-void response_geometry(const request_t * request, const substance_t * substance, patch_t * patch);
-void response_texture(const request_t *request, substance_t *substance, uint32_t *normals, uint32_t *colours,
-                      material_t *material);
+void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
+void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf);
 
 #endif

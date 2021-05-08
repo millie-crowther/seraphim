@@ -30,13 +30,9 @@ struct request_t {
     float radius;
 
     uint hash;
-    uint _1;
-    uint substanceID;
-    uint status;
-
     uint sdf_id;
     uint material_id;
-    uvec2 _unused;
+    uint status;
 };
 
 struct request_pair_t {
@@ -165,8 +161,7 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash){
 
     request_t result = request_t(
         patch_centre - cell_radius,
-        cell_radius, hash, 0, substance.id, active_request,
-        substance.sdf_id, substance.material_id, uvec2(0)
+        cell_radius, hash,substance.sdf_id, substance.material_id, active_request
     );
 
     result.material_id = substance.material_id;

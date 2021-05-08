@@ -92,7 +92,8 @@ material_t *seraphim_create_material(seraphim_t *srph, const vec3 * colour) {
     assert(srph->num_materials < SERAPHIM_MAX_MATERIALS - 1);
 
     material_t *new_material = &srph->materials[srph->num_materials];
-    material_create(new_material, &srph->num_materials, colour);
+    material_create(new_material, srph->num_materials, colour);
+    srph->num_materials++;
     return new_material;
 }
 
@@ -164,7 +165,7 @@ seraphim_t::seraphim_t(const char *title) {
 
     renderer = std::make_unique<renderer_t>(
         device.get(), substances, &num_substances, surface, window.get(),
-        test_camera, work_group_count, work_group_size, max_image_size, materials, &num_materials);
+        test_camera, work_group_count, work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
 
     srph_physics_init(&physics, substances, &num_substances);
 }
