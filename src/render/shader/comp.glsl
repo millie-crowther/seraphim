@@ -163,11 +163,15 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash){
     vec3 patch_centre;
     calculate_cell(x, order, cell_position, cell_radius, patch_centre);
 
-    return request_t(
+    request_t result = request_t(
         patch_centre - cell_radius,
         cell_radius, hash, 0, substance.id, active_request,
         substance.sdf_id, substance.material_id, uvec2(0)
     );
+
+    result.material_id = substance.material_id;
+
+    return result;
 }
 
 vec2 uv(vec2 xy){
@@ -288,27 +292,27 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
 
 intersection_t raycast(ray_t r, inout request_t request){
     uint steps;
-    intersection_t i;
+    intersection_t intersection;
     
-    i.hit = false;
-    i.distance = 0;
+    intersection.hit = false;
+    intersection.distance = 0;
 
     uint min_substanceID = 0;
 
-    for (steps = 0; !i.hit && steps < max_steps && i.distance < pc.render_distance; steps++){
+    for (steps = 0; !intersection.hit && steps < max_steps && intersection.distance < pc.render_distance; steps++){
         float p = pc.render_distance;
-        min_substanceID += int(i.distance > substances[min_substanceID].far);
+        min_substanceID += int(intersection.distance > substances[min_substanceID].far);
 
-        for (uint substanceID = min_substanceID; !i.hit && substanceID < substances_size; substanceID++){
-            p = min(p, phi(r, substances[substanceID], i, request));
-            i.hit = i.hit || p < pc.epsilon;
+        for (uint substanceID = min_substanceID; !intersection.hit && substanceID < substances_size; substanceID++){
+            p = min(p, phi(r, substances[substanceID], intersection, request));
+            intersection.hit = p < pc.epsilon;
         }
         r.x += r.d * p;
-        i.distance += p;
+        intersection.distance += p;
     }
     
-    i.x = r.x;
-    return i;
+    intersection.x = r.x;
+    return intersection;
 }
 
 float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request_t request){
@@ -509,8 +513,12 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     vec3 image_colour = mix(sky, hit_colour, intersection.hit);
 
+    barrier();
+
     // debug line:
-    // image_colour = mix(image_colour, vec3(0, 1, 0), test);
+//    barrier();
+//    image_colour = mix(image_colour, vec3(0, 1, 0), test);
+//    barrier();
 
     imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
 

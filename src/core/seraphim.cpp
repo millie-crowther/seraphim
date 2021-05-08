@@ -83,7 +83,8 @@ sdf_t *seraphim_create_sdf(seraphim_t *srph, sdf_func_t phi, void *data) {
     assert(srph->num_sdfs < SERAPHIM_MAX_SDFS - 1);
 
     sdf_t *new_sdf = &srph->sdfs[srph->num_sdfs];
-    sdf_create(&srph->num_sdfs, new_sdf, phi, data);
+    sdf_create(srph->num_sdfs, new_sdf, phi, data);
+    srph->num_sdfs++;
     return new_sdf;
 }
 

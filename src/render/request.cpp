@@ -86,7 +86,7 @@ void response_texture(const request_t *request, substance_t *substance, uint32_t
         normals[o] = squash(&normal);
 
         vec3 c;
-        material_colour(substance->matter.material, NULL, &c);
+        material_colour(material, NULL, &c);
         colours[o] = squash(&c);
     }
 }

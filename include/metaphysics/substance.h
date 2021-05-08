@@ -12,12 +12,12 @@ struct data_t {
     float near;
     float far;
     uint32_t sdf_id;
-    float material_id;
+    uint32_t material_id;
 
     float r[3];
     uint32_t id;
 
-    float transform[16];
+    float transform[MAT4_SIZE];
 
     data_t();
     data_t(float near, float far, const float *r, uint32_t id);

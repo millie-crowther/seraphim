@@ -17,7 +17,7 @@ struct request_t {
 
     uint32_t sdf_id;
     uint32_t material_id;
-    uint64_t __unused;
+    uint32_t __unused[2];
 
     request_t();
 };

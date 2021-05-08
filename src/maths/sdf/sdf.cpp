@@ -8,11 +8,10 @@
 
 #include "core/constant.h"
 
-void sdf_create(uint32_t *id, sdf_t *sdf, sdf_func_t phi, void *data) {
+void sdf_create(uint32_t id, sdf_t *sdf, sdf_func_t phi, void *data) {
     sdf->distance_function = phi;
     sdf->data = data;
-    sdf->id = *id;
-    (*id)++;
+    sdf->id = id;
 
     sdf->is_bound_valid = false;
     sdf->is_com_valid = false;

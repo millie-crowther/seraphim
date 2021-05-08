@@ -669,45 +669,48 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
 }
 
 static void handle_geometry_request(renderer_t * renderer, request_t * request){
-    if (request_is_valid(request)) {
-        size_t substance_index = request->substanceID;
-        if (substance_index >= *renderer->num_substances) {
-            return;
-        }
-
-        patch_t patch{};
-        response_geometry(request, &renderer->substances[substance_index], &patch);
-        uint32_t index = request_geometry_index(request);
-        renderer->patch_buffer.write(&patch, 1, index);
+    if (!request_is_valid(request)) {
+        return;
     }
+
+    size_t substance_index = request->substanceID;
+    if (substance_index >= *renderer->num_substances) {
+        return;
+    }
+
+    patch_t patch{};
+    response_geometry(request, &renderer->substances[substance_index], &patch);
+    uint32_t index = request_geometry_index(request);
+    renderer->patch_buffer.write(&patch, 1, index);
 }
 
 static void handle_texture_request(renderer_t * renderer, request_t * request){
-    if (request_is_valid(request)) {
-        uint32_t substance_id = request->substanceID;
-        uint32_t material_id = request->material_id;
-        if (substance_id >= *renderer->num_substances ) {
-            return;
-        }
-
-        uint32_t normals[8];
-        uint32_t colours[8];
-        response_texture(request, &renderer->substances[substance_id], normals, colours, &renderer->materials[material_id]);
-
-//        auto response = response_t(*request, &renderer->substances[substance_id]);
-        uint32_t index = request_texture_index(request);
-        uint32_t texture_size = renderer->texture_size;
-        u32vec3_t p = u32vec3_t(
-            index % texture_size,
-            (index % (texture_size * texture_size)) / texture_size,
-            index / texture_size / texture_size
-        ) * patch_sample_size;
-
-        renderer->texture_hash_buffer.write(&request->hash, 1, index);
-
-        renderer->normal_texture->write(p, normals);
-        renderer->colour_texture->write(p, colours);
+    if (!request_is_valid(request)) {
+        return;
     }
+
+    uint32_t substance_id = request->substanceID;
+    uint32_t material_id = request->material_id;
+    if (substance_id >= *renderer->num_substances ) {
+        return;
+    }
+
+    uint32_t normals[8];
+    uint32_t colours[8];
+    response_texture(request, &renderer->substances[substance_id], normals, colours, &renderer->materials[material_id]);
+
+    uint32_t index = request_texture_index(request);
+    uint32_t texture_size = renderer->texture_size;
+    u32vec3_t p = u32vec3_t(
+        index % texture_size,
+        (index % (texture_size * texture_size)) / texture_size,
+        index / texture_size / texture_size
+    ) * patch_sample_size;
+
+    renderer->texture_hash_buffer.write(&request->hash, 1, index);
+
+    renderer->normal_texture->write(p, normals);
+    renderer->colour_texture->write(p, colours);
 }
 
 void renderer_t::handle_requests() {

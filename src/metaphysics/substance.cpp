@@ -50,7 +50,11 @@ substance_t::substance_t() {}
 bool data_t::comparator_t::operator()(const data_t &a, const data_t &b) const {
     return a.far < b.far && a.id != static_cast<uint32_t>(~0);
 }
-data_t::data_t() { id = ~0; }
+data_t::data_t() {
+    id = ~0;
+    material_id = ~0;
+    sdf_id = ~0;
+}
 
 data_t::data_t(float near, float far, const float *r, uint32_t id) {
     this->near = near;
@@ -91,13 +95,14 @@ double substance_inverse_angular_mass(substance_t *self, vec3 *x, vec3 *n) {
 }
 
 void apply_impulse(substance_t *self, const vec3 *x, const vec3 *j) {
-    vec3 n;
-    vec3_normalize(&n, j);
     double j_length = vec3_length(j);
 
     if (self->matter.is_static || j_length == 0) {
         return;
     }
+
+    vec3 n;
+    vec3_normalize(&n, j);
 
     self->matter.is_at_rest = false;
 
