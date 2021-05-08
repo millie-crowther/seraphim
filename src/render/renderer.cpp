@@ -672,10 +672,6 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
 }
 
 static void handle_geometry_request(renderer_t * renderer, request_t * request){
-    if (!request_is_valid(request)) {
-        return;
-    }
-
     uint32_t sdf_id = request->sdf_id;
     if (sdf_id >= *renderer->num_sdfs) {
         return;
@@ -688,10 +684,6 @@ static void handle_geometry_request(renderer_t * renderer, request_t * request){
 }
 
 static void handle_texture_request(renderer_t * renderer, request_t * request){
-    if (!request_is_valid(request)) {
-        return;
-    }
-
     uint32_t material_id = request->material_id;
     uint32_t sdf_id = request->sdf_id;
     if (material_id >= *renderer->num_materials|| sdf_id >= *renderer->num_sdfs) {
@@ -717,20 +709,27 @@ static void handle_texture_request(renderer_t * renderer, request_t * request){
     renderer->colour_texture->write(p, colours);
 }
 
+static void handle_request(renderer_t *renderer, request_t *request){
+    if (request_is_geometry(request)){
+        handle_geometry_request(renderer, request);
+    } else if (request_is_texture(request)){
+        handle_texture_request(renderer, request);
+    }
+}
+
 void renderer_t::handle_requests() {
     vkDeviceWaitIdle(device->device);
 
-    std::vector<request_pair_t> requests(number_of_calls);
-    std::vector<request_pair_t> null_requests(number_of_calls);
+    std::vector<request_t> requests(number_of_calls);
+    std::vector<request_t> null_requests(number_of_calls);
 
     void *memory_map = request_buffer.map(0, requests.size());
-    memcpy(requests.data(), memory_map, requests.size() * sizeof(request_pair_t));
-    memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_pair_t));
+    memcpy(requests.data(), memory_map, requests.size() * sizeof(request_t));
+    memcpy(memory_map, null_requests.data(), requests.size() * sizeof(request_t));
     request_buffer.unmap();
 
     for (auto &call : requests) {
-        handle_geometry_request(this, &call.geometry);
-        handle_texture_request(this, &call.texture);
+        handle_request(this, &call);
     }
 }
 
@@ -740,7 +739,7 @@ void renderer_t::create_buffers() {
 
     buffer_create(&patch_buffer, 1, device, geometry_pool_size, true,
                   sizeof(patch_t));
-    buffer_create(&request_buffer, 2, device, number_of_calls, true, sizeof(request_pair_t));
+    buffer_create(&request_buffer, 2, device, number_of_calls, true, sizeof(request_t));
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));

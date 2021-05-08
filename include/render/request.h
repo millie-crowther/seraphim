@@ -1,10 +1,19 @@
 #ifndef SERAPHIM_RENDER_REQUEST_H
 #define SERAPHIM_RENDER_REQUEST_H
 
+#include "core/array.h"
 #include "metaphysics/substance.h"
+
+#include <threads.h>
 
 static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
+
+typedef struct request_handler_t {
+    thrd_t thread;
+//    array_t()
+} request_handler_t;
+
 
 struct request_t {
     float position[3];
@@ -20,12 +29,8 @@ struct request_t {
 
 uint32_t request_geometry_index(const request_t *call);
 uint32_t request_texture_index(const request_t *call);
-bool request_is_valid(const request_t *request);
-
-struct request_pair_t {
-    request_t geometry;
-    request_t texture;
-};
+bool request_is_geometry(const request_t *request);
+bool request_is_texture(const request_t *request);
 
 struct patch_t {
     uint32_t contents;

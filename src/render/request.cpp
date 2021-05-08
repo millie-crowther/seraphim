@@ -8,6 +8,8 @@ vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
                       vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
 
 static const uint32_t null_status = 0;
+static const uint32_t geometry_request = 1;
+static const uint32_t texture_request = 2;
 
 request_t::request_t() {
     status = null_status;
@@ -87,7 +89,11 @@ response_texture(const request_t *request, uint32_t *normals, uint32_t *colours,
     }
 }
 
-bool request_is_valid(const request_t *request) {
-    return request->status != null_status;
+bool request_is_geometry(const request_t *request) {
+    return request->status == geometry_request;
+}
+
+bool request_is_texture(const request_t *request) {
+    return request->status == texture_request;
 }
 

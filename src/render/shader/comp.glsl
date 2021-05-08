@@ -35,11 +35,6 @@ struct request_t {
     uint status;
 };
 
-struct request_pair_t {
-    request_t geometry;
-    request_t texture;
-};
-
 struct light_t {
     vec3 x;
     uint id;
@@ -64,7 +59,8 @@ const int max_hash_retries = 5;
 const float geometry_epsilon = 1.0 / 300.0;
 
 const uint null_request = 0;
-const uint active_request = 1;
+const uint geometry_request = 1;
+const uint texture_request = 2;
 
 const ivec4 p1 = ivec4(
     904601,
@@ -114,14 +110,14 @@ layout(push_constant) uniform push_constants {
     float epsilon;
 } pc;
 
-layout (binding = 1) buffer patch_buffer        { patch_t        data[]; } patches;
-layout (binding = 2) buffer request_buffer      { request_pair_t data[]; } requests;
-layout (binding = 3) buffer lights_buffer       { light_t        data[]; } lights_global;
-layout (binding = 4) buffer substance_buffer    { substance_t    data[]; } substance;
-layout (binding = 5) buffer pointer_buffer      { uint           data[]; } pointers;
-layout (binding = 6) buffer frustum_buffer      { vec2           data[]; } frustum;
-layout (binding = 7) buffer lighting_buffer     { vec4           data[]; } lighting;
-layout (binding = 8) buffer texture_hash_buffer { uint           data[]; } texture_hash;
+layout (binding = 1) buffer patch_buffer        { patch_t     data[]; } patches;
+layout (binding = 2) buffer request_buffer      { request_t   data[]; } requests;
+layout (binding = 3) buffer lights_buffer       { light_t     data[]; } lights_global;
+layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substance;
+layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
+layout (binding = 6) buffer frustum_buffer      { vec2        data[]; } frustum;
+layout (binding = 7) buffer lighting_buffer     { vec4        data[]; } lighting;
+layout (binding = 8) buffer texture_hash_buffer { uint        data[]; } texture_hash;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;
@@ -142,14 +138,14 @@ void calculate_cell(vec3 x, int order, out float cell_radius, out vec3 patch_cen
     patch_centre = floor(x / size) * size + cell_radius;
 }
 
-request_t build_request(substance_t substance, vec3 x, int order, uint hash){
+request_t build_request(substance_t substance, vec3 x, int order, uint hash, uint request_type){
     float cell_radius;
     vec3 patch_centre;
     calculate_cell(x, order, cell_radius, patch_centre);
 
     request_t result = request_t(
     patch_centre - cell_radius,
-    cell_radius, hash, substance.sdf_id, substance.material_id, active_request
+    cell_radius, hash, substance.sdf_id, substance.material_id, request_type
     );
 
     return result;
@@ -203,7 +199,7 @@ patch_t get_patch(
         pointers.data[index + work_group_offset()] = geometry_index;
         patch_ = patches.data[geometry_index];
         if (patch_.hash != hash){
-            request = build_request(substance, x, order, hash);
+            request = build_request(substance, x, order, hash, geometry_request);
             is_patch_found = false;
         }
     }
@@ -491,13 +487,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     barrier();
 
     if (intersection.hit && texture_hash.data[texture_index] != texture_hash_){
-        request_t texture_request = build_request(intersection.substance, x, order, texture_hash_);
-        requests.data[texture_hash_ % pc.number_of_calls].texture = texture_request;
+        request_t texture_request = build_request(intersection.substance, x, order, texture_hash_, texture_request);
+        requests.data[texture_hash_ % pc.number_of_calls] = texture_request;
     }
 
     barrier();
     if (geometry_request.status != null_request){
-        requests.data[geometry_request.hash % pc.number_of_calls].geometry = geometry_request;
+        requests.data[geometry_request.hash % pc.number_of_calls] = geometry_request;
     }
 }
 
@@ -521,10 +517,10 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
     vec4 ds = transpose(normals) * eye;
 
     vec4 phis = vec4(
-    dot(abs(normals[0]), vec3(sub.radius)),
-    dot(abs(normals[1]), vec3(sub.radius)),
-    dot(abs(normals[2]), vec3(sub.radius)),
-    dot(abs(normals[3]), vec3(sub.radius))
+        dot(abs(normals[0]), vec3(sub.radius)),
+        dot(abs(normals[1]), vec3(sub.radius)),
+        dot(abs(normals[2]), vec3(sub.radius)),
+        dot(abs(normals[3]), vec3(sub.radius))
     );
 
     vec3 f = mat3(sub.transform) * get_ray_direction(gl_WorkGroupID.xy * gl_WorkGroupSize.xy + gl_WorkGroupSize.xy / 2);
