@@ -9,11 +9,11 @@
 
 using namespace srph;
 
-renderer_t::renderer_t(device_t *device, substance_t *substances,
-                       uint32_t *num_substances, VkSurfaceKHR surface,
-                       window_t *window, std::shared_ptr<camera_t> test_camera,
-                       u32vec2_t work_group_count, u32vec2_t work_group_size,
-                       uint32_t max_image_size) {
+renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
+                       srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera,
+                       srph::u32vec2_t work_group_count,
+                       srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
+                       uint32_t *num_materials) {
     this->device = device;
     this->surface = surface;
     this->work_group_count = work_group_count;
