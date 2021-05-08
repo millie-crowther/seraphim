@@ -138,33 +138,24 @@ void grid_align(vec3 x, int order, out float size, out vec3 x_scaled, out ivec3 
     x_grid = ivec3(floor(x_scaled));
 }
 
-void calculate_cell(vec3 x, int order, out vec3 cell_position, out float cell_radius, out vec3 patch_centre){
+void calculate_cell(vec3 x, int order, out float cell_radius, out vec3 patch_centre){
     float size;
     vec3 x_scaled;
     ivec3 x_grid;
     grid_align(x, order, size, x_scaled, x_grid);
-    cell_position = x_grid * size;
     cell_radius = size / 2;
-    patch_centre = cell_position + cell_radius;
+    patch_centre = x_grid * size + cell_radius;
 }
 
 request_t build_request(substance_t substance, vec3 x, int order, uint hash){
-    float size;
-    vec3 x_scaled;
-    ivec3 x_grid;
-    grid_align(x, order, size, x_scaled, x_grid);
-
-    vec3 cell_position;
     float cell_radius;
     vec3 patch_centre;
-    calculate_cell(x, order, cell_position, cell_radius, patch_centre);
+    calculate_cell(x, order, cell_radius, patch_centre);
 
     request_t result = request_t(
         patch_centre - cell_radius,
         cell_radius, hash,substance.sdf_id, substance.material_id, active_request
     );
-
-    result.material_id = substance.material_id;
 
     return result;
 }
@@ -259,17 +250,12 @@ float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, in
     bool is_patch_found = false;
     float cell_radius;
     vec3 patch_centre;
-    vec3 cell_position;
-    float size;
     if (inside_aabb){
         int tries = 0;
         for (; tries < max_hash_retries && !is_patch_found; tries++){
             patch_ = get_patch(r.x, order + tries, intersection, request, is_patch_found);
-            vec3 x_scaled;
-            ivec3 x_grid;
-            grid_align(r.x, order + tries, size, x_scaled, x_grid);
-            calculate_cell(r.x, order + tries, cell_position, cell_radius, patch_centre);
         }
+        calculate_cell(r.x, order + tries - 1, cell_radius, patch_centre);
     }
 
     vec3 n = vec3((patch_.normal >> uvec3(0, 8, 16)) & 0xFF) / 127.5 - 1;
