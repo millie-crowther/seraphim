@@ -71,22 +71,21 @@ void _srph_array_push_front(_srph_base_array *a) {
 void _srph_array_pop_front(_srph_base_array *a) {
     assert(!_srph_array_is_empty(a));
 
-    if (a->offset > a->capacity / 2) {
-        size_t new_capacity = a->capacity / 2;
-        size_t new_offset = a->capacity - new_capacity;
-        uint8_t *new_data = (uint8_t *)malloc(new_capacity * a->element_size);
+    a->offset++;
+    a->size--;
 
-        memcpy(new_data + new_offset * a->element_size,
+    if (a->offset > a->capacity / 2) {
+        a->capacity /= 2;
+        uint8_t *new_data = (uint8_t *)malloc(a->capacity * a->element_size);
+
+        memcpy(new_data,
                a->base_ptr + a->offset * a->element_size, a->size * a->element_size);
 
         free(a->base_ptr);
         a->base_ptr = new_data;
-        a->offset = new_offset;
-        a->capacity = new_capacity;
+        a->offset = 0;
     }
 
-    a->offset++;
-    a->size--;
     fix_ptrs(a);
 }
 

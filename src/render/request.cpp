@@ -187,7 +187,7 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
 
     uint32_t n = request_handler->number_of_requests;
 
-    request_t requests[n];
+    request_t * requests = (request_t *) malloc(sizeof(request_t) * n);
     request_t null_requests[n];
 
     void *memory_map = request_handler->request_buffer.map(0, n);
@@ -205,14 +205,17 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
             }
         }
     }
+
+    free(requests);
 }
 
 void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
+    request_handler->request_buffer.record_read(command_buffer);
+
     mtx_lock(&request_handler->response_mutex);
     request_handler->patch_buffer.record_write(command_buffer);
     request_handler->texture_hash_buffer.record_write(command_buffer);
     request_handler->normal_texture->record_write(command_buffer);
     request_handler->colour_texture->record_write(command_buffer);
-    request_handler->request_buffer.record_read(command_buffer);
     mtx_unlock(&request_handler->response_mutex);
 }
