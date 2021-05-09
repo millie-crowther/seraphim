@@ -23,11 +23,6 @@ struct request_t {
     request_t();
 };
 
-uint32_t request_geometry_index(const request_t *call);
-uint32_t request_texture_index(const request_t *call);
-bool request_is_geometry(const request_t *request);
-bool request_is_texture(const request_t *request);
-
 typedef struct request_handler_t {
     device_t * device;
 
@@ -68,7 +63,5 @@ struct patch_t {
     uint32_t normal;
 };
 
-void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
-void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf);
 
 #endif

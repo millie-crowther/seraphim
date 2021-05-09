@@ -11,16 +11,13 @@ static const uint32_t null_status = 0;
 static const uint32_t geometry_request = 1;
 static const uint32_t texture_request = 2;
 
+
+void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
+void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf);
+
+
 request_t::request_t() {
     status = null_status;
-}
-
-uint32_t request_geometry_index(const request_t *call) {
-    return call->hash % geometry_pool_size;
-}
-
-uint32_t request_texture_index(const request_t *call) {
-    return call->hash % texture_pool_size;
 }
 
 static uint32_t squash(vec3 * x_){
@@ -66,8 +63,7 @@ void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf) {
     *patch = {x_elem, request->hash, phi, np};
 }
 
-void
-response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf) {
+void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf) {
     bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     srph_bound3_midpoint(bound, &midpoint);
@@ -87,14 +83,6 @@ response_texture(const request_t *request, uint32_t *normals, uint32_t *colours,
         material_colour(material, NULL, &c);
         colours[o] = squash(&c);
     }
-}
-
-bool request_is_geometry(const request_t *request) {
-    return request->status == geometry_request;
-}
-
-bool request_is_texture(const request_t *request) {
-    return request->status == texture_request;
 }
 
 void request_handler_destroy(request_handler_t *request_handler) {
@@ -157,7 +145,7 @@ static void handle_geometry_request(request_handler_t * request_handler, request
 
     patch_t patch{};
     response_geometry(request, &patch, &request_handler->sdfs[sdf_id]);
-    uint32_t index = request_geometry_index(request);
+    uint32_t index = request->hash % geometry_pool_size;
     request_handler->patch_buffer.write(&patch, 1, index);
 }
 
@@ -173,7 +161,7 @@ static void handle_texture_request(request_handler_t * request_handler, request_
     response_texture(request, normals, colours, &request_handler->materials[material_id],
                      &request_handler->sdfs[sdf_id]);
 
-    uint32_t index = request_texture_index(request);
+    uint32_t index = request->hash % texture_pool_size;
     uint32_t texture_size = request_handler->texture_size;
     u32vec3_t p = u32vec3_t(
             index % texture_size,
@@ -200,10 +188,12 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
 
     for (size_t i = 0; i < requests.size(); i++){
         request_t * request = &requests[i];
-        if (request_is_geometry(request)){
+        if (request->status == geometry_request){
             handle_geometry_request(request_handler, request);
-        } else if (request_is_texture(request)){
-            handle_texture_request(request_handler, request);
+        } else {
+            if (request->status == texture_request){
+                handle_texture_request(request_handler, request);
+            }
         }
     }
 }
