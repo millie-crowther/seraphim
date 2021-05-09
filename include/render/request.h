@@ -10,7 +10,6 @@
 static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
 
-
 struct request_t {
     float position[3];
     float radius;
@@ -28,7 +27,8 @@ typedef struct request_handler_t {
 
     thrd_t thread;
     array_t(request_t) request_array;
-    mtx_t mutex;
+    mtx_t request_mutex;
+    mtx_t response_mutex;
     cnd_t is_thread_empty;
 
     std::unique_ptr<texture_t> colour_texture;
@@ -54,6 +54,7 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
 void request_handler_create_buffers(request_handler_t *request_handler, uint32_t number_of_requests, device_t *device);
 void request_handler_destroy(request_handler_t *request_handler);
 void request_handler_handle_requests(request_handler_t * request_handler);
+void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer);
 
 
 struct patch_t {

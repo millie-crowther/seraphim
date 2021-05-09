@@ -104,6 +104,9 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     request_handler->patch_sample_size = patch_sample_size;
     request_handler->texture_size = texture_size;
 
+    mtx_init(&request_handler->response_mutex, mtx_plain);
+    mtx_init(&request_handler->request_mutex, mtx_plain);
+
     vec3u size = {{
           texture_size * patch_sample_size,
           texture_size * patch_sample_size,
@@ -146,7 +149,10 @@ static void handle_geometry_request(request_handler_t * request_handler, request
     patch_t patch{};
     response_geometry(request, &patch, &request_handler->sdfs[sdf_id]);
     uint32_t index = request->hash % geometry_pool_size;
+
+    mtx_lock(&request_handler->response_mutex);
     request_handler->patch_buffer.write(&patch, 1, index);
+    mtx_unlock(&request_handler->response_mutex);
 }
 
 static void handle_texture_request(request_handler_t * request_handler, request_t * request){
@@ -169,10 +175,11 @@ static void handle_texture_request(request_handler_t * request_handler, request_
             index / texture_size / texture_size
     ) * request_handler->patch_sample_size;
 
+    mtx_lock(&request_handler->response_mutex);
     request_handler->texture_hash_buffer.write(&request->hash, 1, index);
-
     request_handler->normal_texture->write(p, normals);
     request_handler->colour_texture->write(p, colours);
+    mtx_unlock(&request_handler->response_mutex);
 }
 
 void request_handler_handle_requests(request_handler_t * request_handler) {
@@ -198,4 +205,14 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
             }
         }
     }
+}
+
+void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
+    mtx_lock(&request_handler->response_mutex);
+    request_handler->patch_buffer.record_write(command_buffer);
+    request_handler->texture_hash_buffer.record_write(command_buffer);
+    request_handler->normal_texture->record_write(command_buffer);
+    request_handler->colour_texture->record_write(command_buffer);
+    request_handler->request_buffer.record_read(command_buffer);
+    mtx_unlock(&request_handler->response_mutex);
 }

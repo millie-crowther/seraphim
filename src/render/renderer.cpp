@@ -586,11 +586,10 @@ void renderer_t::render() {
     compute_command_pool
         ->one_time_buffer([&](auto command_buffer) {
             substance_buffer.record_write(command_buffer);
-            request_handler.patch_buffer.record_write(command_buffer);
             light_buffer.record_write(command_buffer);
-            request_handler.texture_hash_buffer.record_write(command_buffer);
-            request_handler.normal_texture->record_write(command_buffer);
-            request_handler.colour_texture->record_write(command_buffer);
+
+            request_handler_record_write(&request_handler, command_buffer);
+
             vkCmdPushConstants(command_buffer, compute_pipeline_layout,
                                VK_SHADER_STAGE_COMPUTE_BIT, 0,
                                sizeof(push_constant_t), &push_constants);
@@ -601,7 +600,6 @@ void renderer_t::render() {
                                     &desc_sets[image_index], 0, NULL);
             vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1],
                           1);
-            request_handler.request_buffer.record_read(command_buffer);
         })
         ->submit(image_available_semas[current_frame],
                  compute_done_semas[current_frame], in_flight_fences[current_frame],
