@@ -28,7 +28,8 @@ typedef struct request_handler_t {
     array_t(request_t *) request_queue;
     mtx_t request_mutex;
     mtx_t response_mutex;
-    cnd_t is_thread_empty;
+    mtx_t cnd_mutex;
+    cnd_t is_queue_empty;
     bool should_quit;
 
     std::unique_ptr<texture_t> colour_texture;

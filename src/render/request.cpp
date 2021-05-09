@@ -92,6 +92,7 @@ void response_texture(const request_t *request, uint32_t *normals, uint32_t *col
 
 void request_handler_destroy(request_handler_t *request_handler) {
     request_handler->should_quit = true;
+    cnd_broadcast(&request_handler->is_queue_empty);
     thrd_join(request_handler->thread, NULL);
 
     request_handler->normal_texture.reset();
@@ -123,6 +124,8 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     srph_array_init(&request_handler->request_queue);
     mtx_init(&request_handler->response_mutex, mtx_plain);
     mtx_init(&request_handler->request_mutex, mtx_plain);
+    mtx_init(&request_handler->cnd_mutex, mtx_plain);
+    cnd_init(&request_handler->is_queue_empty);
     request_handler->should_quit = false;
     thrd_create(&request_handler->thread, request_handling_thread, request_handler);
 
@@ -205,7 +208,9 @@ static int request_handling_thread(void * request_handler_){
         }
         mtx_unlock(&request_handler->request_mutex);
 
-        if (requests != NULL){
+        if (requests == NULL) {
+            cnd_wait(&request_handler->is_queue_empty, &request_handler->cnd_mutex);
+        } else {
             for (size_t i = 0; i < number_of_requests; i++){
                 request_t * request = &requests[i];
                 if (request->status == geometry_request){
@@ -238,6 +243,8 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
     srph_array_push_back(&request_handler->request_queue);
     *(request_handler->request_queue.last) = requests;
     mtx_unlock(&request_handler->request_mutex);
+
+    cnd_signal(&request_handler->is_queue_empty);
 }
 
 void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
