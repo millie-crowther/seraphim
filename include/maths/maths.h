@@ -236,6 +236,8 @@ mfloat_t to_radians(mfloat_t degrees);
 mfloat_t to_degrees(mfloat_t radians);
 mfloat_t clampf(mfloat_t value, mfloat_t min, mfloat_t max);
 
+void vec3u_multiply_u(vec3u * result, const vec3u * x, uint32_t u);
+
 bool vec2i_is_zero(vec2i *v0);
 bool vec2i_is_equal(vec2i *v0, vec2i *v1);
 vec2i *vec2i_assign(vec2i *result, vec2i *v0);

@@ -3934,3 +3934,9 @@ quat *quat_from_euler_angles(quat *result, const vec3 *e) {
     vec3_normalize(&axis, e);
     return quat_from_axis_angle(result, &axis, vec3_length(e));
 }
+
+void vec3u_multiply_u(vec3u *result, const vec3u *x, uint32_t u) {
+    result->x = x->x * u;
+    result->y = x->y * u;
+    result->z = x->z * u;
+}

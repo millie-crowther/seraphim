@@ -133,11 +133,8 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
         null_requests[i].status = null_status;
     }
 
-    vec3u size = {{
-          texture_size * patch_sample_size,
-          texture_size * patch_sample_size,
-          texture_depth * patch_sample_size
-    }};
+    vec3u size = {{ texture_size, texture_size, texture_depth }};
+    vec3u_multiply_u(&size, &size, patch_sample_size);
 
     u32vec3_t size_(size.x, size.y, size.z);
 
