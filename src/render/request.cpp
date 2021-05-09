@@ -2,6 +2,13 @@
 
 using namespace srph;
 
+struct patch_t {
+    uint32_t contents;
+    uint32_t hash;
+    float phi;
+    uint32_t normal;
+};
+
 vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
                       vec3_t(0.0, 2.0, 0.0), vec3_t(2.0, 2.0, 0.0),
                       vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
@@ -97,7 +104,15 @@ void request_handler_destroy(request_handler_t *request_handler) {
 
 void request_handler_create(request_handler_t *request_handler, uint32_t texture_size, uint32_t texture_depth,
                             uint32_t patch_sample_size, sdf_t *sdfs, uint32_t *num_sdfs, material_t *materials,
-                            uint32_t *num_materials) {
+                            uint32_t *num_materials, device_t *device) {
+    request_handler->device = device;
+
+    buffer_create(&request_handler->patch_buffer, 1, request_handler->device, geometry_pool_size, true,
+                  sizeof(patch_t));
+    buffer_create(&request_handler->request_buffer, 2, request_handler->device, number_of_requests, true, sizeof(request_t));
+    buffer_create(&request_handler->texture_hash_buffer, 8, request_handler->device, texture_pool_size, true,
+                  sizeof(uint32_t));
+
     request_handler->sdfs =sdfs;
     request_handler->num_sdfs = num_sdfs;
     request_handler->materials = materials;
@@ -135,17 +150,6 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
                                                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
-
-void request_handler_create_buffers(request_handler_t *request_handler, device_t *device) {
-    request_handler->device = device;
-
-    buffer_create(&request_handler->patch_buffer, 1, request_handler->device, geometry_pool_size, true,
-                  sizeof(patch_t));
-    buffer_create(&request_handler->request_buffer, 2, request_handler->device, number_of_requests, true, sizeof(request_t));
-    buffer_create(&request_handler->texture_hash_buffer, 8, request_handler->device, texture_pool_size, true,
-                  sizeof(uint32_t));
-}
-
 
 static void handle_geometry_request(request_handler_t * request_handler, request_t * request){
     uint32_t sdf_id = request->sdf_id;

@@ -49,19 +49,9 @@ typedef struct request_handler_t {
 
 void request_handler_create(request_handler_t *request_handler, uint32_t texture_size, uint32_t texture_depth,
                             uint32_t patch_sample_size, sdf_t *sdfs, uint32_t *num_sdfs, material_t *materials,
-                            uint32_t *num_materials);
-void request_handler_create_buffers(request_handler_t *request_handler, device_t *device);
+                            uint32_t *num_materials, device_t *device);
 void request_handler_destroy(request_handler_t *request_handler);
 void request_handler_handle_requests(request_handler_t * request_handler);
 void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer);
-
-
-struct patch_t {
-    uint32_t contents;
-    uint32_t hash;
-    float phi;
-    uint32_t normal;
-};
-
 
 #endif

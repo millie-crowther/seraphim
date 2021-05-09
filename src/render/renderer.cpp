@@ -26,8 +26,6 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     start = std::chrono::high_resolution_clock::now();
 
-    create_buffers();
-
     current_frame = 0;
     push_constants.current_frame = 0;
     push_constants.render_distance = (float) rho;
@@ -44,7 +42,6 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     set_main_camera(test_camera);
 
-
     vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
 
     swapchain =
@@ -52,8 +49,9 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     create_render_pass();
 
+    create_buffers();
     request_handler_create(&request_handler, texture_size, push_constants.texture_depth, patch_sample_size, sdfs,
-                           num_sdfs, materials, num_materials);
+                           num_sdfs, materials, num_materials, device);
 
     create_descriptor_set_layout();
     create_graphics_pipeline();
@@ -628,8 +626,6 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
 void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
     uint32_t s = work_group_size[0] * work_group_size[1];
-
-    request_handler_create_buffers(&request_handler, device);
 
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
