@@ -14,9 +14,12 @@ typedef struct shader_t {
     char * code;
     VkShaderModule module;
     device_t * device;
+    VkShaderStageFlagBits stage;
 } shader_t;
 
-bool shader_create(shader_t *shader, const char *filename, device_t *device);
+bool shader_create(shader_t *shader, const char *filename, device_t *device, VkShaderStageFlagBits stage);
 void shader_destroy(shader_t *shader);
+
+void shader_pipeline_stage_create_info(shader_t * shader, VkPipelineShaderStageCreateInfo * create_info);
 
 #endif //SERAPHIM_SHADER_H

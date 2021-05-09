@@ -169,19 +169,16 @@ void renderer_t::create_compute_pipeline() {
     }
 
     shader_t compute_shader;
-    if (!shader_create(&compute_shader, "../src/render/shader/comp.glsl", device)){
+    if (!shader_create(&compute_shader, "../src/render/shader/comp.glsl", device, VK_SHADER_STAGE_COMPUTE_BIT)){
         printf("Error: Failed to create compute shader");
         exit(1);
     }
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipeline_create_info.stage.sType =
-        VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    pipeline_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_create_info.stage.module = compute_shader.module;
-    pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
+
+    shader_pipeline_stage_create_info(&compute_shader, &pipeline_create_info.stage);
 
     if (vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1,
                                  &pipeline_create_info, NULL,
@@ -251,30 +248,19 @@ void renderer_t::create_render_pass() {
 }
 
 void renderer_t::create_graphics_pipeline() {
-    if (!shader_create(&vertex_shader, "../src/render/shader/vert.glsl", device)){
+    if (!shader_create(&vertex_shader, "../src/render/shader/vert.glsl", device, VK_SHADER_STAGE_VERTEX_BIT)){
         printf("Error: Failed to create vertex shader");
         exit(1);
     }
 
-    if (!shader_create(&fragment_shader, "../src/render/shader/frag.glsl", device)){
+    if (!shader_create(&fragment_shader, "../src/render/shader/frag.glsl", device, VK_SHADER_STAGE_FRAGMENT_BIT)){
         printf("Error: Failed to create fragment shader");
         exit(1);
     }
 
-    VkPipelineShaderStageCreateInfo vert_create_info = {};
-    vert_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.module = vertex_shader.module;
-    vert_create_info.pName = "main";
-
-    VkPipelineShaderStageCreateInfo frag_create_info = {};
-    frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.module = fragment_shader.module;
-    frag_create_info.pName = "main";
-
-    std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vert_create_info,
-                                                                  frag_create_info};
+    VkPipelineShaderStageCreateInfo shader_stages[2];
+    shader_pipeline_stage_create_info(&vertex_shader, &shader_stages[0]);
+    shader_pipeline_stage_create_info(&fragment_shader, &shader_stages[1]);
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
     vertex_input_info.sType =
@@ -385,8 +371,8 @@ void renderer_t::create_graphics_pipeline() {
 
     VkGraphicsPipelineCreateInfo pipeline_info = {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = shader_stages.size();
-    pipeline_info.pStages = shader_stages.data();
+    pipeline_info.stageCount = 2;
+    pipeline_info.pStages = shader_stages;
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
     pipeline_info.pViewportState = &viewport_state;
