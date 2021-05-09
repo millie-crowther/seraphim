@@ -7,7 +7,7 @@
 
 #include "cJSON.h"
 
-char *file_load_text(const char *filename, size_t *size);
+char *file_load_text(const char *filename);
 cJSON *file_load_json(const char *filename);
 
 #endif // SERAPHIM_FILE_H

@@ -1,9 +1,6 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#define GLFW_INCLUDE_VULKAN
-
-#include <GLFW/glfw3.h>
 #include <memory>
 
 #include <chrono>
@@ -22,6 +19,7 @@
 #include "render/texture.h"
 #include "ui/window.h"
 #include "texture.h"
+#include "render/shader.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -76,8 +74,8 @@ struct renderer_t {
 
     VkQueue present_queue;
 
-    char *fragment_shader_code;
-    char *vertex_shader_code;
+    shader_t fragment_shader;
+    shader_t vertex_shader;
 
     substance_t *substances;
     uint32_t *num_substances;
@@ -103,9 +101,6 @@ struct renderer_t {
 
     std::chrono::high_resolution_clock::time_point start;
 
-    // initialisation functions
-    VkShaderModule create_shader_module(std::string code);
-
     void create_render_pass();
 
     void create_graphics_pipeline();
@@ -124,14 +119,12 @@ struct renderer_t {
 
     void create_buffers();
 
-    // helper functions
     void recreate_swapchain();
 
     void cleanup_swapchain();
 
     void present(uint32_t image_index) const;
 
-    // constructors and destructors
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera, srph::u32vec2_t work_group_count,
                srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
@@ -139,7 +132,6 @@ struct renderer_t {
 
     ~renderer_t();
 
-    // public functions
     void render();
 
     void set_main_camera(std::weak_ptr<srph::camera_t> camera);

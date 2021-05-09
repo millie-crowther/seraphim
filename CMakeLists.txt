@@ -46,6 +46,7 @@ set(SOURCES
         src/render/renderer.cpp
         src/render/swapchain.cpp
         src/render/texture.cpp
+        src/render/shader.cpp
 
         src/metaphysics/substance.cpp
         src/metaphysics/form.cpp

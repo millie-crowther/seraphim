@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-char *file_load_text(const char *filename, size_t *size) {
+char *file_load_text(const char *filename) {
     FILE *file = fopen(filename, "r");
 
     if (file == NULL) {
@@ -23,15 +23,11 @@ char *file_load_text(const char *filename, size_t *size) {
     string[_size] = '\0';
 
     fclose(file);
-
-    if (size != NULL) {
-        *size = _size;
-    }
     return string;
 }
 
 cJSON *file_load_json(const char *filename) {
-    char *string = file_load_text(filename, NULL);
+    char *string = file_load_text(filename);
     cJSON *parsed_json = cJSON_Parse(string);
     free(string);
     return parsed_json;

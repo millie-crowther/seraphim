@@ -44,8 +44,6 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
     set_main_camera(test_camera);
 
-    fragment_shader_code = file_load_text("../src/render/shader/frag.glsl", NULL);
-    vertex_shader_code = file_load_text("../src/render/shader/vert.glsl", NULL);
 
     vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
 
@@ -125,8 +123,8 @@ void renderer_t::cleanup_swapchain() {
 }
 
 renderer_t::~renderer_t() {
-    free(fragment_shader_code);
-    free(vertex_shader_code);
+    shader_destroy(&vertex_shader);
+    shader_destroy(&fragment_shader);
 
     vkDestroyDescriptorSetLayout(device->device, descriptor_layout, NULL);
 
@@ -170,17 +168,18 @@ void renderer_t::create_compute_pipeline() {
         throw std::runtime_error("Error: Failed to create compute pipeline layout.");
     }
 
-    char *compute_shader_code =
-        file_load_text("../src/render/shader/comp.glsl", NULL);
-    VkShaderModule module = create_shader_module(compute_shader_code);
-    free(compute_shader_code);
+    shader_t compute_shader;
+    if (!shader_create(&compute_shader, "../src/render/shader/comp.glsl", device)){
+        printf("Error: Failed to create compute shader");
+        exit(1);
+    }
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
     pipeline_create_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
     pipeline_create_info.stage.sType =
         VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     pipeline_create_info.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    pipeline_create_info.stage.module = module;
+    pipeline_create_info.stage.module = compute_shader.module;
     pipeline_create_info.stage.pName = "main";
     pipeline_create_info.layout = compute_pipeline_layout;
 
@@ -190,7 +189,7 @@ void renderer_t::create_compute_pipeline() {
         throw std::runtime_error("Error: Failed to create compute pipeline.");
     }
 
-    vkDestroyShaderModule(device->device, module, NULL);
+    shader_destroy(&compute_shader);
 }
 
 void renderer_t::recreate_swapchain() {
@@ -252,19 +251,26 @@ void renderer_t::create_render_pass() {
 }
 
 void renderer_t::create_graphics_pipeline() {
-    VkShaderModule vert_shader_module = create_shader_module(vertex_shader_code);
-    VkShaderModule frag_shader_module = create_shader_module(fragment_shader_code);
+    if (!shader_create(&vertex_shader, "../src/render/shader/vert.glsl", device)){
+        printf("Error: Failed to create vertex shader");
+        exit(1);
+    }
+
+    if (!shader_create(&fragment_shader, "../src/render/shader/frag.glsl", device)){
+        printf("Error: Failed to create fragment shader");
+        exit(1);
+    }
 
     VkPipelineShaderStageCreateInfo vert_create_info = {};
     vert_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vert_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_create_info.module = vert_shader_module;
+    vert_create_info.module = vertex_shader.module;
     vert_create_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo frag_create_info = {};
     frag_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     frag_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_create_info.module = frag_shader_module;
+    frag_create_info.module = fragment_shader.module;
     frag_create_info.pName = "main";
 
     std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vert_create_info,
@@ -399,9 +405,6 @@ void renderer_t::create_graphics_pipeline() {
                                   NULL, &graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create graphics pipeline.");
     }
-
-    vkDestroyShaderModule(device->device, vert_shader_module, NULL);
-    vkDestroyShaderModule(device->device, frag_shader_module, NULL);
 }
 
 void renderer_t::create_framebuffers() {
@@ -631,22 +634,6 @@ void renderer_t::render() {
 
     push_constants.current_frame++;
     current_frame = (current_frame + 1) % frames_in_flight;
-}
-
-VkShaderModule renderer_t::create_shader_module(std::string code) {
-    const char *c_string = code.c_str();
-
-    VkShaderModuleCreateInfo create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    create_info.codeSize = code.size();
-    create_info.pCode = reinterpret_cast<const uint32_t *>(c_string);
-
-    VkShaderModule shader_module;
-    if (vkCreateShaderModule(device->device, &create_info, NULL, &shader_module) !=
-        VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create shader module.");
-    }
-    return shader_module;
 }
 
 void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
