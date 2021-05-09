@@ -28,7 +28,7 @@ struct push_constant_t {
 
     float phi_initial;
     float focal_depth;
-    uint32_t number_of_calls;
+    uint32_t number_of_requests;
     uint32_t texture_pool_size;
 
     float eye_transform[16];
@@ -40,7 +40,6 @@ struct push_constant_t {
 };
 
 static const uint8_t frames_in_flight = 2;
-static const uint32_t number_of_calls = 2048;
 static const uint32_t patch_sample_size = 2;
 
 struct renderer_t {

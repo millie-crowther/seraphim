@@ -34,7 +34,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     push_constants.window_size = window->get_size();
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
-    push_constants.number_of_calls = number_of_calls;
+    push_constants.number_of_requests = number_of_requests;
     push_constants.texture_size = texture_size;
     push_constants.texture_depth =
             texture_pool_size / texture_size / texture_size + 1;
@@ -629,7 +629,7 @@ void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
     uint32_t s = work_group_size[0] * work_group_size[1];
 
-    request_handler_create_buffers(&request_handler, number_of_calls, device);
+    request_handler_create_buffers(&request_handler, device);
 
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));

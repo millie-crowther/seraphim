@@ -7,6 +7,7 @@ vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
                       vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
                       vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
 
+request_t null_requests[number_of_requests];
 static const uint32_t null_status = 0;
 static const uint32_t geometry_request = 1;
 static const uint32_t texture_request = 2;
@@ -15,10 +16,7 @@ static const uint32_t texture_request = 2;
 void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
 void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf);
 
-
-request_t::request_t() {
-    status = null_status;
-}
+static int request_handling_thread(void * request_handler);
 
 static uint32_t squash(vec3 * x_){
     vec4 x;
@@ -86,6 +84,9 @@ void response_texture(const request_t *request, uint32_t *normals, uint32_t *col
 }
 
 void request_handler_destroy(request_handler_t *request_handler) {
+    request_handler->should_quit = true;
+    thrd_join(request_handler->thread, NULL);
+
     request_handler->normal_texture.reset();
     request_handler->colour_texture.reset();
 
@@ -104,8 +105,15 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     request_handler->patch_sample_size = patch_sample_size;
     request_handler->texture_size = texture_size;
 
+    srph_array_init(&request_handler->request_queue);
     mtx_init(&request_handler->response_mutex, mtx_plain);
     mtx_init(&request_handler->request_mutex, mtx_plain);
+    request_handler->should_quit = false;
+    thrd_create(&request_handler->thread, request_handling_thread, request_handler);
+
+    for (size_t i = 0; i < number_of_requests; i++){
+        null_requests[i].status = null_status;
+    }
 
     vec3u size = {{
           texture_size * patch_sample_size,
@@ -128,9 +136,8 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 }
 
-void request_handler_create_buffers(request_handler_t *request_handler, uint32_t number_of_requests, device_t *device) {
+void request_handler_create_buffers(request_handler_t *request_handler, device_t *device) {
     request_handler->device = device;
-    request_handler->number_of_requests = number_of_requests;
 
     buffer_create(&request_handler->patch_buffer, 1, request_handler->device, geometry_pool_size, true,
                   sizeof(patch_t));
@@ -182,31 +189,51 @@ static void handle_texture_request(request_handler_t * request_handler, request_
     mtx_unlock(&request_handler->response_mutex);
 }
 
-void request_handler_handle_requests(request_handler_t * request_handler) {
-    vkDeviceWaitIdle(request_handler->device->device);
+static int request_handling_thread(void * request_handler_){
+    request_handler_t * request_handler = (request_handler_t *) request_handler_;
+    while (!request_handler->should_quit){
+        request_t * requests = NULL;
 
-    uint32_t n = request_handler->number_of_requests;
+        mtx_lock(&request_handler->request_mutex);
+        if (!srph_array_is_empty(&request_handler->request_queue)){
+            requests = *request_handler->request_queue.first;
+            srph_array_pop_front(&request_handler->request_queue);
+        }
+        mtx_unlock(&request_handler->request_mutex);
 
-    request_t * requests = (request_t *) malloc(sizeof(request_t) * n);
-    request_t null_requests[n];
-
-    void *memory_map = request_handler->request_buffer.map(0, n);
-    memcpy(requests, memory_map, n * sizeof(request_t));
-    memcpy(memory_map, null_requests, n * sizeof(request_t));
-    request_handler->request_buffer.unmap();
-
-    for (size_t i = 0; i < n; i++){
-        request_t * request = &requests[i];
-        if (request->status == geometry_request){
-            handle_geometry_request(request_handler, request);
-        } else {
-            if (request->status == texture_request){
-                handle_texture_request(request_handler, request);
+        if (requests != NULL){
+            for (size_t i = 0; i < number_of_requests; i++){
+                request_t * request = &requests[i];
+                if (request->status == geometry_request){
+                    handle_geometry_request(request_handler, request);
+                } else {
+                    if (request->status == texture_request){
+                        handle_texture_request(request_handler, request);
+                    }
+                }
             }
+
+            free(requests);
         }
     }
 
-    free(requests);
+    return 0;
+}
+
+void request_handler_handle_requests(request_handler_t * request_handler) {
+    vkDeviceWaitIdle(request_handler->device->device);
+
+    request_t * requests = (request_t *) malloc(sizeof(request_t) * number_of_requests);
+
+    void *memory_map = request_handler->request_buffer.map(0, number_of_requests);
+    memcpy(requests, memory_map, number_of_requests * sizeof(request_t));
+    memcpy(memory_map, null_requests, number_of_requests * sizeof(request_t));
+    request_handler->request_buffer.unmap();
+
+    mtx_lock(&request_handler->request_mutex);
+    srph_array_push_back(&request_handler->request_queue);
+    *(request_handler->request_queue.last) = requests;
+    mtx_unlock(&request_handler->request_mutex);
 }
 
 void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
