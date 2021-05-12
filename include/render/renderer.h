@@ -20,6 +20,7 @@
 #include "ui/window.h"
 #include "texture.h"
 #include "render/shader.h"
+#include "swapchain.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -55,7 +56,7 @@ struct renderer_t {
 
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
-    std::vector<std::shared_ptr<command_buffer_t>> command_buffers;
+    command_buffer_t * command_buffers;
 
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
@@ -79,7 +80,7 @@ struct renderer_t {
     substance_t *substances;
     uint32_t *num_substances;
 
-    std::unique_ptr<srph::swapchain_t> swapchain;
+    std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<srph::camera_t> main_camera;
 
     // textures

@@ -143,12 +143,6 @@ VkPresentModeKHR swapchain_t::select_present_mode(VkSurfaceKHR surface) {
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkFormat swapchain_t::get_image_format() const { return image_format; }
-
-VkExtent2D swapchain_t::get_extents() const { return extents; }
-
-VkSwapchainKHR swapchain_t::get_handle() const { return handle; }
-
 uint32_t swapchain_t::get_size() const { return image_views.size(); }
 
 VkImageView swapchain_t::get_image_view(uint32_t i) const { return image_views[i]; }
