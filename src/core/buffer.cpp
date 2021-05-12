@@ -11,6 +11,7 @@ void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t 
     self->element_size = element_size;
     self->size = element_size * size;
     self->binding = binding;
+//    self->updates = std::vector<VkBufferCopy>();
 
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;

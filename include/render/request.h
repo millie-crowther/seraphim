@@ -53,6 +53,6 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
                             uint32_t *num_materials, device_t *device);
 void request_handler_destroy(request_handler_t *request_handler);
 void request_handler_handle_requests(request_handler_t * request_handler);
-void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer);
+void request_handler_record_buffer_accesses(request_handler_t *request_handler, VkCommandBuffer command_buffer);
 
 #endif

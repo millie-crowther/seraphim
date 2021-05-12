@@ -55,7 +55,7 @@ struct renderer_t {
 
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
-    std::vector<std::shared_ptr<srph::command_buffer_t>> command_buffers;
+    std::vector<std::shared_ptr<command_buffer_t>> command_buffers;
 
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
@@ -86,8 +86,8 @@ struct renderer_t {
     std::unique_ptr<texture_t> render_texture;
 
     // command pool
-    std::unique_ptr<srph::command_pool_t> compute_command_pool;
-    std::unique_ptr<srph::command_pool_t> graphics_command_pool;
+    std::unique_ptr<command_pool_t> compute_command_pool;
+    std::unique_ptr<command_pool_t> graphics_command_pool;
 
     // buffers
     buffer_t substance_buffer;

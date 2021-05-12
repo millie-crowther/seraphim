@@ -1,24 +1,22 @@
 #include "core/command.h"
 
-using namespace srph;
-
 command_buffer_t::~command_buffer_t() {
     vkFreeCommandBuffers(device, command_pool, 1, &command_buffer);
 }
 
-void command_buffer_t::submit(VkSemaphore wait_sema, VkSemaphore signal_sema,
+void command_buffer_submit(command_buffer_t  * command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema,
                               VkFence fence, VkPipelineStageFlags stage) {
     VkSubmitInfo submit_info = {};
     submit_info.pWaitDstStageMask = &stage;
     submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &command_buffer;
+    submit_info.pCommandBuffers = &command_buffer->command_buffer;
 
     submit_info.waitSemaphoreCount = wait_sema == VK_NULL_HANDLE ? 0 : 1;
     submit_info.pWaitSemaphores = &wait_sema;
     submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
     submit_info.pSignalSemaphores = &signal_sema;
 
-    if (vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS) {
+    if (vkQueueSubmit(command_buffer->queue, 1, &submit_info, fence) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to submit command buffer to queue.");
     }
 }

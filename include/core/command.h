@@ -9,16 +9,16 @@
 #include <memory>
 #include <stdexcept>
 
-namespace srph {
-struct command_buffer_t {
+typedef void (*command_buffer_func_t)(void *data, VkCommandBuffer command_buffer);
+
+typedef struct command_buffer_t {
     VkCommandBuffer command_buffer;
     VkDevice device;
     VkCommandPool command_pool;
     VkQueue queue;
 
-    template <class F>
     command_buffer_t(VkDevice device, VkCommandPool command_pool, VkQueue queue,
-                     VkCommandBufferUsageFlags usage, const F &f) {
+                     VkCommandBufferUsageFlags usage, command_buffer_func_t f, void *data) {
         this->device = device;
         this->command_pool = command_pool;
         this->queue = queue;
@@ -44,7 +44,7 @@ struct command_buffer_t {
             throw std::runtime_error("Error: Failed to begin command buffer");
         }
 
-        f(command_buffer);
+        f(data, command_buffer);
 
         if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS) {
             throw std::runtime_error("Error: Failed to end command buffer");
@@ -53,9 +53,11 @@ struct command_buffer_t {
 
     ~command_buffer_t();
 
-    void submit(VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence,
-                VkPipelineStageFlags stage);
-};
+} command_buffer_t;
+
+void
+command_buffer_submit(command_buffer_t *command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema, VkFence fence,
+                      VkPipelineStageFlags stage);
 
 struct command_pool_t {
     VkDevice device;
@@ -66,20 +68,17 @@ struct command_pool_t {
 
     ~command_pool_t();
 
-    template <class F>
-    std::shared_ptr<command_buffer_t> one_time_buffer(const F &f) const {
+    std::shared_ptr<command_buffer_t> one_time_buffer(command_buffer_func_t f, void *data) const {
         return std::make_shared<command_buffer_t>(
-            device, command_pool, queue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
-            f);
+                device, command_pool, queue, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                f, data);
     }
 
-    template <class F>
-    std::shared_ptr<command_buffer_t> reusable_buffer(const F &f) const {
+    std::shared_ptr<command_buffer_t> reusable_buffer(command_buffer_func_t f, void *data) const {
         return std::make_shared<command_buffer_t>(
-            device, command_pool, queue,
-            VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, f);
+                device, command_pool, queue,
+                VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT, f, data);
     }
 };
-} // namespace srph
 
 #endif

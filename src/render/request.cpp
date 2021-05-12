@@ -244,7 +244,7 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
     cnd_signal(&request_handler->is_queue_empty);
 }
 
-void request_handler_record_write(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
+void request_handler_record_buffer_accesses(request_handler_t *request_handler, VkCommandBuffer command_buffer) {
     request_handler->request_buffer.record_read(command_buffer);
 
     mtx_lock(&request_handler->response_mutex);

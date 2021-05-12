@@ -9,6 +9,11 @@
 
 using namespace srph;
 
+typedef struct command_buffer_data_t {
+    uint32_t index;
+    renderer_t * renderer;
+} command_buffer_data_t;
+
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                        srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera,
                        srph::u32vec2_t work_group_count,
@@ -414,28 +419,59 @@ void renderer_t::create_framebuffers() {
     }
 }
 
+
+static void record_render_command_buffer(void *data, VkCommandBuffer command_buffer){
+    command_buffer_data_t * render_data = (command_buffer_data_t *) data;
+    renderer_t * renderer = render_data->renderer;
+    uint32_t i = render_data->index;
+
+    VkRenderPassBeginInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_info.renderPass = renderer->render_pass;
+    render_pass_info.framebuffer = renderer->framebuffers[i];
+    render_pass_info.renderArea.offset = {0, 0};
+    render_pass_info.renderArea.extent = renderer->swapchain->get_extents();
+    vkCmdBeginRenderPass(command_buffer, &render_pass_info,
+                         VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      renderer->graphics_pipeline);
+    vkCmdBindDescriptorSets(
+            command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, renderer->pipeline_layout,
+            0, 1, &renderer->desc_sets[i], 0, NULL);
+    vkCmdDraw(command_buffer, 3, 1, 0, 0);
+    vkCmdEndRenderPass(command_buffer);
+}
+
+static void record_compute_command_buffer(void *data, VkCommandBuffer command_buffer){
+    command_buffer_data_t * render_data = (command_buffer_data_t *) data;
+    renderer_t * renderer = render_data->renderer;
+    request_handler_record_buffer_accesses(&renderer->request_handler, command_buffer);
+
+    renderer->substance_buffer.record_write(command_buffer);
+    renderer->light_buffer.record_write(command_buffer);
+
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                      renderer->compute_pipeline);
+    vkCmdPushConstants(command_buffer, renderer->compute_pipeline_layout,
+                       VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                       sizeof(push_constant_t), &renderer->push_constants);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                            renderer->compute_pipeline_layout, 0, 1,
+                            &renderer->desc_sets[render_data->index], 0, NULL);
+    vkCmdDispatch(command_buffer, renderer->work_group_count[0], renderer->work_group_count[1],
+                  1);
+}
+
 void renderer_t::create_command_buffers() {
     command_buffers.clear();
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++) {
+        command_buffer_data_t render_data = {
+            .index = i,
+            .renderer = this,
+        };
         command_buffers.push_back(
-            graphics_command_pool->reusable_buffer([&](auto command_buffer) {
-                VkRenderPassBeginInfo render_pass_info = {};
-                render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-                render_pass_info.renderPass = render_pass;
-                render_pass_info.framebuffer = framebuffers[i];
-                render_pass_info.renderArea.offset = {0, 0};
-                render_pass_info.renderArea.extent = swapchain->get_extents();
-                vkCmdBeginRenderPass(command_buffer, &render_pass_info,
-                                     VK_SUBPASS_CONTENTS_INLINE);
-                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                  graphics_pipeline);
-                vkCmdBindDescriptorSets(
-                    command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
-                    0, 1, &desc_sets[i], 0, NULL);
-                vkCmdDraw(command_buffer, 3, 1, 0, 0);
-                vkCmdEndRenderPass(command_buffer);
-            }));
+            graphics_command_pool->reusable_buffer(record_render_command_buffer, (void *) &render_data));
     }
 }
 
@@ -579,31 +615,21 @@ void renderer_t::render() {
         device->device, swapchain->get_handle(), ~static_cast<uint64_t>(0),
         image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
 
+
     request_handler_handle_requests(&request_handler);
 
-    compute_command_pool
-        ->one_time_buffer([&](auto command_buffer) {
-            substance_buffer.record_write(command_buffer);
-            light_buffer.record_write(command_buffer);
+    command_buffer_data_t buffer_data = {
+        .index = image_index,
+        .renderer = this,
+    };
 
-            request_handler_record_write(&request_handler, command_buffer);
-
-            vkCmdPushConstants(command_buffer, compute_pipeline_layout,
-                               VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                               sizeof(push_constant_t), &push_constants);
-            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                              compute_pipeline);
-            vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    compute_pipeline_layout, 0, 1,
-                                    &desc_sets[image_index], 0, NULL);
-            vkCmdDispatch(command_buffer, work_group_count[0], work_group_count[1],
-                          1);
-        })
-        ->submit(image_available_semas[current_frame],
+    auto cmd_buf = compute_command_pool
+        ->one_time_buffer(record_compute_command_buffer, &buffer_data);
+    command_buffer_submit(cmd_buf.get(),  image_available_semas[current_frame],
                  compute_done_semas[current_frame], in_flight_fences[current_frame],
                  VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
-    command_buffers[image_index]->submit(
+    command_buffer_submit(command_buffers[image_index].get(),
         compute_done_semas[current_frame], render_finished_semas[current_frame],
         in_flight_fences[current_frame],
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -621,7 +647,6 @@ void renderer_t::render() {
 void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
     main_camera = camera;
 }
-
 
 void renderer_t::create_buffers() {
     uint32_t c = work_group_count[0] * work_group_count[1];
