@@ -11,6 +11,10 @@ static void window_resize_callback(GLFWwindow *glfw_window, int width, int heigh
     // TODO: handle resize of window
 }
 
+void window_set_title(window_t *window, const char *title) {
+    glfwSetWindowTitle(window->window, title);
+}
+
 window_t::window_t(u32vec2_t size) {
     this->size = size;
 
@@ -51,7 +55,3 @@ keyboard_t &window_t::get_keyboard() const { return *keyboard; }
 mouse_t &window_t::get_mouse() const { return *mouse; }
 
 void window_t::show() { glfwShowWindow(window); }
-
-void window_set_title(srph::window_t *window, const char *title) {
-    glfwSetWindowTitle(window->window, title);
-}

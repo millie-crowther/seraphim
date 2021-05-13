@@ -4,13 +4,12 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <map>
+#include "mouse.h"
 
-namespace srph {
 // forward declaration of window class
 struct window_t;
 
-class keyboard_t {
-  public:
+struct keyboard_t {
     typedef int keycode_t;
 
     keyboard_t(const window_t &window);
@@ -19,8 +18,8 @@ class keyboard_t {
 
     void set_key_pressed(int key, bool state);
 
-  private:
     std::map<keycode_t, bool> key_state;
 };
-} // namespace srph
+
+
 #endif

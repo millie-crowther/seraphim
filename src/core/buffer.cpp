@@ -81,3 +81,17 @@ void buffer_destroy(buffer_t *self) {
 size_t buffer_size(buffer_t *self) {
     return self->size / self->element_size;
 }
+
+void buffer_memory_barrier(buffer_t *self, VkBufferMemoryBarrier *buffer_barrier) {
+    *buffer_barrier = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+        .pNext = NULL,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT,
+        .srcQueueFamilyIndex = self->device->compute_family,
+        .dstQueueFamilyIndex = self->device->compute_family,
+        .buffer = self->buffer,
+        .offset = 0,
+        .size = VK_WHOLE_SIZE,
+    };
+}

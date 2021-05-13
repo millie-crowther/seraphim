@@ -9,6 +9,9 @@ typedef struct material_t {
     double restitution;
     double static_friction;
     double dynamic_friction;
+    double metallic;
+    double roughness;
+    double reflectance;
     uint32_t id;
 } material_t;
 

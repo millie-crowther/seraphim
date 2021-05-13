@@ -115,4 +115,6 @@ void buffer_destroy(buffer_t *self);
 
 size_t buffer_size(buffer_t *self);
 
+void buffer_memory_barrier(buffer_t *self, VkBufferMemoryBarrier *barrier);
+
 #endif

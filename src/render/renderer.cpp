@@ -10,7 +10,7 @@
 using namespace srph;
 
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-                       srph::window_t *window, std::shared_ptr<srph::camera_t> test_camera,
+                       window_t *window, std::shared_ptr<srph::camera_t> test_camera,
                        srph::u32vec2_t work_group_count,
                        srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
                        uint32_t *num_materials,
@@ -76,18 +76,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets) {
         write_desc_sets.push_back(
-            render_texture->get_descriptor_write(descriptor_set));
-        write_desc_sets.push_back(
-            request_handler.normal_texture->get_descriptor_write(descriptor_set));
-        write_desc_sets.push_back(
-                request_handler.colour_texture->get_descriptor_write(descriptor_set));
-
-        write_desc_sets.push_back(
-                request_handler.patch_buffer.get_write_descriptor_set(descriptor_set));
-        write_desc_sets.push_back(
             substance_buffer.get_write_descriptor_set(descriptor_set));
-        write_desc_sets.push_back(
-                request_handler.request_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             light_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
@@ -96,6 +85,17 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
             frustum_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
             lighting_buffer.get_write_descriptor_set(descriptor_set));
+
+        write_desc_sets.push_back(
+                render_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(
+                request_handler.normal_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(
+                request_handler.colour_texture->get_descriptor_write(descriptor_set));
+        write_desc_sets.push_back(
+                request_handler.patch_buffer.get_write_descriptor_set(descriptor_set));
+        write_desc_sets.push_back(
+                request_handler.request_buffer.get_write_descriptor_set(descriptor_set));
         write_desc_sets.push_back(
                 request_handler.texture_hash_buffer.get_write_descriptor_set(descriptor_set));
     }
@@ -424,21 +424,23 @@ void renderer_t::create_command_buffers() {
     for (uint32_t i = 0; i < swapchain->get_size(); i++) {
         command_buffer_t * command_buffer = &command_buffers[i];
         command_buffer_begin_buffer(graphics_command_pool.get(), command_buffer, false);
-        VkRenderPassBeginInfo render_pass_info = {};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.renderPass = render_pass;
-        render_pass_info.framebuffer = framebuffers[i];
-        render_pass_info.renderArea.offset = {0, 0};
-        render_pass_info.renderArea.extent = swapchain->extents;
-        vkCmdBeginRenderPass(command_buffer->command_buffer, &render_pass_info,
-                             VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                          graphics_pipeline);
-        vkCmdBindDescriptorSets(
-                command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
-                0, 1, &desc_sets[i], 0, NULL);
-        vkCmdDraw(command_buffer->command_buffer, 3, 1, 0, 0);
-        vkCmdEndRenderPass(command_buffer->command_buffer);
+        {
+            VkRenderPassBeginInfo render_pass_info = {};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass = render_pass;
+            render_pass_info.framebuffer = framebuffers[i];
+            render_pass_info.renderArea.offset = {0, 0};
+            render_pass_info.renderArea.extent = swapchain->extents;
+            vkCmdBeginRenderPass(command_buffer->command_buffer, &render_pass_info,
+                                 VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdBindPipeline(command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              graphics_pipeline);
+            vkCmdBindDescriptorSets(
+                    command_buffer->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline_layout,
+                    0, 1, &desc_sets[i], 0, NULL);
+            vkCmdDraw(command_buffer->command_buffer, 3, 1, 0, 0);
+            vkCmdEndRenderPass(command_buffer->command_buffer);
+        }
         command_buffer_end(command_buffer);
     }
 }
@@ -488,15 +490,16 @@ void renderer_t::create_descriptor_set_layout() {
             image_layout,
             request_handler.normal_texture->get_descriptor_layout_binding(),
             request_handler.colour_texture->get_descriptor_layout_binding(),
-
             request_handler.patch_buffer.get_descriptor_set_layout_binding(),
+            request_handler.request_buffer.get_descriptor_set_layout_binding(),
+            request_handler.texture_hash_buffer.get_descriptor_set_layout_binding(),
+
             substance_buffer.get_descriptor_set_layout_binding(),
             light_buffer.get_descriptor_set_layout_binding(),
-            request_handler.request_buffer.get_descriptor_set_layout_binding(),
             pointer_buffer.get_descriptor_set_layout_binding(),
             frustum_buffer.get_descriptor_set_layout_binding(),
             lighting_buffer.get_descriptor_set_layout_binding(),
-            request_handler.texture_hash_buffer.get_descriptor_set_layout_binding(),
+
     };
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
@@ -589,21 +592,23 @@ void renderer_t::render() {
 
     command_buffer_t command_buffer;
     command_buffer_begin_buffer(compute_command_pool.get(), &command_buffer, true);
-    request_handler_record_buffer_accesses(&request_handler, command_buffer.command_buffer);
+    {
+        request_handler_record_buffer_accesses(&request_handler, command_buffer.command_buffer);
 
-    substance_buffer.record_write(command_buffer.command_buffer);
-    light_buffer.record_write(command_buffer.command_buffer);
+        substance_buffer.record_write(command_buffer.command_buffer);
+        light_buffer.record_write(command_buffer.command_buffer);
 
-    vkCmdBindPipeline(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                      compute_pipeline);
-    vkCmdPushConstants(command_buffer.command_buffer, compute_pipeline_layout,
-                       VK_SHADER_STAGE_COMPUTE_BIT, 0,
-                       sizeof(push_constant_t), &push_constants);
-    vkCmdBindDescriptorSets(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                            compute_pipeline_layout, 0, 1,
-                            &desc_sets[image_index], 0, NULL);
-    vkCmdDispatch(command_buffer.command_buffer, work_group_count[0], work_group_count[1],
-                  1);
+        vkCmdBindPipeline(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                          compute_pipeline);
+        vkCmdPushConstants(command_buffer.command_buffer, compute_pipeline_layout,
+                           VK_SHADER_STAGE_COMPUTE_BIT, 0,
+                           sizeof(push_constant_t), &push_constants);
+        vkCmdBindDescriptorSets(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                                compute_pipeline_layout, 0, 1,
+                                &desc_sets[image_index], 0, NULL);
+        vkCmdDispatch(command_buffer.command_buffer, work_group_count[0], work_group_count[1],
+                      1);
+    }
     command_buffer_end(&command_buffer);
 
 
