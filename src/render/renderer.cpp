@@ -66,10 +66,14 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     create_descriptor_pool();
     create_sync();
 
+    vec3u size = {{
+        work_group_count[0] * work_group_size[0],
+        work_group_count[1] * work_group_size[1],
+        1u
+    }};
+
     render_texture = std::make_unique<texture_t>(
-        10, device,
-        u32vec3_t(work_group_count[0] * work_group_size[0],
-                  work_group_count[1] * work_group_size[1], 1u),
+        10, device, &size,
         VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
         VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 

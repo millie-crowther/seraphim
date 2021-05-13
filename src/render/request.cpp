@@ -136,16 +136,14 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     vec3u size = {{ texture_size, texture_size, texture_depth }};
     vec3u_multiply_u(&size, &size, patch_sample_size);
 
-    u32vec3_t size_(size.x, size.y, size.z);
-
     request_handler->normal_texture = std::make_unique<texture_t>(
-            11, request_handler->device, size_, VK_IMAGE_USAGE_SAMPLED_BIT,
+            11, request_handler->device, &size, VK_IMAGE_USAGE_SAMPLED_BIT,
             static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
                                                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
 
     request_handler->colour_texture = std::make_unique<texture_t>(
-            12, request_handler->device, size_, VK_IMAGE_USAGE_SAMPLED_BIT,
+            12, request_handler->device, &size, VK_IMAGE_USAGE_SAMPLED_BIT,
             static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
                                                  VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
@@ -180,16 +178,17 @@ static void handle_texture_request(request_handler_t * request_handler, request_
 
     uint32_t index = request->hash % texture_pool_size;
     uint32_t texture_size = request_handler->texture_size;
-    u32vec3_t p = u32vec3_t(
-            index % texture_size,
-            (index % (texture_size * texture_size)) / texture_size,
-            index / texture_size / texture_size
-    ) * request_handler->patch_sample_size;
+    vec3i p = {{
+        (int) (index % texture_size),
+        (int) ((index % (texture_size * texture_size)) / texture_size),
+        (int)(index / texture_size / texture_size)
+    }};
+    vec3i_multiply_i(&p, &p, request_handler->patch_sample_size);
 
     mtx_lock(&request_handler->response_mutex);
     request_handler->texture_hash_buffer.write(&request->hash, 1, index);
-    request_handler->normal_texture->write(p, normals);
-    request_handler->colour_texture->write(p, colours);
+    request_handler->normal_texture->write(&p, normals);
+    request_handler->colour_texture->write(&p, colours);
     mtx_unlock(&request_handler->response_mutex);
 }
 

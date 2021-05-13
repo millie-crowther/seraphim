@@ -1,18 +1,19 @@
 #include "render/texture.h"
 
 #include <stdexcept>
+#include <maths/maths.h>
 
 #include "core/buffer.h"
 
 using namespace srph;
 
-texture_t::texture_t(uint32_t binding, device_t *device, u32vec3_t size,
+texture_t::texture_t(uint32_t binding, device_t *device, vec3u *size,
                      VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
                      VkDescriptorType descriptor_type) {
     this->binding = binding;
     this->device = device;
     this->descriptor_type = descriptor_type;
-    extents = {size[0], size[1], size[2]};
+    extents = {size->x, size->y, size->z};
 
     format = VK_FORMAT_R8G8B8A8_UNORM;
     layout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -146,7 +147,7 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
     return descriptor_write;
 }
 
-void texture_t::write(u32vec3_t p, uint32_t *x) {
+void texture_t::write(vec3i *p, uint32_t *x) {
     uint32_t offset = (index++ % buffer_size(&staging_buffer));
     staging_buffer.write(x, 1, offset);
 
@@ -158,8 +159,7 @@ void texture_t::write(u32vec3_t p, uint32_t *x) {
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = 1;
-    region.imageOffset = {static_cast<int>(p[0]), static_cast<int>(p[1]),
-                          static_cast<int>(p[2])};
+    region.imageOffset = {p->x, p->y, p->z};
     region.imageExtent = {2, 2, 2};
 
     updates.push_back(region);

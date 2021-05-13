@@ -5,6 +5,7 @@
 #include "core/command.h"
 #include "core/device.h"
 #include "maths/matrix.h"
+#include "camera.h"
 
 #include <vector>
 
@@ -28,7 +29,7 @@ struct texture_t {
     uint32_t index;
 
     // constructors and destructors
-    texture_t(uint32_t binding, device_t *device, srph::u32vec3_t size,
+    texture_t(uint32_t binding, device_t *device, vec3u *size,
               VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
               VkDescriptorType descriptor_type);
     ~texture_t();
@@ -36,7 +37,7 @@ struct texture_t {
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     void record_write(VkCommandBuffer command_buffer);
-    void write(srph::u32vec3_t p, uint32_t *x);
+    void write(vec3i *p, uint32_t *x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
 
     // static methods
