@@ -3,8 +3,6 @@
 #include <assert.h>
 #include <math.h>
 
-using namespace srph;
-
 void camera_transformation_matrix(camera_t *camera, float *xs) {
     assert(camera != NULL && xs != NULL);
     mat4 dxs;
@@ -25,7 +23,7 @@ void camera_t::update(double delta, const keyboard_t &keyboard,
     double scale = 2000.0;
 
     quat q;
-    quat_from_axis_angle(&q, &vec3_up, delta * mouse.get_velocity()[0] / scale);
+    quat_from_axis_angle(&q, &vec3_up, delta * mouse.velocity.x / scale);
     transform_rotate(&transform, &q);
 
     vec3 right;
@@ -33,7 +31,7 @@ void camera_t::update(double delta, const keyboard_t &keyboard,
     transform_right(&transform, &right);
     right.y = 0;
     vec3_normalize(&right, &right);
-    quat_from_axis_angle(&q1, &right, delta * mouse.get_velocity()[1] / scale);
+    quat_from_axis_angle(&q1, &right, delta * mouse.velocity.y / scale);
     transform_rotate(&transform, &q1);
 
     vec3 forward;
@@ -64,8 +62,4 @@ void camera_t::update(double delta, const keyboard_t &keyboard,
         vec3_multiply_f(&d, &move_right, -delta);
         transform_translate(&transform, &d);
     }
-
-    assert(isfinite(delta));
-    assert(isfinite(mouse.get_velocity()[0]));
-    assert(isfinite(mouse.get_velocity()[1]));
 }

@@ -139,7 +139,7 @@ seraphim_t::seraphim_t(const char *title) {
     }
 #endif
 
-    if (glfwCreateWindowSurface(instance, window->get_window(), nullptr, &surface) !=
+    if (glfwCreateWindowSurface(instance, window->window, nullptr, &surface) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create window surface.");
     }
@@ -325,9 +325,9 @@ void seraphim_t::run() {
         r_time += 1.0 / delta;
         previous = now;
 
-        window->get_mouse().update(delta, *window);
+        mouse_update(&window->mouse, delta);
 
-        test_camera->update(delta, window->get_keyboard(), window->get_mouse());
+        test_camera->update(delta, window->get_keyboard(), window->mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;

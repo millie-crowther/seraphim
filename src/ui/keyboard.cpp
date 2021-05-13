@@ -13,7 +13,7 @@ static void key_callback(GLFWwindow *glfw_window, int key, int scancode, int act
 }
 
 keyboard_t::keyboard_t(const window_t &window) {
-    glfwSetKeyCallback(window.get_window(), key_callback);
+    glfwSetKeyCallback(window.window, key_callback);
 }
 
 bool keyboard_t::is_key_pressed(int key) const {

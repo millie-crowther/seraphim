@@ -17,7 +17,7 @@ struct window_t {
     srph::u32vec2_t size;
     GLFWwindow *window;
     std::unique_ptr<keyboard_t> keyboard;
-    std::unique_ptr<mouse_t> mouse;
+    mouse_t mouse;
 
     // constructors and destructors
     window_t(srph::u32vec2_t size);
@@ -25,13 +25,9 @@ struct window_t {
 
     void show();
 
-    // accessors
-    GLFWwindow *get_window() const;
-    srph::u32vec2_t get_size() const;
     bool should_close() const;
 
     keyboard_t &get_keyboard() const;
-    mouse_t &get_mouse() const;
 };
 
 

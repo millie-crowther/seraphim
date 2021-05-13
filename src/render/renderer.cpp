@@ -15,12 +15,12 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
                        srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
                        uint32_t *num_materials,
                        sdf_t *sdfs, uint32_t *num_sdfs) {
-    this->device = device;
-    this->surface = surface;
-    this->work_group_count = work_group_count;
-    this->work_group_size = work_group_size;
-    this->substances = substances;
-    this->num_substances = num_substances;
+    renderer_t::device = device;
+    renderer_t::surface = surface;
+    renderer_t::work_group_count = work_group_count;
+    renderer_t::work_group_size = work_group_size;
+    renderer_t::substances = substances;
+    renderer_t::num_substances = num_substances;
 
     texture_size = max_image_size / patch_sample_size;
 
@@ -29,7 +29,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     current_frame = 0;
     push_constants.current_frame = 0;
     push_constants.render_distance = (float) rho;
-    push_constants.window_size = window->get_size();
+    push_constants.window_size = window->size;
     push_constants.phi_initial = 0;
     push_constants.focal_depth = 1.0;
     push_constants.number_of_requests = number_of_requests;

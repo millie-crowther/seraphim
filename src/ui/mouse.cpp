@@ -2,26 +2,25 @@
 
 #include "ui/window.h"
 
-using namespace srph;
+void mouse_update(mouse_t *mouse, double delta) {
+    vec2 cursor;
+    glfwGetCursorPos(mouse->window->window, &cursor.x, &cursor.y);
 
-mouse_t::mouse_t(window_t &window) {
-    GLFWwindow *w = window.get_window();
-    c = vec2_t(window.get_size()[0], window.get_size()[1]) / 2.0;
-    glfwSetCursorPos(w, c[0], c[1]);
+    vec2_subtract(&mouse->velocity, &cursor, &mouse->cursor_position);
+    vec2_divide_f(&mouse->velocity, &mouse->velocity, delta);
+    glfwSetCursorPos(mouse->window->window, mouse->cursor_position.x, mouse->cursor_position.y);
 
-    if (glfwRawMouseMotionSupported()) {
-        glfwSetInputMode(w, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-    }
-
-    glfwSetInputMode(window.get_window(), GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }
 
-vec2_t mouse_t::get_velocity() const { return v; }
+void mouse_create(mouse_t *mouse, struct window_t *window) {
+    mouse->window = window;
+    mouse->cursor_position = {{(double) window->size[0], (double) window->size[0] }};
+    vec2_divide_f(&mouse->cursor_position, &mouse->cursor_position, 2.0);
+    glfwSetCursorPos(window->window, mouse->cursor_position.x, mouse->cursor_position.y);
 
-void mouse_t::update(double delta, const window_t &window) {
-    vec2_t cursor;
-    glfwGetCursorPos(window.get_window(), &cursor[0], &cursor[1]);
+    if (glfwRawMouseMotionSupported()) {
+        glfwSetInputMode(window->window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    }
 
-    v = (cursor - c) / delta;
-    glfwSetCursorPos(window.get_window(), c[0], c[1]);
+    glfwSetInputMode(window->window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 }

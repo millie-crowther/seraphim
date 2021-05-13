@@ -32,7 +32,7 @@ window_t::window_t(u32vec2_t size) {
     glfwSetWindowSizeCallback(window, window_resize_callback);
 
     keyboard = std::make_unique<keyboard_t>(*this);
-    mouse = std::make_unique<mouse_t>(*this);
+    mouse_create(&mouse, this);
 }
 
 window_t::~window_t() {
@@ -41,17 +41,11 @@ window_t::~window_t() {
     }
 }
 
-u32vec2_t window_t::get_size() const { return size; }
-
-GLFWwindow *window_t::get_window() const { return window; }
-
 bool window_t::should_close() const {
     return glfwWindowShouldClose(window) ||
            keyboard->is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
 keyboard_t &window_t::get_keyboard() const { return *keyboard; }
-
-mouse_t &window_t::get_mouse() const { return *mouse; }
 
 void window_t::show() { glfwShowWindow(window); }
