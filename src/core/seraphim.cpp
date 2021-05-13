@@ -22,7 +22,7 @@ const std::vector<const char *> validation_layers = {
 void seraphim_destroy(seraphim_t *engine) {
     engine->fps_monitor_quit = true;
 
-    srph_physics_destroy(&engine->physics);
+    physics_destroy(&engine->physics);
 
     vkDeviceWaitIdle(engine->device->device);
 
@@ -167,7 +167,7 @@ seraphim_t::seraphim_t(const char *title) {
         device.get(), substances, &num_substances, surface, window.get(),
         test_camera, work_group_count, work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
 
-    srph_physics_init(&physics, substances, &num_substances);
+    physics_create(&physics, substances, &num_substances);
 }
 
 void seraphim_t::monitor_fps() {
@@ -303,7 +303,7 @@ bool seraphim_t::check_validation_layers() {
 }
 
 void seraphim_t::run() {
-    srph_physics_start(&physics);
+    physics_start(&physics);
 
     fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
 

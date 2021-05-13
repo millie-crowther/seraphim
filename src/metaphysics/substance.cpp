@@ -13,7 +13,7 @@ substance_t::substance_t(form_t *form, matter_t *matter, uint32_t id) {
 
 data_t substance_t::get_data(const vec3 *eye_position) {
     vec3 r;
-    srph_bound3_radius(sdf_bound(matter.sdf), &r);
+    bound3_radius(sdf_bound(matter.sdf), &r);
 
     vec3 eye;
     matter_to_local_position(&matter, &eye, eye_position);
@@ -274,8 +274,8 @@ double substance_mass(substance_t *self) {
 
 void substance_calculate_sphere_bound(substance_t *self, double dt) {
     vec3 midpoint, radius;
-    srph_bound3_midpoint(&self->matter.sdf->bound, &midpoint);
-    srph_bound3_radius(&self->matter.sdf->bound, &radius);
+    bound3_midpoint(&self->matter.sdf->bound, &midpoint);
+    bound3_radius(&self->matter.sdf->bound, &radius);
     matter_to_global_position(&self->matter, &self->bounding_sphere.c, &midpoint);
     self->bounding_sphere.r =
         vec3_length(&radius) + vec3_length(&self->matter.velocity) * dt;

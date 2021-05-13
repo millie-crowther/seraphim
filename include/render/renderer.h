@@ -21,6 +21,7 @@
 #include "texture.h"
 #include "render/shader.h"
 #include "swapchain.h"
+#include "camera.h"
 
 struct push_constant_t {
     srph::u32vec2_t window_size;
@@ -81,7 +82,7 @@ struct renderer_t {
     uint32_t *num_substances;
 
     std::unique_ptr<swapchain_t> swapchain;
-    std::weak_ptr<srph::camera_t> main_camera;
+    std::weak_ptr<camera_t> main_camera;
 
     // textures
     std::unique_ptr<texture_t> render_texture;
@@ -126,7 +127,7 @@ struct renderer_t {
     void present(uint32_t image_index) const;
 
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-               window_t *window, std::shared_ptr<srph::camera_t> test_camera, srph::u32vec2_t work_group_count,
+               window_t *window, std::shared_ptr<camera_t> test_camera, srph::u32vec2_t work_group_count,
                srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
                sdf_t *sdfs, uint32_t *num_sdfs);
 
@@ -134,7 +135,7 @@ struct renderer_t {
 
     void render();
 
-    void set_main_camera(std::weak_ptr<srph::camera_t> camera);
+    void set_main_camera(std::weak_ptr<camera_t> camera);
 
     int get_frame_count();
 };

@@ -10,8 +10,8 @@
 
 #define SOLVER_ITERATIONS 1
 
-void srph_physics_init(srph_physics *p, substance_t *substances,
-                       uint32_t *num_substances) {
+void physics_create(srph_physics *p, substance_t *substances,
+                    uint32_t *num_substances) {
     p->quit = false;
 
     p->gravity = {{0.0, -9.8, 0.0}};
@@ -21,11 +21,11 @@ void srph_physics_init(srph_physics *p, substance_t *substances,
     p->num_substances = num_substances;
 }
 
-void srph_physics_start(srph_physics *p) {
+void physics_start(srph_physics *p) {
     p->thread = std::thread(&srph_physics::run, p);
 }
 
-void srph_physics_destroy(srph_physics *p) {
+void physics_destroy(srph_physics *p) {
     p->quit = true;
 
     if (p->thread.joinable()) {
@@ -35,7 +35,7 @@ void srph_physics_destroy(srph_physics *p) {
     srph_array_clear(&p->collisions);
 }
 
-void srph_physics_tick(srph_physics *p, double dt) {
+void physics_tick(srph_physics *p, double dt) {
     // update substances and integrate forces
     for (uint32_t i = 0; i < *p->num_substances; i++) {
         substance_t *substance = &p->substances[i];
@@ -98,7 +98,7 @@ void srph_physics::run() {
 
         double delta = sigma;
 
-        srph_physics_tick(this, delta);
+        physics_tick(this, delta);
         /*
                 std::vector<collision_t> collisions;
 

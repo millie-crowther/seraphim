@@ -43,7 +43,7 @@ struct seraphim_t {
     srph::u32vec2_t work_group_count;
     srph::u32vec2_t work_group_size;
 
-    std::shared_ptr<srph::camera_t> test_camera;
+    std::shared_ptr<camera_t> test_camera;
 
     uint32_t num_substances;
     substance_t substances[SERAPHIM_MAX_SUBSTANCES];

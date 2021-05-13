@@ -5,6 +5,16 @@
 
 using namespace srph;
 
+void camera_transformation_matrix(camera_t *camera, float *xs) {
+    assert(camera != NULL && xs != NULL);
+    mat4 dxs;
+    transform_matrix(&camera->transform, &dxs);
+
+    for (int i = 0; i < 16; i++) {
+        xs[i] = (float)dxs.v[i];
+    }
+}
+
 camera_t::camera_t() {
     transform.position = {{0.0, 0.5, -5.0}};
     transform.rotation = quat_identity;
@@ -58,14 +68,4 @@ void camera_t::update(double delta, const keyboard_t &keyboard,
     assert(isfinite(delta));
     assert(isfinite(mouse.get_velocity()[0]));
     assert(isfinite(mouse.get_velocity()[1]));
-}
-
-void srph_camera_transformation_matrix(srph::camera_t *c, float *xs) {
-    assert(c != NULL && xs != NULL);
-    mat4 dxs;
-    transform_matrix(&c->transform, &dxs);
-
-    for (int i = 0; i < 16; i++) {
-        xs[i] = (float)dxs.v[i];
-    }
 }

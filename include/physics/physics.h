@@ -27,10 +27,10 @@ typedef struct srph_physics {
     void run();
 } srph_physics;
 
-void srph_physics_init(srph_physics *p, substance_t *substances,
-                       uint32_t *num_substances);
-void srph_physics_start(srph_physics *p);
-void srph_physics_destroy(srph_physics *p);
-void srph_physics_tick(srph_physics *p, double dt);
+void physics_create(srph_physics *p, substance_t *substances,
+                    uint32_t *num_substances);
+void physics_start(srph_physics *p);
+void physics_destroy(srph_physics *p);
+void physics_tick(srph_physics *p, double dt);
 
 #endif

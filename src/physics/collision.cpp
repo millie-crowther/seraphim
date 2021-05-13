@@ -243,9 +243,9 @@ static void collision_generate_manifold(collision_t *c, double dt) {
     xs[2].y += r.y;
     xs[3].z += r.z;
 
-    srph_opt_sample s;
+    opt_sample_t s;
     double threshold = 0.0;
-    srph_opt_nelder_mead(&s, intersection_func, c->substances, xs, &threshold);
+    opt_nelder_mead(&s, intersection_func, c->substances, xs, &threshold);
 
     if (s.fx <= 0) {
         matter_add_deformation(&c->substances[0]->matter, &s.x,
@@ -288,19 +288,19 @@ static void collision_resolve_interpenetration_constraint(collision_t *c) {
 
 static bool is_colliding_in_bound(substance_t **substances, bound3_t *bound) {
     vec3 radius;
-    srph_bound3_radius(bound, &radius);
+    bound3_radius(bound, &radius);
     if (vec3_length(&radius) <= epsilon) {
         return false;
     }
 
     bound3_t sub_bounds[2];
-    srph_bound3_bisect(bound, sub_bounds);
+    bound3_bisect(bound, sub_bounds);
     double sub_bound_distances[2];
 
     for (int sub_bound_index = 0; sub_bound_index < 2; sub_bound_index++) {
         vec3 global_position;
         double phis[2];
-        srph_bound3_midpoint(&sub_bounds[sub_bound_index], &global_position);
+        bound3_midpoint(&sub_bounds[sub_bound_index], &global_position);
 
         for (int i = 0; i < 2; i++) {
             vec3 local_position;
@@ -315,7 +315,7 @@ static bool is_colliding_in_bound(substance_t **substances, bound3_t *bound) {
             return true;
         }
 
-        srph_bound3_radius(&sub_bounds[sub_bound_index], &radius);
+        bound3_radius(&sub_bounds[sub_bound_index], &radius);
         double radius_length = vec3_length(&radius);
         if (phis[0] >= radius_length || phis[1] >= radius_length) {
             return false;
@@ -327,7 +327,7 @@ static bool is_colliding_in_bound(substance_t **substances, bound3_t *bound) {
                 bool is_intersecting = false;
                 vec3 vertex;
                 for (int vertex_index = 0; vertex_index < 8; vertex_index++) {
-                    srph_bound3_vertex(bound, vertex_index, &vertex);
+                    bound3_vertex(bound, vertex_index, &vertex);
                     matter_to_local_position(&substance->matter, &vertex, &vertex);
                     double phi = sdf_distance(substance->matter.sdf, &vertex);
                     if (phi < epsilon) {
@@ -362,7 +362,7 @@ static bool collision_narrow_phase(collision_t *c) {
                    bounding_sphere->r);
     }
 
-    srph_bound3_intersection(&bounds[0], &bounds[1], &c->bound);
+    bound3_intersection(&bounds[0], &bounds[1], &c->bound);
 
     if (!bound3_is_valid(&c->bound)) {
         return false;

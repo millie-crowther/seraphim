@@ -3,14 +3,14 @@
 
 #include "maths/maths.h"
 
-typedef double (*srph_opt_func)(void *data, const vec3 *x);
+typedef double (*opt_func_t)(void *data, const vec3 *x);
 
-typedef struct srph_opt_sample {
+typedef struct opt_sample_t {
     vec3 x;
     double fx;
-} srph_opt_sample;
+} opt_sample_t;
 
-void srph_opt_nelder_mead(srph_opt_sample *s, srph_opt_func f, void *data,
-                          const vec3 *xs, double *threshold);
+void opt_nelder_mead(opt_sample_t *s, opt_func_t f, void *data,
+                     const vec3 *xs, const double *threshold_);
 
 #endif

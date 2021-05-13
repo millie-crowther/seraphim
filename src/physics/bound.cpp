@@ -5,24 +5,24 @@
 
 #include <iostream>
 
-void srph_bound3_create(bound3_t *b) {
+void bound3_create(bound3_t *b) {
     for (int i = 0; i < 3; i++) {
         b->lower.v[i] = DBL_MAX;
         b->upper.v[i] = -DBL_MAX;
     }
 }
 
-void srph_bound3_intersection(const bound3_t *a, const bound3_t *b,
-                              bound3_t *intersect) {
+void bound3_intersection(const bound3_t *a, const bound3_t *b,
+                         bound3_t *intersection) {
     for (int i = 0; i < 3; i++) {
-        intersect->lower.v[i] = fmax(a->lower.v[i], b->lower.v[i]);
-        intersect->upper.v[i] = fmin(a->upper.v[i], b->upper.v[i]);
+        intersection->lower.v[i] = fmax(a->lower.v[i], b->lower.v[i]);
+        intersection->upper.v[i] = fmin(a->upper.v[i], b->upper.v[i]);
     }
 }
 
-void srph_bound3_vertex(const bound3_t *b, int vertex_index, vec3 *v) {
+void bound3_vertex(const bound3_t *b, int i, vec3 *v) {
     for (int i = 0; i < 3; i++) {
-        if ((vertex_index & (1 << i)) != 0) {
+        if ((i & (1 << i)) != 0) {
             v->v[i] = b->upper.v[i];
         } else {
             v->v[i] = b->lower.v[i];
@@ -30,26 +30,26 @@ void srph_bound3_vertex(const bound3_t *b, int vertex_index, vec3 *v) {
     }
 }
 
-void srph_bound3_midpoint(const bound3_t *b, vec3 *v) {
+void bound3_midpoint(const bound3_t *b, vec3 *v) {
     for (int i = 0; i < 3; i++) {
         v->v[i] = (b->upper.v[i] + b->lower.v[i]) / 2.0;
     }
 }
 
-void srph_bound3_radius(const bound3_t *b, vec3 *v) {
+void bound3_radius(const bound3_t *b, vec3 *v) {
     for (int i = 0; i < 3; i++) {
         v->v[i] = (b->upper.v[i] - b->lower.v[i]) / 2.0;
     }
 }
 
-void srph_bound3_capture(bound3_t *b, vec3 *v) {
+void bound3_capture(bound3_t *b, vec3 *v) {
     for (int i = 0; i < 3; i++) {
         b->lower.v[i] = fmin(b->lower.v[i], v->v[i]);
         b->upper.v[i] = fmax(b->upper.v[i], v->v[i]);
     }
 }
 
-double srph_bound3_volume(const bound3_t *b) {
+double bound3_volume(const bound3_t *b) {
     double v = 1.0;
     for (int i = 0; i < 3; i++) {
         v *= b->upper.v[i] - b->lower.v[i];
@@ -57,7 +57,7 @@ double srph_bound3_volume(const bound3_t *b) {
     return v;
 }
 
-bool srph_bound3_contains(bound3_t *b, const vec3 *v) {
+bool bound3_contains(bound3_t *b, const vec3 *v) {
     for (int i = 0; i < 3; i++) {
         if (v->v[i] < b->lower.v[i] || v->v[i] > b->upper.v[i]) {
             return false;
@@ -66,11 +66,11 @@ bool srph_bound3_contains(bound3_t *b, const vec3 *v) {
     return true;
 }
 
-void srph_bound3_bisect(const bound3_t *self, bound3_t *sub_bounds) {
+void bound3_bisect(const bound3_t *self, bound3_t *sub_bounds) {
     vec3 radius;
     int max_axis = 0;
 
-    srph_bound3_radius(self, &radius);
+    bound3_radius(self, &radius);
     for (int axis = 1; axis < 3; axis++) {
         if (radius.v[axis] > radius.v[max_axis]) {
             max_axis = axis;

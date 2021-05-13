@@ -46,10 +46,10 @@ vec3 sdf_normal(sdf_t *sdf, const vec3 *x) {
 }
 
 bool sdf_contains(sdf_t *sdf, const vec3 *x) {
-    return srph_bound3_contains(&sdf->bound, x) && sdf_distance(sdf, x) <= 0.0;
+    return bound3_contains(&sdf->bound, x) && sdf_distance(sdf, x) <= 0.0;
 }
 
-double srph_sdf_project(sdf_t *sdf, const vec3 *d) {
+double sdf_project(sdf_t *sdf, const vec3 *d) {
     vec3 x;
     vec3_normalize(&x, d);
     vec3_multiply_f(&x, &x, rho);
@@ -85,7 +85,7 @@ double sdf_volume(sdf_t *sdf) {
             }
         }
 
-        sdf->volume = srph_bound3_volume(b) * (double)hits /
+        sdf->volume = bound3_volume(b) * (double)hits /
                       (double)SERAPHIM_SDF_VOLUME_SAMPLES;
     }
 
@@ -103,10 +103,10 @@ bound3_t *sdf_bound(sdf_t *sdf) {
             a = vec3_zero;
 
             a.v[i] = -1.0;
-            sdf->bound.lower.v[i] = -srph_sdf_project(sdf, &a);
+            sdf->bound.lower.v[i] = -sdf_project(sdf, &a);
 
             a.v[i] = 1.0;
-            sdf->bound.upper.v[i] = srph_sdf_project(sdf, &a);
+            sdf->bound.upper.v[i] = sdf_project(sdf, &a);
         }
 
         sdf->is_bound_valid = true;
