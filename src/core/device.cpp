@@ -5,8 +5,9 @@
 #include <string>
 #include <vector>
 
-const std::vector<const char *> device_extensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+const char * device_extensions[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+};
 
 static VkPhysicalDevice select_physical_device(VkInstance instance,
                                                VkSurfaceKHR surface);
@@ -15,11 +16,11 @@ static void select_queue_families(device_t * device, VkSurfaceKHR surface);
 static bool device_has_extension(VkPhysicalDevice phys_device,
                                  const char *extension) {
     uint32_t extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count,
-                                         nullptr);
+    vkEnumerateDeviceExtensionProperties(phys_device, NULL, &extension_count,
+                                         NULL);
 
     std::vector<VkExtensionProperties> available_extensions(extension_count);
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extension_count,
+    vkEnumerateDeviceExtensionProperties(phys_device, NULL, &extension_count,
                                          available_extensions.data());
 
     for (auto available_extension : available_extensions) {
@@ -38,7 +39,7 @@ static bool has_adequate_queue_families(VkPhysicalDevice physical_device,
 
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count,
-                                             nullptr);
+                                             NULL);
 
     std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count,
@@ -88,11 +89,11 @@ static bool is_suitable_device(VkPhysicalDevice physical_device_,
 
     uint32_t formats_count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface, &formats_count,
-                                         nullptr);
+                                         NULL);
 
     uint32_t present_modes_count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface,
-                                              &present_modes_count, nullptr);
+                                              &present_modes_count, NULL);
     if (formats_count * present_modes_count == 0) {
         return false;
     }
@@ -103,44 +104,45 @@ static bool is_suitable_device(VkPhysicalDevice physical_device_,
 static VkPhysicalDevice select_physical_device(VkInstance instance,
                                                   VkSurfaceKHR surface) {
     uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+    vkEnumeratePhysicalDevices(instance, &device_count, NULL);
 
-    std::vector<VkPhysicalDevice> devices(device_count);
-    vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+    VkPhysicalDevice physical_devices[device_count];
+    vkEnumeratePhysicalDevices(instance, &device_count, physical_devices);
 
-    for (auto physical_device_ : devices) {
-        if (is_suitable_device(physical_device_, surface)) {
-            return physical_device_;
+    for (uint32_t i = 0; i < device_count; i++) {
+        if (is_suitable_device(physical_devices[i], surface)) {
+            return physical_devices[i];
         }
     }
 
-    throw std::runtime_error("Error: Unable to find a suitable physical device!");
+    printf("Error: Unable to find a suitable physical device!");
+    exit(1);
 }
 
 static void select_queue_families(device_t * device, VkSurfaceKHR surface) {
     uint32_t queue_family_count = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(device->physical_device, &queue_family_count,
-                                             nullptr);
+                                             NULL);
 
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    VkQueueFamilyProperties queue_family_properties[queue_family_count];
     vkGetPhysicalDeviceQueueFamilyProperties(device->physical_device, &queue_family_count,
-                                             queue_families.data());
+                                             queue_family_properties);
 
     for (uint32_t i = 0; i < queue_family_count; i++) {
         VkBool32 present_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(device->physical_device, i, surface,
                                              &present_support);
 
-        if (queue_families[i].queueCount > 0) {
+        if (queue_family_properties[i].queueCount > 0) {
             if (present_support) {
                 device->present_family = i;
             }
 
-            if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            if (queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 device->graphics_family = i;
             }
 
-            if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+            if (queue_family_properties[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 device->compute_family = i;
             }
         }
@@ -190,18 +192,18 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface,
     create_info.queueCreateInfoCount =
             static_cast<uint32_t>(queue_create_infos.size());
     create_info.pEnabledFeatures = &device_features;
-    create_info.enabledExtensionCount = device_extensions.size();
-    create_info.ppEnabledExtensionNames = device_extensions.data();
+    create_info.enabledExtensionCount = sizeof(device_extensions) / sizeof(*device_extensions);
+    create_info.ppEnabledExtensionNames = device_extensions;
     create_info.enabledLayerCount =
             static_cast<uint32_t>(enabled_validation_layers.size());
     create_info.ppEnabledLayerNames = enabled_validation_layers.data();
 
-    if (vkCreateDevice(device->physical_device, &create_info, nullptr, &device->device) !=
+    if (vkCreateDevice(device->physical_device, &create_info, NULL, &device->device) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: failed to create device");
     }
 }
 
 void device_destroy(device_t *device) {
-    vkDestroyDevice(device->device, nullptr);
+    vkDestroyDevice(device->device, NULL);
 }
