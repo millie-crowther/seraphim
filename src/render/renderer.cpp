@@ -80,15 +80,16 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     std::vector<VkWriteDescriptorSet> write_desc_sets;
     for (auto descriptor_set : desc_sets) {
         write_desc_sets.push_back(
-            substance_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&substance_buffer, descriptor_set));
         write_desc_sets.push_back(
-            light_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&light_buffer, descriptor_set));
         write_desc_sets.push_back(
-            pointer_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&pointer_buffer, descriptor_set));
         write_desc_sets.push_back(
-            frustum_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&frustum_buffer, descriptor_set));
         write_desc_sets.push_back(
-            lighting_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&lighting_buffer, descriptor_set));
+
 
         write_desc_sets.push_back(
                 render_texture->get_descriptor_write(descriptor_set));
@@ -96,12 +97,15 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
                 request_handler.normal_texture->get_descriptor_write(descriptor_set));
         write_desc_sets.push_back(
                 request_handler.colour_texture->get_descriptor_write(descriptor_set));
+
+
         write_desc_sets.push_back(
-                request_handler.patch_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&request_handler.patch_buffer, descriptor_set));
         write_desc_sets.push_back(
-                request_handler.request_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&request_handler.request_buffer, descriptor_set));
         write_desc_sets.push_back(
-                request_handler.texture_hash_buffer.get_write_descriptor_set(descriptor_set));
+                buffer_write_descriptor_set(&request_handler.texture_hash_buffer, descriptor_set));
+
     }
 
     vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
@@ -494,15 +498,16 @@ void renderer_t::create_descriptor_set_layout() {
             image_layout,
             request_handler.normal_texture->get_descriptor_layout_binding(),
             request_handler.colour_texture->get_descriptor_layout_binding(),
-            request_handler.patch_buffer.get_descriptor_set_layout_binding(),
-            request_handler.request_buffer.get_descriptor_set_layout_binding(),
-            request_handler.texture_hash_buffer.get_descriptor_set_layout_binding(),
 
-            substance_buffer.get_descriptor_set_layout_binding(),
-            light_buffer.get_descriptor_set_layout_binding(),
-            pointer_buffer.get_descriptor_set_layout_binding(),
-            frustum_buffer.get_descriptor_set_layout_binding(),
-            lighting_buffer.get_descriptor_set_layout_binding(),
+            buffer_descriptor_set_layout_binding(&request_handler.patch_buffer),
+            buffer_descriptor_set_layout_binding(&request_handler.request_buffer),
+            buffer_descriptor_set_layout_binding(&request_handler.texture_hash_buffer),
+
+            buffer_descriptor_set_layout_binding(&substance_buffer),
+            buffer_descriptor_set_layout_binding(&light_buffer),
+            buffer_descriptor_set_layout_binding(&pointer_buffer),
+            buffer_descriptor_set_layout_binding(&frustum_buffer),
+            buffer_descriptor_set_layout_binding(&lighting_buffer),
 
     };
 
@@ -573,12 +578,12 @@ void renderer_t::render() {
 
     std::sort(substance_data.begin(), substance_data.end(), data_t::comparator_t());
 
-    substance_buffer.write(substance_data.data(), substance_data.size(), 0);
+    buffer_write(&substance_buffer, substance_data.data(), substance_data.size(), 0);
 
     // write lights
     std::vector<light_t> lights(size);
     lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
-    light_buffer.write(lights.data(), lights.size(), 0);
+    buffer_write(&light_buffer, lights.data(), lights.size(), 0);
 
     if (auto camera = main_camera.lock()) {
         camera_transformation_matrix(camera.get(),
@@ -599,8 +604,8 @@ void renderer_t::render() {
     {
         request_handler_record_buffer_accesses(&request_handler, command_buffer.command_buffer);
 
-        substance_buffer.record_write(command_buffer.command_buffer);
-        light_buffer.record_write(command_buffer.command_buffer);
+        buffer_record_write(&substance_buffer, command_buffer.command_buffer);
+        buffer_record_write(&light_buffer, command_buffer.command_buffer);
 
         vkCmdBindPipeline(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                           compute_pipeline);

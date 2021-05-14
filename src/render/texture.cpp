@@ -149,7 +149,7 @@ texture_t::get_descriptor_write(VkDescriptorSet desc_set) const {
 
 void texture_t::write(vec3i *p, uint32_t *x) {
     uint32_t offset = (index++ % buffer_size(&staging_buffer));
-    staging_buffer.write(x, 1, offset);
+    buffer_write(&staging_buffer, x, 1, offset);
 
     VkBufferImageCopy region;
     region.bufferOffset = offset * staging_buffer.element_size;

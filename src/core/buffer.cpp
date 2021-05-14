@@ -95,3 +95,88 @@ void buffer_memory_barrier(buffer_t *self, VkBufferMemoryBarrier *buffer_barrier
         .size = VK_WHOLE_SIZE,
     };
 }
+
+void *buffer_map(buffer_t *buffer, uint64_t offset, uint64_t map_size) {
+    if (buffer->is_device_local) {
+        return buffer_map(buffer->staging_buffer, offset, map_size);
+    } else {
+        void *memory_map;
+        vkMapMemory(buffer->device->device, buffer->memory, buffer->element_size * offset,
+                    buffer->element_size * map_size, 0, &memory_map);
+        return memory_map;
+    }
+}
+
+void buffer_unmap(buffer_t *buffer) {
+    if (buffer->is_device_local) {
+        buffer_unmap(buffer->staging_buffer);
+    } else {
+        vkUnmapMemory(buffer->device->device, buffer->memory);
+    }
+}
+
+void buffer_write(buffer_t *buffer, const void *source, size_t number, uint64_t offset) {
+    if (number == 0) {
+        return;
+    }
+
+    if (buffer->element_size * (offset + number) > buffer->size + 1) {
+        throw std::runtime_error("Error: Invalid buffer write.");
+    }
+
+    void *mem_map = buffer_map(buffer, offset, number);
+    memcpy(mem_map, source, buffer->element_size * number);
+    buffer_unmap(buffer);
+
+    if (buffer->is_device_local) {
+        VkBufferCopy buffer_copy = {};
+        buffer_copy.srcOffset = buffer->element_size * offset;
+        buffer_copy.dstOffset = buffer->element_size * offset;
+        buffer_copy.size = buffer->element_size * number;
+        buffer->updates.push_back(buffer_copy);
+    }
+}
+
+void buffer_record_write(buffer_t *buffer, VkCommandBuffer command_buffer) {
+    if (buffer->updates.empty()){
+        return;
+    }
+
+    vkCmdCopyBuffer(command_buffer, buffer->staging_buffer->buffer, buffer->buffer,
+                    buffer->updates.size(), buffer->updates.data());
+    buffer->updates.clear();
+}
+
+void buffer_record_read(buffer_t *buffer, VkCommandBuffer command_buffer) {
+    VkBufferCopy region;
+    region.srcOffset = 0;
+    region.dstOffset = 0;
+    region.size = buffer->size;
+    vkCmdCopyBuffer(command_buffer, buffer->buffer, buffer->staging_buffer->buffer, 1, &region);
+    vkCmdFillBuffer(command_buffer, buffer->buffer, 0, buffer->size, 0);
+}
+
+VkWriteDescriptorSet buffer_write_descriptor_set(buffer_t *buffer, VkDescriptorSet descriptor_set) {
+    VkWriteDescriptorSet write_desc_set = {};
+    write_desc_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write_desc_set.pNext = NULL;
+    write_desc_set.dstArrayElement = 0;
+    write_desc_set.descriptorCount = 1;
+    write_desc_set.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    write_desc_set.pImageInfo = NULL;
+    write_desc_set.pTexelBufferView = NULL;
+    write_desc_set.dstSet = descriptor_set;
+    write_desc_set.dstBinding = buffer->binding;
+    write_desc_set.pBufferInfo = &buffer->desc_buffer_info;
+    return write_desc_set;
+}
+
+VkDescriptorSetLayoutBinding buffer_descriptor_set_layout_binding(buffer_t *buffer) {
+    VkDescriptorSetLayoutBinding layout_binding = {};
+    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    layout_binding.descriptorCount = 1;
+    layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+    layout_binding.pImmutableSamplers = NULL;
+    layout_binding.binding = buffer->binding;
+    return layout_binding;
+}
