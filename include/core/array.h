@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define array_t(T)                                                               \
+#define array_t(T)                                                                  \
     struct {                                                                        \
         size_t size;                                                                \
         size_t capacity;                                                            \

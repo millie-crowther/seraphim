@@ -32,7 +32,7 @@ struct seraphim_t {
 
     std::vector<const char *> get_required_extensions();
 
-    std::unique_ptr<device_t> device;
+    device_t device;
     std::unique_ptr<renderer_t> renderer;
     std::unique_ptr<window_t> window;
     srph_physics physics;

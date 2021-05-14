@@ -24,7 +24,7 @@ void seraphim_destroy(seraphim_t *engine) {
 
     physics_destroy(&engine->physics);
 
-    vkDeviceWaitIdle(engine->device->device);
+    vkDeviceWaitIdle(engine->device.device);
 
     engine->fps_cv.notify_all();
     if (engine->fps_monitor_thread.joinable()) {
@@ -34,7 +34,7 @@ void seraphim_destroy(seraphim_t *engine) {
     engine->renderer.reset();
 
     // destroy device
-    engine->device.reset();
+    device_destroy(&engine->device);
 
     // destroy debug callback
 #if SERAPHIM_DEBUG
@@ -144,11 +144,11 @@ seraphim_t::seraphim_t(const char *title) {
         throw std::runtime_error("Error: Failed to create window surface.");
     }
 
-    device = std::make_unique<device_t>(instance, surface, validation_layers);
+    device_create(&device, instance, surface, validation_layers);
 
 #if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
-    vkGetPhysicalDeviceProperties(device->physical_device, &properties);
+    vkGetPhysicalDeviceProperties(device.physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: "
               << properties.limits.maxStorageBufferRange << std::endl;
@@ -164,7 +164,7 @@ seraphim_t::seraphim_t(const char *title) {
     test_camera = std::make_shared<camera_t>();
 
     renderer = std::make_unique<renderer_t>(
-        device.get(), substances, &num_substances, surface, window.get(),
+        &device, substances, &num_substances, surface, window.get(),
         test_camera, work_group_count, work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
 
     physics_create(&physics, substances, &num_substances);
