@@ -5,6 +5,7 @@
 #include <ui/file.h>
 
 #include <stdio.h>
+#include <cstring>
 
 int main() {
     const char *game_filepath = "/home/millie/seraphim_game/";

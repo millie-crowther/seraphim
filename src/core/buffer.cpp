@@ -2,6 +2,7 @@
 // Created by millie on 02/05/2021.
 //
 
+#include <cstring>
 #include "core/buffer.h"
 
 void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t size,
@@ -11,7 +12,7 @@ void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t 
     self->element_size = element_size;
     self->size = element_size * size;
     self->binding = binding;
-//    self->updates = std::vector<VkBufferCopy>();
+    array_create(&self->updates);
 
     VkBufferCreateInfo buffer_info = {};
     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -26,14 +27,15 @@ void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t 
         memory_property = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     } else {
         buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-        memory_property = static_cast<VkMemoryPropertyFlagBits>(
+        memory_property = (VkMemoryPropertyFlagBits)(
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     }
 
-    if (vkCreateBuffer(device->device, &buffer_info, nullptr, &self->buffer) !=
+    if (vkCreateBuffer(device->device, &buffer_info, NULL, &self->buffer) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create buffer.");
+        printf("Error: Failed to create buffer.");
+        exit(1);
     }
 
     VkMemoryRequirements mem_req;
@@ -45,14 +47,16 @@ void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t 
     alloc_info.memoryTypeIndex =
         device_memory_type(device, mem_req.memoryTypeBits, memory_property);
 
-    if (vkAllocateMemory(device->device, &alloc_info, nullptr, &self->memory) !=
+    if (vkAllocateMemory(device->device, &alloc_info, NULL, &self->memory) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to allocate buffer memory.");
+        printf("Error: Failed to allocate buffer memory.");
+        exit(1);
     }
 
     if (vkBindBufferMemory(device->device, self->buffer, self->memory, 0) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to bind buffer memory.");
+        printf("Error: Failed to bind buffer memory.");
+        exit(1);
     }
 
     self->desc_buffer_info = {};
@@ -69,8 +73,10 @@ void buffer_create(buffer_t *self, uint32_t binding, device_t *device, uint64_t 
 }
 
 void buffer_destroy(buffer_t *self) {
-    vkDestroyBuffer(self->device->device, self->buffer, nullptr);
-    vkFreeMemory(self->device->device, self->memory, nullptr);
+    array_clear(&self->updates);
+
+    vkDestroyBuffer(self->device->device, self->buffer, NULL);
+    vkFreeMemory(self->device->device, self->memory, NULL);
 
     if (self->staging_buffer != NULL) {
         buffer_destroy(self->staging_buffer);
@@ -121,7 +127,8 @@ void buffer_write(buffer_t *buffer, const void *source, size_t number, uint64_t 
     }
 
     if (buffer->element_size * (offset + number) > buffer->size + 1) {
-        throw std::runtime_error("Error: Invalid buffer write.");
+        printf("Error: Invalid buffer write.");
+        exit(1);
     }
 
     void *mem_map = buffer_map(buffer, offset, number);
@@ -133,18 +140,20 @@ void buffer_write(buffer_t *buffer, const void *source, size_t number, uint64_t 
         buffer_copy.srcOffset = buffer->element_size * offset;
         buffer_copy.dstOffset = buffer->element_size * offset;
         buffer_copy.size = buffer->element_size * number;
-        buffer->updates.push_back(buffer_copy);
+
+        array_push_back(&buffer->updates);
+        *(buffer->updates.last) = buffer_copy;
     }
 }
 
 void buffer_record_write(buffer_t *buffer, VkCommandBuffer command_buffer) {
-    if (buffer->updates.empty()){
+    if (array_is_empty(&buffer->updates)){
         return;
     }
 
     vkCmdCopyBuffer(command_buffer, buffer->staging_buffer->buffer, buffer->buffer,
-                    buffer->updates.size(), buffer->updates.data());
-    buffer->updates.clear();
+                    buffer->updates.size, buffer->updates.data);
+    array_clear(&buffer->updates);
 }
 
 void buffer_record_read(buffer_t *buffer, VkCommandBuffer command_buffer) {

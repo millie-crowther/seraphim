@@ -1,3 +1,4 @@
+#include <cstring>
 #include "render/request.h"
 
 using namespace srph;
