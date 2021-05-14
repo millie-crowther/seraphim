@@ -28,15 +28,15 @@ void matter_create(matter_t *m, sdf_t *sdf, material_t *mat, const vec3 *x,
         m->angular_velocity = {{0.1, 0.1, 0.1}};
     }
 
-    srph_array_init(&m->deformations);
+    array_create(&m->deformations);
 }
 
 void matter_destroy(matter_t *m) {
-    while (!srph_array_is_empty(&m->deformations)) {
+    while (!array_is_empty(&m->deformations)) {
         free(*m->deformations.last);
-        srph_array_pop_back(&m->deformations);
+        array_pop_back(&m->deformations);
     }
-    srph_array_clear(&m->deformations);
+    array_clear(&m->deformations);
 }
 
 bool matter_is_at_rest(matter_t *m) {
@@ -86,12 +86,12 @@ deform_t *matter_add_deformation(matter_t *self, const vec3 *x, deform_type_t ty
         vec3_add(&deform->v, &deform->v, &self->deformations.data[i]->v);
     }
 
-    if (!srph_array_is_empty(&self->deformations)) {
+    if (!array_is_empty(&self->deformations)) {
         vec3_multiply_f(&deform->v, &deform->v,
                         1.0 / (double)self->deformations.size);
     }
     // add to list of deformations
-    srph_array_push_back(&self->deformations);
+    array_push_back(&self->deformations);
     *self->deformations.last = deform;
 
     return deform;

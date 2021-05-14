@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void fix_ptrs(_srph_base_array *a) {
+static void fix_ptrs(array_base_t *a) {
     if (a->size == 0) {
         free(a->base_ptr);
         a->base_ptr = NULL;
@@ -21,22 +21,22 @@ static void fix_ptrs(_srph_base_array *a) {
     }
 }
 
-void _srph_array_init(_srph_base_array *a, size_t element_size) {
+void array_base_create(array_base_t *a, size_t element_size) {
     a->element_size = element_size;
     a->base_ptr = NULL;
-    srph_array_clear(a);
+    array_clear(a);
 }
 
-bool _srph_array_is_empty(_srph_base_array *a) { return a->size == 0; }
+bool array_base_is_empty(array_base_t *a) { return a->size == 0; }
 
-void _srph_array_clear(_srph_base_array *a) {
+void array_base_clear(array_base_t *a) {
     a->size = 0;
     a->capacity = 0;
     a->offset = 0;
     fix_ptrs(a);
 }
 
-void _srph_array_push_back(_srph_base_array *a) {
+void array_base_push_back(array_base_t *a) {
     if (a->size + a->offset >= a->capacity) {
         a->capacity = a->capacity == 0 ? 1 : a->capacity * 2;
         a->base_ptr = (uint8_t *)realloc(a->base_ptr, a->capacity * a->element_size);
@@ -46,7 +46,7 @@ void _srph_array_push_back(_srph_base_array *a) {
     fix_ptrs(a);
 }
 
-void _srph_array_push_front(_srph_base_array *a) {
+void array_base_push_front(array_base_t *a) {
     if (a->offset == 0) {
         size_t new_capacity = a->capacity == 0 ? 1 : a->capacity * 2;
         size_t new_offset = new_capacity - a->capacity;
@@ -68,8 +68,8 @@ void _srph_array_push_front(_srph_base_array *a) {
     fix_ptrs(a);
 }
 
-void _srph_array_pop_front(_srph_base_array *a) {
-    assert(!_srph_array_is_empty(a));
+void array_base_pop_front(array_base_t *a) {
+    assert(!array_base_is_empty(a));
 
     a->offset++;
     a->size--;
@@ -89,8 +89,8 @@ void _srph_array_pop_front(_srph_base_array *a) {
     fix_ptrs(a);
 }
 
-void _srph_array_pop_back(_srph_base_array *a) {
-    assert(!_srph_array_is_empty(a));
+void array_base_pop_back(array_base_t *a) {
+    assert(!array_base_is_empty(a));
 
     if (a->offset + a->size < a->capacity / 2) {
         a->capacity = a->capacity / 2;
@@ -101,7 +101,7 @@ void _srph_array_pop_back(_srph_base_array *a) {
     fix_ptrs(a);
 }
 
-void _srph_array_sort(_srph_base_array *a,
+void array_base_sort(array_base_t *a,
                       int (*comparator)(const void *, const void *)) {
     if (a->size <= 1) {
         return;

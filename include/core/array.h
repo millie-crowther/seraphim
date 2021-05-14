@@ -18,33 +18,33 @@
         uint32_t offset;                                                            \
         uint8_t *base_ptr;                                                          \
     }
-typedef array_t(uint8_t) _srph_base_array;
+typedef array_t(uint8_t) array_base_t;
 
-#define SRPH_ARRAY_CAST(x) ((_srph_base_array *)x)
+#define ARRAY_CAST(x) ((array_base_t *)x)
 
-#define srph_array_init(x) _srph_array_init(SRPH_ARRAY_CAST(x), sizeof((x)->data[0]))
-void _srph_array_init(_srph_base_array *a, size_t element_size);
+#define array_create(x) array_base_create(ARRAY_CAST(x), sizeof((x)->data[0]))
+void array_base_create(array_base_t *a, size_t element_size);
 
-#define srph_array_clear(x) _srph_array_clear(SRPH_ARRAY_CAST(x))
-void _srph_array_clear(_srph_base_array *a);
+#define array_clear(x) array_base_clear(ARRAY_CAST(x))
+void array_base_clear(array_base_t *a);
 
-#define srph_array_is_empty(x) _srph_array_is_empty(SRPH_ARRAY_CAST(x))
-bool _srph_array_is_empty(_srph_base_array *a);
+#define array_is_empty(x) array_base_is_empty(ARRAY_CAST(x))
+bool array_base_is_empty(array_base_t *a);
 
-#define srph_array_push_front(x) _srph_array_push_front(SRPH_ARRAY_CAST(x))
-void _srph_array_push_front(_srph_base_array *a);
+#define array_push_front(x) array_base_push_front(ARRAY_CAST(x))
+void array_base_push_front(array_base_t *a);
 
-#define srph_array_push_back(x) _srph_array_push_back(SRPH_ARRAY_CAST(x))
-void _srph_array_push_back(_srph_base_array *a);
+#define array_push_back(x) array_base_push_back(ARRAY_CAST(x))
+void array_base_push_back(array_base_t *a);
 
-#define srph_array_pop_front(x) _srph_array_pop_front(SRPH_ARRAY_CAST(x))
-void _srph_array_pop_front(_srph_base_array *a);
+#define array_pop_front(x) array_base_pop_front(ARRAY_CAST(x))
+void array_base_pop_front(array_base_t *a);
 
-#define srph_array_pop_back(x) _srph_array_pop_back(SRPH_ARRAY_CAST(x))
-void _srph_array_pop_back(_srph_base_array *a);
+#define array_pop_back(x) array_base_pop_back(ARRAY_CAST(x))
+void array_base_pop_back(array_base_t *a);
 
-#define srph_array_sort(x, f) _srph_array_sort(SRPH_ARRAY_CAST(x), (f))
-void _srph_array_sort(_srph_base_array *a,
+#define array_sort(x, f) array_base_sort(ARRAY_CAST(x), (f))
+void array_base_sort(array_base_t *a,
                       int (*comparator)(const void *, const void *));
 
 #endif

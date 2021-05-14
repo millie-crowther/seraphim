@@ -16,7 +16,7 @@ void physics_create(srph_physics *p, substance_t *substances,
 
     p->gravity = {{0.0, -9.8, 0.0}};
 
-    srph_array_init(&p->collisions);
+    array_create(&p->collisions);
     p->substances = substances;
     p->num_substances = num_substances;
 }
@@ -32,7 +32,7 @@ void physics_destroy(srph_physics *p) {
         p->thread.join();
     }
 
-    srph_array_clear(&p->collisions);
+    array_clear(&p->collisions);
 }
 
 void physics_tick(srph_physics *p, double dt) {

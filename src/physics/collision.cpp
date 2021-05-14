@@ -31,17 +31,17 @@ static int x_comparator(const void *a, const void *b) {
 
 static void collision_broad_phase(substance_t *substance_pointers,
                                   size_t num_substances, srph_collision_array *cs) {
-    srph_array_clear(cs);
+    array_clear(cs);
 
     array_t(substance_t *) substances{};
-    srph_array_init(&substances);
+    array_create(&substances);
 
     for (size_t i = 0; i < num_substances; i++) {
-        srph_array_push_back(&substances);
+        array_push_back(&substances);
         substances.data[i] = &substance_pointers[i];
     }
 
-    srph_array_sort(&substances, x_comparator);
+    array_sort(&substances, x_comparator);
 
     for (size_t i = 0; i < num_substances; i++) {
         substance_t *a = substances.data[i];
@@ -60,7 +60,7 @@ static void collision_broad_phase(substance_t *substance_pointers,
                 continue;
             }
 
-            srph_array_push_back(cs);
+            array_push_back(cs);
             cs->last->substances[0] = a;
             cs->last->substances[1] = b;
         }
@@ -217,7 +217,7 @@ static void collision_resolve_velocity_constraint(collision_t *self, double dt) 
 }
 
 static void collision_generate_manifold(collision_t *c, double dt) {
-    srph_array_init(&c->manifold);
+    array_create(&c->manifold);
 
     sphere_t *sa = &c->substances[0]->bounding_sphere;
     sphere_t *sb = &c->substances[1]->bounding_sphere;
@@ -253,7 +253,7 @@ static void collision_generate_manifold(collision_t *c, double dt) {
         matter_add_deformation(&c->substances[1]->matter, &s.x,
                                deform_type_collision);
 
-        srph_array_push_back(&c->manifold);
+        array_push_back(&c->manifold);
         c->manifold.data[0] = s.x;
     }
 }
@@ -381,25 +381,25 @@ void collision_detect(substance_t *substance_ptrs, size_t num_substances,
                       srph_collision_array *cs, double dt) {
     // clear collisions from last iteration
     for (size_t i = 0; i < cs->size; i++) {
-        srph_array_clear(&cs->data[i].manifold);
+        array_clear(&cs->data[i].manifold);
     }
-    srph_array_clear(cs);
+    array_clear(cs);
 
     srph_collision_array broad_phase_collisions;
-    srph_array_init(&broad_phase_collisions);
+    array_create(&broad_phase_collisions);
 
     collision_broad_phase(substance_ptrs, num_substances, &broad_phase_collisions);
 
     for (size_t i = 0; i < broad_phase_collisions.size; i++) {
         collision_t *collision = &broad_phase_collisions.data[i];
         if (collision_narrow_phase(collision)) {
-            srph_array_push_back(cs);
+            array_push_back(cs);
             *(cs->last) = *collision;
             collision_generate_manifold(cs->last, dt);
         }
     }
 
-    srph_array_clear(&broad_phase_collisions);
+    array_clear(&broad_phase_collisions);
 }
 
 void collision_resolve(collision_t *self, double dt) {

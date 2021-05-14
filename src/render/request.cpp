@@ -121,7 +121,7 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     request_handler->patch_sample_size = patch_sample_size;
     request_handler->texture_size = texture_size;
 
-    srph_array_init(&request_handler->request_queue);
+    array_create(&request_handler->request_queue);
     mtx_init(&request_handler->response_mutex, mtx_plain);
     mtx_init(&request_handler->request_mutex, mtx_plain);
     mtx_init(&request_handler->cnd_mutex, mtx_plain);
@@ -181,7 +181,7 @@ static void handle_texture_request(request_handler_t * request_handler, request_
     vec3i p = {{
         (int) (index % texture_size),
         (int) ((index % (texture_size * texture_size)) / texture_size),
-        (int)(index / texture_size / texture_size)
+        (int) (index / texture_size / texture_size)
     }};
     vec3i_multiply_i(&p, &p, request_handler->patch_sample_size);
 
@@ -198,9 +198,9 @@ static int request_handling_thread(void * request_handler_){
         request_t * requests = NULL;
 
         mtx_lock(&request_handler->request_mutex);
-        if (!srph_array_is_empty(&request_handler->request_queue)){
+        if (!array_is_empty(&request_handler->request_queue)){
             requests = *request_handler->request_queue.first;
-            srph_array_pop_front(&request_handler->request_queue);
+            array_pop_front(&request_handler->request_queue);
         }
         mtx_unlock(&request_handler->request_mutex);
 
@@ -236,7 +236,7 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
     request_handler->request_buffer.unmap();
 
     mtx_lock(&request_handler->request_mutex);
-    srph_array_push_back(&request_handler->request_queue);
+    array_push_back(&request_handler->request_queue);
     *(request_handler->request_queue.last) = requests;
     mtx_unlock(&request_handler->request_mutex);
 
