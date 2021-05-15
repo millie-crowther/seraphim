@@ -39,7 +39,7 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     } else {
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         create_info.queueFamilyIndexCount = 0;
-        create_info.pQueueFamilyIndices = nullptr;
+        create_info.pQueueFamilyIndices = NULL;
     }
 
     create_info.preTransform = capabilities.currentTransform;
@@ -48,13 +48,13 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     create_info.clipped = VK_TRUE;
     create_info.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(device->device, &create_info, nullptr, &handle) !=
+    if (vkCreateSwapchainKHR(device->device, &create_info, NULL, &handle) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: failed to create swapchain!");
     }
 
     uint32_t count = 0;
-    vkGetSwapchainImagesKHR(device->device, handle, &count, nullptr);
+    vkGetSwapchainImagesKHR(device->device, handle, &count, NULL);
 
     std::vector<VkImage> images(count);
     vkGetSwapchainImagesKHR(device->device, handle, &count, images.data());
@@ -69,17 +69,17 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
 
 swapchain_t::~swapchain_t() {
     for (auto image_view : image_views) {
-        vkDestroyImageView(device->device, image_view, nullptr);
+        vkDestroyImageView(device->device, image_view, NULL);
     }
     image_views.clear();
 
-    vkDestroySwapchainKHR(device->device, handle, nullptr);
+    vkDestroySwapchainKHR(device->device, handle, NULL);
 }
 
 VkSurfaceFormatKHR swapchain_t::select_surface_format(VkSurfaceKHR surface) {
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_device, surface, &count,
-                                         nullptr);
+                                         NULL);
     std::vector<VkSurfaceFormatKHR> formats(count);
     vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_device, surface, &count,
                                          formats.data());
@@ -125,7 +125,7 @@ VkExtent2D swapchain_t::select_swap_extent(vec2u *size, VkSurfaceKHR surface) {
 VkPresentModeKHR swapchain_t::select_present_mode(VkSurfaceKHR surface) {
     uint32_t count = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_device, surface,
-                                              &count, nullptr);
+                                              &count, NULL);
     std::vector<VkPresentModeKHR> modes(count);
     vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_device, surface,
                                               &count, modes.data());

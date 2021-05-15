@@ -22,7 +22,8 @@ static const uint32_t texture_request = 2;
 
 
 void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
-void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf);
+void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, uint32_t *physicals,
+                      material_t *material, sdf_t *sdf);
 
 static int request_handling_thread(void * request_handler);
 
@@ -70,7 +71,8 @@ void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf) {
     *patch = {x_elem, request->hash, phi, np};
 }
 
-void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, material_t *material, sdf_t *sdf) {
+void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, uint32_t *physicals,
+                      material_t *material, sdf_t *sdf) {
     bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     bound3_midpoint(bound, &midpoint);
@@ -175,7 +177,8 @@ static void handle_texture_request(request_handler_t * request_handler, request_
 
     uint32_t normals[8];
     uint32_t colours[8];
-    response_texture(request, normals, colours, &request_handler->materials[material_id],
+    uint32_t physicals[8];
+    response_texture(request, normals, colours, physicals, &request_handler->materials[material_id],
                      &request_handler->sdfs[sdf_id]);
 
     uint32_t index = request->hash % texture_pool_size;
@@ -192,6 +195,7 @@ static void handle_texture_request(request_handler_t * request_handler, request_
         buffer_write(&request_handler->texture_hash_buffer, &request->hash, 1, index);
         request_handler->textures[TEXTURE_TYPE_NORMAL].write(&p, normals);
         request_handler->textures[TEXTURE_TYPE_COLOUR].write(&p, colours);
+        request_handler->textures[TEXTURE_TYPE_PHYSICAL].write(&p, physicals);
     }
     mtx_unlock(&request_handler->response_mutex);
 }

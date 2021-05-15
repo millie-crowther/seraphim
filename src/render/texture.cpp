@@ -19,7 +19,7 @@ VkImageView create_image_view(VkDevice device, VkImage image,
     view_info.subresourceRange.layerCount = 1;
 
     VkImageView image_view;
-    if (vkCreateImageView(device, &view_info, nullptr, &image_view) != VK_SUCCESS) {
+    if (vkCreateImageView(device, &view_info, NULL, &image_view) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create image view.");
     }
     return image_view;
@@ -117,7 +117,7 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
                            format_feature);
 
     // allocate memory
-    if (vkCreateImage(device->device, &image_create_info, nullptr, &texture->image) !=
+    if (vkCreateImage(device->device, &image_create_info, NULL, &texture->image) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create image.");
     }
@@ -130,7 +130,7 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
     mem_alloc_info.memoryTypeIndex = device_memory_type(
             device, mem_req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    if (vkAllocateMemory(device->device, &mem_alloc_info, nullptr, &texture->memory) !=
+    if (vkAllocateMemory(device->device, &mem_alloc_info, NULL, &texture->memory) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to allocate image memory.");
     }
@@ -159,7 +159,7 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
     sampler_info.minLod = 0.0f;
     sampler_info.maxLod = 0.0f;
 
-    if (vkCreateSampler(device->device, &sampler_info, nullptr, &texture->sampler) !=
+    if (vkCreateSampler(device->device, &sampler_info, NULL, &texture->sampler) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create texture sampler.");
     }
@@ -169,14 +169,14 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
     texture->image_info.imageView = texture->image_view;
     texture->image_info.sampler = texture->sampler;
 
-    buffer_create(&texture->staging_buffer, ~0, device, texture->staging_buffer_size, false,
+    buffer_create(&texture->staging_buffer, ~0, device, staging_buffer_size, false,
                   sizeof(uint32_t) * 8);
 }
 
 void texture_destroy(texture_t *texture) {
-    vkDestroyImageView(texture->device->device, texture->image_view, nullptr);
-    vkDestroyImage(texture->device->device, texture->image, nullptr);
-    vkFreeMemory(texture->device->device, texture->memory, nullptr);
-    vkDestroySampler(texture->device->device, texture->sampler, nullptr);
+    vkDestroyImageView(texture->device->device, texture->image_view, NULL);
+    vkDestroyImage(texture->device->device, texture->image, NULL);
+    vkFreeMemory(texture->device->device, texture->memory, NULL);
+    vkDestroySampler(texture->device->device, texture->sampler, NULL);
     buffer_destroy(&texture->staging_buffer);
 }

@@ -39,15 +39,15 @@ void seraphim_destroy(seraphim_t *engine) {
     auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
         engine->instance, "vkDestroyDebugReportCallbackEXT");
 
-    if (func != nullptr) {
-        func(engine->instance, engine->callback, nullptr);
+    if (func != NULL) {
+        func(engine->instance, engine->callback, NULL);
     }
 #endif
 
-    vkDestroySurfaceKHR(engine->instance, engine->surface, nullptr);
+    vkDestroySurfaceKHR(engine->instance, engine->surface, NULL);
 
     // destroy instance
-    vkDestroyInstance(engine->instance, nullptr);
+    vkDestroyInstance(engine->instance, NULL);
 
     engine->window.reset();
 
@@ -121,7 +121,7 @@ seraphim_t::seraphim_t(const char *title) {
     window_set_title(window.get(), title);
 
     uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, NULL);
     std::vector<VkExtensionProperties> extensions(extension_count);
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count,
                                            extensions.data());
@@ -139,7 +139,7 @@ seraphim_t::seraphim_t(const char *title) {
     }
 #endif
 
-    if (glfwCreateWindowSurface(instance, window->window, nullptr, &surface) !=
+    if (glfwCreateWindowSurface(instance, window->window, NULL, &surface) !=
         VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to create window surface.");
     }
@@ -264,7 +264,7 @@ void seraphim_t::create_instance() {
         std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::endl;
     }
 
-    auto result = vkCreateInstance(&create_info, nullptr, &instance);
+    auto result = vkCreateInstance(&create_info, NULL, &instance);
     if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to create Vulkan instance!");
     }
@@ -287,7 +287,7 @@ bool seraphim_t::setup_debug_callback() {
 
 bool seraphim_t::check_validation_layers() {
     uint32_t layer_count;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+    vkEnumerateInstanceLayerProperties(&layer_count, NULL);
 
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());

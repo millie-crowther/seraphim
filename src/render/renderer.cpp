@@ -497,20 +497,21 @@ void renderer_t::create_descriptor_set_layout() {
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
             image_layout,
-            request_handler.textures[TEXTURE_TYPE_NORMAL].get_descriptor_layout_binding(),
-            request_handler.textures[TEXTURE_TYPE_COLOUR].get_descriptor_layout_binding(),
-
             buffer_descriptor_set_layout_binding(&request_handler.patch_buffer),
             buffer_descriptor_set_layout_binding(&request_handler.request_buffer),
             buffer_descriptor_set_layout_binding(&request_handler.texture_hash_buffer),
 
             buffer_descriptor_set_layout_binding(&substance_buffer),
             buffer_descriptor_set_layout_binding(&light_buffer),
+
             buffer_descriptor_set_layout_binding(&pointer_buffer),
             buffer_descriptor_set_layout_binding(&frustum_buffer),
             buffer_descriptor_set_layout_binding(&lighting_buffer),
-
     };
+
+    for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
+        layouts.push_back(request_handler.textures[i].get_descriptor_layout_binding());
+    }
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

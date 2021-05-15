@@ -14,7 +14,8 @@ static const uint32_t base_texture_binding = 11;
 
 typedef enum texture_type_t {
     TEXTURE_TYPE_NORMAL = 0,
-    TEXTURE_TYPE_COLOUR = 1,
+    TEXTURE_TYPE_COLOUR,
+    TEXTURE_TYPE_PHYSICAL,
     TEXTURE_TYPE_MAXIMUM
 } texture_type_t;
 

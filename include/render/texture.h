@@ -8,9 +8,9 @@
 
 #include <vector>
 
-struct texture_t {
-    static constexpr uint32_t staging_buffer_size = 10000;
+static const uint32_t staging_buffer_size = 10000;
 
+struct texture_t {
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory memory;

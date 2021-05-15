@@ -91,6 +91,7 @@ const uvec4 vertex_masks[2] = {
 layout (binding = 10) uniform writeonly image2D render_texture;
 layout (binding = 11) uniform sampler3D normal_texture;
 layout (binding = 12) uniform sampler3D colour_texture;
+layout (binding = 13) uniform sampler3D physical_texture;
 
 layout(push_constant) uniform push_constants {
     uvec2 window_size;
