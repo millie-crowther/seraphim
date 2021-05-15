@@ -12,6 +12,7 @@
 #include <ui/file.h>
 
 static bool check_validation_layers();
+void create_instance(seraphim_t * seraphim);
 
 #if SERAPHIM_DEBUG
 const char * validation_layers[] = {
@@ -68,6 +69,20 @@ debug_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
     return VK_FALSE;
 }
 
+static bool setup_debug_callback(seraphim_t * seraphim) {
+    VkDebugReportCallbackCreateInfoEXT create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
+    create_info.flags =
+            VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
+    create_info.pfnCallback = debug_callback;
+
+    // load in function address, since its an extension
+    auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
+            seraphim->instance, "vkCreateDebugReportCallbackEXT");
+
+    return func != NULL &&
+           func(seraphim->instance, &create_info, NULL, &seraphim->callback) == VK_SUCCESS;
+}
 #endif
 
 substance_t *seraphim_create_substance(seraphim_t *srph, form_t *form,
@@ -134,10 +149,10 @@ seraphim_t::seraphim_t(const char *title) {
         std::cout << "\t" << extension.extensionName << std::endl;
     }
 
-    create_instance();
+    create_instance(this);
 
 #if SERAPHIM_DEBUG
-    if (!setup_debug_callback()) {
+    if (!setup_debug_callback(this)) {
         PANIC("Error: Failed to setup debug callback.");
     }
 #endif
@@ -173,22 +188,22 @@ seraphim_t::seraphim_t(const char *title) {
     physics_create(&physics, substances, &num_substances);
 }
 
-void seraphim_t::monitor_fps() {
+void monitor_fps(seraphim_t * seraphim) {
     int interval = 1; // seconds
-    fps_monitor_quit = false;
+    seraphim->fps_monitor_quit = false;
 
     std::mutex m;
     std::unique_lock<std::mutex> lock(m);
 
-    while (!fps_monitor_quit) {
+    while (!seraphim->fps_monitor_quit) {
         double physics_fps =
-            static_cast<double>(physics.get_frame_count()) / interval;
+                (double) (seraphim->physics.get_frame_count()) / interval;
         double render_fps =
-            static_cast<double>(renderer->get_frame_count()) / interval;
+                (double) (seraphim->renderer->get_frame_count()) / interval;
 
         std::cout << "Render: " << render_fps << " FPS; "
                   << "Physics: " << physics_fps << " FPS" << std::endl;
-        fps_cv.wait_for(lock, std::chrono::seconds(interval));
+        seraphim->fps_cv.wait_for(lock, std::chrono::seconds(interval));
     }
 }
 
@@ -207,7 +222,7 @@ static std::vector<const char *> get_required_extensions() {
     return required_extensions;
 }
 
-void seraphim_t::create_instance() {
+void create_instance(seraphim_t * seraphim) {
 #if SERAPHIM_DEBUG
     if (!check_validation_layers()) {
         PANIC("Requested validation layers not available.");
@@ -217,7 +232,7 @@ void seraphim_t::create_instance() {
     // determine vulkan version
     typedef VkResult (*vulkan_version_func_t)(uint32_t *);
     auto vk_version_func = (vulkan_version_func_t)vkGetInstanceProcAddr(
-        instance, "vkEnumerateInstanceVersion");
+            seraphim->instance, "vkEnumerateInstanceVersion");
 
     uint32_t version;
     unsigned major, minor, patch;
@@ -267,26 +282,12 @@ void seraphim_t::create_instance() {
         std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::endl;
     }
 
-    auto result = vkCreateInstance(&create_info, NULL, &instance);
+    auto result = vkCreateInstance(&create_info, NULL, &seraphim->instance);
     if (result != VK_SUCCESS) {
         PANIC("Failed to create Vulkan instance!");
     }
 }
 
-bool seraphim_t::setup_debug_callback() {
-    VkDebugReportCallbackCreateInfoEXT create_info = {};
-    create_info.sType = VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    create_info.flags =
-        VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT;
-    create_info.pfnCallback = debug_callback;
-
-    // load in function address, since its an extension
-    auto func = (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-        instance, "vkCreateDebugReportCallbackEXT");
-
-    return func != NULL &&
-           func(instance, &create_info, NULL, &callback) == VK_SUCCESS;
-}
 
 static bool check_validation_layers() {
     uint32_t layer_count;
@@ -312,19 +313,19 @@ static bool check_validation_layers() {
     return true;
 }
 
-void seraphim_t::run() {
-    physics_start(&physics);
+void seraphim_run(seraphim_t *seraphim) {
+    physics_start(&seraphim->physics);
 
-    fps_monitor_thread = std::thread(&seraphim_t::monitor_fps, this);
+    seraphim->fps_monitor_thread = std::thread(monitor_fps, seraphim);
 
-    window->show();
+    seraphim->window->show();
 
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto previous = std::chrono::steady_clock::now();
     double r_time;
 
-    while (!window->should_close()) {
+    while (!seraphim->window->should_close()) {
         glfwPollEvents();
 
         auto now = std::chrono::steady_clock::now();
@@ -335,15 +336,15 @@ void seraphim_t::run() {
         r_time += 1.0 / delta;
         previous = now;
 
-        mouse_update(&window->mouse, delta);
+        mouse_update(&seraphim->window->mouse, delta);
 
-        test_camera->update(delta, *window->keyboard, window->mouse);
+        seraphim->test_camera->update(delta, *seraphim->window->keyboard, seraphim->window->mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;
         }
 
-        renderer->render();
+        seraphim->renderer->render();
 
         current_frame++;
     }
