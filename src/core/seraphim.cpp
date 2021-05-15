@@ -327,7 +327,7 @@ void seraphim_t::run() {
 
         mouse_update(&window->mouse, delta);
 
-        test_camera->update(delta, window->get_keyboard(), window->mouse);
+        test_camera->update(delta, *window->keyboard, window->mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;

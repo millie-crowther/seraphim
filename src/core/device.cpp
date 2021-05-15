@@ -2,8 +2,8 @@
 
 #include <set>
 #include <stdexcept>
-#include <string>
 #include <vector>
+#include <string.h>
 
 const char * device_extensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -19,13 +19,12 @@ static bool device_has_extension(VkPhysicalDevice phys_device,
     vkEnumerateDeviceExtensionProperties(phys_device, NULL, &extension_count,
                                          NULL);
 
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
+    VkExtensionProperties available_extensions[extension_count];
     vkEnumerateDeviceExtensionProperties(phys_device, NULL, &extension_count,
-                                         available_extensions.data());
+                                         available_extensions);
 
-    for (auto available_extension : available_extensions) {
-        if (std::string(extension) ==
-            std::string(available_extension.extensionName)) {
+    for (uint32_t i = 0; i < extension_count; i++) {
+        if (strcmp(extension, available_extensions[i].extensionName) == 0){
             return true;
         }
     }
@@ -63,36 +62,37 @@ static bool has_adequate_queue_families(VkPhysicalDevice physical_device,
            queue_families_found[2];
 }
 
-static bool is_suitable_device(VkPhysicalDevice physical_device_,
+static bool is_suitable_device(VkPhysicalDevice physical_device,
                                   VkSurfaceKHR surface) {
     // check that gpu isnt integrated
     VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physical_device_, &properties);
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
     if (properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
         return false;
     }
 
     VkPhysicalDeviceFeatures features;
-    vkGetPhysicalDeviceFeatures(physical_device_, &features);
+    vkGetPhysicalDeviceFeatures(physical_device, &features);
     // can do extra checks here if you want
 
     // check device has at least one graphics queue family
-    if (!has_adequate_queue_families(physical_device_, surface)) {
+    if (!has_adequate_queue_families(physical_device, surface)) {
         return false;
     }
 
-    for (auto extension : device_extensions) {
-        if (!device_has_extension(physical_device_, extension)) {
+    size_t num_extensions = sizeof(device_extensions) / sizeof(*device_extensions);
+    for (uint32_t i = 0; i < num_extensions; i++) {
+        if (!device_has_extension(physical_device, device_extensions[i])) {
             return false;
         }
     }
 
     uint32_t formats_count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface, &formats_count,
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &formats_count,
                                          NULL);
 
     uint32_t present_modes_count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface,
                                               &present_modes_count, NULL);
     if (formats_count * present_modes_count == 0) {
         return false;
@@ -161,7 +161,8 @@ uint32_t device_memory_type(device_t *device, uint32_t type_filter,
         }
     }
 
-    throw std::runtime_error("failed to find suitable memory type!");
+    printf("failed to find suitable memory type!");
+    exit(1);
 }
 
 void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface,

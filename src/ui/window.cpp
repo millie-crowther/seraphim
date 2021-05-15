@@ -46,6 +46,4 @@ bool window_t::should_close() const {
            keyboard->is_key_pressed(GLFW_KEY_ESCAPE);
 }
 
-keyboard_t &window_t::get_keyboard() const { return *keyboard; }
-
 void window_t::show() { glfwShowWindow(window); }

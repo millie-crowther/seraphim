@@ -9,7 +9,7 @@ static void key_callback(GLFWwindow *glfw_window, int key, int scancode, int act
     void *data = glfwGetWindowUserPointer(glfw_window);
     window_t *window = reinterpret_cast<window_t *>(data);
 
-    window->get_keyboard().set_key_pressed(key, action != GLFW_RELEASE);
+    (*window->keyboard).set_key_pressed(key, action != GLFW_RELEASE);
 }
 
 keyboard_t::keyboard_t(const window_t &window) {
