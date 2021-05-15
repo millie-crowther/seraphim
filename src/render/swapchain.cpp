@@ -63,7 +63,7 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     image_format = format.format;
     for (auto &image : images) {
         image_views.push_back(
-            texture_t::create_image_view(device->device, image, format.format));
+            create_image_view(device->device, image, format.format));
     }
 }
 

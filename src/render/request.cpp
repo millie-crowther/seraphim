@@ -42,7 +42,7 @@ void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf) {
     bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     bound3_midpoint(bound, &midpoint);
-    vec3 position = {{request->position[0], request->position[1], request->position[2] }};
+    vec3 position = {{request->position.x, request->position.y, request->position.z }};
     vec3_subtract(&position, &position, &midpoint);
 
     uint32_t contains_mask = 0;
@@ -74,7 +74,7 @@ void response_texture(const request_t *request, uint32_t *normals, uint32_t *col
     bound3_t *bound = sdf_bound(sdf);
     vec3 midpoint;
     bound3_midpoint(bound, &midpoint);
-    vec3 position = {{request->position[0], request->position[1], request->position[2] }};
+    vec3 position = {{request->position.x, request->position.y, request->position.z }};
     vec3_subtract(&position, &position, &midpoint);
 
     for (int o = 0; o < 8; o++) {
@@ -98,8 +98,9 @@ void request_handler_destroy(request_handler_t *request_handler) {
     cnd_broadcast(&request_handler->is_queue_empty);
     thrd_join(request_handler->thread, NULL);
 
-    request_handler->normal_texture.reset();
-    request_handler->colour_texture.reset();
+    for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
+        texture_destroy(&request_handler->textures[i]);
+    }
 
     buffer_destroy(&request_handler->patch_buffer);
     buffer_destroy(&request_handler->request_buffer);
@@ -139,17 +140,13 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     vec3u size = {{ texture_size, texture_size, texture_depth }};
     vec3u_multiply_u(&size, &size, patch_sample_size);
 
-    request_handler->normal_texture = std::make_unique<texture_t>(
-            11, request_handler->device, &size, VK_IMAGE_USAGE_SAMPLED_BIT,
-            static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-                                                 VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-
-    request_handler->colour_texture = std::make_unique<texture_t>(
-            12, request_handler->device, &size, VK_IMAGE_USAGE_SAMPLED_BIT,
-            static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
-                                                 VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
-            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++) {
+        texture_create(&request_handler->textures[i], base_texture_binding + i, request_handler->device, &size,
+                       VK_IMAGE_USAGE_SAMPLED_BIT,
+                       static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                                                            VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
+                       VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    }
 }
 
 static void handle_geometry_request(request_handler_t * request_handler, request_t * request){
@@ -163,7 +160,9 @@ static void handle_geometry_request(request_handler_t * request_handler, request
     uint32_t index = request->hash % geometry_pool_size;
 
     mtx_lock(&request_handler->response_mutex);
-    buffer_write(&request_handler->patch_buffer, &patch, 1, index);
+    {
+        buffer_write(&request_handler->patch_buffer, &patch, 1, index);
+    }
     mtx_unlock(&request_handler->response_mutex);
 }
 
@@ -189,9 +188,11 @@ static void handle_texture_request(request_handler_t * request_handler, request_
     vec3i_multiply_i(&p, &p, request_handler->patch_sample_size);
 
     mtx_lock(&request_handler->response_mutex);
-    buffer_write(&request_handler->texture_hash_buffer, &request->hash, 1, index);
-    request_handler->normal_texture->write(&p, normals);
-    request_handler->colour_texture->write(&p, colours);
+    {
+        buffer_write(&request_handler->texture_hash_buffer, &request->hash, 1, index);
+        request_handler->textures[TEXTURE_TYPE_NORMAL].write(&p, normals);
+        request_handler->textures[TEXTURE_TYPE_COLOUR].write(&p, colours);
+    }
     mtx_unlock(&request_handler->response_mutex);
 }
 
@@ -201,9 +202,11 @@ static int request_handling_thread(void * request_handler_){
         request_t * requests = NULL;
 
         mtx_lock(&request_handler->request_mutex);
-        if (!array_is_empty(&request_handler->request_queue)){
-            requests = *request_handler->request_queue.first;
-            array_pop_front(&request_handler->request_queue);
+        {
+            if (!array_is_empty(&request_handler->request_queue)) {
+                requests = *request_handler->request_queue.first;
+                array_pop_front(&request_handler->request_queue);
+            }
         }
         mtx_unlock(&request_handler->request_mutex);
 
@@ -234,13 +237,17 @@ void request_handler_handle_requests(request_handler_t * request_handler) {
     request_t * requests = (request_t *) malloc(sizeof(request_t) * number_of_requests);
 
     void *memory_map = buffer_map(&request_handler->request_buffer, 0, number_of_requests);
-    memcpy(requests, memory_map, number_of_requests * sizeof(request_t));
-    memcpy(memory_map, null_requests, number_of_requests * sizeof(request_t));
+    {
+        memcpy(requests, memory_map, number_of_requests * sizeof(request_t));
+        memcpy(memory_map, null_requests, number_of_requests * sizeof(request_t));
+    }
     buffer_unmap(&request_handler->request_buffer);
 
     mtx_lock(&request_handler->request_mutex);
-    array_push_back(&request_handler->request_queue);
-    *(request_handler->request_queue.last) = requests;
+    {
+        array_push_back(&request_handler->request_queue);
+        *(request_handler->request_queue.last) = requests;
+    }
     mtx_unlock(&request_handler->request_mutex);
 
     cnd_signal(&request_handler->is_queue_empty);
@@ -250,9 +257,12 @@ void request_handler_record_buffer_accesses(request_handler_t *request_handler, 
     buffer_record_read(&request_handler->request_buffer, command_buffer);
 
     mtx_lock(&request_handler->response_mutex);
-    buffer_record_write(&request_handler->patch_buffer, command_buffer);
-    buffer_record_write(&request_handler->texture_hash_buffer, command_buffer);
-    request_handler->normal_texture->record_write(command_buffer);
-    request_handler->colour_texture->record_write(command_buffer);
+    {
+        buffer_record_write(&request_handler->patch_buffer, command_buffer);
+        buffer_record_write(&request_handler->texture_hash_buffer, command_buffer);
+        for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++) {
+            request_handler->textures[i].record_write(command_buffer);
+        }
+    }
     mtx_unlock(&request_handler->response_mutex);
 }

@@ -27,24 +27,20 @@ struct texture_t {
     std::vector<VkBufferImageCopy> updates;
     uint32_t index;
 
-    // constructors and destructors
-    texture_t(uint32_t binding, device_t *device, vec3u *size,
-              VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
-              VkDescriptorType descriptor_type);
-    ~texture_t();
 
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     void record_write(VkCommandBuffer command_buffer);
     void write(vec3i *p, uint32_t *x);
     VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
-
-    // static methods
-    static void check_format_supported(VkPhysicalDevice physical_device,
-                                       VkFormat format, VkImageTiling tiling,
-                                       VkFormatFeatureFlags features);
-    static VkImageView create_image_view(VkDevice device, VkImage image,
-                                         VkFormat format);
 };
 
+void texture_create(texture_t * texture, uint32_t binding, device_t *device, vec3u *size,
+VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
+VkDescriptorType descriptor_type);
+
+void texture_destroy(texture_t * texture);
+
+VkImageView create_image_view(VkDevice device, VkImage image,
+                                     VkFormat format);
 #endif

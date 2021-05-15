@@ -84,8 +84,7 @@ struct renderer_t {
     std::unique_ptr<swapchain_t> swapchain;
     std::weak_ptr<camera_t> main_camera;
 
-    // textures
-    std::unique_ptr<texture_t> render_texture;
+    texture_t render_texture;
 
     // command pool
     command_pool_t compute_command_pool;

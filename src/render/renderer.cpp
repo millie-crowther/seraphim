@@ -69,7 +69,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
         1u
     }};
 
-    render_texture = std::make_unique<texture_t>(
+    texture_create(&render_texture,
         10, device, &size,
         VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
         VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
@@ -89,12 +89,11 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
 
 
         write_desc_sets.push_back(
-                render_texture->get_descriptor_write(descriptor_set));
-        write_desc_sets.push_back(
-                request_handler.normal_texture->get_descriptor_write(descriptor_set));
-        write_desc_sets.push_back(
-                request_handler.colour_texture->get_descriptor_write(descriptor_set));
+                render_texture.get_descriptor_write(descriptor_set));
 
+        for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
+            write_desc_sets.push_back(request_handler.textures[i].get_descriptor_write(descriptor_set));
+        }
 
         write_desc_sets.push_back(
                 buffer_write_descriptor_set(&request_handler.patch_buffer, descriptor_set));
@@ -157,6 +156,8 @@ renderer_t::~renderer_t() {
     buffer_destroy(&pointer_buffer);
     buffer_destroy(&frustum_buffer);
     buffer_destroy(&lighting_buffer);
+
+    texture_destroy(&render_texture);
 }
 
 void renderer_t::create_compute_pipeline() {
@@ -496,8 +497,8 @@ void renderer_t::create_descriptor_set_layout() {
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
             image_layout,
-            request_handler.normal_texture->get_descriptor_layout_binding(),
-            request_handler.colour_texture->get_descriptor_layout_binding(),
+            request_handler.textures[TEXTURE_TYPE_NORMAL].get_descriptor_layout_binding(),
+            request_handler.textures[TEXTURE_TYPE_COLOUR].get_descriptor_layout_binding(),
 
             buffer_descriptor_set_layout_binding(&request_handler.patch_buffer),
             buffer_descriptor_set_layout_binding(&request_handler.request_buffer),

@@ -10,9 +10,16 @@
 static const uint32_t geometry_pool_size = 1000000;
 static const uint32_t texture_pool_size = 1000000;
 static const uint32_t number_of_requests = 2048;
+static const uint32_t base_texture_binding = 11;
+
+typedef enum texture_type_t {
+    TEXTURE_TYPE_NORMAL = 0,
+    TEXTURE_TYPE_COLOUR = 1,
+    TEXTURE_TYPE_MAXIMUM
+} texture_type_t;
 
 struct request_t {
-    float position[3];
+    vec3f position;
     float radius;
 
     uint32_t hash;
@@ -32,8 +39,8 @@ typedef struct request_handler_t {
     cnd_t is_queue_empty;
     bool should_quit;
 
-    std::unique_ptr<texture_t> colour_texture;
-    std::unique_ptr<texture_t> normal_texture;
+    texture_t textures[TEXTURE_TYPE_MAXIMUM];
+
     buffer_t patch_buffer;
     buffer_t request_buffer;
     buffer_t texture_hash_buffer;
