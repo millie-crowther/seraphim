@@ -15,16 +15,16 @@ void window_set_title(window_t *window, const char *title) {
     glfwSetWindowTitle(window->window, title);
 }
 
-window_t::window_t(u32vec2_t size) {
-    this->size = size;
+window_t::window_t(vec2u *size) {
+    this->size = *size;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    window = glfwCreateWindow(size[0], size[1], "Seraphim", nullptr, nullptr);
+    window = glfwCreateWindow(size->x, size->y, "Seraphim", NULL, NULL);
 
-    if (window == nullptr) {
+    if (window == NULL) {
         throw std::runtime_error("Error: Failed to create main window.");
     }
 
@@ -36,7 +36,7 @@ window_t::window_t(u32vec2_t size) {
 }
 
 window_t::~window_t() {
-    if (window != nullptr) {
+    if (window != NULL) {
         glfwDestroyWindow(window);
     }
 }

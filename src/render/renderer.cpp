@@ -11,14 +11,14 @@ using namespace srph;
 
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                        window_t *window, std::shared_ptr<camera_t> test_camera,
-                       srph::u32vec2_t work_group_count,
-                       srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials,
+                       vec2u *work_group_count,
+                       vec2u *work_group_size, uint32_t max_image_size, material_t *materials,
                        uint32_t *num_materials,
                        sdf_t *sdfs, uint32_t *num_sdfs) {
     renderer_t::device = device;
     renderer_t::surface = surface;
-    renderer_t::work_group_count = work_group_count;
-    renderer_t::work_group_size = work_group_size;
+    renderer_t::work_group_count = *work_group_count;
+    renderer_t::work_group_size = *work_group_size;
     renderer_t::substances = substances;
     renderer_t::num_substances = num_substances;
 
@@ -45,7 +45,7 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
 
     swapchain =
-        std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
+        std::make_unique<swapchain_t>(device, &push_constants.window_size, surface);
 
     create_render_pass();
 
@@ -65,8 +65,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     create_sync();
 
     vec3u size = {{
-        work_group_count[0] * work_group_size[0],
-        work_group_count[1] * work_group_size[1],
+        work_group_count->x * work_group_size->x,
+        work_group_count->y * work_group_size->y,
         1u
     }};
 
@@ -205,7 +205,7 @@ void renderer_t::recreate_swapchain() {
 
     cleanup_swapchain();
     swapchain =
-        std::make_unique<swapchain_t>(device, push_constants.window_size, surface);
+        std::make_unique<swapchain_t>(device, &push_constants.window_size, surface);
 
     create_render_pass();
     create_graphics_pipeline();
@@ -566,7 +566,7 @@ void renderer_t::present(uint32_t image_index) const {
 void renderer_t::render() {
     frames++;
 
-    uint32_t size = work_group_size[0] * work_group_size[1];
+    uint32_t size = work_group_size.x * work_group_size.y;
 
     // write substances
     std::vector<data_t> substance_data;
@@ -583,7 +583,9 @@ void renderer_t::render() {
 
     // write lights
     std::vector<light_t> lights(size);
-    lights[0] = light_t(f32vec3_t(0, 4.0f, -4.0f), f32vec4_t(50.0f));
+    vec3f light_x = {{ 0, 4, -4}};
+    vec4f light_colour = {{50, 50, 50, 50}};
+    lights[0] = light_t(&light_x, &light_colour);
     buffer_write(&light_buffer, lights.data(), lights.size(), 0);
 
     if (auto camera = main_camera.lock()) {
@@ -616,7 +618,7 @@ void renderer_t::render() {
         vkCmdBindDescriptorSets(command_buffer.command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE,
                                 compute_pipeline_layout, 0, 1,
                                 &desc_sets[image_index], 0, NULL);
-        vkCmdDispatch(command_buffer.command_buffer, work_group_count[0], work_group_count[1],
+        vkCmdDispatch(command_buffer.command_buffer, work_group_count.x, work_group_count.y,
                       1);
     }
     command_buffer_end(&command_buffer);
@@ -646,8 +648,8 @@ void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
 }
 
 void renderer_t::create_buffers() {
-    uint32_t c = work_group_count[0] * work_group_count[1];
-    uint32_t s = work_group_size[0] * work_group_size[1];
+    uint32_t c = work_group_count.x * work_group_count.y;
+    uint32_t s = work_group_size.x * work_group_size.y;
 
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));

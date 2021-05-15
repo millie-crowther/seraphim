@@ -24,7 +24,7 @@
 #include "camera.h"
 
 struct push_constant_t {
-    srph::u32vec2_t window_size;
+    vec2u window_size;
     float render_distance;
     uint32_t current_frame;
 
@@ -46,8 +46,8 @@ static const uint32_t patch_sample_size = 2;
 
 struct renderer_t {
     // fields
-    srph::u32vec2_t work_group_count;
-    srph::u32vec2_t work_group_size;
+    vec2u work_group_count;
+    vec2u work_group_size;
     uint32_t texture_size;
     push_constant_t push_constants;
     device_t *device;
@@ -127,8 +127,8 @@ struct renderer_t {
     void present(uint32_t image_index) const;
 
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-               window_t *window, std::shared_ptr<camera_t> test_camera, srph::u32vec2_t work_group_count,
-               srph::u32vec2_t work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
+               window_t *window, std::shared_ptr<camera_t> test_camera, vec2u *work_group_count,
+               vec2u *work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
                sdf_t *sdfs, uint32_t *num_sdfs);
 
     ~renderer_t();

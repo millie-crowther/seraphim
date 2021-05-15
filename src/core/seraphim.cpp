@@ -107,16 +107,18 @@ seraphim_t::seraphim_t(const char *title) {
     num_substances = 0;
     num_sdfs = 0;
     num_materials = 0;
-    work_group_count = u32vec2_t(48u, 20u);
-    work_group_size = u32vec2_t(32u);
+    work_group_count = {{48u, 20u}};
+    work_group_size = {{32u, 32u}};
 
     if (!glfwInit()) {
         throw std::runtime_error("Error: Failed to initialise GLFW.");
     }
 
-    window = std::make_unique<window_t>(
-        u32vec2_t(work_group_count[0] * work_group_size[0],
-                  work_group_count[1] * work_group_size[1]));
+    vec2u window_size = {{
+        work_group_count.x * work_group_size.x,
+        work_group_count.y * work_group_size.y
+    }};
+    window = std::make_unique<window_t>(&window_size);
 
     window_set_title(window.get(), title);
 
@@ -165,7 +167,7 @@ seraphim_t::seraphim_t(const char *title) {
 
     renderer = std::make_unique<renderer_t>(
         &device, substances, &num_substances, surface, window.get(),
-        test_camera, work_group_count, work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
+        test_camera, &work_group_count, &work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
 
     physics_create(&physics, substances, &num_substances);
 }

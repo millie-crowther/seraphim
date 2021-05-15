@@ -4,7 +4,7 @@
 
 using namespace srph;
 
-swapchain_t::swapchain_t(device_t *device, u32vec2_t size, VkSurfaceKHR surface) {
+swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     this->device = device;
     VkSurfaceFormatKHR format = select_surface_format(surface);
     VkPresentModeKHR mode = select_present_mode(surface);
@@ -100,23 +100,23 @@ VkSurfaceFormatKHR swapchain_t::select_surface_format(VkSurfaceKHR surface) {
     return formats[0];
 }
 
-VkExtent2D swapchain_t::select_swap_extent(u32vec2_t size, VkSurfaceKHR surface) {
+VkExtent2D swapchain_t::select_swap_extent(vec2u *size, VkSurfaceKHR surface) {
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physical_device, surface,
                                               &capabilities);
 
     // check if we need to supply width and height
     if (capabilities.currentExtent.width == ~((uint32_t)0)) {
-        VkExtent2D extents;
+        VkExtent2D extents_;
 
-        extents.width =
+        extents_.width =
             std::max(capabilities.minImageExtent.width,
-                     std::min(size[0], capabilities.maxImageExtent.width));
-        extents.height =
+                     std::min(size->x, capabilities.maxImageExtent.width));
+        extents_.height =
             std::max(capabilities.minImageExtent.height,
-                     std::min(size[1], capabilities.maxImageExtent.height));
+                     std::min(size->y, capabilities.maxImageExtent.height));
 
-        return extents;
+        return extents_;
     } else {
         return capabilities.currentExtent;
     }

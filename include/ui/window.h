@@ -13,11 +13,11 @@
 #include "keyboard.h"
 
 struct window_t {
-    srph::u32vec2_t size;
+    vec2u size;
     GLFWwindow *window;
     std::unique_ptr<keyboard_t> keyboard;
     mouse_t mouse;
-    window_t(srph::u32vec2_t size);
+    window_t(vec2u *size);
     ~window_t();
     void show();
     bool should_close() const;

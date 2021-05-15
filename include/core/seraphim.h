@@ -40,8 +40,8 @@ struct seraphim_t {
     VkInstance instance;
     VkSurfaceKHR surface;
 
-    srph::u32vec2_t work_group_count;
-    srph::u32vec2_t work_group_size;
+    vec2u work_group_count;
+    vec2u work_group_size;
 
     std::shared_ptr<camera_t> test_camera;
 

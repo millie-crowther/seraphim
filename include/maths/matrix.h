@@ -101,10 +101,7 @@ namespace srph {
 
     template<class T, int N> using vec_t = matrix_t<T, N, 1>;
 
-    typedef vec_t<uint32_t, 2> u32vec2_t;
-
-    typedef vec_t<float, 3> f32vec3_t;
-    typedef vec_t<float, 4> f32vec4_t;
+//    typedef vec_t<uint32_t, 2> u32vec2_t;
 
     typedef vec_t<double, 3> vec3_t;
 }
