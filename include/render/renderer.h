@@ -88,8 +88,8 @@ struct renderer_t {
     std::unique_ptr<texture_t> render_texture;
 
     // command pool
-    std::unique_ptr<command_pool_t> compute_command_pool;
-    std::unique_ptr<command_pool_t> graphics_command_pool;
+    command_pool_t compute_command_pool;
+    command_pool_t graphics_command_pool;
 
     // buffers
     buffer_t substance_buffer;

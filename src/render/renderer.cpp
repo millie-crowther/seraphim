@@ -57,10 +57,8 @@ renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_
     create_graphics_pipeline();
     create_compute_pipeline();
 
-    graphics_command_pool =
-        std::make_unique<command_pool_t>(device->device, device->graphics_family);
-    compute_command_pool =
-        std::make_unique<command_pool_t>(device->device, device->compute_family);
+    command_pool_create(&graphics_command_pool, device->device, device->graphics_family);
+    command_pool_create(&compute_command_pool, device->device, device->compute_family);
 
     create_framebuffers();
     create_descriptor_pool();
@@ -139,6 +137,9 @@ renderer_t::~renderer_t() {
     vkDestroyDescriptorSetLayout(device->device, descriptor_layout, NULL);
 
     cleanup_swapchain();
+
+    command_pool_destroy(&graphics_command_pool);
+    command_pool_destroy(&compute_command_pool);
 
     vkDestroyPipeline(device->device, compute_pipeline, NULL);
     vkDestroyPipelineLayout(device->device, compute_pipeline_layout, NULL);
@@ -431,7 +432,7 @@ void renderer_t::create_command_buffers() {
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++) {
         command_buffer_t * command_buffer = &command_buffers[i];
-        command_buffer_begin_buffer(graphics_command_pool.get(), command_buffer, false);
+        command_buffer_begin_buffer(&graphics_command_pool, command_buffer, false);
         {
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -600,7 +601,7 @@ void renderer_t::render() {
 
 
     command_buffer_t command_buffer;
-    command_buffer_begin_buffer(compute_command_pool.get(), &command_buffer, true);
+    command_buffer_begin_buffer(&compute_command_pool, &command_buffer, true);
     {
         request_handler_record_buffer_accesses(&request_handler, command_buffer.command_buffer);
 

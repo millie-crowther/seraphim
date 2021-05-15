@@ -13,7 +13,8 @@ void command_buffer_submit(command_buffer_t  * command_buffer, VkSemaphore wait_
     submit_info.pSignalSemaphores = &signal_sema;
 
     if (vkQueueSubmit(command_buffer->queue, 1, &submit_info, fence) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to submit command buffer to queue.");
+        printf("Error: Failed to submit command buffer to queue.");
+        exit(1);
     }
 
     if (command_buffer->is_one_time){
@@ -36,14 +37,15 @@ void command_buffer_begin_buffer(command_pool_t *pool, command_buffer_t *buffer,
 
     if (vkAllocateCommandBuffers(buffer->device, &alloc_info, &buffer->command_buffer) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to allocate command buffer.");
+        printf("Error: Failed to allocate command buffer.");
+        exit(1);
     }
 
     VkCommandBufferBeginInfo begin_info;
     begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     begin_info.flags = usage;
-    begin_info.pNext = nullptr;
-    begin_info.pInheritanceInfo = nullptr;
+    begin_info.pNext = NULL;
+    begin_info.pInheritanceInfo = NULL;
 
     if (vkBeginCommandBuffer(buffer->command_buffer, &begin_info) != VK_SUCCESS) {
         throw std::runtime_error("Error: Failed to begin command buffer");
@@ -52,7 +54,8 @@ void command_buffer_begin_buffer(command_pool_t *pool, command_buffer_t *buffer,
 
 void command_buffer_end(command_buffer_t *buffer) {
     if (vkEndCommandBuffer(buffer->command_buffer) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to end command buffer");
+        printf("Error: Failed to end command buffer");
+        exit(1);
     }
 }
 
@@ -60,22 +63,23 @@ void command_buffer_destroy(command_buffer_t *command_buffer) {
     vkFreeCommandBuffers(command_buffer->device, command_buffer->command_pool, 1, &command_buffer->command_buffer);
 }
 
-command_pool_t::command_pool_t(VkDevice device, uint32_t queue_family) {
-    this->device = device;
+void command_pool_create(command_pool_t *pool, VkDevice device, uint32_t queue_family) {
+    pool->device = device;
 
     VkCommandPoolCreateInfo command_pool_info = {};
     command_pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     command_pool_info.queueFamilyIndex = queue_family;
     command_pool_info.flags = 0;
 
-    if (vkCreateCommandPool(device, &command_pool_info, nullptr, &command_pool) !=
+    if (vkCreateCommandPool(device, &command_pool_info, NULL, &pool->command_pool) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: failed to create command pool.");
+        printf("Error: failed to create command pool.");
+        exit(1);
     }
 
-    vkGetDeviceQueue(device, queue_family, 0, &queue);
+    vkGetDeviceQueue(device, queue_family, 0, &pool->queue);
 }
 
-command_pool_t::~command_pool_t() {
-    vkDestroyCommandPool(device, command_pool, nullptr);
+void command_pool_destroy(command_pool_t *pool) {
+    vkDestroyCommandPool(pool->device, pool->command_pool, NULL);
 }

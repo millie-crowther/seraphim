@@ -21,10 +21,6 @@ struct command_pool_t {
     VkDevice device;
     VkCommandPool command_pool;
     VkQueue queue;
-
-    command_pool_t(VkDevice device, uint32_t queue_family);
-
-    ~command_pool_t();
 };
 
 void command_buffer_destroy(command_buffer_t * command_buffer);
@@ -34,5 +30,8 @@ command_buffer_submit(command_buffer_t *command_buffer, VkSemaphore wait_sema, V
 
 void command_buffer_begin_buffer(command_pool_t * pool, command_buffer_t *buffer, bool is_one_time);
 void command_buffer_end(command_buffer_t *buffer);
+
+void command_pool_create(command_pool_t * pool, VkDevice device, uint32_t queue_family);
+void command_pool_destroy(command_pool_t * pool);
 
 #endif
