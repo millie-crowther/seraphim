@@ -247,6 +247,8 @@ static const vec3 vec3_right = {{1.0, 0.0, 0.0}};
 static const vec3 vec3_up = {{0.0, 1.0, 0.0}};
 static const vec3 vec3_forward = {{0.0, 0.0, 1.0}};
 
+static const vec4 vec4_zero = {{0.0, 0.0, 0.0, 0.0 }};
+
 static const quat quat_identity = {{0.0, 0.0, 0.0, 1.0}};
 
 static const mat3 mat3_identity = {{1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0}};

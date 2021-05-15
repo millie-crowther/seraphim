@@ -23,14 +23,10 @@ static const uint32_t texture_request = 2;
 
 static int request_handling_thread(void * request_handler);
 
-static uint32_t pack_vector(vec3 * x_){
-    vec4 x;
-    x.xyz = *x_;
-    x.w = 0.0;
-
+static uint32_t pack_vector(vec4 *x) {
     uint8_t bytes[4];
     for (int i = 0; i < 4; i++) {
-        bytes[i] = (uint8_t)(fmax(0.0, fmin(x.v[i] * 255.0, 255.0)));
+        bytes[i] = (uint8_t)(fmax(0.0, fmin(x->v[i] * 255.0, 255.0)));
     }
     return *(uint32_t *) bytes;
 }
@@ -119,9 +115,10 @@ static void handle_geometry_request(request_handler_t * request_handler, request
     vec3_multiply_f(&c, &position, request->radius);
     float phi = (float) sdf_distance(&request_handler->sdfs[sdf_id], &c);
 
-    vec3 normal = sdf_normal(&request_handler->sdfs[sdf_id], &c);
-    vec3_divide_f(&normal, &normal, 2);
-    vec3_add_f(&normal, &normal, 0.5);
+    vec4 normal = vec4_zero;
+    normal.xyz = sdf_normal(&request_handler->sdfs[sdf_id], &c);
+    vec4_divide_f(&normal, &normal, 2);
+    vec4_add_f(&normal, &normal, 0.5);
     uint32_t packed_normal = pack_vector(&normal);
 
     patch_t patch = {
@@ -160,14 +157,19 @@ static void handle_texture_request(request_handler_t * request_handler, request_
         vec3_multiply_f(&d, &vertices[o], request->radius);
         vec3_add(&d, &d, &position);
 
-        vec3 normal = sdf_normal(&request_handler->sdfs[sdf_id], &d);
-        vec3_divide_f(&normal, &normal, 2);
-        vec3_add_f(&normal, &normal, 0.5);
+        vec4 normal = vec4_zero;
+        normal.xyz = sdf_normal(&request_handler->sdfs[sdf_id], &d);
+        vec4_divide_f(&normal, &normal, 2);
+        vec4_add_f(&normal, &normal, 0.5);
         normals[o] = pack_vector(&normal);
 
-        vec3 c;
-        material_colour(&request_handler->materials[material_id], NULL, &c);
-        colours[o] = pack_vector(&c);
+        vec4 colour = vec4_zero;
+        material_colour(&request_handler->materials[material_id], NULL, &colour.xyz);
+        colours[o] = pack_vector(&colour);
+
+        vec4 physical;
+        material_physical(&request_handler->materials[material_id], NULL, &physical);
+        physicals[o] = pack_vector(&physical);
     }
 
     uint32_t index = request->hash % texture_pool_size;
