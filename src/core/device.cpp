@@ -171,9 +171,11 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, 
     device->physical_device = select_physical_device(instance, surface);
     select_queue_families(device, surface);
 
-    std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
     std::set<uint32_t> unique_queue_families = {device->graphics_family, device->present_family,
                                                 device->compute_family};
+
+    VkDeviceQueueCreateInfo queue_create_infos[unique_queue_families.size()];
+    uint32_t num_queue_create_infos = 0;
 
     float queue_priority = 1.0f;
     VkDeviceQueueCreateInfo queue_create_info = {};
@@ -182,7 +184,8 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, 
     queue_create_info.pQueuePriorities = &queue_priority;
     for (uint32_t queue_family : unique_queue_families) {
         queue_create_info.queueFamilyIndex = queue_family;
-        queue_create_infos.push_back(queue_create_info);
+        queue_create_infos[num_queue_create_infos] = queue_create_info;
+        num_queue_create_infos++;
     }
 
     VkPhysicalDeviceFeatures device_features = {};
@@ -190,9 +193,8 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, 
 
     VkDeviceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    create_info.pQueueCreateInfos = queue_create_infos.data();
-    create_info.queueCreateInfoCount =
-            static_cast<uint32_t>(queue_create_infos.size());
+    create_info.pQueueCreateInfos = queue_create_infos;
+    create_info.queueCreateInfoCount = num_queue_create_infos;
     create_info.pEnabledFeatures = &device_features;
     create_info.enabledExtensionCount = sizeof(device_extensions) / sizeof(*device_extensions);
     create_info.ppEnabledExtensionNames = device_extensions;

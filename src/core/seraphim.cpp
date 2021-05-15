@@ -288,7 +288,6 @@ void create_instance(seraphim_t * seraphim) {
     }
 }
 
-
 static bool check_validation_layers() {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, NULL);
