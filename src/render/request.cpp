@@ -21,13 +21,9 @@ static const uint32_t geometry_request = 1;
 static const uint32_t texture_request = 2;
 
 
-void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf);
-void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, uint32_t *physicals,
-                      material_t *material, sdf_t *sdf);
-
 static int request_handling_thread(void * request_handler);
 
-static uint32_t squash(vec3 * x_){
+static uint32_t pack_vector(vec3 * x_){
     vec4 x;
     x.xyz = *x_;
     x.w = 0.0;
@@ -37,62 +33,6 @@ static uint32_t squash(vec3 * x_){
         bytes[i] = (uint8_t)(fmax(0.0, fmin(x.v[i] * 255.0, 255.0)));
     }
     return *(uint32_t *) bytes;
-}
-
-void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf) {
-    bound3_t *bound = sdf_bound(sdf);
-    vec3 midpoint;
-    bound3_midpoint(bound, &midpoint);
-    vec3 position = {{request->position.x, request->position.y, request->position.z }};
-    vec3_subtract(&position, &position, &midpoint);
-
-    uint32_t contains_mask = 0;
-
-    for (int o = 0; o < 8; o++) {
-        vec3 d;
-        vec3_multiply_f(&d, &vertices[o], request->radius);
-        vec3_add(&d, &d, &position);
-
-        if (!sdf_contains(sdf, &d)) {
-            contains_mask |= 1 << o;
-        }
-    }
-
-    vec3 c;
-    vec3_multiply_f(&c, &position, request->radius);
-    float phi = (float) sdf_distance(sdf, &c);
-
-    vec3 normal = sdf_normal(sdf, &c);
-    vec3_divide_f(&normal, &normal, 2);
-    vec3_add_f(&normal, &normal, 0.5);
-    uint32_t np = squash(&normal);
-
-    uint32_t x_elem = contains_mask << 16;
-    *patch = {x_elem, request->hash, phi, np};
-}
-
-void response_texture(const request_t *request, uint32_t *normals, uint32_t *colours, uint32_t *physicals,
-                      material_t *material, sdf_t *sdf) {
-    bound3_t *bound = sdf_bound(sdf);
-    vec3 midpoint;
-    bound3_midpoint(bound, &midpoint);
-    vec3 position = {{request->position.x, request->position.y, request->position.z }};
-    vec3_subtract(&position, &position, &midpoint);
-
-    for (int o = 0; o < 8; o++) {
-        vec3 d;
-        vec3_multiply_f(&d, &vertices[o], request->radius);
-        vec3_add(&d, &d, &position);
-
-        vec3 normal = sdf_normal(sdf, &d);
-        vec3_divide_f(&normal, &normal, 2);
-        vec3_add_f(&normal, &normal, 0.5);
-        normals[o] = squash(&normal);
-
-        vec3 c;
-        material_colour(material, NULL, &c);
-        colours[o] = squash(&c);
-    }
 }
 
 void request_handler_destroy(request_handler_t *request_handler) {
@@ -157,8 +97,39 @@ static void handle_geometry_request(request_handler_t * request_handler, request
         return;
     }
 
-    patch_t patch{};
-    response_geometry(request, &patch, &request_handler->sdfs[sdf_id]);
+    bound3_t *bound = sdf_bound(&request_handler->sdfs[sdf_id]);
+    vec3 midpoint;
+    bound3_midpoint(bound, &midpoint);
+    vec3 position = {{request->position.x, request->position.y, request->position.z}};
+    vec3_subtract(&position, &position, &midpoint);
+
+    uint32_t containsMask = 0;
+
+    for (int o = 0; o < 8; o++) {
+        vec3 d;
+        vec3_multiply_f(&d, &vertices[o], request->radius);
+        vec3_add(&d, &d, &position);
+
+        if (!sdf_contains(&request_handler->sdfs[sdf_id], &d)) {
+            containsMask |= 1 << o;
+        }
+    }
+
+    vec3 c;
+    vec3_multiply_f(&c, &position, request->radius);
+    float phi = (float) sdf_distance(&request_handler->sdfs[sdf_id], &c);
+
+    vec3 normal = sdf_normal(&request_handler->sdfs[sdf_id], &c);
+    vec3_divide_f(&normal, &normal, 2);
+    vec3_add_f(&normal, &normal, 0.5);
+    uint32_t packed_normal = pack_vector(&normal);
+
+    patch_t patch = {
+        .contents = containsMask << 16,
+        .hash = request->hash,
+        .phi = phi,
+        .normal = packed_normal,
+    };
     uint32_t index = request->hash % geometry_pool_size;
 
     mtx_lock(&request_handler->response_mutex);
@@ -178,8 +149,26 @@ static void handle_texture_request(request_handler_t * request_handler, request_
     uint32_t normals[8];
     uint32_t colours[8];
     uint32_t physicals[8];
-    response_texture(request, normals, colours, physicals, &request_handler->materials[material_id],
-                     &request_handler->sdfs[sdf_id]);
+    bound3_t *bound = sdf_bound(&request_handler->sdfs[sdf_id]);
+    vec3 midpoint;
+    bound3_midpoint(bound, &midpoint);
+    vec3 position = {{request->position.x, request->position.y, request->position.z}};
+    vec3_subtract(&position, &position, &midpoint);
+
+    for (int o = 0; o < 8; o++) {
+        vec3 d;
+        vec3_multiply_f(&d, &vertices[o], request->radius);
+        vec3_add(&d, &d, &position);
+
+        vec3 normal = sdf_normal(&request_handler->sdfs[sdf_id], &d);
+        vec3_divide_f(&normal, &normal, 2);
+        vec3_add_f(&normal, &normal, 0.5);
+        normals[o] = pack_vector(&normal);
+
+        vec3 c;
+        material_colour(&request_handler->materials[material_id], NULL, &c);
+        colours[o] = pack_vector(&c);
+    }
 
     uint32_t index = request->hash % texture_pool_size;
     uint32_t texture_size = request_handler->texture_size;
