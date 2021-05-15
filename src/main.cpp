@@ -21,7 +21,8 @@ int main() {
     }
     cJSON_Delete(game_json);
 
-    seraphim_t seraphim(title_string);
+    seraphim_t seraphim;
+    seraphim_create(&seraphim, title_string);
 
     form_t form;
 

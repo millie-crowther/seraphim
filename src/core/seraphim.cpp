@@ -113,30 +113,30 @@ material_t *seraphim_create_material(seraphim_t *srph, const vec3 * colour) {
     return new_material;
 }
 
-seraphim_t::seraphim_t(const char *title) {
+void seraphim_create(seraphim_t *seraphim, const char *title) {
 #if SERAPHIM_DEBUG
     std::cout << "Running in debug mode." << std::endl;
 #else
     std::cout << "Running in release mode." << std::endl;
 #endif
 
-    num_substances = 0;
-    num_sdfs = 0;
-    num_materials = 0;
-    work_group_count = {{48u, 20u}};
-    work_group_size = {{32u, 32u}};
+    seraphim->num_substances = 0;
+    seraphim->num_sdfs = 0;
+    seraphim->num_materials = 0;
+    seraphim->work_group_count = {{48u, 20u}};
+    seraphim->work_group_size = {{32u, 32u}};
 
     if (!glfwInit()) {
         PANIC("Error: Failed to initialise GLFW.");
     }
 
     vec2u window_size = {{
-        work_group_count.x * work_group_size.x,
-        work_group_count.y * work_group_size.y
+         seraphim->work_group_count.x * seraphim->work_group_size.x,
+         seraphim->work_group_count.y * seraphim->work_group_size.y
     }};
-    window = std::make_unique<window_t>(&window_size);
+    seraphim->window = std::make_unique<window_t>(&window_size);
 
-    window_set_title(window.get(), title);
+    window_set_title(seraphim->window.get(), title);
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, NULL);
@@ -149,24 +149,24 @@ seraphim_t::seraphim_t(const char *title) {
         std::cout << "\t" << extension.extensionName << std::endl;
     }
 
-    create_instance(this);
+    create_instance(seraphim);
 
 #if SERAPHIM_DEBUG
-    if (!setup_debug_callback(this)) {
+    if (!setup_debug_callback(seraphim)) {
         PANIC("Error: Failed to setup debug callback.");
     }
 #endif
 
-    if (glfwCreateWindowSurface(instance, window->window, NULL, &surface) !=
+    if (glfwCreateWindowSurface(seraphim->instance, seraphim->window->window, NULL, &seraphim->surface) !=
         VK_SUCCESS) {
         PANIC("Error: Failed to create window surface.");
     }
 
-    device_create(&device, instance, surface, validation_layers, num_validation_layers);
+    device_create(&seraphim->device, seraphim->instance, seraphim->surface, validation_layers, num_validation_layers);
 
 #if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
-    vkGetPhysicalDeviceProperties(device.physical_device, &properties);
+    vkGetPhysicalDeviceProperties(seraphim->device.physical_device, &properties);
     std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
     std::cout << "\tMaximum storage buffer range: "
               << properties.limits.maxStorageBufferRange << std::endl;
@@ -179,13 +179,13 @@ seraphim_t::seraphim_t(const char *title) {
     std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
 #endif
 
-    test_camera = std::make_shared<camera_t>();
+    seraphim->test_camera = std::make_shared<camera_t>();
 
-    renderer = std::make_unique<renderer_t>(
-        &device, substances, &num_substances, surface, window.get(),
-        test_camera, &work_group_count, &work_group_size, max_image_size, materials, &num_materials, sdfs, &num_sdfs);
+    seraphim->renderer = std::make_unique<renderer_t>(
+        &seraphim->device, seraphim->substances, &seraphim->num_substances, seraphim->surface, seraphim->window.get(),
+        seraphim->test_camera, &seraphim->work_group_count, &seraphim->work_group_size, max_image_size, seraphim->materials, &seraphim->num_materials, seraphim->sdfs, &seraphim->num_sdfs);
 
-    physics_create(&physics, substances, &num_substances);
+    physics_create(&seraphim->physics, seraphim->substances, &seraphim->num_substances);
 }
 
 void monitor_fps(seraphim_t * seraphim) {
@@ -318,14 +318,14 @@ void seraphim_run(seraphim_t *seraphim) {
 
     seraphim->fps_monitor_thread = std::thread(monitor_fps, seraphim);
 
-    seraphim->window->show();
+    window_show(seraphim->window.get());
 
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto previous = std::chrono::steady_clock::now();
     double r_time;
 
-    while (!seraphim->window->should_close()) {
+    while (!window_should_close(seraphim->window.get())) {
         glfwPollEvents();
 
         auto now = std::chrono::steady_clock::now();

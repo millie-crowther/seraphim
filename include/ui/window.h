@@ -18,10 +18,10 @@ struct window_t {
     mouse_t mouse;
     window_t(vec2u *size);
     ~window_t();
-    void show();
-    bool should_close() const;
 };
 
+bool window_should_close(window_t *window);
+void window_show(window_t * window);
 void window_set_title(window_t *window, const char *title);
 
 #endif
