@@ -3,11 +3,10 @@
 #include "core/constant.h"
 #include "render/texture.h"
 
+#include <algorithm>
 #include <chrono>
 #include <stdexcept>
 #include <ui/file.h>
-
-using namespace srph;
 
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                        window_t *window, std::shared_ptr<camera_t> test_camera,

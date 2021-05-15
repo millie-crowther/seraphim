@@ -2,7 +2,7 @@
 
 #include "render/texture.h"
 
-using namespace srph;
+#include <algorithm>
 
 swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     this->device = device;

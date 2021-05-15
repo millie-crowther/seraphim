@@ -2,8 +2,6 @@
 
 #include "ui/window.h"
 
-using namespace srph;
-
 static void key_callback(GLFWwindow *glfw_window, int key, int scancode, int action,
                          int mods) {
     void *data = glfwGetWindowUserPointer(glfw_window);

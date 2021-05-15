@@ -11,8 +11,6 @@
 #include <assert.h>
 #include <ui/file.h>
 
-using namespace srph;
-
 const std::vector<const char *> validation_layers = {
 #if SERAPHIM_DEBUG
 // "VK_LAYER_KHRONOS_validation"

@@ -6,8 +6,6 @@
 #include "form.h"
 #include "matter.h"
 
-#include "maths/matrix.h"
-
 struct data_t {
     float near;
     float far;

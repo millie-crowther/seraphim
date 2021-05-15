@@ -5,8 +5,6 @@
 
 #include "core/buffer.h"
 
-using namespace srph;
-
 texture_t::texture_t(uint32_t binding, device_t *device, vec3u *size,
                      VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
                      VkDescriptorType descriptor_type) {

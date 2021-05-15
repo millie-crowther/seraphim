@@ -1,8 +1,6 @@
 #include <cstring>
 #include "render/request.h"
 
-using namespace srph;
-
 struct patch_t {
     uint32_t contents;
     uint32_t hash;
@@ -10,10 +8,12 @@ struct patch_t {
     uint32_t normal;
 };
 
-vec3_t vertices[8] = {vec3_t(0.0, 0.0, 0.0), vec3_t(2.0, 0.0, 0.0),
-                      vec3_t(0.0, 2.0, 0.0), vec3_t(2.0, 2.0, 0.0),
-                      vec3_t(0.0, 0.0, 2.0), vec3_t(2.0, 0.0, 2.0),
-                      vec3_t(0.0, 2.0, 2.0), vec3_t(2.0, 2.0, 2.0)};
+vec3 vertices[8] = {
+    {{0.0, 0.0, 0.0}}, {{2.0, 0.0, 0.0}},
+    {{0.0, 2.0, 0.0}}, {{2.0, 2.0, 0.0}},
+    {{0.0, 0.0, 2.0}}, {{2.0, 0.0, 2.0}},
+    {{0.0, 2.0, 2.0}}, {{2.0, 2.0, 2.0}}
+};
 
 request_t null_requests[number_of_requests];
 static const uint32_t null_status = 0;
@@ -48,19 +48,20 @@ void response_geometry(const request_t *request, patch_t *patch, sdf_t *sdf) {
     uint32_t contains_mask = 0;
 
     for (int o = 0; o < 8; o++) {
-        vec3_t d = vec3_t(position.x, position.y, position.z) + vertices[o] * request->radius;
-        vec3 d1 = {{d[0], d[1], d[2]}};
+        vec3 d;
+        vec3_multiply_f(&d, &vertices[o], request->radius);
+        vec3_add(&d, &d, &position);
 
-        if (!sdf_contains(sdf, &d1)) {
+        if (!sdf_contains(sdf, &d)) {
             contains_mask |= 1 << o;
         }
     }
 
-    vec3_t c = vec3_t(position.x, position.y, position.z) + request->radius;
-    vec3 c1 = {{c[0], c[1], c[2]}};
-    float phi = (float) sdf_distance(sdf, &c1);
+    vec3 c;
+    vec3_multiply_f(&c, &position, request->radius);
+    float phi = (float) sdf_distance(sdf, &c);
 
-    vec3 normal = sdf_normal(sdf, &c1);
+    vec3 normal = sdf_normal(sdf, &c);
     vec3_divide_f(&normal, &normal, 2);
     vec3_add_f(&normal, &normal, 0.5);
     uint32_t np = squash(&normal);
@@ -77,10 +78,11 @@ void response_texture(const request_t *request, uint32_t *normals, uint32_t *col
     vec3_subtract(&position, &position, &midpoint);
 
     for (int o = 0; o < 8; o++) {
-        vec3_t d = vec3_t(position.x, position.y, position.z) + vertices[o] * request->radius;
-        vec3 d1 = {{d[0], d[1], d[2]}};
+        vec3 d;
+        vec3_multiply_f(&d, &vertices[o], request->radius);
+        vec3_add(&d, &d, &position);
 
-        vec3 normal = sdf_normal(sdf, &d1);
+        vec3 normal = sdf_normal(sdf, &d);
         vec3_divide_f(&normal, &normal, 2);
         vec3_add_f(&normal, &normal, 0.5);
         normals[o] = squash(&normal);

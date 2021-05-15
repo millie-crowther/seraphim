@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "core/device.h"
-#include "maths/matrix.h"
 #include "camera.h"
 
 struct swapchain_t {
