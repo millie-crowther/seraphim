@@ -15,8 +15,8 @@ typedef struct device_t {
 } device_t;
 
 
-void device_create(device_t * device, VkInstance instance, VkSurfaceKHR surface,
-        std::vector<const char *> enabled_validation_layers);
+void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, const char **enabled_validation_layers,
+                   uint32_t num_validation_layers);
 void device_destroy(device_t * device);
 uint32_t device_memory_type(device_t *device, uint32_t type_filter,
                             VkMemoryPropertyFlags prop);

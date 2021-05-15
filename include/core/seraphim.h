@@ -21,16 +21,10 @@ struct seraphim_t {
 #if SERAPHIM_DEBUG
     VkDebugReportCallbackEXT callback;
 
-    bool check_validation_layers();
-
     bool setup_debug_callback();
 
 #endif
-
-    // initialisation functions
     void create_instance();
-
-    std::vector<const char *> get_required_extensions();
 
     device_t device;
     std::unique_ptr<renderer_t> renderer;

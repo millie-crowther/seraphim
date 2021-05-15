@@ -166,8 +166,8 @@ uint32_t device_memory_type(device_t *device, uint32_t type_filter,
     exit(1);
 }
 
-void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface,
-                   std::vector<const char *> enabled_validation_layers) {
+void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, const char **enabled_validation_layers,
+                   uint32_t num_validation_layers) {
     device->physical_device = select_physical_device(instance, surface);
     select_queue_families(device, surface);
 
@@ -196,9 +196,8 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface,
     create_info.pEnabledFeatures = &device_features;
     create_info.enabledExtensionCount = sizeof(device_extensions) / sizeof(*device_extensions);
     create_info.ppEnabledExtensionNames = device_extensions;
-    create_info.enabledLayerCount =
-            static_cast<uint32_t>(enabled_validation_layers.size());
-    create_info.ppEnabledLayerNames = enabled_validation_layers.data();
+    create_info.enabledLayerCount = num_validation_layers;
+    create_info.ppEnabledLayerNames = enabled_validation_layers;
 
     if (vkCreateDevice(device->physical_device, &create_info, NULL, &device->device) !=
         VK_SUCCESS) {

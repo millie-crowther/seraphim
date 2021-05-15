@@ -4,18 +4,21 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
-#include <stdexcept>
 #include <string>
+#include <string.h>
 
 #include "render/renderer.h"
 #include <assert.h>
 #include <ui/file.h>
 
-const std::vector<const char *> validation_layers = {
+static bool check_validation_layers();
+
 #if SERAPHIM_DEBUG
+const char * validation_layers[] = {
 // "VK_LAYER_KHRONOS_validation"
-#endif
 };
+const size_t num_validation_layers = sizeof(validation_layers) / sizeof(*validation_layers);
+#endif
 
 void seraphim_destroy(seraphim_t *engine) {
     engine->fps_monitor_quit = true;
@@ -144,7 +147,7 @@ seraphim_t::seraphim_t(const char *title) {
         PANIC("Error: Failed to create window surface.");
     }
 
-    device_create(&device, instance, surface, validation_layers);
+    device_create(&device, instance, surface, validation_layers, num_validation_layers);
 
 #if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
@@ -189,7 +192,7 @@ void seraphim_t::monitor_fps() {
     }
 }
 
-std::vector<const char *> seraphim_t::get_required_extensions() {
+static std::vector<const char *> get_required_extensions() {
     uint32_t extension_count = 0;
     const char **glfw_extensions =
         glfwGetRequiredInstanceExtensions(&extension_count);
@@ -253,8 +256,8 @@ void seraphim_t::create_instance() {
     }
 
 #if SERAPHIM_DEBUG
-    create_info.ppEnabledLayerNames = validation_layers.data();
-    create_info.enabledLayerCount = validation_layers.size();
+    create_info.ppEnabledLayerNames = validation_layers;
+    create_info.enabledLayerCount = num_validation_layers;
 #else
     create_info.enabledLayerCount = 0;
 #endif
@@ -285,21 +288,28 @@ bool seraphim_t::setup_debug_callback() {
            func(instance, &create_info, NULL, &callback) == VK_SUCCESS;
 }
 
-bool seraphim_t::check_validation_layers() {
+static bool check_validation_layers() {
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, NULL);
 
-    std::vector<VkLayerProperties> available_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+    VkLayerProperties available_layers[layer_count];
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers);
 
-    return std::all_of(validation_layers.begin(), validation_layers.end(),
-                       [available_layers](auto &layer) {
-                           return std::any_of(
-                               available_layers.begin(), available_layers.end(),
-                               [layer](auto &properties) {
-                                   return layer == std::string(properties.layerName);
-                               });
-                       });
+    for (uint32_t i = 0; i < num_validation_layers; i++){
+        bool layer_found = false;
+        for (uint32_t j = 0; j < layer_count; j++){
+            if (strcmp(validation_layers[i], available_layers[j].layerName) == 0){
+                layer_found = true;
+                break;
+            }
+        }
+
+        if (!layer_found){
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void seraphim_t::run() {
