@@ -41,6 +41,6 @@ VkDescriptorType descriptor_type);
 
 void texture_destroy(texture_t * texture);
 
-VkImageView create_image_view(VkDevice device, VkImage image,
-                                     VkFormat format);
+VkImageView texture_create_image_view(VkDevice device, VkImage image,
+                                      VkFormat format);
 #endif

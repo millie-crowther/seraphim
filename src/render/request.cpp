@@ -20,7 +20,6 @@ static const uint32_t null_status = 0;
 static const uint32_t geometry_request = 1;
 static const uint32_t texture_request = 2;
 
-
 static int request_handling_thread(void * request_handler);
 
 static uint32_t pack_vector(vec4 *x) {
@@ -81,7 +80,7 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++) {
         texture_create(&request_handler->textures[i], base_texture_binding + i, request_handler->device, &size,
                        VK_IMAGE_USAGE_SAMPLED_BIT,
-                       static_cast<VkFormatFeatureFlagBits>(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
+                       (VkFormatFeatureFlagBits)(VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT |
                                                             VK_FORMAT_FEATURE_TRANSFER_DST_BIT),
                        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     }
@@ -172,12 +171,12 @@ static void handle_texture_request(request_handler_t * request_handler, request_
         physicals[o] = pack_vector(&physical);
     }
 
-    uint32_t index = request->hash % texture_pool_size;
-    uint32_t texture_size = request_handler->texture_size;
+    int index = (int) (request->hash % texture_pool_size);
+    int texture_size = request_handler->texture_size;
     vec3i p = {{
-        (int) (index % texture_size),
-        (int) ((index % (texture_size * texture_size)) / texture_size),
-        (int) (index / texture_size / texture_size)
+        index % texture_size,
+        (index % (texture_size * texture_size)) / texture_size,
+        index / texture_size / texture_size
     }};
     vec3i_multiply_i(&p, &p, request_handler->patch_sample_size);
 
@@ -212,10 +211,8 @@ static int request_handling_thread(void * request_handler_){
                 request_t * request = &requests[i];
                 if (request->status == geometry_request){
                     handle_geometry_request(request_handler, request);
-                } else {
-                    if (request->status == texture_request){
-                        handle_texture_request(request_handler, request);
-                    }
+                } if (request->status == texture_request){
+                    handle_texture_request(request_handler, request);
                 }
             }
 

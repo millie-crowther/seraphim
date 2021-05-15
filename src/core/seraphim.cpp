@@ -109,7 +109,7 @@ seraphim_t::seraphim_t(const char *title) {
     work_group_size = {{32u, 32u}};
 
     if (!glfwInit()) {
-        throw std::runtime_error("Error: Failed to initialise GLFW.");
+        PANIC("Error: Failed to initialise GLFW.");
     }
 
     vec2u window_size = {{
@@ -135,13 +135,13 @@ seraphim_t::seraphim_t(const char *title) {
 
 #if SERAPHIM_DEBUG
     if (!setup_debug_callback()) {
-        throw std::runtime_error("Error: Failed to setup debug callback.");
+        PANIC("Error: Failed to setup debug callback.");
     }
 #endif
 
     if (glfwCreateWindowSurface(instance, window->window, NULL, &surface) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create window surface.");
+        PANIC("Error: Failed to create window surface.");
     }
 
     device_create(&device, instance, surface, validation_layers);
@@ -207,7 +207,7 @@ std::vector<const char *> seraphim_t::get_required_extensions() {
 void seraphim_t::create_instance() {
 #if SERAPHIM_DEBUG
     if (!check_validation_layers()) {
-        throw std::runtime_error("Requested validation layers not available.");
+        PANIC("Requested validation layers not available.");
     }
 #endif
 
@@ -266,7 +266,7 @@ void seraphim_t::create_instance() {
 
     auto result = vkCreateInstance(&create_info, NULL, &instance);
     if (result != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan instance!");
+        PANIC("Failed to create Vulkan instance!");
     }
 }
 

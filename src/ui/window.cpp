@@ -1,6 +1,7 @@
 #include "ui/window.h"
 
 #include <exception>
+#include <core/debug.h>
 
 static void window_resize_callback(GLFWwindow *glfw_window, int width, int height) {
     //    void * data = glfwGetWindowUserPointer(glfw_window);
@@ -23,7 +24,7 @@ window_t::window_t(vec2u *size) {
     window = glfwCreateWindow(size->x, size->y, "Seraphim", NULL, NULL);
 
     if (window == NULL) {
-        throw std::runtime_error("Error: Failed to create main window.");
+        PANIC("Error: Failed to create main window.");
     }
 
     glfwSetWindowUserPointer(window, static_cast<void *>(this));

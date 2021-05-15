@@ -1,3 +1,4 @@
+#include <core/debug.h>
 #include "core/command.h"
 
 void command_buffer_submit(command_buffer_t  * command_buffer, VkSemaphore wait_sema, VkSemaphore signal_sema,
@@ -48,14 +49,13 @@ void command_buffer_begin_buffer(command_pool_t *pool, command_buffer_t *buffer,
     begin_info.pInheritanceInfo = NULL;
 
     if (vkBeginCommandBuffer(buffer->command_buffer, &begin_info) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to begin command buffer");
+        PANIC("Error: Failed to begin command buffer");
     }
 }
 
 void command_buffer_end(command_buffer_t *buffer) {
     if (vkEndCommandBuffer(buffer->command_buffer) != VK_SUCCESS) {
-        printf("Error: Failed to end command buffer");
-        exit(1);
+        PANIC("Error: Failed to end command buffer");
     }
 }
 

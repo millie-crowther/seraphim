@@ -8,8 +8,8 @@ void camera_transformation_matrix(camera_t *camera, float *xs) {
     mat4 dxs;
     transform_matrix(&camera->transform, &dxs);
 
-    for (int i = 0; i < 16; i++) {
-        xs[i] = (float)dxs.v[i];
+    for (int i = 0; i < MAT4_SIZE; i++) {
+        xs[i] = dxs.v[i];
     }
 }
 

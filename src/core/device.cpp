@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <vector>
 #include <string.h>
+#include <core/debug.h>
 
 const char * device_extensions[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -201,7 +202,7 @@ void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface,
 
     if (vkCreateDevice(device->physical_device, &create_info, NULL, &device->device) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: failed to create device");
+        PANIC("Error: failed to create device");
     }
 }
 

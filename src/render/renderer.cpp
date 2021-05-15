@@ -7,6 +7,7 @@
 #include <chrono>
 #include <stdexcept>
 #include <ui/file.h>
+#include <core/debug.h>
 
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
                        window_t *window, std::shared_ptr<camera_t> test_camera,
@@ -176,13 +177,12 @@ void renderer_t::create_compute_pipeline() {
 
     if (vkCreatePipelineLayout(device->device, &pipeline_layout_info, NULL,
                                &compute_pipeline_layout) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create compute pipeline layout.");
+        PANIC("Error: Failed to create compute pipeline layout.");
     }
 
     shader_t compute_shader;
     if (!shader_create(&compute_shader, "../src/render/shader/comp.glsl", device, VK_SHADER_STAGE_COMPUTE_BIT)){
-        printf("Error: Failed to create compute shader");
-        exit(1);
+        PANIC("Error: Failed to create compute shader");
     }
 
     VkComputePipelineCreateInfo pipeline_create_info = {};
@@ -194,7 +194,7 @@ void renderer_t::create_compute_pipeline() {
     if (vkCreateComputePipelines(device->device, VK_NULL_HANDLE, 1,
                                  &pipeline_create_info, NULL,
                                  &compute_pipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create compute pipeline.");
+        PANIC("Error: Failed to create compute pipeline.");
     }
 
     shader_destroy(&compute_shader);
@@ -254,7 +254,7 @@ void renderer_t::create_render_pass() {
 
     if (vkCreateRenderPass(device->device, &render_pass_info, NULL, &render_pass) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create render pass.");
+        PANIC("Error: Failed to create render pass.");
     }
 }
 
@@ -369,7 +369,7 @@ void renderer_t::create_graphics_pipeline() {
 
     if (vkCreatePipelineLayout(device->device, &pipeline_layout_info, NULL,
                                &pipeline_layout) != VK_SUCCESS) {
-        throw std::runtime_error(
+        PANIC(
             "Error: Failed to create graphics pipeline layout.");
     }
 
@@ -400,7 +400,7 @@ void renderer_t::create_graphics_pipeline() {
 
     if (vkCreateGraphicsPipelines(device->device, VK_NULL_HANDLE, 1, &pipeline_info,
                                   NULL, &graphics_pipeline) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create graphics pipeline.");
+        PANIC("Error: Failed to create graphics pipeline.");
     }
 }
 
@@ -422,7 +422,7 @@ void renderer_t::create_framebuffers() {
 
         if (vkCreateFramebuffer(device->device, &framebuffer_info, NULL,
                                 &framebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("Error: Failed to create framebuffer.");
+            PANIC("Error: Failed to create framebuffer.");
         }
     }
 }
@@ -468,7 +468,7 @@ void renderer_t::create_descriptor_pool() {
 
     if (vkCreateDescriptorPool(device->device, &pool_info, NULL, &desc_pool) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create descriptor pool.");
+        PANIC("Error: Failed to create descriptor pool.");
     }
 
     std::vector<VkDescriptorSetLayout> layouts(swapchain->get_size(),
@@ -483,7 +483,7 @@ void renderer_t::create_descriptor_pool() {
     desc_sets.resize(swapchain->get_size());
     if (vkAllocateDescriptorSets(device->device, &alloc_info, desc_sets.data()) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to allocate descriptor sets.");
+        PANIC("Error: Failed to allocate descriptor sets.");
     }
 }
 
@@ -520,7 +520,7 @@ void renderer_t::create_descriptor_set_layout() {
 
     if (vkCreateDescriptorSetLayout(device->device, &layout_info, NULL,
                                     &descriptor_layout) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create descriptor set layout.");
+        PANIC("Error: Failed to create descriptor set layout.");
     }
 }
 
@@ -545,7 +545,7 @@ void renderer_t::create_sync() {
     }
 
     if (result != VK_SUCCESS) {
-        throw std::runtime_error(
+        PANIC(
             "Error: Failed to create synchronisation primitives.");
     }
 }
@@ -586,7 +586,7 @@ void renderer_t::render() {
     std::vector<light_t> lights(size);
     vec3f light_x = {{ 0, 4, -4}};
     vec4f light_colour = {{50, 50, 50, 50}};
-    lights[0] = light_t(&light_x, &light_colour);
+    lights[0] = light_t(0, &light_x, &light_colour);
     buffer_write(&light_buffer, lights.data(), lights.size(), 0);
 
     if (auto camera = main_camera.lock()) {
@@ -596,7 +596,7 @@ void renderer_t::render() {
 
     uint32_t image_index;
     vkAcquireNextImageKHR(
-            device->device, swapchain->handle, ~static_cast<uint64_t>(0),
+            device->device, swapchain->handle, ~0,
             image_available_semas[current_frame], VK_NULL_HANDLE, &image_index);
 
 

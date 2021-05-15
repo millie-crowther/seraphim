@@ -3,6 +3,7 @@
 #include "render/texture.h"
 
 #include <algorithm>
+#include <core/debug.h>
 
 swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     this->device = device;
@@ -50,7 +51,7 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
 
     if (vkCreateSwapchainKHR(device->device, &create_info, NULL, &handle) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: failed to create swapchain!");
+        PANIC("Error: failed to create swapchain!");
     }
 
     uint32_t count = 0;
@@ -63,7 +64,7 @@ swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     image_format = format.format;
     for (auto &image : images) {
         image_views.push_back(
-            create_image_view(device->device, image, format.format));
+                texture_create_image_view(device->device, image, format.format));
     }
 }
 

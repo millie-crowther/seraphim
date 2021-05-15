@@ -2,11 +2,12 @@
 
 #include <stdexcept>
 #include <maths/maths.h>
+#include <core/debug.h>
 
 #include "core/buffer.h"
 
-VkImageView create_image_view(VkDevice device, VkImage image,
-                                         VkFormat format) {
+VkImageView texture_create_image_view(VkDevice device, VkImage image,
+                                      VkFormat format) {
     VkImageViewCreateInfo view_info = {};
     view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     view_info.image = image;
@@ -20,7 +21,7 @@ VkImageView create_image_view(VkDevice device, VkImage image,
 
     VkImageView image_view;
     if (vkCreateImageView(device, &view_info, NULL, &image_view) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create image view.");
+        PANIC("Error: Failed to create image view.");
     }
     return image_view;
 }
@@ -33,7 +34,7 @@ static void check_format_supported(VkPhysicalDevice physical_device,
 
     if ((tiling == VK_IMAGE_TILING_OPTIMAL || tiling == VK_IMAGE_TILING_LINEAR) &&
         (properties.optimalTilingFeatures & features) != features) {
-        throw std::runtime_error("Error: Unsupported image format.");
+        PANIC("Error: Unsupported image format.");
     }
 }
 
@@ -119,7 +120,7 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
     // allocate memory
     if (vkCreateImage(device->device, &image_create_info, NULL, &texture->image) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create image.");
+        PANIC("Error: Failed to create image.");
     }
     VkMemoryRequirements mem_req;
     vkGetImageMemoryRequirements(device->device, texture->image, &mem_req);
@@ -132,14 +133,14 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
 
     if (vkAllocateMemory(device->device, &mem_alloc_info, NULL, &texture->memory) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to allocate image memory.");
+        PANIC("Error: Failed to allocate image memory.");
     }
 
     if (vkBindImageMemory(device->device, texture->image, texture->memory, 0) != VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to bind image.");
+        PANIC("Error: Failed to bind image.");
     }
     // create image view
-    texture->image_view = create_image_view(device->device, texture->image, texture->format);
+    texture->image_view = texture_create_image_view(device->device, texture->image, texture->format);
 
     // create sampler
     VkSamplerCreateInfo sampler_info = {};
@@ -161,7 +162,7 @@ void texture_create(texture_t *texture, uint32_t binding, device_t *device, vec3
 
     if (vkCreateSampler(device->device, &sampler_info, NULL, &texture->sampler) !=
         VK_SUCCESS) {
-        throw std::runtime_error("Error: Failed to create texture sampler.");
+        PANIC("Error: Failed to create texture sampler.");
     }
 
     texture->image_info = {};
