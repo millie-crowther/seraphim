@@ -53,7 +53,7 @@ void seraphim_destroy(seraphim_t *engine) {
     // destroy instance
     vkDestroyInstance(engine->instance, NULL);
 
-    engine->window.reset();
+    window_destroy(&engine->window);
 
     glfwTerminate();
 
@@ -134,9 +134,9 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
          seraphim->work_group_count.x * seraphim->work_group_size.x,
          seraphim->work_group_count.y * seraphim->work_group_size.y
     }};
-    seraphim->window = std::make_unique<window_t>(&window_size);
 
-    window_set_title(seraphim->window.get(), title);
+    window_create(&seraphim->window, &window_size);
+    window_set_title(&seraphim->window, title);
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, NULL);
@@ -157,7 +157,7 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
     }
 #endif
 
-    if (glfwCreateWindowSurface(seraphim->instance, seraphim->window->window, NULL, &seraphim->surface) !=
+    if (glfwCreateWindowSurface(seraphim->instance, seraphim->window.window, NULL, &seraphim->surface) !=
         VK_SUCCESS) {
         PANIC("Error: Failed to create window surface.");
     }
@@ -182,7 +182,7 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
     camera_create(&seraphim->test_camera);
 
     seraphim->renderer = std::make_unique<renderer_t>(
-        &seraphim->device, seraphim->substances, &seraphim->num_substances, seraphim->surface, seraphim->window.get(),
+        &seraphim->device, seraphim->substances, &seraphim->num_substances, seraphim->surface, &seraphim->window,
         &seraphim->test_camera, &seraphim->work_group_count, &seraphim->work_group_size, max_image_size, seraphim->materials, &seraphim->num_materials, seraphim->sdfs, &seraphim->num_sdfs);
 
     physics_create(&seraphim->physics, seraphim->substances, &seraphim->num_substances);
@@ -317,14 +317,14 @@ void seraphim_run(seraphim_t *seraphim) {
 
     seraphim->fps_monitor_thread = std::thread(monitor_fps, seraphim);
 
-    window_show(seraphim->window.get());
+    window_show(&seraphim->window);
 
     uint32_t current_frame = 0;
     uint32_t frequency = 100;
     auto previous = std::chrono::steady_clock::now();
     double r_time;
 
-    while (!window_should_close(seraphim->window.get())) {
+    while (!window_should_close(&seraphim->window)) {
         glfwPollEvents();
 
         auto now = std::chrono::steady_clock::now();
@@ -335,9 +335,9 @@ void seraphim_run(seraphim_t *seraphim) {
         r_time += 1.0 / delta;
         previous = now;
 
-        mouse_update(&seraphim->window->mouse, delta);
+        mouse_update(&seraphim->window.mouse, delta);
 
-        camera_update(&seraphim->test_camera, delta, *seraphim->window->keyboard, seraphim->window->mouse);
+        camera_update(&seraphim->test_camera, delta, *seraphim->window.keyboard, seraphim->window.mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;

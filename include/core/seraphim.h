@@ -33,10 +33,10 @@ struct seraphim_t {
     uint32_t num_materials;
     material_t materials[SERAPHIM_MAX_MATERIALS];
     bool fps_monitor_quit;
-
     camera_t test_camera;
+    window_t window;
+    
     std::unique_ptr<renderer_t> renderer;
-    std::unique_ptr<window_t> window;
     std::thread fps_monitor_thread;
     std::condition_variable fps_cv;
 };

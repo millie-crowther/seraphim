@@ -54,6 +54,7 @@ layout (local_size_x = 32, local_size_y = 32) in;
 
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
 const float sqrt3 = 1.73205080757;
+const float pi = 3.14159265358979323;
 const int max_steps = 128;
 const int max_hash_retries = 5;
 const float geometry_epsilon = 1.0 / 300.0;
@@ -307,6 +308,38 @@ float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request
     shadow_i.distance > dist;
 
     return float(is_clear);
+}
+
+float DistributionGGX(vec3 N, vec3 H, float a){
+    float a2     = a*a;
+    float NdotH  = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float nom    = a2;
+    float denom  = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom        = PI * denom * denom;
+
+    return nom / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float k){
+    float nom   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float k){
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx1 = GeometrySchlickGGX(NdotV, k);
+    float ggx2 = GeometrySchlickGGX(NdotL, k);
+
+    return ggx1 * ggx2;
+}
+
+vec3 fresnelSchlick(float cosTheta, vec3 F0){
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
 vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){

@@ -16,10 +16,10 @@ struct window_t {
     GLFWwindow *window;
     std::unique_ptr<keyboard_t> keyboard;
     mouse_t mouse;
-    window_t(vec2u *size);
-    ~window_t();
 };
 
+void window_create(window_t * window, vec2u * size);
+void window_destroy(window_t * window);
 bool window_should_close(window_t *window);
 void window_show(window_t * window);
 void window_set_title(window_t *window, const char *title);

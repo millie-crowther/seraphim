@@ -41,9 +41,9 @@ static bool has_adequate_queue_families(VkPhysicalDevice physical_device,
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count,
                                              NULL);
 
-    std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+    VkQueueFamilyProperties queue_families[queue_family_count];
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count,
-                                             queue_families.data());
+                                             queue_families);
 
     for (uint32_t i = 0; i < queue_family_count; i++) {
         VkBool32 present_support = false;
@@ -116,8 +116,7 @@ static VkPhysicalDevice select_physical_device(VkInstance instance,
         }
     }
 
-    printf("Error: Unable to find a suitable physical device!");
-    exit(1);
+    PANIC("Error: Unable to find a suitable physical device!");
 }
 
 static void select_queue_families(device_t * device, VkSurfaceKHR surface) {
@@ -162,8 +161,7 @@ uint32_t device_memory_type(device_t *device, uint32_t type_filter,
         }
     }
 
-    printf("failed to find suitable memory type!");
-    exit(1);
+    PANIC("failed to find suitable memory type!");
 }
 
 void device_create(device_t *device, VkInstance instance, VkSurfaceKHR surface, const char **enabled_validation_layers,

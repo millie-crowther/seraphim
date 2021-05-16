@@ -22,28 +22,29 @@ bool window_should_close(window_t *window) {
     return glfwWindowShouldClose(window->window) ||
            window->keyboard->is_key_pressed(GLFW_KEY_ESCAPE);}
 
-window_t::window_t(vec2u *size) {
-    this->size = *size;
+void window_destroy(window_t *window) {
+    if (window->window != NULL) {
+        glfwDestroyWindow(window->window);
+    }
+
+}
+
+void window_create(window_t *window, vec2u *size) {
+    window->size = *size;
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    window = glfwCreateWindow(size->x, size->y, "Seraphim", NULL, NULL);
+    window->window = glfwCreateWindow(size->x, size->y, "Seraphim", NULL, NULL);
 
-    if (window == NULL) {
+    if (window->window == NULL) {
         PANIC("Error: Failed to create main window.");
     }
 
-    glfwSetWindowUserPointer(window, static_cast<void *>(this));
-    glfwSetWindowSizeCallback(window, window_resize_callback);
+    glfwSetWindowUserPointer(window->window, (void *) window);
+    glfwSetWindowSizeCallback(window->window, window_resize_callback);
 
-    keyboard = std::make_unique<keyboard_t>(*this);
-    mouse_create(&mouse, this);
-}
-
-window_t::~window_t() {
-    if (window != NULL) {
-        glfwDestroyWindow(window);
-    }
+    window->keyboard = std::make_unique<keyboard_t>(*window);
+    mouse_create(&window->mouse, window);
 }
