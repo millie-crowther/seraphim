@@ -34,9 +34,9 @@ data_t substance_t::get_data(const vec3 *eye_position) {
 
     float far = (float)vec3_length(&x);
 
-    float f32r[3] = {(float)r.x, (float)r.y, (float)r.z};
+    vec3f f32r = {{(float)r.x, (float)r.y, (float)r.z}};
 
-    data_t data(near, far, f32r, id);
+    data_t data(near, far, &f32r, id);
 
     matter_transformation_matrix(&matter, data.transform);
     data.sdf_id = matter.sdf->id;
@@ -50,20 +50,18 @@ substance_t::substance_t() {}
 bool data_t::comparator_t::operator()(const data_t &a, const data_t &b) const {
     return a.far < b.far && a.id != static_cast<uint32_t>(~0);
 }
+
 data_t::data_t() {
     id = ~0;
     material_id = ~0;
     sdf_id = ~0;
 }
 
-data_t::data_t(float near, float far, const float *r, uint32_t id) {
+data_t::data_t(float near, float far, vec3f *r, uint32_t id) {
     this->near = near;
     this->far = far;
     this->id = id;
-
-    for (int i = 0; i < 3; i++) {
-        this->r[i] = r[i];
-    }
+    this->r = *r;
 }
 
 static void offset_from_centre_of_mass(substance_t *self, vec3 *r, const vec3 *x) {

@@ -74,12 +74,6 @@ bool _vec2i_is_equal(mint_t *v0, mint_t *v1) {
     return v0[0] == v1[0] && v0[1] == v1[1];
 }
 
-mint_t *_vec2i_new(mint_t *result, mint_t x, mint_t y) {
-    result[0] = x;
-    result[1] = y;
-    return result;
-}
-
 mint_t *_vec2i_assign(mint_t *result, mint_t *v0) {
     result[0] = v0[0];
     result[1] = v0[1];
@@ -210,13 +204,6 @@ bool _vec3i_is_zero(mint_t *v0) { return v0[0] == 0 && v0[1] == 0 && v0[2] == 0;
 
 bool _vec3i_is_equal(mint_t *v0, mint_t *v1) {
     return v0[0] == v1[0] && v0[1] == v1[1] && v0[2] == v1[2];
-}
-
-mint_t *_vec3i_new(mint_t *result, mint_t x, mint_t y, mint_t z) {
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-    return result;
 }
 
 mint_t *_vec3i_assign(mint_t *result, mint_t *v0) {
@@ -384,14 +371,6 @@ bool _vec4i_is_zero(mint_t *v0) {
 
 bool _vec4i_is_equal(mint_t *v0, mint_t *v1) {
     return v0[0] == v1[0] && v0[1] == v1[1] && v0[2] == v1[2] && v0[3] == v1[3];
-}
-
-mint_t *_vec4i_new(mint_t *result, mint_t x, mint_t y, mint_t z, mint_t w) {
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-    result[3] = w;
-    return result;
 }
 
 mint_t *_vec4i_assign(mint_t *result, mint_t *v0) {
@@ -603,12 +582,6 @@ bool _vec2_is_zero(mfloat_t *v0) {
 bool _vec2_is_equal(mfloat_t *v0, mfloat_t *v1) {
     return MFABS(v0[0] - v1[0]) < MFLT_EPSILON &&
            MFABS(v0[1] - v1[1]) < MFLT_EPSILON;
-}
-
-mfloat_t *_vec2_new(mfloat_t *result, mfloat_t x, mfloat_t y) {
-    result[0] = x;
-    result[1] = y;
-    return result;
 }
 
 mfloat_t *_vec2_assign(mfloat_t *result, mfloat_t *v0) {
@@ -858,13 +831,6 @@ bool _vec3_is_equal(mfloat_t *v0, mfloat_t *v1) {
     return MFABS(v0[0] - v1[0]) < MFLT_EPSILON &&
            MFABS(v0[1] - v1[1]) < MFLT_EPSILON &&
            MFABS(v0[2] - v1[2]) < MFLT_EPSILON;
-}
-
-mfloat_t *_vec3_new(mfloat_t *result, mfloat_t x, mfloat_t y, mfloat_t z) {
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-    return result;
 }
 
 mfloat_t *_vec3_assign(mfloat_t *result, const mfloat_t *v0) {
@@ -1159,15 +1125,6 @@ bool _vec4_is_equal(mfloat_t *v0, mfloat_t *v1) {
            MFABS(v0[1] - v1[1]) < MFLT_EPSILON &&
            MFABS(v0[2] - v1[2]) < MFLT_EPSILON &&
            MFABS(v0[3] - v1[3]) < MFLT_EPSILON;
-}
-
-mfloat_t *_vec4_new(mfloat_t *result, mfloat_t x, mfloat_t y, mfloat_t z,
-                    mfloat_t w) {
-    result[0] = x;
-    result[1] = y;
-    result[2] = z;
-    result[3] = w;
-    return result;
 }
 
 mfloat_t *_vec4_assign(mfloat_t *result, mfloat_t *v0) {
@@ -1562,15 +1519,6 @@ mfloat_t _quat_angle(mfloat_t *q0, mfloat_t *q1) {
     return MACOS(_quat_dot(q0, q1) * s);
 }
 
-mfloat_t *_mat2_new(mfloat_t *result, mfloat_t m11, mfloat_t m12, mfloat_t m21,
-                    mfloat_t m22) {
-    result[0] = m11;
-    result[1] = m21;
-    result[2] = m12;
-    result[3] = m22;
-    return result;
-}
-
 mfloat_t _mat2_determinant(mfloat_t *m0) { return m0[0] * m0[3] - m0[2] * m0[1]; }
 
 mfloat_t *_mat2_assign(mfloat_t *result, mfloat_t *m0) {
@@ -1680,21 +1628,6 @@ mfloat_t *_mat2_lerp(mfloat_t *result, mfloat_t *m0, mfloat_t *m1, mfloat_t f) {
     result[1] = m0[1] + (m1[1] - m0[1]) * f;
     result[2] = m0[2] + (m1[2] - m0[2]) * f;
     result[3] = m0[3] + (m1[3] - m0[3]) * f;
-    return result;
-}
-
-mfloat_t *_mat3_new(mfloat_t *result, mfloat_t m11, mfloat_t m12, mfloat_t m13,
-                    mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m31,
-                    mfloat_t m32, mfloat_t m33) {
-    result[0] = m11;
-    result[1] = m21;
-    result[2] = m31;
-    result[3] = m12;
-    result[4] = m22;
-    result[5] = m32;
-    result[6] = m13;
-    result[7] = m23;
-    result[8] = m33;
     return result;
 }
 
@@ -1935,30 +1868,6 @@ mfloat_t *_mat3_lerp(mfloat_t *result, mfloat_t *m0, mfloat_t *m1, mfloat_t f) {
     result[6] = m0[6] + (m1[6] - m0[6]) * f;
     result[7] = m0[7] + (m1[7] - m0[7]) * f;
     result[8] = m0[8] + (m1[8] - m0[8]) * f;
-    return result;
-}
-
-mfloat_t *_mat4_new(mfloat_t *result, mfloat_t m11, mfloat_t m12, mfloat_t m13,
-                    mfloat_t m14, mfloat_t m21, mfloat_t m22, mfloat_t m23,
-                    mfloat_t m24, mfloat_t m31, mfloat_t m32, mfloat_t m33,
-                    mfloat_t m34, mfloat_t m41, mfloat_t m42, mfloat_t m43,
-                    mfloat_t m44) {
-    result[0] = m11;
-    result[1] = m21;
-    result[2] = m31;
-    result[3] = m41;
-    result[4] = m12;
-    result[5] = m22;
-    result[6] = m32;
-    result[7] = m42;
-    result[8] = m13;
-    result[9] = m23;
-    result[10] = m33;
-    result[11] = m43;
-    result[12] = m14;
-    result[13] = m24;
-    result[14] = m34;
-    result[15] = m44;
     return result;
 }
 
@@ -2666,10 +2575,6 @@ bool vec2i_is_equal(vec2i *v0, vec2i *v1) {
     return _vec2i_is_equal((mint_t *)v0, (mint_t *)v1);
 }
 
-vec2i *vec2i_new(vec2i *result, mint_t x, mint_t y) {
-    return (vec2i *)_vec2i_new((mint_t *)result, x, y);
-}
-
 vec2i *vec2i_assign(vec2i *result, vec2i *v0) {
     return (vec2i *)_vec2i_assign((mint_t *)result, (mint_t *)v0);
 }
@@ -2751,10 +2656,6 @@ bool vec3i_is_zero(vec3i *v0) { return _vec3i_is_zero((mint_t *)v0); }
 
 bool vec3i_is_equal(vec3i *v0, vec3i *v1) {
     return _vec3i_is_equal((mint_t *)v0, (mint_t *)v1);
-}
-
-vec3i *vec3i_new(vec3i *result, mint_t x, mint_t y, mint_t z) {
-    return (vec3i *)_vec3i_new((mint_t *)result, x, y, z);
 }
 
 vec3i *vec3i_assign(vec3i *result, vec3i *v0) {
@@ -2840,10 +2741,6 @@ bool vec4i_is_equal(vec4i *v0, vec4i *v1) {
     return _vec4i_is_equal((mint_t *)v0, (mint_t *)v1);
 }
 
-vec4i *vec4i_new(vec4i *result, mint_t x, mint_t y, mint_t z, mint_t w) {
-    return (vec4i *)_vec4i_new((mint_t *)result, x, y, z, w);
-}
-
 vec4i *vec4i_assign(vec4i *result, vec4i *v0) {
     return (vec4i *)_vec4i_assign((mint_t *)result, (mint_t *)v0);
 }
@@ -2921,10 +2818,6 @@ bool vec2_is_zero(vec2 *v0) { return _vec2_is_zero((mfloat_t *)v0); }
 
 bool vec2_is_equal(vec2 *v0, vec2 *v1) {
     return _vec2_is_equal((mfloat_t *)v0, (mfloat_t *)v1);
-}
-
-vec2 *vec2_new(vec2 *result, mfloat_t x, mfloat_t y) {
-    return (vec2 *)_vec2_new((mfloat_t *)result, x, y);
 }
 
 vec2 *vec2_assign(vec2 *result, vec2 *v0) {
@@ -3082,10 +2975,6 @@ bool vec3_is_zero(vec3 *v0) { return _vec3_is_zero((mfloat_t *)v0); }
 
 bool vec3_is_equal(vec3 *v0, vec3 *v1) {
     return _vec3_is_equal((mfloat_t *)v0, (mfloat_t *)v1);
-}
-
-vec3 *vec3_new(vec3 *result, mfloat_t x, mfloat_t y, mfloat_t z) {
-    return (vec3 *)_vec3_new((mfloat_t *)result, x, y, z);
 }
 
 vec3 *vec3_assign(vec3 *result, vec3 *v0) {
@@ -3247,10 +3136,6 @@ bool vec4_is_equal(vec4 *v0, vec4 *v1) {
     return _vec4_is_equal((mfloat_t *)v0, (mfloat_t *)v1);
 }
 
-vec4 *vec4_new(vec4 *result, mfloat_t x, mfloat_t y, mfloat_t z, mfloat_t w) {
-    return (vec4 *)_vec4_new((mfloat_t *)result, x, y, z, w);
-}
-
 vec4 *vec4_assign(vec4 *result, vec4 *v0) {
     return (vec4 *)_vec4_assign((mfloat_t *)result, (mfloat_t *)v0);
 }
@@ -3357,10 +3242,6 @@ bool quat_is_equal(quat *q0, quat *q1) {
     return _quat_is_equal((mfloat_t *)q0, (mfloat_t *)q1);
 }
 
-quat *quat_new(quat *result, mfloat_t x, mfloat_t y, mfloat_t z, mfloat_t w) {
-    return (quat *)_quat_new((mfloat_t *)result, x, y, z, w);
-}
-
 quat *quat_assign(quat *result, quat *q0) {
     return (quat *)_quat_assign((mfloat_t *)result, (mfloat_t *)q0);
 }
@@ -3455,11 +3336,6 @@ mfloat_t quat_angle(quat *q0, quat *q1) {
     return _quat_angle((mfloat_t *)q0, (mfloat_t *)q1);
 }
 
-mat2 *mat2_new(mat2 *result, mfloat_t m11, mfloat_t m12, mfloat_t m21,
-               mfloat_t m22) {
-    return (mat2 *)_mat2_new((mfloat_t *)result, m11, m12, m21, m22);
-}
-
 mfloat_t mat2_determinant(mat2 *m0) { return _mat2_determinant((mfloat_t *)m0); }
 
 mat2 *mat2_assign(mat2 *result, mat2 *m0) {
@@ -3509,13 +3385,6 @@ mat2 *mat2_rotation_z(mat2 *result, mfloat_t f) {
 
 mat2 *mat2_lerp(mat2 *result, mat2 *m0, mat2 *m1, mfloat_t f) {
     return (mat2 *)_mat2_lerp((mfloat_t *)result, (mfloat_t *)m0, (mfloat_t *)m1, f);
-}
-
-mat3 *mat3_new(mat3 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m21,
-               mfloat_t m22, mfloat_t m23, mfloat_t m31, mfloat_t m32,
-               mfloat_t m33) {
-    return (mat3 *)_mat3_new((mfloat_t *)result, m11, m12, m13, m21, m22, m23, m31,
-                             m32, m33);
 }
 
 mfloat_t mat3_determinant(mat3 *m0) { return _mat3_determinant((mfloat_t *)m0); }
@@ -3607,14 +3476,6 @@ mat3 *mat3_rotation_quat(mat3 *result, const quat *q0) {
 
 mat3 *mat3_lerp(mat3 *result, mat3 *m0, mat3 *m1, mfloat_t f) {
     return (mat3 *)_mat3_lerp((mfloat_t *)result, (mfloat_t *)m0, (mfloat_t *)m1, f);
-}
-
-mat4 *mat4_new(mat4 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m14,
-               mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m24, mfloat_t m31,
-               mfloat_t m32, mfloat_t m33, mfloat_t m34, mfloat_t m41, mfloat_t m42,
-               mfloat_t m43, mfloat_t m44) {
-    return (mat4 *)_mat4_new((mfloat_t *)result, m11, m12, m13, m14, m21, m22, m23,
-                             m24, m31, m32, m33, m34, m41, m42, m43, m44);
 }
 
 mfloat_t mat4_determinant(mat4 *m0) { return _mat4_determinant((mfloat_t *)m0); }

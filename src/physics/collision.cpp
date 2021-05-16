@@ -30,7 +30,7 @@ static int x_comparator(const void *a, const void *b) {
 }
 
 static void collision_broad_phase(substance_t *substance_pointers,
-                                  size_t num_substances, srph_collision_array *cs) {
+                                  size_t num_substances, collision_array_t *cs) {
     array_clear(cs);
 
     array_t(substance_t *) substances{};
@@ -378,14 +378,14 @@ static bool collision_narrow_phase(collision_t *c) {
 }
 
 void collision_detect(substance_t *substance_ptrs, size_t num_substances,
-                      srph_collision_array *cs, double dt) {
+                      collision_array_t *cs, double dt) {
     // clear collisions from last iteration
     for (size_t i = 0; i < cs->size; i++) {
         array_clear(&cs->data[i].manifold);
     }
     array_clear(cs);
 
-    srph_collision_array broad_phase_collisions;
+    collision_array_t broad_phase_collisions;
     array_create(&broad_phase_collisions);
 
     collision_broad_phase(substance_ptrs, num_substances, &broad_phase_collisions);

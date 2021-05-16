@@ -7,7 +7,7 @@
 #include <thread>
 #include <mutex>
 
-typedef struct srph_physics {
+typedef struct physics_t {
     int get_frame_count();
 
     vec3 gravity;
@@ -20,17 +20,17 @@ typedef struct srph_physics {
     substance_t *substances;
     uint32_t *num_substances;
 
-    srph_collision_array collisions;
+    collision_array_t collisions;
 
     int frames;
 
     void run();
-} srph_physics;
+} physics_t;
 
-void physics_create(srph_physics *p, substance_t *substances,
+void physics_create(physics_t *p, substance_t *substances,
                     uint32_t *num_substances);
-void physics_start(srph_physics *p);
-void physics_destroy(srph_physics *p);
-void physics_tick(srph_physics *p, double dt);
+void physics_start(physics_t *p);
+void physics_destroy(physics_t *p);
+void physics_tick(physics_t *p, double dt);
 
 #endif

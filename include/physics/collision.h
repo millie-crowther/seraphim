@@ -9,10 +9,10 @@ typedef struct collision_t {
     array_t(vec3) manifold;
 } collision_t;
 
-typedef array_t(collision_t) srph_collision_array;
+typedef array_t(collision_t) collision_array_t;
 
 void collision_detect(substance_t *substance_ptrs, size_t num_substances,
-                      srph_collision_array *cs, double dt);
+                      collision_array_t *cs, double dt);
 void collision_resolve(collision_t *self, double dt);
 
 #endif

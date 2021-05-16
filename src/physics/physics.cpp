@@ -10,7 +10,7 @@
 
 #define SOLVER_ITERATIONS 1
 
-void physics_create(srph_physics *p, substance_t *substances,
+void physics_create(physics_t *p, substance_t *substances,
                     uint32_t *num_substances) {
     p->quit = false;
 
@@ -21,11 +21,11 @@ void physics_create(srph_physics *p, substance_t *substances,
     p->num_substances = num_substances;
 }
 
-void physics_start(srph_physics *p) {
-    p->thread = std::thread(&srph_physics::run, p);
+void physics_start(physics_t *p) {
+    p->thread = std::thread(&physics_t::run, p);
 }
 
-void physics_destroy(srph_physics *p) {
+void physics_destroy(physics_t *p) {
     p->quit = true;
 
     if (p->thread.joinable()) {
@@ -35,7 +35,7 @@ void physics_destroy(srph_physics *p) {
     array_clear(&p->collisions);
 }
 
-void physics_tick(srph_physics *p, double dt) {
+void physics_tick(physics_t *p, double dt) {
     // update substances and integrate forces
     for (uint32_t i = 0; i < *p->num_substances; i++) {
         substance_t *substance = &p->substances[i];
@@ -89,7 +89,7 @@ void physics_tick(srph_physics *p, double dt) {
     }
 }
 
-void srph_physics::run() {
+void physics_t::run() {
     auto t = std::chrono::steady_clock::now();
     printf("physics thread starting\n");
 
@@ -149,7 +149,7 @@ void srph_physics::run() {
     }
 }
 
-int srph_physics::get_frame_count() {
+int physics_t::get_frame_count() {
     int f = frames;
     frames = 0;
     return f;

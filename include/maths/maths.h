@@ -331,7 +331,7 @@ vec4i *vec4i_min(vec4i *result, vec4i *v0, vec4i *v1);
 vec4i *vec4i_clamp(vec4i *result, vec4i *v0, vec4i *v1, vec4i *v2);
 bool vec2_is_zero(vec2 *v0);
 bool vec2_is_equal(vec2 *v0, vec2 *v1);
-vec2 *vec2_new(vec2 *result, mfloat_t x, mfloat_t y);
+
 vec2 *vec2_assign(vec2 *result, vec2 *v0);
 vec2 *vec2_assign_vec2i(vec2 *result, vec2i *v0);
 vec2 *vec2_sign(vec2 *result, vec2 *v0);
@@ -410,7 +410,7 @@ mfloat_t vec3_distance(const vec3 *v0, const vec3 *v1);
 mfloat_t vec3_distance_squared(const vec3 *v0, const vec3 *v1);
 bool vec4_is_zero(vec4 *v0);
 bool vec4_is_equal(vec4 *v0, vec4 *v1);
-vec4 *vec4_new(vec4 *result, mfloat_t x, mfloat_t y, mfloat_t z, mfloat_t w);
+
 vec4 *vec4_assign(vec4 *result, vec4 *v0);
 vec4 *vec4_assign_vec4i(vec4 *result, vec4i *v0);
 vec4 *vec4_sign(vec4 *result, vec4 *v0);
@@ -437,7 +437,7 @@ vec4 *vec4_normalize(vec4 *result, vec4 *v0);
 vec4 *vec4_lerp(vec4 *result, vec4 *v0, vec4 *v1, mfloat_t f);
 bool quat_is_zero(quat *q0);
 bool quat_is_equal(quat *q0, quat *q1);
-quat *quat_new(quat *result, mfloat_t x, mfloat_t y, mfloat_t z, mfloat_t w);
+
 quat *quat_assign(quat *result, quat *q0);
 quat *quat_multiply(quat *result, const quat *q0, const quat *q1);
 quat *quat_multiply_f(quat *result, quat *q0, mfloat_t f);
@@ -458,7 +458,7 @@ quat *quat_slerp(quat *result, quat *q0, quat *q1, mfloat_t f);
 mfloat_t quat_length(quat *q0);
 mfloat_t quat_length_squared(quat *q0);
 mfloat_t quat_angle(quat *q0, quat *q1);
-mat2 *mat2_new(mat2 *result, mfloat_t m11, mfloat_t m12, mfloat_t m21, mfloat_t m22);
+
 mfloat_t mat2_determinant(mat2 *m0);
 mat2 *mat2_assign(mat2 *result, mat2 *m0);
 void mat2_negative(mat2 *result, mat2 *m0);
@@ -472,8 +472,7 @@ mat2 *mat2_scaling(mat2 *result, vec2 *v0);
 mat2 *mat2_scale(mat2 *result, mat2 *m0, vec2 *v0);
 mat2 *mat2_rotation_z(mat2 *result, mfloat_t f);
 mat2 *mat2_lerp(mat2 *result, mat2 *m0, mat2 *m1, mfloat_t f);
-mat3 *mat3_new(mat3 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m21,
-               mfloat_t m22, mfloat_t m23, mfloat_t m31, mfloat_t m32, mfloat_t m33);
+
 mfloat_t mat3_determinant(mat3 *m0);
 mat3 *mat3_assign(mat3 *result, mat3 *m0);
 void mat3_negative(mat3 *result, mat3 *m0);
@@ -490,10 +489,7 @@ mat3 *mat3_rotation_z(mat3 *result, mfloat_t f);
 mat3 *mat3_rotation_axis(mat3 *result, vec3 *v0, mfloat_t f);
 mat3 *mat3_rotation_quat(mat3 *result, const quat *q0);
 mat3 *mat3_lerp(mat3 *result, mat3 *m0, mat3 *m1, mfloat_t f);
-mat4 *mat4_new(mat4 *result, mfloat_t m11, mfloat_t m12, mfloat_t m13, mfloat_t m14,
-               mfloat_t m21, mfloat_t m22, mfloat_t m23, mfloat_t m24, mfloat_t m31,
-               mfloat_t m32, mfloat_t m33, mfloat_t m34, mfloat_t m41, mfloat_t m42,
-               mfloat_t m43, mfloat_t m44);
+
 mfloat_t mat4_determinant(mat4 *m0);
 mat4 *mat4_assign(mat4 *result, mat4 *m0);
 void mat4_negative(mat4 *result, mat4 *m0);

@@ -126,13 +126,11 @@ void renderer_t::create_render_pass() {
 
 void renderer_t::create_graphics_pipeline() {
     if (!shader_create(&vertex_shader, "../src/render/shader/vert.glsl", device, VK_SHADER_STAGE_VERTEX_BIT)){
-        printf("Error: Failed to create vertex shader");
-        exit(1);
+        PANIC("Error: Failed to create vertex shader");
     }
 
     if (!shader_create(&fragment_shader, "../src/render/shader/frag.glsl", device, VK_SHADER_STAGE_FRAGMENT_BIT)){
-        printf("Error: Failed to create fragment shader");
-        exit(1);
+        PANIC("Error: Failed to create fragment shader");
     }
 
     VkPipelineShaderStageCreateInfo shader_stages[2];
@@ -156,8 +154,8 @@ void renderer_t::create_graphics_pipeline() {
     VkViewport viewport = {};
     viewport.x = 0;
     viewport.y = 0;
-    viewport.width = static_cast<float>(extents.width);
-    viewport.height = static_cast<float>(extents.height);
+    viewport.width = extents.width;
+    viewport.height = extents.height;
     viewport.minDepth = 0;
     viewport.maxDepth = 1;
 

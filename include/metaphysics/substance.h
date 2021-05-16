@@ -12,13 +12,13 @@ struct data_t {
     uint32_t sdf_id;
     uint32_t material_id;
 
-    float r[3];
+    vec3f r;
     uint32_t id;
 
     float transform[MAT4_SIZE];
 
     data_t();
-    data_t(float near, float far, const float *r, uint32_t id);
+    data_t(float near, float far, vec3f *r, uint32_t id);
 
     struct comparator_t {
         bool operator()(const data_t &a, const data_t &b) const;

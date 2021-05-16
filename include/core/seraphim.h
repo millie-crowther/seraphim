@@ -21,7 +21,7 @@ struct seraphim_t {
     VkDebugReportCallbackEXT callback;
 #endif
     device_t device;
-    srph_physics physics;
+    physics_t physics;
     VkInstance instance;
     VkSurfaceKHR surface;
     vec2u work_group_count;
