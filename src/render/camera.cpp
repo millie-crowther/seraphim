@@ -13,11 +13,6 @@ void camera_transformation_matrix(camera_t *camera, float *xs) {
     }
 }
 
-camera_t::camera_t() {
-    transform.position = {{0.0, 0.5, -5.0}};
-    transform.rotation = quat_identity;
-}
-
 void camera_update(camera_t *camera, double delta, const keyboard_t &keyboard, const mouse_t &mouse) {
     double scale = 2000.0;
 
@@ -61,4 +56,9 @@ void camera_update(camera_t *camera, double delta, const keyboard_t &keyboard, c
         vec3_multiply_f(&d, &move_right, -delta);
         transform_translate(&camera->transform, &d);
     }
+}
+
+void camera_create(camera_t *camera) {
+    camera->transform.position = {{0.0, 0.5, -5.0}};
+    camera->transform.rotation = quat_identity;
 }

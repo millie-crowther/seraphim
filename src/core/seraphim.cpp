@@ -179,11 +179,11 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
     std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
 #endif
 
-    seraphim->test_camera = std::make_shared<camera_t>();
+    camera_create(&seraphim->test_camera);
 
     seraphim->renderer = std::make_unique<renderer_t>(
         &seraphim->device, seraphim->substances, &seraphim->num_substances, seraphim->surface, seraphim->window.get(),
-        seraphim->test_camera, &seraphim->work_group_count, &seraphim->work_group_size, max_image_size, seraphim->materials, &seraphim->num_materials, seraphim->sdfs, &seraphim->num_sdfs);
+        &seraphim->test_camera, &seraphim->work_group_count, &seraphim->work_group_size, max_image_size, seraphim->materials, &seraphim->num_materials, seraphim->sdfs, &seraphim->num_sdfs);
 
     physics_create(&seraphim->physics, seraphim->substances, &seraphim->num_substances);
 }
@@ -337,7 +337,7 @@ void seraphim_run(seraphim_t *seraphim) {
 
         mouse_update(&seraphim->window->mouse, delta);
 
-        camera_update(seraphim->test_camera.get(), delta, *seraphim->window->keyboard, seraphim->window->mouse);
+        camera_update(&seraphim->test_camera, delta, *seraphim->window->keyboard, seraphim->window->mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;

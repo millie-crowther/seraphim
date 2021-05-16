@@ -34,7 +34,7 @@ struct seraphim_t {
     material_t materials[SERAPHIM_MAX_MATERIALS];
     bool fps_monitor_quit;
 
-    std::shared_ptr<camera_t> test_camera;
+    camera_t test_camera;
     std::unique_ptr<renderer_t> renderer;
     std::unique_ptr<window_t> window;
     std::thread fps_monitor_thread;

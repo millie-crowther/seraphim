@@ -45,7 +45,6 @@ static const uint8_t frames_in_flight = 2;
 static const uint32_t patch_sample_size = 2;
 
 struct renderer_t {
-    // fields
     vec2u work_group_count;
     vec2u work_group_size;
     uint32_t texture_size;
@@ -82,7 +81,7 @@ struct renderer_t {
     uint32_t *num_substances;
 
     std::unique_ptr<swapchain_t> swapchain;
-    std::weak_ptr<camera_t> main_camera;
+    camera_t * main_camera;
 
     texture_t render_texture;
 
@@ -126,7 +125,7 @@ struct renderer_t {
     void present(uint32_t image_index) const;
 
     renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-               window_t *window, std::shared_ptr<camera_t> test_camera, vec2u *work_group_count,
+               window_t *window, camera_t *test_camera, vec2u *work_group_count,
                vec2u *work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
                sdf_t *sdfs, uint32_t *num_sdfs);
 
@@ -134,7 +133,7 @@ struct renderer_t {
 
     void render();
 
-    void set_main_camera(std::weak_ptr<camera_t> camera);
+    void set_main_camera(camera_t *camera);
 
     int get_frame_count();
 };

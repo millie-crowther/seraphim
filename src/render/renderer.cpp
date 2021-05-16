@@ -10,7 +10,7 @@
 #include <core/debug.h>
 
 renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-                       window_t *window, std::shared_ptr<camera_t> test_camera,
+                       window_t *window, camera_t *test_camera,
                        vec2u *work_group_count,
                        vec2u *work_group_size, uint32_t max_image_size, material_t *materials,
                        uint32_t *num_materials,
@@ -574,7 +574,7 @@ void renderer_t::render() {
     for (size_t i = 0; i < *num_substances; i++) {
         substance_t *s = &substances[i];
         substance_data.push_back(
-            s->get_data(&main_camera.lock()->transform.position));
+            s->get_data(&main_camera->transform.position));
     }
     substance_data.resize(size);
 
@@ -589,10 +589,8 @@ void renderer_t::render() {
     lights[0] = light_t(0, &light_x, &light_colour);
     buffer_write(&light_buffer, lights.data(), lights.size(), 0);
 
-    if (auto camera = main_camera.lock()) {
-        camera_transformation_matrix(camera.get(),
-                                     push_constants.eye_transform);
-    }
+    camera_transformation_matrix(main_camera,
+                                 push_constants.eye_transform);
 
     uint32_t image_index;
     vkAcquireNextImageKHR(
@@ -644,7 +642,7 @@ void renderer_t::render() {
     current_frame = (current_frame + 1) % frames_in_flight;
 }
 
-void renderer_t::set_main_camera(std::weak_ptr<camera_t> camera) {
+void renderer_t::set_main_camera(camera_t *camera) {
     main_camera = camera;
 }
 
