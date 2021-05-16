@@ -9,9 +9,9 @@ typedef struct camera_t {
     transform_t transform;
     camera_t();
 
-    void update(double delta, const keyboard_t &keyboard, const mouse_t &mouse);
 } camera_t;
 
 void camera_transformation_matrix(camera_t *camera, float *xs);
+void camera_update(camera_t *camera, double delta, const keyboard_t &keyboard, const mouse_t &mouse);
 
 #endif

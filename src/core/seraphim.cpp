@@ -337,7 +337,7 @@ void seraphim_run(seraphim_t *seraphim) {
 
         mouse_update(&seraphim->window->mouse, delta);
 
-        seraphim->test_camera->update(delta, *seraphim->window->keyboard, seraphim->window->mouse);
+        camera_update(seraphim->test_camera.get(), delta, *seraphim->window->keyboard, seraphim->window->mouse);
 
         if (current_frame % frequency == frequency - 1) {
             r_time = 0;

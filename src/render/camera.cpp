@@ -18,24 +18,23 @@ camera_t::camera_t() {
     transform.rotation = quat_identity;
 }
 
-void camera_t::update(double delta, const keyboard_t &keyboard,
-                      const mouse_t &mouse) {
+void camera_update(camera_t *camera, double delta, const keyboard_t &keyboard, const mouse_t &mouse) {
     double scale = 2000.0;
 
     quat q;
     quat_from_axis_angle(&q, &vec3_up, delta * mouse.velocity.x / scale);
-    transform_rotate(&transform, &q);
+    transform_rotate(&camera->transform, &q);
 
     vec3 right;
     quat q1;
-    transform_right(&transform, &right);
+    transform_right(&camera->transform, &right);
     right.y = 0;
     vec3_normalize(&right, &right);
     quat_from_axis_angle(&q1, &right, delta * mouse.velocity.y / scale);
-    transform_rotate(&transform, &q1);
+    transform_rotate(&camera->transform, &q1);
 
     vec3 forward;
-    transform_forward(&transform, &forward);
+    transform_forward(&camera->transform, &forward);
     forward.y = 0.0;
     vec3_normalize(&forward, &forward);
 
@@ -45,21 +44,21 @@ void camera_t::update(double delta, const keyboard_t &keyboard,
     vec3 d;
     if (keyboard.is_key_pressed(GLFW_KEY_W)) {
         vec3_multiply_f(&d, &forward, delta);
-        transform_translate(&transform, &d);
+        transform_translate(&camera->transform, &d);
     }
 
     if (keyboard.is_key_pressed(GLFW_KEY_S)) {
         vec3_multiply_f(&d, &forward, -delta);
-        transform_translate(&transform, &d);
+        transform_translate(&camera->transform, &d);
     }
 
     if (keyboard.is_key_pressed(GLFW_KEY_A)) {
         vec3_multiply_f(&d, &move_right, delta);
-        transform_translate(&transform, &d);
+        transform_translate(&camera->transform, &d);
     }
 
     if (keyboard.is_key_pressed(GLFW_KEY_D)) {
         vec3_multiply_f(&d, &move_right, -delta);
-        transform_translate(&transform, &d);
+        transform_translate(&camera->transform, &d);
     }
 }
