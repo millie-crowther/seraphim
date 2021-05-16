@@ -9,108 +9,6 @@
 #include <ui/file.h>
 #include <core/debug.h>
 
-renderer_t::renderer_t(device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-                       window_t *window, camera_t *test_camera,
-                       vec2u *work_group_count,
-                       vec2u *work_group_size, uint32_t max_image_size, material_t *materials,
-                       uint32_t *num_materials,
-                       sdf_t *sdfs, uint32_t *num_sdfs) {
-    renderer_t::device = device;
-    renderer_t::surface = surface;
-    renderer_t::work_group_count = *work_group_count;
-    renderer_t::work_group_size = *work_group_size;
-    renderer_t::substances = substances;
-    renderer_t::num_substances = num_substances;
-
-    texture_size = max_image_size / patch_sample_size;
-
-    start = std::chrono::high_resolution_clock::now();
-
-    current_frame = 0;
-    push_constants.current_frame = 0;
-    push_constants.render_distance = (float) rho;
-    push_constants.window_size = window->size;
-    push_constants.phi_initial = 0;
-    push_constants.focal_depth = 1.0;
-    push_constants.number_of_requests = number_of_requests;
-    push_constants.texture_size = texture_size;
-    push_constants.texture_depth =
-            texture_pool_size / texture_size / texture_size + 1;
-    push_constants.geometry_pool_size = geometry_pool_size;
-    push_constants.texture_pool_size = texture_pool_size;
-    push_constants.epsilon = (float) epsilon;
-
-    set_main_camera(test_camera);
-
-    vkGetDeviceQueue(device->device, device->present_family, 0, &present_queue);
-
-    swapchain =
-        std::make_unique<swapchain_t>(device, &push_constants.window_size, surface);
-
-    create_render_pass();
-
-    create_buffers();
-    request_handler_create(&request_handler, texture_size, push_constants.texture_depth, patch_sample_size, sdfs,
-                           num_sdfs, materials, num_materials, device);
-
-    create_descriptor_set_layout();
-    create_graphics_pipeline();
-    create_compute_pipeline();
-
-    command_pool_create(&graphics_command_pool, device->device, device->graphics_family);
-    command_pool_create(&compute_command_pool, device->device, device->compute_family);
-
-    create_framebuffers();
-    create_descriptor_pool();
-    create_sync();
-
-    vec3u size = {{
-        work_group_count->x * work_group_size->x,
-        work_group_count->y * work_group_size->y,
-        1u
-    }};
-
-    texture_create(&render_texture,
-        10, device, &size,
-        VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
-        VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-
-    std::vector<VkWriteDescriptorSet> write_desc_sets;
-    for (auto descriptor_set : desc_sets) {
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&substance_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&light_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&pointer_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&frustum_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&lighting_buffer, descriptor_set));
-
-
-        write_desc_sets.push_back(
-                render_texture.get_descriptor_write(descriptor_set));
-
-        for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
-            write_desc_sets.push_back(request_handler.textures[i].get_descriptor_write(descriptor_set));
-        }
-
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&request_handler.patch_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&request_handler.request_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&request_handler.texture_hash_buffer, descriptor_set));
-
-    }
-
-    vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
-                           write_desc_sets.data(), 0, NULL);
-
-    create_command_buffers();
-}
-
 void renderer_t::cleanup_swapchain() {
     for (auto framebuffer : framebuffers) {
         vkDestroyFramebuffer(device->device, framebuffer, NULL);
@@ -127,38 +25,6 @@ void renderer_t::cleanup_swapchain() {
     vkDestroyRenderPass(device->device, render_pass, NULL);
 
     swapchain.reset(NULL);
-}
-
-renderer_t::~renderer_t() {
-    shader_destroy(&vertex_shader);
-    shader_destroy(&fragment_shader);
-
-    vkDestroyDescriptorSetLayout(device->device, descriptor_layout, NULL);
-
-    cleanup_swapchain();
-
-    command_pool_destroy(&graphics_command_pool);
-    command_pool_destroy(&compute_command_pool);
-
-    vkDestroyPipeline(device->device, compute_pipeline, NULL);
-    vkDestroyPipelineLayout(device->device, compute_pipeline_layout, NULL);
-
-    for (int i = 0; i < frames_in_flight; i++) {
-        vkDestroySemaphore(device->device, image_available_semas[i], NULL);
-        vkDestroySemaphore(device->device, compute_done_semas[i], NULL);
-        vkDestroySemaphore(device->device, render_finished_semas[i], NULL);
-        vkDestroyFence(device->device, in_flight_fences[i], NULL);
-    }
-
-    request_handler_destroy(&request_handler);
-
-    buffer_destroy(&substance_buffer);
-    buffer_destroy(&light_buffer);
-    buffer_destroy(&pointer_buffer);
-    buffer_destroy(&frustum_buffer);
-    buffer_destroy(&lighting_buffer);
-
-    texture_destroy(&render_texture);
 }
 
 void renderer_t::create_compute_pipeline() {
@@ -661,4 +527,137 @@ int renderer_t::get_frame_count() {
     int f = frames;
     frames = 0;
     return f;
+}
+
+void renderer_destroy(renderer_t *renderer) {
+
+    shader_destroy(&renderer->vertex_shader);
+    shader_destroy(&renderer->fragment_shader);
+
+    vkDestroyDescriptorSetLayout(renderer->device->device, renderer->descriptor_layout, NULL);
+
+    renderer->cleanup_swapchain();
+
+    command_pool_destroy(&renderer->graphics_command_pool);
+    command_pool_destroy(&renderer->compute_command_pool);
+
+    vkDestroyPipeline(renderer->device->device, renderer->compute_pipeline, NULL);
+    vkDestroyPipelineLayout(renderer->device->device, renderer->compute_pipeline_layout, NULL);
+
+    for (int i = 0; i < frames_in_flight; i++) {
+        vkDestroySemaphore(renderer->device->device, renderer->image_available_semas[i], NULL);
+        vkDestroySemaphore(renderer->device->device, renderer->compute_done_semas[i], NULL);
+        vkDestroySemaphore(renderer->device->device, renderer->render_finished_semas[i], NULL);
+        vkDestroyFence(renderer->device->device, renderer->in_flight_fences[i], NULL);
+    }
+
+    request_handler_destroy(&renderer->request_handler);
+
+    buffer_destroy(&renderer->substance_buffer);
+    buffer_destroy(&renderer->light_buffer);
+    buffer_destroy(&renderer->pointer_buffer);
+    buffer_destroy(&renderer->frustum_buffer);
+    buffer_destroy(&renderer->lighting_buffer);
+
+    texture_destroy(&renderer->render_texture);
+}
+
+void renderer_create(renderer_t *renderer, device_t *device, substance_t *substances, uint32_t *num_substances,
+                     VkSurfaceKHR surface, window_t *window, camera_t *test_camera, vec2u *work_group_count,
+                     vec2u *work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
+                     sdf_t *sdfs, uint32_t *num_sdfs) {
+    renderer->device = device;
+    renderer->surface = surface;
+    renderer->work_group_count = *work_group_count;
+    renderer->work_group_size = *work_group_size;
+    renderer->substances = substances;
+    renderer->num_substances = num_substances;
+
+    renderer->texture_size = max_image_size / patch_sample_size;
+
+    renderer->start = std::chrono::high_resolution_clock::now();
+
+    renderer->current_frame = 0;
+    renderer->push_constants.current_frame = 0;
+    renderer->push_constants.render_distance = (float) rho;
+    renderer->push_constants.window_size = window->size;
+    renderer->push_constants.phi_initial = 0;
+    renderer->push_constants.focal_depth = 1.0;
+    renderer->push_constants.number_of_requests = number_of_requests;
+    renderer->push_constants.texture_size = renderer->texture_size;
+    renderer->push_constants.texture_depth =
+            texture_pool_size / renderer->texture_size / renderer->texture_size + 1;
+    renderer->push_constants.geometry_pool_size = geometry_pool_size;
+    renderer->push_constants.texture_pool_size = texture_pool_size;
+    renderer->push_constants.epsilon = (float) epsilon;
+
+    renderer->set_main_camera(test_camera);
+
+    vkGetDeviceQueue(device->device, device->present_family, 0, &renderer->present_queue);
+
+    renderer->swapchain =
+            std::make_unique<swapchain_t>(device, &renderer->push_constants.window_size, surface);
+
+    renderer->create_render_pass();
+
+    renderer->create_buffers();
+    request_handler_create(&renderer->request_handler, renderer->texture_size, renderer->push_constants.texture_depth, patch_sample_size, sdfs,
+                           num_sdfs, materials, num_materials, device);
+
+    renderer->create_descriptor_set_layout();
+    renderer->create_graphics_pipeline();
+    renderer->create_compute_pipeline();
+
+    command_pool_create(&renderer->graphics_command_pool, device->device, device->graphics_family);
+    command_pool_create(&renderer->compute_command_pool, device->device, device->compute_family);
+
+    renderer->create_framebuffers();
+    renderer->create_descriptor_pool();
+    renderer->create_sync();
+
+    vec3u size = {{
+                          work_group_count->x * work_group_size->x,
+                          work_group_count->y * work_group_size->y,
+                          1u
+                  }};
+
+    texture_create(&renderer->render_texture,
+                   10, device, &size,
+                   VK_IMAGE_USAGE_STORAGE_BIT, VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT,
+                   VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
+    std::vector<VkWriteDescriptorSet> write_desc_sets;
+    for (auto descriptor_set : renderer->desc_sets) {
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->substance_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->light_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->pointer_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->frustum_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->lighting_buffer, descriptor_set));
+
+
+        write_desc_sets.push_back(
+                renderer->render_texture.get_descriptor_write(descriptor_set));
+
+        for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
+            write_desc_sets.push_back(renderer->request_handler.textures[i].get_descriptor_write(descriptor_set));
+        }
+
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->request_handler.patch_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->request_handler.request_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->request_handler.texture_hash_buffer, descriptor_set));
+
+    }
+
+    vkUpdateDescriptorSets(device->device, write_desc_sets.size(),
+                           write_desc_sets.data(), 0, NULL);
+
+    renderer->create_command_buffers();
 }

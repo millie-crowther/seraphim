@@ -32,13 +32,11 @@ void seraphim_destroy(seraphim_t *engine) {
     if (engine->fps_monitor_thread.joinable()) {
         engine->fps_monitor_thread.join();
     }
-    // delete renderer early to release resources at appropriate time
-    engine->renderer.reset();
 
-    // destroy device
+    renderer_destroy(&engine->renderer);
+
     device_destroy(&engine->device);
 
-    // destroy debug callback
 #if SERAPHIM_DEBUG
     auto func = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
         engine->instance, "vkDestroyDebugReportCallbackEXT");
@@ -50,7 +48,6 @@ void seraphim_destroy(seraphim_t *engine) {
 
     vkDestroySurfaceKHR(engine->instance, engine->surface, NULL);
 
-    // destroy instance
     vkDestroyInstance(engine->instance, NULL);
 
     window_destroy(&engine->window);
@@ -181,7 +178,7 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
 
     camera_create(&seraphim->test_camera);
 
-    seraphim->renderer = std::make_unique<renderer_t>(
+    renderer_create(&seraphim->renderer,
         &seraphim->device, seraphim->substances, &seraphim->num_substances, seraphim->surface, &seraphim->window,
         &seraphim->test_camera, &seraphim->work_group_count, &seraphim->work_group_size, max_image_size, seraphim->materials, &seraphim->num_materials, seraphim->sdfs, &seraphim->num_sdfs);
 
@@ -199,7 +196,7 @@ void monitor_fps(seraphim_t * seraphim) {
         double physics_fps =
                 (double) (seraphim->physics.get_frame_count()) / interval;
         double render_fps =
-                (double) (seraphim->renderer->get_frame_count()) / interval;
+                (double) (seraphim->renderer.get_frame_count()) / interval;
 
         std::cout << "Render: " << render_fps << " FPS; "
                   << "Physics: " << physics_fps << " FPS" << std::endl;
@@ -343,7 +340,7 @@ void seraphim_run(seraphim_t *seraphim) {
             r_time = 0;
         }
 
-        seraphim->renderer->render();
+        seraphim->renderer.render();
 
         current_frame++;
     }

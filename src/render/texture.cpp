@@ -1,9 +1,7 @@
 #include "render/texture.h"
 
-#include <stdexcept>
 #include <maths/maths.h>
 #include <core/debug.h>
-
 #include "core/buffer.h"
 
 VkImageView texture_create_image_view(VkDevice device, VkImage image,
