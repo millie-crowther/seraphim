@@ -374,7 +374,9 @@ void renderer_t::create_descriptor_set_layout() {
     };
 
     for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
-        layouts.push_back(request_handler.textures[i].get_descriptor_layout_binding());
+        VkDescriptorSetLayoutBinding layout_binding;
+        texture_descriptor_layout_binding(&request_handler.textures[i], &layout_binding);
+        layouts.push_back(layout_binding);
     }
 
     VkDescriptorSetLayoutCreateInfo layout_info = {};

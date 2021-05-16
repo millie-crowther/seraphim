@@ -10,7 +10,7 @@
 
 static const uint32_t staging_buffer_size = 10000;
 
-struct texture_t {
+typedef struct texture_t {
     VkImage image;
     VkImageView image_view;
     VkDeviceMemory memory;
@@ -27,13 +27,11 @@ struct texture_t {
     std::vector<VkBufferImageCopy> updates;
     uint32_t index;
 
-
     VkWriteDescriptorSet get_descriptor_write(VkDescriptorSet desc_set) const;
 
     void record_write(VkCommandBuffer command_buffer);
     void write(vec3i *p, uint32_t *x);
-    VkDescriptorSetLayoutBinding get_descriptor_layout_binding() const;
-};
+} texture_t;
 
 void texture_create(texture_t * texture, uint32_t binding, device_t *device, vec3u *size,
 VkImageUsageFlags usage, VkFormatFeatureFlagBits format_feature,
@@ -43,4 +41,7 @@ void texture_destroy(texture_t * texture);
 
 VkImageView texture_create_image_view(VkDevice device, VkImage image,
                                       VkFormat format);
+
+void texture_descriptor_layout_binding(texture_t *texture, VkDescriptorSetLayoutBinding * layout_binding);
+
 #endif

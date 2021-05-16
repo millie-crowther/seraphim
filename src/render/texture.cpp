@@ -68,15 +68,6 @@ void texture_t::write(vec3i *p, uint32_t *x) {
     updates.push_back(region);
 }
 
-VkDescriptorSetLayoutBinding texture_t::get_descriptor_layout_binding() const {
-    VkDescriptorSetLayoutBinding layout_binding = {};
-    layout_binding.binding = binding;
-    layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    layout_binding.descriptorCount = 1;
-    layout_binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    return layout_binding;
-}
-
 void texture_t::record_write(VkCommandBuffer command_buffer) {
     if (updates.empty()){
         return;
@@ -178,4 +169,12 @@ void texture_destroy(texture_t *texture) {
     vkFreeMemory(texture->device->device, texture->memory, NULL);
     vkDestroySampler(texture->device->device, texture->sampler, NULL);
     buffer_destroy(&texture->staging_buffer);
+}
+
+void texture_descriptor_layout_binding(texture_t *texture, VkDescriptorSetLayoutBinding * layout_binding) {
+    layout_binding->pImmutableSamplers = NULL;
+    layout_binding->binding = texture->binding;
+    layout_binding->descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layout_binding->descriptorCount = 1;
+    layout_binding->stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 }
