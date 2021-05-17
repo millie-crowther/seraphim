@@ -342,6 +342,34 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0){
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+vec3 cook_torrance_brdf(
+    vec3 light_position, vec3 light_colour,
+    vec3 world_position, vec3 camera_position, vec3 normal,
+    float roughness, float metallic, vec3 albedo
+){
+    vec3 F0 = vec3(0.04);
+    F0 = mix(F0, albedo, metallic);
+    vec3 view = normalize(camera_position - world_position);
+    vec3 light = normalize(light_position - world_position);
+    vec3 half_vector = normalize(view + light);
+    float distance = length(light_position - world_position);
+    float attentuation = 1.0 / (distance * distance);
+    vec3 radiance = light_colour * attentuation;
+    float NDF = DistributionGGX(normal, half_vector, roughness);
+    float G   = GeometrySmith(normal, view, light, roughness);
+    vec3 F    = fresnelSchlick(max(dot(half_vector, view), 0.0), F0);
+
+    vec3 kS = F;
+    vec3 kD = vec3(1.0) - kS;
+    kD *= 1.0 - metallic;
+
+    float NdotL = max(dot(normal, light), 0.0);
+    float denominator = 4.0 * max(dot(normal, view), 0.0) * NdotL;
+    vec3 specular     = (NDF * G * F) / max(denominator, 0.001);
+
+    return (kD * albedo / pi + specular) * radiance * NdotL;
+}
+
 vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
     const float shininess = 16;
 

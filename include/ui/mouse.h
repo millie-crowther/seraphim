@@ -4,7 +4,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include <GLFW/glfw3.h>
-#include "maths//maths.h"
+#include "maths/maths.h"
 #include <memory>
 
 struct window_t;
