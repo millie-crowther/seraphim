@@ -95,55 +95,8 @@ void physics_t::run() {
 
     while (!quit) {
         frames++;
-
         double delta = sigma;
-
         physics_tick(this, delta);
-        /*
-                std::vector<collision_t> collisions;
-
-                {
-                    std::lock_guard<std::mutex> lock(substances_mutex);
-
-                    // reset acceleration and apply gravity force
-                    for (uint32_t i = 0; i < substances.size; i++){
-                        substance_t * s = substances.data[i];
-
-                        if (s->matter.get_position()[1] > -90.0){
-                            s->matter.reset_acceleration();
-                        }
-                    }
-
-                    // collide awake substances with each other
-                    for (uint32_t i = 0; i < substances.size; i++){
-                        substance_t * s = substances.data[i];
-
-                        for (uint32_t j = i + 1; j < substances.size; j++){
-                            substance_t * t = substances.data[j];
-                            collisions.emplace_back(&s->matter, &t->matter);
-                        }
-                    }
-                }
-
-                {
-                    std::lock_guard<std::mutex> lock(substances_mutex);
-
-                    // try to put matters to sleep
-                    for (uint32_t i = 0; i < matters.size();){
-                        auto m = matters[i];
-
-                        if (m->is_inert()){
-                            std::cout << "Matter going to sleep!" << std::endl;
-                            asleep_matters.push_back(m);
-                            matters[i] = matters[matters.size() - 1];
-                            matters.pop_back();
-                        } else {
-                            i++;
-                        }
-                    }
-                }
-
-                */
         t += std::chrono::microseconds(static_cast<int64_t>(delta * 1000000.0));
         std::this_thread::sleep_until(t);
     }

@@ -62,7 +62,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL
 debug_callback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT obj_type,
                uint64_t obj, size_t location, int32_t code, const char *layer_prefix,
                const char *msg, void *user_data) {
-    std::cout << "Validation layer debug message: " << msg << std::endl;
+    printf("Validation layer debug message: %s\n", msg);
     return VK_FALSE;
 }
 
@@ -112,9 +112,9 @@ material_t *seraphim_create_material(seraphim_t *srph, const vec3 * colour) {
 
 void seraphim_create(seraphim_t *seraphim, const char *title) {
 #if SERAPHIM_DEBUG
-    std::cout << "Running in debug mode." << std::endl;
+    printf("Running in debug mode\n");
 #else
-    std::cout << "Running in release mode." << std::endl;
+    printf("Running in release mode\n");
 #endif
 
     seraphim->num_substances = 0;
@@ -136,15 +136,17 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
     window_set_title(&seraphim->window, title);
 
     uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, NULL);
+    vkEnumerateInstanceExtensionProperties(NULL, &extension_count, NULL);
     std::vector<VkExtensionProperties> extensions(extension_count);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count,
+    vkEnumerateInstanceExtensionProperties(NULL, &extension_count,
                                            extensions.data());
 
-    std::cout << "Available extensions:" << std::endl;
-    for (const auto &extension : extensions) {
-        std::cout << "\t" << extension.extensionName << std::endl;
+#if SERAPHIM_DEBUG
+    printf("Available extensions:\n");
+    for (uint32_t i = 0; i < extension_count; i++) {
+        printf("\t%s\n", extensions[i].extensionName);
     }
+#endif
 
     create_instance(seraphim);
 
@@ -161,19 +163,16 @@ void seraphim_create(seraphim_t *seraphim, const char *title) {
 
     device_create(&seraphim->device, seraphim->instance, seraphim->surface, validation_layers, num_validation_layers);
 
-#if SERAPHIM_DEBUG
     VkPhysicalDeviceProperties properties = {};
     vkGetPhysicalDeviceProperties(seraphim->device.physical_device, &properties);
-    std::cout << "Chosen physical device: " << properties.deviceName << std::endl;
-    std::cout << "\tMaximum storage buffer range: "
-              << properties.limits.maxStorageBufferRange << std::endl;
-    std::cout << "\tMaximum shared memory  size: "
-              << properties.limits.maxComputeSharedMemorySize << std::endl;
-    std::cout << "\tMaximum 2d image size: " << properties.limits.maxImageDimension2D
-              << std::endl;
-
     uint32_t max_image_size = properties.limits.maxImageDimension3D;
-    std::cout << "\tMaximum 3d image size: " << max_image_size << std::endl;
+
+#if SERAPHIM_DEBUG
+    printf("Chosen physical device: %s\n", properties.deviceName);
+    printf("\tMaximum storage buffer range: %u\n", properties.limits.maxStorageBufferRange);
+    printf("\tMaximum shared memory size: %u\n", properties.limits.maxComputeSharedMemorySize);
+    printf("\tMaximum 2d image size: %u\n", properties.limits.maxImageDimension2D);
+    printf("\tMaximum 3d image size: %u\n", max_image_size);
 #endif
 
     camera_create(&seraphim->test_camera);
@@ -198,8 +197,7 @@ void monitor_fps(seraphim_t * seraphim) {
         double render_fps =
                 (double) (seraphim->renderer.get_frame_count()) / interval;
 
-        std::cout << "Render: " << render_fps << " FPS; "
-                  << "Physics: " << physics_fps << " FPS" << std::endl;
+        printf("Render: %f FPS; Physics: %f FPS\n", render_fps, physics_fps);
         seraphim->fps_cv.wait_for(lock, std::chrono::seconds(interval));
     }
 }
@@ -243,8 +241,7 @@ void create_instance(seraphim_t * seraphim) {
         patch = 0;
     }
 
-    std::cout << "Vulkan version: " << major << '.' << minor << '.' << patch
-              << std::endl;
+    printf("Vulkan version: %u.%u.%u\n", major, minor, patch);
 
     VkApplicationInfo app_info = {};
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -262,22 +259,22 @@ void create_instance(seraphim_t * seraphim) {
     create_info.enabledExtensionCount = required_extensions.size();
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
-    std::cout << "Enabled extensions: " << std::endl;
+    printf("Enabled extensions: \n");
     for (uint32_t i = 0; i < create_info.enabledExtensionCount; i++) {
-        std::cout << "\t" << create_info.ppEnabledExtensionNames[i] << std::endl;
+        printf("\t%s\n", create_info.ppEnabledExtensionNames[i]);
     }
 
 #if SERAPHIM_DEBUG
     create_info.ppEnabledLayerNames = validation_layers;
     create_info.enabledLayerCount = num_validation_layers;
+
+    printf("Enabled validation layers: \n");
+    for (uint32_t i = 0; i < create_info.enabledLayerCount; i++) {
+        printf("\t%s\n", create_info.ppEnabledLayerNames[i]);
+    }
 #else
     create_info.enabledLayerCount = 0;
 #endif
-
-    std::cout << "Enabled validation layers: " << std::endl;
-    for (uint32_t i = 0; i < create_info.enabledLayerCount; i++) {
-        std::cout << "\t" << create_info.ppEnabledLayerNames[i] << std::endl;
-    }
 
     auto result = vkCreateInstance(&create_info, NULL, &seraphim->instance);
     if (result != VK_SUCCESS) {
