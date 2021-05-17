@@ -78,50 +78,8 @@ static double intersection_func(void *data, const vec3 *x) {
     double phi_a = sdf_distance(a->matter.sdf, &xa);
     double phi_b = sdf_distance(b->matter.sdf, &xb);
 
-    return std::max(phi_a, phi_b);
+    return fmax(phi_a, phi_b);
 }
-
-// static double time_to_collision_func(void * data, const vec3 * x){
-//    collision_t * collision = (collision_t *) data;
-//    matter_t * a = collision->a;
-//    matter_t * b = collision->b;
-//
-//    vec3 xa, xb;
-//    transform_to_local_position(&a->transform, &xa, x);
-//    transform_to_local_position(&b->transform, &xb, x);
-//
-//    double phi_a = sdf_distance(a->sdf, &xa);
-//    double phi_b = sdf_distance(b->sdf, &xb);
-//    double distance_function = phi_a + phi_b;
-//
-//    if (distance_function <= 0){
-//        return 0;
-//    }
-//
-//    vec3 n = sdf_normal(a->sdf, &xa);
-//
-//    srph::vec3_t n1(n.x, n.y, n.z);
-//    n1 = a->get_rotation() * n1;
-//
-//    n = { n1[0], n1[1], n1[2] };
-//
-//    //TODO
-//    srph::vec3_t x1(x->x, x->y, x->z);
-//    srph::vec3_t va = a->get_velocity(x1);
-//    srph::vec3_t vb = b->get_velocity(x1);
-//    srph::vec3_t vr1 = va - vb;
-//
-//    vec3 vr = { vr1[0], vr1[2], vr1[2] };
-//
-//    double vrn = srph_vec3_dot(&vr, &n);
-//
-//    if (vrn <= 0){
-//        return DBL_MAX;
-//    }
-//
-//    // estimate of time to collision
-//    return distance_function / vrn;
-//}
 
 static void contact_correct(substance_t *sa, substance_t *sb, deform_t *xb,
                             double dt) {
