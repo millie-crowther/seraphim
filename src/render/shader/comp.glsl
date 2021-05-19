@@ -146,8 +146,8 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash, uin
     calculate_cell(x, order, cell_radius, patch_centre);
 
     request_t result = request_t(
-    patch_centre - cell_radius,
-    cell_radius, hash, substance.sdf_id, substance.material_id, request_type
+        patch_centre - cell_radius,
+        cell_radius, hash, substance.sdf_id, substance.material_id, request_type
     );
 
     return result;
@@ -212,8 +212,8 @@ patch_t get_patch(
 float phi(ray_t global_r, substance_t sub, inout intersection_t intersection, inout request_t request){
     mat4 inv = inverse(sub.transform);
     ray_t r = ray_t(
-    (inv * vec4(global_r.x, 1)).xyz,
-    mat3(inv) * global_r.d
+        (inv * vec4(global_r.x, 1)).xyz,
+        mat3(inv) * global_r.d
     );
 
     vec3 faces = -sign(r.d) * sub.radius;
@@ -315,11 +315,10 @@ float DistributionGGX(vec3 N, vec3 H, float a){
     float NdotH  = max(dot(N, H), 0.0);
     float NdotH2 = NdotH*NdotH;
 
-    float nom    = a2;
     float denom  = (NdotH2 * (a2 - 1.0) + 1.0);
-    denom        = PI * denom * denom;
+    denom        = pi * denom * denom;
 
-    return nom / denom;
+    return a2 / denom;
 }
 
 float GeometrySchlickGGX(float NdotV, float k){
@@ -344,12 +343,12 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0){
 
 vec3 cook_torrance_brdf(
     vec3 light_position, vec3 light_colour,
-    vec3 world_position, vec3 camera_position, vec3 normal,
+    vec3 world_position, vec3 eye_position, vec3 normal,
     float roughness, float metallic, vec3 albedo
 ){
     vec3 F0 = vec3(0.04);
     F0 = mix(F0, albedo, metallic);
-    vec3 view = normalize(camera_position - world_position);
+    vec3 view = normalize(eye_position - world_position);
     vec3 light = normalize(light_position - world_position);
     vec3 half_vector = normalize(view + light);
     float distance = length(light_position - world_position);
@@ -370,29 +369,21 @@ vec3 cook_torrance_brdf(
     return (kD * albedo / pi + specular) * radiance * NdotL;
 }
 
-vec3 light(uint light_i, intersection_t i, vec3 n, inout request_t request){
+vec3 light(uint light_i, intersection_t i, vec3 n, float roughness, float metallic, vec3 albedo, inout request_t request){
     const float shininess = 16;
 
     light_t light = lights[light_i];
-
-    // attenuation
-    vec3 dist = light.x - i.x;
-    float attenuation = 1.0 / dot(dist, dist);
+    vec3 light_position = light.x;
+    vec3 light_colour = light.colour;
+    vec3 world_position = i.x;
+    vec3 eye_position = pc.eye_transform[3].xyz;
+    vec3 colour = cook_torrance_brdf(
+        light_position, light_colour, world_position, eye_position, n, roughness, metallic, albedo);
 
     //shadows
     float shadow = shadow_cast(light.x, light_i, i, request);
 
-    //diffuse
-    vec3 l = normalize(light.x - i.x);
-    float d = 0.75 * max(pc.epsilon, dot(l, n));
-
-    //specular
-    vec3 v = normalize(-i.x);
-
-    vec3 h = normalize(l + v);
-    float s = 0.4 * pow(max(dot(h, n), 0.0), shininess);
-
-    return (d + s) * attenuation * shadow * light.colour;
+    return colour * shadow;
 }
 
 uvec4 reduce_to_fit(uint i, bvec4 hits, out uvec4 totals){
@@ -479,16 +470,16 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     max(gl_LocalInvocationID.x, gl_LocalInvocationID.y) < lights_size;
 
     vec4 result = reduce_min(i, mix(
-    vec4(pc.render_distance),
-    vec4(intersection.distance, -intersection.distance, -dist, 0),
-    bvec4(intersection.hit, intersection.hit, is_valid, false)
+        vec4(pc.render_distance),
+        vec4(intersection.distance, -intersection.distance, -dist, 0),
+        bvec4(intersection.hit, intersection.hit, is_valid, false)
     ));
     barrier();
 
     if (dist == -result.z && is_valid){
         lighting.data[j] = vec4(
-        (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2,
-        dist / 2
+            (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2,
+            dist / 2
         );
     }
 
@@ -521,20 +512,21 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     );
     t /= vec3(pc.texture_size, pc.texture_size, pc.texture_depth);
 
-    vec3 n =
-    mat3(intersection.substance.transform) *
-    normalize(texture(normal_texture, t).xyz - 0.5);
+    vec3 n = mat3(intersection.substance.transform) * normalize(texture(normal_texture, t).xyz - 0.5);
 
     // ambient
     vec3 lighting = vec3(0.25, 0.25, 0.25);
+    vec3 albedo = texture(colour_texture, t).xyz;
+    vec3 physical = texture(physical_texture, t).xyz;
+    float metallic = physical.x;
+    float roughness = physical.y;
 
     for (uint light_i = 0; light_i < lights_size; light_i++){
-        lighting += light(light_i, intersection, n, geometry_request);
+        lighting += light(light_i, intersection, n, roughness, metallic, albedo, geometry_request);
     }
 
     const vec3 sky = vec3(0.5, 0.7, 0.9);
-    vec3 hit_colour = texture(colour_texture, t).xyz * lighting;
-
+    vec3 hit_colour = lighting;
     vec3 image_colour = mix(sky, hit_colour, intersection.hit);
 
     barrier();
@@ -543,12 +535,15 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     //    barrier();
     //    image_colour = mix(image_colour, vec3(0, 1, 0), test);
     //    barrier();
+    bool texture_data_present = texture_hash.data[texture_index] == texture_hash_;
 
-    imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
+    if (!intersection.hit || texture_data_present){
+        imageStore(render_texture, ivec2(gl_GlobalInvocationID.xy), vec4(image_colour, 1));
+    }
 
     barrier();
 
-    if (intersection.hit && texture_hash.data[texture_index] != texture_hash_){
+    if (intersection.hit && !texture_data_present){
         request_t texture_request = build_request(intersection.substance, x, order, texture_hash_, texture_request);
         requests.data[texture_hash_ % pc.number_of_calls] = texture_request;
     }
@@ -636,15 +631,15 @@ bool is_shadow_visible(substance_t s, vec2 view_frustum, vec3 light_position){
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
     mat4x3 rays = mat4x3(
-    get_ray_direction(gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
-    get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
-    get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy),
-    get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy)
+        get_ray_direction( gl_WorkGroupID.xy                * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 0)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(1, 1)) * gl_WorkGroupSize.xy),
+        get_ray_direction((gl_WorkGroupID.xy + uvec2(0, 1)) * gl_WorkGroupSize.xy)
     );
 
     mat4x3 normals = mat4x3(
-    cross(rays[1], rays[0]), cross(rays[2], rays[1]),
-    cross(rays[3], rays[2]), cross(rays[0], rays[3])
+        cross(rays[1], rays[0]), cross(rays[2], rays[1]),
+        cross(rays[3], rays[2]), cross(rays[0], rays[3])
     );
 
     // load shit
@@ -655,10 +650,10 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
     // visibility check on substances and load into shared memory
     barrier();
     bvec4 hits = bvec4(
-    is_substance_visible(s, normals),
-    is_light_visible(l, view_frustum.x, view_frustum.y, normals),
-    is_shadow_visible(s, view_frustum, light.xyz),
-    false
+        is_substance_visible(s, normals),
+        is_light_visible(l, view_frustum.x, view_frustum.y, normals),
+        is_shadow_visible(s, view_frustum, light.xyz),
+        false
     );
     uvec4 totals;
     uvec4 indices = reduce_to_fit(i, hits, totals);

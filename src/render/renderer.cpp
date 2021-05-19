@@ -451,7 +451,7 @@ void renderer_t::render() {
     // write lights
     std::vector<light_t> lights(size);
     vec3f light_x = {{ 0, 4, -4}};
-    vec4f light_colour = {{50, 50, 50, 50}};
+    vec4f light_colour = {{250, 250, 250, 250}};
     lights[0] = light_t(0, &light_x, &light_colour);
     buffer_write(&light_buffer, lights.data(), lights.size(), 0);
 

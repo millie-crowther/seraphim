@@ -10,6 +10,9 @@ void material_create(material_t *material, uint32_t id, const vec3 *colour) {
     material->density = 700.0;
     material->restitution = 0.5;
     material->colour = *colour;
+    material->metallic = 1.0;
+    material->roughness = 0.5;
+    material->reflectance = 0.5;
 
     material->id = id;
 }
