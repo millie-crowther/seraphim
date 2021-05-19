@@ -37,22 +37,22 @@ void camera_update(camera_t *camera, double delta, const keyboard_t &keyboard, c
     vec3_cross(&move_right, &forward, &vec3_up);
 
     vec3 d;
-    if (keyboard.is_key_pressed(GLFW_KEY_W)) {
+    if (keyboard_is_key_pressed(&keyboard, GLFW_KEY_W)) {
         vec3_multiply_f(&d, &forward, delta);
         transform_translate(&camera->transform, &d);
     }
 
-    if (keyboard.is_key_pressed(GLFW_KEY_S)) {
+    if (keyboard_is_key_pressed(&keyboard, GLFW_KEY_S)) {
         vec3_multiply_f(&d, &forward, -delta);
         transform_translate(&camera->transform, &d);
     }
 
-    if (keyboard.is_key_pressed(GLFW_KEY_A)) {
+    if (keyboard_is_key_pressed(&keyboard, GLFW_KEY_A)) {
         vec3_multiply_f(&d, &move_right, delta);
         transform_translate(&camera->transform, &d);
     }
 
-    if (keyboard.is_key_pressed(GLFW_KEY_D)) {
+    if (keyboard_is_key_pressed(&keyboard, GLFW_KEY_D)) {
         vec3_multiply_f(&d, &move_right, -delta);
         transform_translate(&camera->transform, &d);
     }

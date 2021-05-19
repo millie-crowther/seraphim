@@ -4,19 +4,18 @@
 
 static void key_callback(GLFWwindow *glfw_window, int key, int scancode, int action,
                          int mods) {
-    void *data = glfwGetWindowUserPointer(glfw_window);
-    window_t *window = reinterpret_cast<window_t *>(data);
-
-    (*window->keyboard).set_key_pressed(key, action != GLFW_RELEASE);
+    window_t *window =  (window_t *)glfwGetWindowUserPointer(glfw_window);
+    window->keyboard.key_state[key] = action != GLFW_RELEASE;
 }
 
-keyboard_t::keyboard_t(const window_t &window) {
-    glfwSetKeyCallback(window.window, key_callback);
+bool keyboard_is_key_pressed(const keyboard_t *keyboard, keycode_t keycode) {
+    return keyboard->key_state[keycode];
 }
 
-bool keyboard_t::is_key_pressed(int key) const {
-    key_state.find(key);
-    return key_state.find(key) != key_state.end() && key_state.at(key);
-}
+void keyboard_create(keyboard_t *keyboard, GLFWwindow *window) {
+    glfwSetKeyCallback(window, key_callback);
 
-void keyboard_t::set_key_pressed(int key, bool state) { key_state[key] = state; }
+    for (int i = 0; i < GLFW_KEY_LAST; i++){
+        keyboard->key_state[i] = false;
+    }
+}

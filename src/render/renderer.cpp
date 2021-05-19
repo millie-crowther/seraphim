@@ -351,7 +351,7 @@ void renderer_t::create_descriptor_pool() {
     }
 }
 
-void renderer_t::create_descriptor_set_layout() {
+void create_descriptor_set_layout(renderer_t * renderer) {
     VkDescriptorSetLayoutBinding image_layout = {};
     image_layout.binding = 10;
     image_layout.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -361,21 +361,21 @@ void renderer_t::create_descriptor_set_layout() {
 
     std::vector<VkDescriptorSetLayoutBinding> layouts = {
             image_layout,
-            buffer_descriptor_set_layout_binding(&request_handler.patch_buffer),
-            buffer_descriptor_set_layout_binding(&request_handler.request_buffer),
-            buffer_descriptor_set_layout_binding(&request_handler.texture_hash_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->request_handler.patch_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->request_handler.request_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->request_handler.texture_hash_buffer),
 
-            buffer_descriptor_set_layout_binding(&substance_buffer),
-            buffer_descriptor_set_layout_binding(&light_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->substance_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->light_buffer),
 
-            buffer_descriptor_set_layout_binding(&pointer_buffer),
-            buffer_descriptor_set_layout_binding(&frustum_buffer),
-            buffer_descriptor_set_layout_binding(&lighting_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->pointer_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->frustum_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->lighting_buffer),
     };
 
     for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
         VkDescriptorSetLayoutBinding layout_binding;
-        texture_descriptor_layout_binding(&request_handler.textures[i], &layout_binding);
+        texture_descriptor_layout_binding(&renderer->request_handler.textures[i], &layout_binding);
         layouts.push_back(layout_binding);
     }
 
@@ -384,8 +384,8 @@ void renderer_t::create_descriptor_set_layout() {
     layout_info.bindingCount = layouts.size();
     layout_info.pBindings = layouts.data();
 
-    if (vkCreateDescriptorSetLayout(device->device, &layout_info, NULL,
-                                    &descriptor_layout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(renderer->device->device, &layout_info, NULL,
+                                    &renderer->descriptor_layout) != VK_SUCCESS) {
         PANIC("Error: Failed to create descriptor set layout.");
     }
 }
@@ -600,7 +600,7 @@ void renderer_create(renderer_t *renderer, device_t *device, substance_t *substa
     request_handler_create(&renderer->request_handler, renderer->texture_size, renderer->push_constants.texture_depth, patch_sample_size, sdfs,
                            num_sdfs, materials, num_materials, device);
 
-    renderer->create_descriptor_set_layout();
+    create_descriptor_set_layout(renderer);
     renderer->create_graphics_pipeline();
     renderer->create_compute_pipeline();
 

@@ -14,7 +14,7 @@
 struct window_t {
     vec2u size;
     GLFWwindow *window;
-    std::unique_ptr<keyboard_t> keyboard;
+    keyboard_t keyboard;
     mouse_t mouse;
 };
 

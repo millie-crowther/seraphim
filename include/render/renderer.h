@@ -101,7 +101,6 @@ struct renderer_t {
     void create_compute_pipeline();
     void create_framebuffers();
     void create_command_buffers();
-    void create_descriptor_set_layout();
     void create_descriptor_pool();
     void create_sync();
     void create_buffers();

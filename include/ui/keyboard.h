@@ -6,20 +6,13 @@
 #include <map>
 #include "mouse.h"
 
-// forward declaration of window class
-struct window_t;
+typedef int keycode_t;
 
 struct keyboard_t {
-    typedef int keycode_t;
-
-    keyboard_t(const window_t &window);
-
-    bool is_key_pressed(int key) const;
-
-    void set_key_pressed(int key, bool state);
-
-    std::map<keycode_t, bool> key_state;
+    bool key_state[GLFW_KEY_LAST];
 };
 
+void keyboard_create(keyboard_t * keyboard, GLFWwindow * window);
+bool keyboard_is_key_pressed(const keyboard_t *keyboard, keycode_t keycode);
 
 #endif

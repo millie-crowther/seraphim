@@ -19,14 +19,13 @@ void window_show(window_t *window) {
 }
 
 bool window_should_close(window_t *window) {
-    return glfwWindowShouldClose(window->window) ||
-           window->keyboard->is_key_pressed(GLFW_KEY_ESCAPE);}
+    return glfwWindowShouldClose(window->window) || keyboard_is_key_pressed(&window->keyboard, GLFW_KEY_ESCAPE);
+}
 
 void window_destroy(window_t *window) {
     if (window->window != NULL) {
         glfwDestroyWindow(window->window);
     }
-
 }
 
 void window_create(window_t *window, vec2u *size) {
@@ -45,6 +44,6 @@ void window_create(window_t *window, vec2u *size) {
     glfwSetWindowUserPointer(window->window, (void *) window);
     glfwSetWindowSizeCallback(window->window, window_resize_callback);
 
-    window->keyboard = std::make_unique<keyboard_t>(*window);
+    keyboard_create(&window->keyboard, window->window);
     mouse_create(&window->mouse, window);
 }
