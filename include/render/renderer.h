@@ -107,9 +107,8 @@ struct renderer_t {
     void create_buffers();
     void recreate_swapchain();
     void cleanup_swapchain();
-    void present(uint32_t image_index) const;
     void render();
-    void set_main_camera(camera_t *camera);
+
     int get_frame_count();
 };
 

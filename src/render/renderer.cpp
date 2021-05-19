@@ -416,18 +416,18 @@ void renderer_t::create_sync() {
     }
 }
 
-void renderer_t::present(uint32_t image_index) const {
-    VkSwapchainKHR swapchain_handle = swapchain->handle;
+void renderer_present(renderer_t * renderer, uint32_t image_index) {
+    VkSwapchainKHR swapchain_handle = renderer->swapchain->handle;
     VkPresentInfoKHR present_info = {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = &render_finished_semas[current_frame];
+    present_info.pWaitSemaphores = &renderer->render_finished_semas[renderer->current_frame];
     present_info.swapchainCount = 1;
     present_info.pSwapchains = &swapchain_handle;
     present_info.pImageIndices = &image_index;
     present_info.pResults = NULL;
 
-    vkQueuePresentKHR(present_queue, &present_info);
+    vkQueuePresentKHR(renderer->present_queue, &present_info);
 }
 
 void renderer_t::render() {
@@ -498,7 +498,7 @@ void renderer_t::render() {
         in_flight_fences[current_frame],
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    present(image_index);
+    renderer_present(this, image_index);
 
     vkWaitForFences(device->device, 1, &in_flight_fences[current_frame], VK_TRUE,
                     ~((uint64_t)0));
@@ -506,10 +506,6 @@ void renderer_t::render() {
 
     push_constants.current_frame++;
     current_frame = (current_frame + 1) % frames_in_flight;
-}
-
-void renderer_t::set_main_camera(camera_t *camera) {
-    main_camera = camera;
 }
 
 void renderer_t::create_buffers() {
@@ -591,7 +587,7 @@ void renderer_create(renderer_t *renderer, device_t *device, substance_t *substa
     renderer->push_constants.texture_pool_size = texture_pool_size;
     renderer->push_constants.epsilon = (float) epsilon;
 
-    renderer->set_main_camera(test_camera);
+    renderer->main_camera = test_camera;
 
     vkGetDeviceQueue(device->device, device->present_family, 0, &renderer->present_queue);
 
