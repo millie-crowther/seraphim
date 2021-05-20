@@ -7,7 +7,7 @@
 
 #include "test_header.h"
 #include "maths/matrix.h"
-#include "maths/maths.h"
+#include "../common/maths.h"
 
 extern inline const char * test_matrix_inverse_identity(){
     mat3 i;

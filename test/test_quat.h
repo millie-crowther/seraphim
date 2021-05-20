@@ -4,7 +4,7 @@
 #ifndef SERAPHIM_TEST_QUAT
 #define SERAPHIM_TEST_QUAT
 
-#include "maths/maths.h"
+#include "../common/maths.h"
 #include "test_header.h"
 
 extern inline const char * test_quat_identity(){

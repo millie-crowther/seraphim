@@ -7,7 +7,7 @@
 
 #include "test_header.h"
 
-#include "core/array.h"
+#include "../common/array.h"
 
 static int int_comparator(const void * _a, const void * _b){
     int a = *(int *) _a;

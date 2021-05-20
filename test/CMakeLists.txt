@@ -14,15 +14,15 @@ set(INCLUDE_DIR
 include_directories(${INCLUDE_DIR})
 
 set(SOURCES
-    ../src/maths/sdf/sdf.cpp
-    ../src/maths/sdf/primitive.cpp
-    ../src/maths/sdf/platonic.cpp
-        ../src/physics/bound.cpp
-    ../src/core/random.cpp
-    ../src/physics/transform.cpp
-    ../src/core/array.cpp
-    ../src/maths/maths.cpp
-    ../src/metaphysics/matter.cpp
+        ../backend/sdf.cpp
+        ../backend/primitive.cpp
+        ../backend/platonic.cpp
+        ../common/bound.cpp
+        ../common/random.cpp
+        ../common/transform.cpp
+        ../common/array.cpp
+        ../common/maths.cpp
+        ../common/matter.cpp
     test_main.cpp
 )
 

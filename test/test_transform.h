@@ -5,7 +5,7 @@
 #ifndef SERAPHIM_TEST_TRANSFORM_H
 #define SERAPHIM_TEST_TRANSFORM_H
 
-#include "physics/transform.h"
+#include "../common/transform.h"
 
 extern inline const char * test_transform_matrix(){
     srph_transform tf;

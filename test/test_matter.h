@@ -5,9 +5,9 @@
 #ifndef SERAPHIM_TEST_MATTER_H
 #define SERAPHIM_TEST_MATTER_H
 
-#include "maths/sdf/sdf.h"
-#include "metaphysics/matter.h"
-#include "maths/sdf/platonic.h"
+#include "../backend/sdf.h"
+#include "../common/matter.h"
+#include "../backend/platonic.h"
 
 extern inline const char * test_matter_inertia_tensor_uniform_cube(){
     double r = 0.5;

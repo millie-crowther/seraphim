@@ -24,46 +24,46 @@ set(INCLUDE_DIR
 include_directories(${INCLUDE_DIR})
 
 set(SOURCES
-        src/main.cpp
+        common/main.cpp
 
-        src/core/command.cpp
-        src/core/device.cpp
-        src/core/random.cpp
-        src/core/seraphim.cpp
-        src/core/array.cpp
-        src/core/buffer.cpp
+        frontend/command.cpp
+        frontend/device.cpp
+        common/random.cpp
+        common/seraphim.cpp
+        common/array.cpp
+        frontend/buffer.cpp
 
-        src/lib/cJSON.c
+        common/cJSON.c
 
-        src/physics/collision.cpp
-        src/physics/physics.cpp
-        src/physics/sphere.cpp
-        src/physics/transform.cpp
+        backend/collision.cpp
+        backend/physics.cpp
+        common/sphere.cpp
+        common/transform.cpp
 
-        src/render/request.cpp
-        src/render/camera.cpp
-        src/render/light.cpp
-        src/render/renderer.cpp
-        src/render/swapchain.cpp
-        src/render/texture.cpp
-        src/render/shader.cpp
+        frontend/request.cpp
+        common/camera.cpp
+        common/light.cpp
+        frontend/renderer.cpp
+        frontend/swapchain.cpp
+        frontend/texture.cpp
+        frontend/shader.cpp
 
-        src/metaphysics/substance.cpp
-        src/metaphysics/form.cpp
-        src/metaphysics/matter.cpp
-        src/metaphysics/material.cpp
+        common/substance.cpp
+        common/form.cpp
+        common/matter.cpp
+        common/material.cpp
 
-        src/physics/bound.cpp
-        src/maths/optimise.cpp
-        src/maths/maths.cpp
-        src/maths/sdf/sdf.cpp
-        src/maths/sdf/primitive.cpp
-        src/maths/sdf/platonic.cpp
+        common/bound.cpp
+        backend/optimise.cpp
+        common/maths.cpp
+        backend/sdf.cpp
+        backend/primitive.cpp
+        backend/platonic.cpp
 
-        src/ui/keyboard.cpp
-        src/ui/window.cpp
-        src/ui/mouse.cpp
-        src/ui/file.cpp
+        frontend/keyboard.cpp
+        frontend/window.cpp
+        frontend/mouse.cpp
+        common/file.cpp
 )
 
 add_executable(seraphim ${SOURCES})
