@@ -60,9 +60,7 @@ set(SOURCES
         backend/primitive.cpp
         backend/platonic.cpp
 
-        frontend/keyboard.cpp
-        frontend/window.cpp
-        frontend/mouse.cpp
+        frontend/ui.cpp
         common/file.cpp
 )
 

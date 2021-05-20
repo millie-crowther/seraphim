@@ -17,7 +17,7 @@
 #include "../common/light.h"
 #include "swapchain.h"
 #include "texture.h"
-#include "window.h"
+#include "ui.h"
 #include "texture.h"
 #include "shader.h"
 #include "swapchain.h"

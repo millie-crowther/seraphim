@@ -10,7 +10,7 @@
 
 #include "../backend/physics.h"
 #include "../frontend/renderer.h"
-#include "../frontend/window.h"
+#include "../frontend/ui.h"
 
 #define SERAPHIM_MAX_SUBSTANCES 100
 #define SERAPHIM_MAX_SDFS 100

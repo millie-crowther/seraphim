@@ -2,8 +2,7 @@
 #define CAMERA_H
 
 #include "transform.h"
-#include "../frontend/keyboard.h"
-#include "../frontend/mouse.h"
+#include "../frontend/ui.h"
 
 typedef struct camera_t {
     transform_t transform;
