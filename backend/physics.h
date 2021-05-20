@@ -1,7 +1,7 @@
 #ifndef SERAPHIM_PHYSICS_H
 #define SERAPHIM_PHYSICS_H
 
-#include "../common/substance.h"
+#include "metaphysics.h"
 #include "collision.h"
 
 #include <thread>

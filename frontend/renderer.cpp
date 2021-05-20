@@ -436,7 +436,7 @@ void renderer_t::render() {
     uint32_t size = work_group_size.x * work_group_size.y;
 
     // write substances
-    std::vector<data_t> substance_data;
+    std::vector<substance_data_t> substance_data;
     for (size_t i = 0; i < *num_substances; i++) {
         substance_t *s = &substances[i];
         substance_data.push_back(
@@ -444,7 +444,7 @@ void renderer_t::render() {
     }
     substance_data.resize(size);
 
-    std::sort(substance_data.begin(), substance_data.end(), data_t::comparator_t());
+    std::sort(substance_data.begin(), substance_data.end(), substance_data_t::comparator_t());
 
     buffer_write(&substance_buffer, substance_data.data(), substance_data.size(), 0);
 
@@ -513,7 +513,7 @@ void renderer_t::create_buffers() {
     uint32_t s = work_group_size.x * work_group_size.y;
 
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
-    buffer_create(&substance_buffer, 4, device, s, true, sizeof(data_t));
+    buffer_create(&substance_buffer, 4, device, s, true, sizeof(substance_data_t));
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
     buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
     buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);

@@ -2,7 +2,7 @@
 #define SERAPHIM_RENDER_REQUEST_H
 
 #include "../common/array.h"
-#include "../common/substance.h"
+#include "../backend/metaphysics.h"
 #include "texture.h"
 
 #include <threads.h>

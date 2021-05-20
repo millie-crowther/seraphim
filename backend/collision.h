@@ -1,7 +1,7 @@
 #ifndef SERAPHIM_COLLISION_H
 #define SERAPHIM_COLLISION_H
 
-#include "../common/substance.h"
+#include "metaphysics.h"
 
 typedef struct collision_t {
     substance_t *substances[2];

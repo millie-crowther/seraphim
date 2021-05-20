@@ -48,9 +48,7 @@ set(SOURCES
         frontend/texture.cpp
         frontend/shader.cpp
 
-        common/substance.cpp
-        common/form.cpp
-        common/matter.cpp
+        backend/metaphysics.cpp
         common/material.cpp
 
         common/bound.cpp

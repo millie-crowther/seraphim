@@ -11,7 +11,7 @@
 #include "request.h"
 #include "buffer.h"
 #include "command.h"
-#include "../common/substance.h"
+#include "../backend/metaphysics.h"
 #include "request.h"
 #include "../common/camera.h"
 #include "../common/light.h"

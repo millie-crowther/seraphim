@@ -22,8 +22,7 @@ set(SOURCES
         ../common/transform.cpp
         ../common/array.cpp
         ../common/maths.cpp
-        ../common/matter.cpp
-    test_main.cpp
+        test_main.cpp
 )
 
 add_executable(seraphim_test ${SOURCES})
