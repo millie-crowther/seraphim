@@ -7,12 +7,10 @@
 
 #include "../common/maths.h"
 
-struct window_t;
-
 typedef struct mouse_t {
     vec2 velocity;
     vec2 cursor_position;
-    struct window_t * window;
+    GLFWwindow *window;
 } mouse_t;
 
 typedef int keycode_t;
@@ -34,7 +32,7 @@ bool window_should_close(window_t *window);
 void window_show(window_t * window);
 void window_set_title(window_t *window, const char *title);
 
-void mouse_create(mouse_t *mouse, struct window_t *window);
+void mouse_create(mouse_t *mouse, window_t *window);
 void mouse_update(mouse_t *mouse, double delta);
 
 void keyboard_create(keyboard_t * keyboard, GLFWwindow * window);
