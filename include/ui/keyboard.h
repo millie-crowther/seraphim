@@ -8,9 +8,9 @@
 
 typedef int keycode_t;
 
-struct keyboard_t {
+typedef struct keyboard_t {
     bool key_state[GLFW_KEY_LAST];
-};
+} keyboard_t;
 
 void keyboard_create(keyboard_t * keyboard, GLFWwindow * window);
 bool keyboard_is_key_pressed(const keyboard_t *keyboard, keycode_t keycode);
