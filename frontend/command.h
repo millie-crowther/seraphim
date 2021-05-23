@@ -9,19 +9,18 @@
 #include <memory>
 #include <stdexcept>
 
-typedef struct command_buffer_t {
-    VkCommandBuffer command_buffer;
-    VkDevice device;
-    VkCommandPool command_pool;
-    VkQueue queue;
-    bool is_one_time;
-} command_buffer_t;
-
 typedef struct command_pool_t {
     VkDevice device;
     VkCommandPool command_pool;
     VkQueue queue;
 } command_pool_t;
+
+typedef struct command_buffer_t {
+    command_pool_t * pool;
+    VkCommandBuffer command_buffer;
+    bool is_one_time;
+} command_buffer_t;
+
 
 void command_buffer_destroy(command_buffer_t * command_buffer);
 void

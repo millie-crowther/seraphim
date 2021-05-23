@@ -13,7 +13,7 @@ void command_buffer_submit(command_buffer_t  * command_buffer, VkSemaphore wait_
     submit_info.signalSemaphoreCount = signal_sema == VK_NULL_HANDLE ? 0 : 1;
     submit_info.pSignalSemaphores = &signal_sema;
 
-    if (vkQueueSubmit(command_buffer->queue, 1, &submit_info, fence) != VK_SUCCESS) {
+    if (vkQueueSubmit(command_buffer->pool->queue, 1, &submit_info, fence) != VK_SUCCESS) {
         printf("Error: Failed to submit command buffer to queue.");
         exit(1);
     }
@@ -24,22 +24,19 @@ void command_buffer_submit(command_buffer_t  * command_buffer, VkSemaphore wait_
 }
 
 void command_buffer_begin_buffer(command_pool_t *pool, command_buffer_t *buffer, bool is_one_time) {
-    buffer->device = pool->device;
-    buffer->command_pool = pool->command_pool;
-    buffer->queue = pool->queue;
+    buffer->pool = pool;
     buffer->is_one_time = is_one_time;
     VkCommandBufferUsageFlags usage = is_one_time ? VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
     VkCommandBufferAllocateInfo alloc_info = {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    alloc_info.commandPool = buffer->command_pool;
+    alloc_info.commandPool = buffer->pool->command_pool;
     alloc_info.commandBufferCount = 1;
 
-    if (vkAllocateCommandBuffers(buffer->device, &alloc_info, &buffer->command_buffer) !=
+    if (vkAllocateCommandBuffers(buffer->pool->device, &alloc_info, &buffer->command_buffer) !=
         VK_SUCCESS) {
-        printf("Error: Failed to allocate command buffer.");
-        exit(1);
+        PANIC("Error: Failed to allocate command buffer.");
     }
 
     VkCommandBufferBeginInfo begin_info;
@@ -60,7 +57,7 @@ void command_buffer_end(command_buffer_t *buffer) {
 }
 
 void command_buffer_destroy(command_buffer_t *command_buffer) {
-    vkFreeCommandBuffers(command_buffer->device, command_buffer->command_pool, 1, &command_buffer->command_buffer);
+    vkFreeCommandBuffers(command_buffer->pool->device, command_buffer->pool->command_pool, 1, &command_buffer->command_buffer);
 }
 
 void command_pool_create(command_pool_t *pool, VkDevice device, uint32_t queue_family) {
@@ -73,8 +70,7 @@ void command_pool_create(command_pool_t *pool, VkDevice device, uint32_t queue_f
 
     if (vkCreateCommandPool(device, &command_pool_info, NULL, &pool->command_pool) !=
         VK_SUCCESS) {
-        printf("Error: failed to create command pool.");
-        exit(1);
+        PANIC("Error: failed to create command pool.");
     }
 
     vkGetDeviceQueue(device, queue_family, 0, &pool->queue);
