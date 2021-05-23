@@ -273,7 +273,7 @@ void renderer_t::create_framebuffers() {
     framebuffers.resize(swapchain->get_size());
 
     for (uint32_t i = 0; i < swapchain->get_size(); i++) {
-        VkImageView image_view = swapchain->get_image_view(i);
+        VkImageView image_view = swapchain->image_views[i];
 
         VkFramebufferCreateInfo framebuffer_info = {};
         framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

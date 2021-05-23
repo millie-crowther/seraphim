@@ -5,11 +5,15 @@
 #include <algorithm>
 #include "../common/debug.h"
 
+static VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+static VkExtent2D select_swap_extent(VkPhysicalDevice physical_device, vec2u *size, VkSurfaceKHR surface);
+static VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device, VkSurfaceKHR surface);
+
 swapchain_t::swapchain_t(device_t *device, vec2u *size, VkSurfaceKHR surface) {
     this->device = device;
-    VkSurfaceFormatKHR format = select_surface_format(surface);
-    VkPresentModeKHR mode = select_present_mode(surface);
-    extents = select_swap_extent(size, surface);
+    VkSurfaceFormatKHR format = select_surface_format(device->physical_device, surface);
+    VkPresentModeKHR mode = select_present_mode(device->physical_device, surface);
+    extents = select_swap_extent(device->physical_device, size, surface);
 
     VkSurfaceCapabilitiesKHR capabilities;
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physical_device, surface,
@@ -77,23 +81,23 @@ swapchain_t::~swapchain_t() {
     vkDestroySwapchainKHR(device->device, handle, NULL);
 }
 
-VkSurfaceFormatKHR swapchain_t::select_surface_format(VkSurfaceKHR surface) {
-    uint32_t count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_device, surface, &count,
+static VkSurfaceFormatKHR select_surface_format(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+    uint32_t count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count,
                                          NULL);
-    std::vector<VkSurfaceFormatKHR> formats(count);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device->physical_device, surface, &count,
-                                         formats.data());
+    VkSurfaceFormatKHR formats[count];
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &count, formats);
 
     // check if all formats supported
-    if (formats.size() == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
+    if (count == 1 && formats[0].format == VK_FORMAT_UNDEFINED) {
         return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
     }
+
     // check for preferred
-    for (auto available_format : formats) {
-        if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-            available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-            return available_format;
+    for (uint32_t i = 0; i < count; i++) {
+        if (formats[i].format == VK_FORMAT_B8G8R8A8_UNORM &&
+            formats[i].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            return formats[i];
         }
     }
 
@@ -101,9 +105,9 @@ VkSurfaceFormatKHR swapchain_t::select_surface_format(VkSurfaceKHR surface) {
     return formats[0];
 }
 
-VkExtent2D swapchain_t::select_swap_extent(vec2u *size, VkSurfaceKHR surface) {
+static VkExtent2D select_swap_extent(VkPhysicalDevice physical_device, vec2u *size, VkSurfaceKHR surface) {
     VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device->physical_device, surface,
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface,
                                               &capabilities);
 
     // check if we need to supply width and height
@@ -123,22 +127,24 @@ VkExtent2D swapchain_t::select_swap_extent(vec2u *size, VkSurfaceKHR surface) {
     }
 }
 
-VkPresentModeKHR swapchain_t::select_present_mode(VkSurfaceKHR surface) {
+static VkPresentModeKHR select_present_mode(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
     uint32_t count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_device, surface,
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface,
                                               &count, NULL);
-    std::vector<VkPresentModeKHR> modes(count);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device->physical_device, surface,
-                                              &count, modes.data());
+    VkPresentModeKHR modes[count];
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface,
+                                              &count, modes);
 
-    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_MAILBOX_KHR) !=
-        modes.end()) {
-        return VK_PRESENT_MODE_MAILBOX_KHR;
+    for (uint32_t i = 0; i < count; i++){
+        if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR){
+            return VK_PRESENT_MODE_MAILBOX_KHR;
+        }
     }
 
-    if (std::find(modes.begin(), modes.end(), VK_PRESENT_MODE_IMMEDIATE_KHR) !=
-        modes.end()) {
-        return VK_PRESENT_MODE_IMMEDIATE_KHR;
+    for (uint32_t i = 0; i < count; i++){
+        if (modes[i] == VK_PRESENT_MODE_IMMEDIATE_KHR){
+            return VK_PRESENT_MODE_IMMEDIATE_KHR;
+        }
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
@@ -146,4 +152,3 @@ VkPresentModeKHR swapchain_t::select_present_mode(VkSurfaceKHR surface) {
 
 uint32_t swapchain_t::get_size() const { return image_views.size(); }
 
-VkImageView swapchain_t::get_image_view(uint32_t i) const { return image_views[i]; }
