@@ -88,8 +88,7 @@ struct renderer_t {
     buffer_t substance_buffer;
     buffer_t light_buffer;
     buffer_t pointer_buffer;
-    buffer_t frustum_buffer;
-    buffer_t lighting_buffer;
+    buffer_t work_group_persistent_buffer;
 
     request_handler_t request_handler;
 

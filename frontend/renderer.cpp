@@ -369,8 +369,7 @@ void create_descriptor_set_layout(renderer_t * renderer) {
             buffer_descriptor_set_layout_binding(&renderer->light_buffer),
 
             buffer_descriptor_set_layout_binding(&renderer->pointer_buffer),
-            buffer_descriptor_set_layout_binding(&renderer->frustum_buffer),
-            buffer_descriptor_set_layout_binding(&renderer->lighting_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->work_group_persistent_buffer),
     };
 
     for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++){
@@ -515,8 +514,7 @@ void renderer_t::create_buffers() {
     buffer_create(&light_buffer, 3, device, s, true, sizeof(light_t));
     buffer_create(&substance_buffer, 4, device, s, true, sizeof(substance_data_t));
     buffer_create(&pointer_buffer, 5, device, c * s, true, sizeof(uint32_t));
-    buffer_create(&frustum_buffer, 6, device, c, true, sizeof(float) * 2);
-    buffer_create(&lighting_buffer, 7, device, c, true, sizeof(float) * 4);
+    buffer_create(&work_group_persistent_buffer, 6, device, c, true, sizeof(float) * 4);
 }
 
 int renderer_t::get_frame_count() {
@@ -552,8 +550,7 @@ void renderer_destroy(renderer_t *renderer) {
     buffer_destroy(&renderer->substance_buffer);
     buffer_destroy(&renderer->light_buffer);
     buffer_destroy(&renderer->pointer_buffer);
-    buffer_destroy(&renderer->frustum_buffer);
-    buffer_destroy(&renderer->lighting_buffer);
+    buffer_destroy(&renderer->work_group_persistent_buffer);
 
     texture_destroy(&renderer->render_texture);
 }
@@ -631,9 +628,7 @@ void renderer_create(renderer_t *renderer, device_t *device, substance_t *substa
         write_desc_sets.push_back(
                 buffer_write_descriptor_set(&renderer->pointer_buffer, descriptor_set));
         write_desc_sets.push_back(
-                buffer_write_descriptor_set(&renderer->frustum_buffer, descriptor_set));
-        write_desc_sets.push_back(
-                buffer_write_descriptor_set(&renderer->lighting_buffer, descriptor_set));
+                buffer_write_descriptor_set(&renderer->work_group_persistent_buffer, descriptor_set));
 
 
         write_desc_sets.push_back(

@@ -50,6 +50,13 @@ struct patch_t {
     uint normal;
 };
 
+struct work_group_persistent_t {
+    float near_plane;
+    float far_plane;
+    float unused1;
+    float unused2;
+};
+
 layout (local_size_x = 32, local_size_y = 32) in;
 
 const int work_group_size = int(gl_WorkGroupSize.x * gl_WorkGroupSize.y);
@@ -117,8 +124,7 @@ layout (binding = 2) buffer request_buffer      { request_t   data[]; } requests
 layout (binding = 3) buffer lights_buffer       { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substance;
 layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
-layout (binding = 6) buffer frustum_buffer      { vec2        data[]; } frustum;
-layout (binding = 7) buffer lighting_buffer     { vec4        data[]; } lighting;
+layout (binding = 6) buffer work_group_persistent_buffer      { work_group_persistent_t        data[]; } work_group_persistent;
 layout (binding = 8) buffer texture_hash_buffer { uint        data[]; } texture_hash;
 
 shared substance_t substances[gl_WorkGroupSize.x];
@@ -466,8 +472,8 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 
     float dist = length(lights[gl_LocalInvocationID.x].x - lights[gl_LocalInvocationID.y].x);
     bool is_valid =
-    lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0 &&
-    max(gl_LocalInvocationID.x, gl_LocalInvocationID.y) < lights_size;
+        lights[gl_LocalInvocationID.x].id != ~0 && lights[gl_LocalInvocationID.y].id != ~0 &&
+        max(gl_LocalInvocationID.x, gl_LocalInvocationID.y) < lights_size;
 
     vec4 result = reduce_min(i, mix(
         vec4(pc.render_distance),
@@ -476,16 +482,13 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
     ));
     barrier();
 
-    if (dist == -result.z && is_valid){
-        lighting.data[j] = vec4(
-            (lights[gl_LocalInvocationID.x].x + lights[gl_LocalInvocationID.y].x) / 2,
-            dist / 2
-        );
-    }
-
-    barrier();
-
-    frustum.data[j] = vec2(result.x, -result.y);
+    work_group_persistent.data[j] = work_group_persistent_t(
+        result.x,
+        -result.y,
+        0,
+        0
+    );
+//    frustum.data[j] = vec2(result.x, -result.y);
 
     barrier();
 
@@ -555,16 +558,7 @@ void render(uint i, uint j, substance_t s, uint shadow_index, uint shadow_size){
 }
 
 bool is_light_visible(light_t l, float near, float far, mat4x3 normals){
-    vec3 light = l.x - pc.eye_transform[3].xyz;
-    float r = sqrt(length(l.colour) / pc.epsilon);
-
-    vec4 phis = transpose(normals) * light;
-    bool frustum_hit = all(lessThanEqual(phis, vec4(r)));
-
-    float depth = dot(pc.eye_transform[2].xyz, light);
-    bool depth_hit = depth >= near - r  && depth <= far + r;
-
-    return l.id != ~0 && frustum_hit && depth_hit;
+    return l.id != ~0;
 }
 
 bool is_substance_visible(substance_t sub, mat4x3 normals_global){
@@ -594,39 +588,7 @@ bool is_substance_visible(substance_t sub, mat4x3 normals_global){
 }
 
 bool is_shadow_visible(substance_t s, vec2 view_frustum, vec3 light_position){
-    /*
-
-                  __--G--__  r
-            x_--``    |    ``--_               S = shadowing_substance
-             \        |        /              L = light_position
-              \       |       /               G = geometry_centre
-               \      |      /                r = geometry_radius
-                \     |     /
-       _____     \    |    /
-      /     \     \   |   /                   o = vector pointing out of screen towards you
-     |   S   |     \  |  /
-      \_____/       \ | /
-                     \|/
-                      L
-    */
-
-    vec3 eye_position = pc.eye_transform[3].xyz;
-    vec3 eye_direction = get_ray_direction(gl_WorkGroupSize.xy * gl_WorkGroupID.xy + gl_WorkGroupSize.xy / 2);
-    vec3 view_centre = eye_direction * (view_frustum.x + view_frustum.y) / 2;
-    float view_radius = length(eye_direction * view_frustum.y - view_centre);
-    view_centre += eye_position;
-
-    vec3 substance_origin = s.transform[3].xyz;
-    float substance_radius = length(s.radius);
-
-    vec3 difference = normalize(light_position - view_centre);
-    float alpha = dot(difference, substance_origin - view_centre) / length(light_position - view_centre);
-    alpha = clamp(alpha, 0, 1);
-
-    vec3 c = mix(view_centre, light_position, alpha);
-    float r = mix(view_radius, 0, alpha);
-
-    return s.id != ~0 && view_frustum.x < view_frustum.y && length(substance_origin - c) < r + substance_radius;
+    return s.id != ~0;
 }
 
 void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint shadow_size){
@@ -644,15 +606,15 @@ void prerender(uint i, uint j, substance_t s, out uint shadow_index, out uint sh
 
     // load shit
     light_t l = lights_global.data[i];
-    vec2 view_frustum = frustum.data[j].xy;
-    vec4 light = lighting.data[j];
+    work_group_persistent_t persistent = work_group_persistent.data[j];
+    vec2 view_frustum = vec2(persistent.near_plane, persistent.far_plane);
 
     // visibility check on substances and load into shared memory
     barrier();
     bvec4 hits = bvec4(
         is_substance_visible(s, normals),
         is_light_visible(l, view_frustum.x, view_frustum.y, normals),
-        is_shadow_visible(s, view_frustum, light.xyz),
+        is_shadow_visible(s, view_frustum, vec3(0)),
         false
     );
     uvec4 totals;
