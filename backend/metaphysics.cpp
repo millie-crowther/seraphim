@@ -140,15 +140,13 @@ void matter_material(matter_t *self, material_t *mat, const vec3 *x) {
     *mat = *self->material;
 }
 
-substance_t::substance_t(form_t *form, matter_t *matter, uint32_t id) {
-    this->form = *form;
-    this->matter = *matter;
-    this->id = id;
-    this->is_inertia_tensor_valid = false;
-    this->is_com_valid = false;
+void substance_create(substance_t *self, form_t *form, matter_t *matter, uint32_t id) {
+    self->form = *form;
+    self->matter = *matter;
+    self->id = id;
+    self->is_inertia_tensor_valid = false;
+    self->is_com_valid = false;
 }
-
-substance_t::substance_t() {}
 
 bool substance_data_t::comparator_t::operator()(const substance_data_t &a, const substance_data_t &b) const {
     return a.far < b.far && a.id != static_cast<uint32_t>(~0);

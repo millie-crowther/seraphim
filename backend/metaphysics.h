@@ -55,9 +55,6 @@ void matter_material(matter_t *self, material_t *mat, const vec3 *x);
 double matter_average_density(matter_t *self);
 
 typedef struct substance_t {
-    substance_t();
-    substance_t(form_t *form, matter_t *matter, uint32_t i);
-
     uint32_t id;
 
     bool is_com_valid;
@@ -73,6 +70,7 @@ typedef struct substance_t {
     matter_t matter;
 } substance_t;
 
+void substance_create(substance_t *self, form_t *form, matter_t *matter, uint32_t id);
 void substance_data(substance_t *substance, substance_data_t *data, vec3 *eye_position);
 
 // velocity

@@ -87,7 +87,7 @@ substance_t *seraphim_create_substance(seraphim_t *srph, form_t *form,
     assert(srph->num_substances < SERAPHIM_MAX_SUBSTANCES - 1);
 
     substance_t *new_substance = &srph->substances[srph->num_substances];
-    *new_substance = substance_t(form, matter, srph->num_substances);
+    substance_create(new_substance, form, matter, srph->num_substances);
     srph->num_substances++;
     return new_substance;
 }

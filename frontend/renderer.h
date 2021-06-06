@@ -55,7 +55,7 @@ struct renderer_t {
     VkRenderPass render_pass;
     VkPipeline graphics_pipeline;
     VkPipelineLayout pipeline_layout;
-    command_buffer_t * command_buffers;
+    command_buffer_t *command_buffers;
     VkPipeline compute_pipeline;
     VkPipelineLayout compute_pipeline_layout;
     int frames;
@@ -77,7 +77,7 @@ struct renderer_t {
 
     substance_t *substances;
     uint32_t *num_substances;
-    camera_t * main_camera;
+    camera_t *main_camera;
     texture_t render_texture;
 
     // command pool
@@ -96,24 +96,35 @@ struct renderer_t {
     std::chrono::high_resolution_clock::time_point start;
 
     void create_render_pass();
+
     void create_graphics_pipeline();
+
     void create_compute_pipeline();
+
     void create_framebuffers();
+
     void create_command_buffers();
+
     void create_descriptor_pool();
+
     void create_sync();
+
     void create_buffers();
+
     void recreate_swapchain();
+
     void cleanup_swapchain();
+
     void render();
 
     int get_frame_count();
 };
 
-void renderer_create(renderer_t * renderer, device_t *device, substance_t *substances, uint32_t *num_substances, VkSurfaceKHR surface,
-        window_t *window, camera_t *test_camera, vec2u *work_group_count,
-vec2u *work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
-sdf_t *sdfs, uint32_t *num_sdfs);
-void renderer_destroy(renderer_t * renderer);
+void renderer_create(renderer_t *renderer, device_t *device, substance_t *substances, uint32_t *num_substances,
+                     VkSurfaceKHR surface, window_t *window, camera_t *test_camera, vec2u *work_group_count,
+                     vec2u *work_group_size, uint32_t max_image_size, material_t *materials, uint32_t *num_materials,
+                     sdf_t *sdfs, uint32_t *num_sdfs);
+
+void renderer_destroy(renderer_t *renderer);
 
 #endif

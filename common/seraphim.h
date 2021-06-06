@@ -16,7 +16,7 @@
 #define SERAPHIM_MAX_SDFS 100
 #define SERAPHIM_MAX_MATERIALS 100
 
-struct seraphim_t {
+typedef struct seraphim_t {
 #if SERAPHIM_DEBUG
     VkDebugReportCallbackEXT callback;
 #endif
@@ -39,7 +39,7 @@ struct seraphim_t {
     renderer_t renderer;
     std::thread fps_monitor_thread;
     std::condition_variable fps_cv;
-};
+} seraphim_t;
 
 substance_t *seraphim_create_substance(seraphim_t *srph, form_t *form, matter_t *matter);
 sdf_t *seraphim_create_sdf(seraphim_t *srph, sdf_func_t phi, void *data);
