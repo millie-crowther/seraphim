@@ -436,13 +436,12 @@ void renderer_t::render() {
 
     // write substances
     substance_data_t substance_datas[size];
-    for (size_t i = 0; i < size; i++) {
-        if (i < *num_substances){
-            substance_t *s = &substances[i];
-            substance_data(s, &substance_datas[i], &main_camera->transform.position);
-        } else {
-            substance_datas[i] = null_substance_data;
-        }
+    for (size_t i = 0; i < *num_substances; i++) {
+        substance_t *s = &substances[i];
+        substance_data(s, &substance_datas[i], &main_camera->transform.position);
+    }
+    for (size_t i = *num_substances; i < size; i++){
+        substance_datas[i] = null_substance_data;
     }
 
     std::sort(substance_datas, substance_datas + size, substance_data_t::comparator_t());
