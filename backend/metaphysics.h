@@ -58,8 +58,6 @@ typedef struct substance_t {
     substance_t();
     substance_t(form_t *form, matter_t *matter, uint32_t i);
 
-    substance_data_t get_data(const vec3 *eye_position);
-
     uint32_t id;
 
     bool is_com_valid;
@@ -74,6 +72,8 @@ typedef struct substance_t {
     form_t form;
     matter_t matter;
 } substance_t;
+
+void substance_data(substance_t *substance, substance_data_t *data, vec3 *eye_position);
 
 // velocity
 void substance_velocity_at(substance_t *self, const vec3 *x, vec3 *v);

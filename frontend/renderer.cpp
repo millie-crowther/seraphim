@@ -435,17 +435,18 @@ void renderer_t::render() {
     uint32_t size = work_group_size.x * work_group_size.y;
 
     // write substances
-    std::vector<substance_data_t> substance_data;
+    std::vector<substance_data_t> substance_datas;
     for (size_t i = 0; i < *num_substances; i++) {
         substance_t *s = &substances[i];
-        substance_data.push_back(
-            s->get_data(&main_camera->transform.position));
+        substance_data_t data;
+        substance_data(s, &data, &main_camera->transform.position);
+        substance_datas.push_back(data);
     }
-    substance_data.resize(size);
+    substance_datas.resize(size);
 
-    std::sort(substance_data.begin(), substance_data.end(), substance_data_t::comparator_t());
+    std::sort(substance_datas.begin(), substance_datas.end(), substance_data_t::comparator_t());
 
-    buffer_write(&substance_buffer, substance_data.data(), substance_data.size(), 0);
+    buffer_write(&substance_buffer, substance_datas.data(), substance_datas.size(), 0);
 
     // write lights
     std::vector<light_t> lights(size);

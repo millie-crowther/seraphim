@@ -148,40 +148,6 @@ substance_t::substance_t(form_t *form, matter_t *matter, uint32_t id) {
     this->is_com_valid = false;
 }
 
-substance_data_t substance_t::get_data(const vec3 *eye_position) {
-    vec3 r;
-    bound3_radius(sdf_bound(matter.sdf), &r);
-
-    vec3 eye;
-    matter_to_local_position(&matter, &eye, eye_position);
-
-    vec3_abs(&eye, &eye);
-
-    vec3 x;
-    vec3_subtract(&x, &eye, &r);
-
-    for (int i = 0; i < 3; i++) {
-        x.v[i] = fmax(x.v[i], 0.0);
-    }
-
-    float near = (float)vec3_length(&x);
-
-    x = eye;
-    vec3_add(&x, &eye, &r);
-
-    float far = (float)vec3_length(&x);
-
-    vec3f f32r = {{(float)r.x, (float)r.y, (float)r.z}};
-
-    substance_data_t data(near, far, &f32r, id);
-
-    matter_transformation_matrix(&matter, data.transform);
-    data.sdf_id = matter.sdf->id;
-    data.material_id = matter.material->id;
-
-    return data;
-}
-
 substance_t::substance_t() {}
 
 bool substance_data_t::comparator_t::operator()(const substance_data_t &a, const substance_data_t &b) const {
@@ -192,13 +158,6 @@ substance_data_t::substance_data_t() {
     id = ~0;
     material_id = ~0;
     sdf_id = ~0;
-}
-
-substance_data_t::substance_data_t(float near, float far, vec3f *r, uint32_t id) {
-    this->near = near;
-    this->far = far;
-    this->id = id;
-    this->r = *r;
 }
 
 static void offset_from_centre_of_mass(substance_t *self, vec3 *r, const vec3 *x) {
@@ -414,4 +373,42 @@ void substance_calculate_sphere_bound(substance_t *self, double dt) {
     matter_to_global_position(&self->matter, &self->bounding_sphere.c, &midpoint);
     self->bounding_sphere.r =
         vec3_length(&radius) + vec3_length(&self->matter.velocity) * dt;
+}
+
+
+
+void substance_data(substance_t *substance, substance_data_t *data, vec3 *eye_position) {
+    matter_t * matter = &substance->matter;
+    vec3 r;
+    bound3_radius(sdf_bound(matter->sdf), &r);
+
+    vec3 eye;
+    matter_to_local_position(matter, &eye, eye_position);
+
+    vec3_abs(&eye, &eye);
+
+    vec3 x;
+    vec3_subtract(&x, &eye, &r);
+
+    for (int i = 0; i < 3; i++) {
+        x.v[i] = fmax(x.v[i], 0.0);
+    }
+
+    float near = (float)vec3_length(&x);
+
+    x = eye;
+    vec3_add(&x, &eye, &r);
+
+    float far = (float)vec3_length(&x);
+
+    vec3f f32r = {{(float)r.x, (float)r.y, (float)r.z}};
+
+    data->near = near;
+    data->far = far;
+    data->id = substance->id;
+    data->r = f32r;
+    data->sdf_id = matter->sdf->id;
+    data->material_id = matter->material->id;
+
+    matter_transformation_matrix(matter, data->transform);
 }

@@ -17,7 +17,6 @@ typedef struct substance_data_t {
     float transform[MAT4_SIZE];
 
     substance_data_t();
-    substance_data_t(float near, float far, vec3f *r, uint32_t id);
 
     struct comparator_t {
         bool operator()(const substance_data_t &a, const substance_data_t &b) const;
