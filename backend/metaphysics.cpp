@@ -395,12 +395,14 @@ void substance_data(substance_t *substance, substance_data_t *data, vec3 *eye_po
 
     vec3f f32r = {{(float)r.x, (float)r.y, (float)r.z}};
 
-    data->near = near;
-    data->far = far;
-    data->id = substance->id;
-    data->r = f32r;
-    data->sdf_id = matter->sdf->id;
-    data->material_id = matter->material->id;
+    *data = {
+        .near = near,
+        .far = far,
+        .sdf_id = matter->sdf->id,
+        .material_id = matter->material->id,
+        .r = f32r,
+        .id = substance->id,
+    };
 
     matter_transformation_matrix(matter, data->transform);
 }
