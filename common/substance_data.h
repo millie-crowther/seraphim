@@ -16,11 +16,15 @@ typedef struct substance_data_t {
 
     float transform[MAT4_SIZE];
 
-    substance_data_t();
-
     struct comparator_t {
         bool operator()(const substance_data_t &a, const substance_data_t &b) const;
     };
 } substance_data_t;
+
+static const substance_data_t null_substance_data = {
+    .sdf_id = (uint32_t) ~0,
+    .material_id = (uint32_t) ~0,
+    .id = (uint32_t) ~0,
+};
 
 #endif //SERAPHIM_SUBSTANCE_DATA_H

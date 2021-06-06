@@ -152,12 +152,6 @@ bool substance_data_t::comparator_t::operator()(const substance_data_t &a, const
     return a.far < b.far && a.id != static_cast<uint32_t>(~0);
 }
 
-substance_data_t::substance_data_t() {
-    id = ~0;
-    material_id = ~0;
-    sdf_id = ~0;
-}
-
 static void offset_from_centre_of_mass(substance_t *self, vec3 *r, const vec3 *x) {
     vec3 com;
     matter_to_global_position(&self->matter, &com, substance_com(self));
