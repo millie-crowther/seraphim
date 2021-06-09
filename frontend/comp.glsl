@@ -25,6 +25,17 @@ struct intersection_t {
     substance_t substance;
 };
 
+struct ray_intersection_t {
+    vec3 position;
+    float distance;
+
+    vec3 direction;
+    uint sdf_id;
+
+    vec3 normal;
+    float _2;
+};
+
 struct request_t {
     vec3 position;
     float radius;
@@ -124,8 +135,9 @@ layout (binding = 2) buffer request_buffer      { request_t   data[]; } requests
 layout (binding = 3) buffer lights_buffer       { light_t     data[]; } lights_global;
 layout (binding = 4) buffer substance_buffer    { substance_t data[]; } substance;
 layout (binding = 5) buffer pointer_buffer      { uint        data[]; } pointers;
-layout (binding = 6) buffer work_group_persistent_buffer      { work_group_persistent_t        data[]; } work_group_persistent;
+layout (binding = 6) buffer work_group_persistent_buffer { work_group_persistent_t  data[]; } work_group_persistent;
 layout (binding = 8) buffer texture_hash_buffer { uint        data[]; } texture_hash;
+layout (binding = 9) buffer raycast_buffer      { ray_intersection_t   data[]; } raycasts;
 
 shared substance_t substances[gl_WorkGroupSize.x];
 shared uint substances_size;

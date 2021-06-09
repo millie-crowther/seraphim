@@ -1,12 +1,12 @@
 #include <cstring>
 #include "request.h"
 
-struct patch_t {
+typedef struct patch_t {
     uint32_t contents;
     uint32_t hash;
     float phi;
     uint32_t normal;
-};
+} patch_t;
 
 vec3 vertices[8] = {
     {{0.0, 0.0, 0.0}}, {{2.0, 0.0, 0.0}},
@@ -19,6 +19,7 @@ request_t null_requests[number_of_requests];
 static const uint32_t null_status = 0;
 static const uint32_t geometry_request = 1;
 static const uint32_t texture_request = 2;
+static const uint32_t raycast_request = 3;
 
 static int request_handling_thread(void * request_handler);
 
@@ -42,6 +43,7 @@ void request_handler_destroy(request_handler_t *request_handler) {
     buffer_destroy(&request_handler->patch_buffer);
     buffer_destroy(&request_handler->request_buffer);
     buffer_destroy(&request_handler->texture_hash_buffer);
+    buffer_destroy(&request_handler->raycast_buffer);
 }
 
 void request_handler_create(request_handler_t *request_handler, uint32_t texture_size, uint32_t texture_depth,
@@ -54,6 +56,7 @@ void request_handler_create(request_handler_t *request_handler, uint32_t texture
     buffer_create(&request_handler->request_buffer, 2, request_handler->device, number_of_requests, true, sizeof(request_t));
     buffer_create(&request_handler->texture_hash_buffer, 8, request_handler->device, texture_pool_size, true,
                   sizeof(uint32_t));
+    buffer_create(&request_handler->raycast_buffer, 9, request_handler->device, number_of_raycasts, true, sizeof(intersection_t));
 
     request_handler->sdfs =sdfs;
     request_handler->num_sdfs = num_sdfs;
@@ -135,6 +138,18 @@ static void handle_geometry_request(request_handler_t * request_handler, request
     mtx_unlock(&request_handler->response_mutex);
 }
 
+static void handle_raycast_request(request_handler_t * request_handler, request_t * request) {
+    intersection_t intersection = {
+        .sdf_id = request->sdf_id,
+    };
+
+    if (intersection.sdf_id >= *request_handler->num_sdfs) {
+        return;
+    }
+
+
+}
+
 static void handle_texture_request(request_handler_t * request_handler, request_t * request){
     uint32_t material_id = request->material_id;
     uint32_t sdf_id = request->sdf_id;
@@ -211,8 +226,10 @@ static int request_handling_thread(void * request_handler_){
                 request_t * request = &requests[i];
                 if (request->status == geometry_request){
                     handle_geometry_request(request_handler, request);
-                } if (request->status == texture_request){
+                } else if (request->status == texture_request){
                     handle_texture_request(request_handler, request);
+                } else if (request->status == raycast_request){
+                    handle_raycast_request(request_handler, request);
                 }
             }
 

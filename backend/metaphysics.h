@@ -8,6 +8,22 @@
 #include "deform.h"
 #include "../common/substance_data.h"
 
+typedef struct ray_t {
+    vec3 position;
+    vec3 direction;
+} ray_t;
+
+typedef struct intersection_t {
+    vec3f position;
+    float distance;
+
+    vec3f direction;
+    uint32_t sdf_id;
+
+    vec3f normal;
+    float _2;
+} intersection_t;
+
 typedef struct form_t {
 
 } form_t;
@@ -89,5 +105,7 @@ double substance_inverse_mass(substance_t *self);
 vec3 *substance_com(substance_t *self);
 
 void substance_calculate_sphere_bound(substance_t *self, double dt);
+
+void substance_raycast(substance_t * self, ray_t * ray, intersection_t * intersection);
 
 #endif

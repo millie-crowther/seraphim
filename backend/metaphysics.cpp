@@ -1,6 +1,7 @@
 #include "metaphysics.h"
 
 #include "../common/random.h"
+#include "../common/constant.h"
 #include <assert.h>
 
 #define LINEAR_VELOCITY_REST_THRESHOLD 0.075
@@ -405,4 +406,49 @@ void substance_data(substance_t *substance, substance_data_t *data, vec3 *eye_po
     };
 
     matter_transformation_matrix(matter, data->transform);
+}
+
+void substance_raycast(substance_t *self, ray_t *ray, intersection_t *intersection) {
+    ray_t r = *ray;
+
+    vec3 step;
+    double min_distance = rho;
+    while (true){
+        double distance = sdf_distance(self->matter.sdf, &r.position);
+        min_distance = fmin(min_distance, distance);
+
+        if (distance <= epsilon || distance >= rho){
+            break;
+        }
+
+        vec3_multiply_f(&step, &r.direction, distance);
+        vec3_add(&r.position, &r.position, &step);
+    }
+
+    vec3f position = {
+        .x = (float) r.position.x,
+        .y = (float) r.position.y,
+        .z = (float) r.position.z,
+    };
+
+    vec3f direction = {
+        .x = (float) r.direction.x,
+        .y = (float) r.direction.y,
+        .z = (float) r.direction.z,
+    };
+
+    vec3 normal = sdf_normal(self->matter.sdf, &r.position);
+    vec3f normal_f = {
+        .x = (float) normal.x,
+        .y = (float) normal.y,
+        .z = (float) normal.z,
+    };
+
+    *intersection = {
+        .position = position,
+        .distance = (float) min_distance,
+        .direction = direction,
+        .sdf_id = self->matter.sdf->id,
+        .normal = normal_f,
+    };
 }
