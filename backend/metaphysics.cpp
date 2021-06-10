@@ -417,7 +417,7 @@ void substance_raycast(substance_t *self, ray_t *ray, intersection_t *intersecti
         double distance = sdf_distance(self->matter.sdf, &r.position);
         min_distance = fmin(min_distance, distance);
 
-        if (distance <= epsilon || distance >= rho){
+        if (distance < epsilon || distance >= rho){
             break;
         }
 
@@ -425,24 +425,24 @@ void substance_raycast(substance_t *self, ray_t *ray, intersection_t *intersecti
         vec3_add(&r.position, &r.position, &step);
     }
 
-    vec3f position = {
+    vec3f position = {{
         .x = (float) r.position.x,
         .y = (float) r.position.y,
         .z = (float) r.position.z,
-    };
+    }};
 
-    vec3f direction = {
-        .x = (float) r.direction.x,
-        .y = (float) r.direction.y,
-        .z = (float) r.direction.z,
-    };
+    vec3f direction = {{
+       .x = (float) r.direction.x,
+       .y = (float) r.direction.y,
+       .z = (float) r.direction.z,
+    }};
 
     vec3 normal = sdf_normal(self->matter.sdf, &r.position);
-    vec3f normal_f = {
+    vec3f normal_f = {{
         .x = (float) normal.x,
         .y = (float) normal.y,
         .z = (float) normal.z,
-    };
+    }};
 
     *intersection = {
         .position = position,

@@ -28,6 +28,9 @@ struct request_t {
     uint32_t sdf_id;
     uint32_t material_id;
     uint32_t status;
+
+    vec3f direction;
+    uint32_t _1;
 };
 
 typedef struct request_handler_t {

@@ -44,6 +44,9 @@ struct request_t {
     uint sdf_id;
     uint material_id;
     uint status;
+
+    vec3 direction;
+    uint _1;
 };
 
 struct light_t {
@@ -163,9 +166,12 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash, uin
     vec3 patch_centre;
     calculate_cell(x, order, cell_radius, patch_centre);
 
+    vec3 direction;
+    
     request_t result = request_t(
         patch_centre - cell_radius,
-        cell_radius, hash, substance.sdf_id, substance.material_id, request_type
+        cell_radius, hash, substance.sdf_id, substance.material_id, request_type,
+        direction, 0
     );
 
     return result;
