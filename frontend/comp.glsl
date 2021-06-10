@@ -167,7 +167,7 @@ request_t build_request(substance_t substance, vec3 x, int order, uint hash, uin
     calculate_cell(x, order, cell_radius, patch_centre);
 
     vec3 direction;
-    
+
     request_t result = request_t(
         patch_centre - cell_radius,
         cell_radius, hash, substance.sdf_id, substance.material_id, request_type,

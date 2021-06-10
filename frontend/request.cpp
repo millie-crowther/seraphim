@@ -139,15 +139,22 @@ static void handle_geometry_request(request_handler_t * request_handler, request
 }
 
 static void handle_raycast_request(request_handler_t * request_handler, request_t * request) {
-    intersection_t intersection = {
-        .sdf_id = request->sdf_id,
-    };
+    uint32_t sdf_id = request->sdf_id;
 
-    if (intersection.sdf_id >= *request_handler->num_sdfs) {
+    if (sdf_id >= *request_handler->num_sdfs) {
         return;
     }
 
+    sdf_t * sdf = &request_handler->sdfs[sdf_id];
+    ray_t ray = {
+        .position = {{.x = request->position.x, .y = request->position.y, .z = request->position.z }},
+        .direction = {{.x = request->direction.x, .y = request->direction.y, .z = request->direction.z }}
+    };
 
+    intersection_t intersection;
+    sdf_raycast(sdf, &ray, &intersection);
+
+    // TODO
 }
 
 static void handle_texture_request(request_handler_t * request_handler, request_t * request){
