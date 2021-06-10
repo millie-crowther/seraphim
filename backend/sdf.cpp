@@ -134,7 +134,6 @@ double sdf_discontinuity(sdf_t *sdf, const vec3 *x) {
     return fabs(mat3_determinant((mat3 *)ns));
 }
 
-
 void sdf_raycast(sdf_t *self, ray_t *ray, intersection_t *intersection) {
     ray_t r = *ray;
 
@@ -164,7 +163,7 @@ void sdf_raycast(sdf_t *self, ray_t *ray, intersection_t *intersection) {
            .z = (float) r.direction.z,
     }};
 
-    vec3 normal = sdf_normal(self->matter.sdf, &r.position);
+    vec3 normal = sdf_normal(self, &r.position);
     vec3f normal_f = {{
           .x = (float) normal.x,
           .y = (float) normal.y,
