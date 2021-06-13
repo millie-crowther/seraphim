@@ -364,6 +364,7 @@ void create_descriptor_set_layout(renderer_t * renderer) {
             buffer_descriptor_set_layout_binding(&renderer->request_handler.patch_buffer),
             buffer_descriptor_set_layout_binding(&renderer->request_handler.request_buffer),
             buffer_descriptor_set_layout_binding(&renderer->request_handler.texture_hash_buffer),
+            buffer_descriptor_set_layout_binding(&renderer->request_handler.raycast_buffer),
 
             buffer_descriptor_set_layout_binding(&renderer->substance_buffer),
             buffer_descriptor_set_layout_binding(&renderer->light_buffer),
@@ -645,6 +646,8 @@ void renderer_create(renderer_t *renderer, device_t *device, substance_t *substa
                 buffer_write_descriptor_set(&renderer->request_handler.request_buffer, descriptor_set));
         write_desc_sets.push_back(
                 buffer_write_descriptor_set(&renderer->request_handler.texture_hash_buffer, descriptor_set));
+        write_desc_sets.push_back(
+                buffer_write_descriptor_set(&renderer->request_handler.raycast_buffer, descriptor_set));
 
     }
 

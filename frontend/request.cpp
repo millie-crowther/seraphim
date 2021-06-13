@@ -154,7 +154,12 @@ static void handle_raycast_request(request_handler_t * request_handler, request_
     intersection_t intersection;
     sdf_raycast(sdf, &ray, &intersection);
 
-    // TODO
+    uint32_t index = request->hash % number_of_raycasts;
+    mtx_lock(&request_handler->response_mutex);
+    {
+        buffer_write(&request_handler->raycast_buffer, &intersection, 1, index);
+    }
+    mtx_unlock(&request_handler->response_mutex);
 }
 
 static void handle_texture_request(request_handler_t * request_handler, request_t * request){
@@ -276,6 +281,7 @@ void request_handler_record_buffer_accesses(request_handler_t *request_handler, 
     {
         buffer_record_write(&request_handler->patch_buffer, command_buffer);
         buffer_record_write(&request_handler->texture_hash_buffer, command_buffer);
+        buffer_record_write(&request_handler->raycast_buffer, command_buffer);
         for (int i = 0; i < TEXTURE_TYPE_MAXIMUM; i++) {
             request_handler->textures[i].record_write(command_buffer);
         }
