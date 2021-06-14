@@ -207,6 +207,11 @@ uint get_hash(vec3 x, int order, int id){
     return base_hash ^ id;
 }
 
+uint get_hash2(vec3 x, int id){
+    int order = expected_order(x);
+    return get_hash(x, order, id);
+}
+
 patch_t get_patch(
     vec3 x, int order, inout intersection_t intersection, inout request_t request, out bool is_patch_found
 ){
@@ -302,6 +307,17 @@ intersection_t raycast(ray_t r, inout request_t request){
 
     intersection.x = r.x;
     return intersection;
+}
+
+float shadow_cast1(vec3 light_position, vec3 geometry_position, substance_t sub){
+    mat4 inv = inverse(sub.transform);
+    light_position = (inv * vec4(light_position, 1)).xyz;
+    geometry_position = (inv * vec4(geometry_position, 1)).xyz;
+
+    uint position_hash = get_hash2(geometry_position, sub.sdf_id);
+
+    vec3 light_direction = normalize(geometry_position - light_position);
+    return 0;
 }
 
 float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request_t request){
