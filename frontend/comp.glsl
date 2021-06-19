@@ -199,7 +199,7 @@ uint work_group_offset(){
     return (gl_WorkGroupID.x + gl_WorkGroupID.y * gl_NumWorkGroups.x) * work_group_size;
 }
 
-uint get_hash(vec3 x, int order, int id){
+uint get_hash(vec3 x, int order, uint id){
     float size = expected_size(order);
     ivec3 x_grid = ivec3(floor(x / size));
     ivec4 hash_vec = ivec4(x_grid, order) * p1 + p2;
@@ -207,7 +207,7 @@ uint get_hash(vec3 x, int order, int id){
     return base_hash ^ id;
 }
 
-uint get_hash2(vec3 x, int id){
+uint get_hash2(vec3 x, uint id){
     int order = expected_order(x);
     return get_hash(x, order, id);
 }
@@ -309,7 +309,7 @@ intersection_t raycast(ray_t r, inout request_t request){
     return intersection;
 }
 
-float shadow_cast1(vec3 light_position, vec3 geometry_position, substance_t sub){
+float shadow_cast(vec3 light_position, vec3 geometry_position, substance_t sub, inout request_t request){
     mat4 inv = inverse(sub.transform);
     light_position = (inv * vec4(light_position, 1)).xyz;
     geometry_position = (inv * vec4(geometry_position, 1)).xyz;
@@ -317,38 +317,40 @@ float shadow_cast1(vec3 light_position, vec3 geometry_position, substance_t sub)
     uint position_hash = get_hash2(geometry_position, sub.sdf_id);
 
     vec3 light_direction = normalize(geometry_position - light_position);
-    return 0;
+    uvec3 light_hash = uvec3((light_direction + vec3(1, 3, 5)) * (1 << 9));
+    uint hash = position_hash ^ (light_hash.x | light_hash.y | light_hash.z);
+    return 1;
 }
 
-float shadow_cast(vec3 l, uint light_i, intersection_t geometry_i, inout request_t request){
-    uint steps;
-    ray_t r = ray_t(l, normalize(geometry_i.x - l));
-
-    intersection_t shadow_i;
-    shadow_i.substance.id = ~0;
-    shadow_i.hit = false;
-    shadow_i.distance = 0;
-
-    for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
-        float p = pc.render_distance;
-
-        for (uint i = 0; !shadow_i.hit && i < substances_size; i++){
-            p = min(p, phi(r, substances[i], shadow_i, request));
-            shadow_i.hit = p < pc.epsilon;
-        }
-        r.x += r.d * p;
-        shadow_i.distance += p;
-    }
-
-    float dist = length(geometry_i.x - l);
-
-    bool is_clear =
-    shadow_i.substance.id == geometry_i.substance.id ||
-    shadow_i.substance.id == ~0 ||
-    shadow_i.distance > dist;
-
-    return float(is_clear);
-}
+//float shadow_cast1(vec3 l, uint light_i, intersection_t geometry_i, inout request_t request){
+//    uint steps;
+//    ray_t r = ray_t(l, normalize(geometry_i.x - l));
+//
+//    intersection_t shadow_i;
+//    shadow_i.substance.id = ~0;
+//    shadow_i.hit = false;
+//    shadow_i.distance = 0;
+//
+//    for (steps = 0; !shadow_i.hit && steps < max_steps && shadow_i.distance < pc.render_distance; steps++){
+//        float p = pc.render_distance;
+//
+//        for (uint i = 0; !shadow_i.hit && i < substances_size; i++){
+//            p = min(p, phi(r, substances[i], shadow_i, request));
+//            shadow_i.hit = p < pc.epsilon;
+//        }
+//        r.x += r.d * p;
+//        shadow_i.distance += p;
+//    }
+//
+//    float dist = length(geometry_i.x - l);
+//
+//    bool is_clear =
+//    shadow_i.substance.id == geometry_i.substance.id ||
+//    shadow_i.substance.id == ~0 ||
+//    shadow_i.distance > dist;
+//
+//    return float(is_clear);
+//}
 
 float DistributionGGX(vec3 N, vec3 H, float a){
     float a2     = a*a;
@@ -421,7 +423,7 @@ vec3 light(uint light_i, intersection_t i, vec3 n, float roughness, float metall
         light_position, light_colour, world_position, eye_position, n, roughness, metallic, albedo);
 
     //shadows
-    float shadow = shadow_cast(light.x, light_i, i, request);
+    float shadow = shadow_cast(light.x, i.x, i.substance, request);
 
     return colour * shadow;
 }
