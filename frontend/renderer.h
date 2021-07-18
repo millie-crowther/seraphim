@@ -39,6 +39,9 @@ struct push_constant_t {
     uint32_t texture_depth;
     uint32_t geometry_pool_size;
     float epsilon;
+
+    uint32_t number_of_raycasts;
+    uint32_t _unused[3];
 };
 
 static const uint8_t frames_in_flight = 2;

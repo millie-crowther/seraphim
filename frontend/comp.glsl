@@ -83,6 +83,7 @@ const float geometry_epsilon = 1.0 / 300.0;
 const uint null_request = 0;
 const uint geometry_request = 1;
 const uint texture_request = 2;
+const uint raycast_request = 3;
 
 const ivec4 p1 = ivec4(
     904601,
@@ -131,6 +132,9 @@ layout(push_constant) uniform push_constants {
     uint texture_depth;
     uint geometry_pool_size;
     float epsilon;
+
+    uint number_of_raycasts;
+    uvec3 _unused;
 } pc;
 
 layout (binding = 1) buffer patch_buffer        { patch_t     data[]; } patches;
@@ -319,6 +323,10 @@ float shadow_cast(vec3 light_position, vec3 geometry_position, substance_t sub, 
     vec3 light_direction = normalize(geometry_position - light_position);
     uvec3 light_hash = uvec3((light_direction + vec3(1, 3, 5)) * (1 << 9));
     uint hash = position_hash ^ (light_hash.x | light_hash.y | light_hash.z);
+
+//    request = request_t(
+//        light_position, 0, hash, sub.sdf_id, sub.sdf_id, raycast_request, light_direction, 0
+//    );
     return 1;
 }
 

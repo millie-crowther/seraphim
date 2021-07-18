@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <stdexcept>
 #include "../common/file.h"
 #include "../common/debug.h"
 
@@ -585,6 +584,7 @@ void renderer_create(renderer_t *renderer, device_t *device, substance_t *substa
     renderer->push_constants.geometry_pool_size = geometry_pool_size;
     renderer->push_constants.texture_pool_size = texture_pool_size;
     renderer->push_constants.epsilon = (float) epsilon;
+    renderer->push_constants.number_of_raycasts = number_of_raycasts;
 
     renderer->main_camera = test_camera;
 
